@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-quer
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
+import { useState } from 'react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { fetchModuleRecords } from '../../shared/api/module-records.ts';
 import { server } from '../../test/server.ts';
@@ -248,18 +249,32 @@ describe('Pendientes: aggregation and grouping', () => {
     install({
       alerts: [alert('ALT-1', 'Alta'), alert('ALT-2', 'Media')],
       actors: [{ _id: 'AC-1', Nombre: 'Actor sin territorio' }],
+      situations: [situation('rojo', 'Rojo')],
     });
     mount();
     const box = await list();
     const user = userEvent.setup();
-    await waitFor(() => expect(within(box).getAllByRole('option')).toHaveLength(3));
-    const chips = screen.getByRole('group', { name: 'Tipo de pendiente' });
-    expect(within(chips).getByRole('button', { name: /Todo/ })).toHaveTextContent('3');
-    expect(within(chips).getByRole('button', { name: /Alertas/ })).toHaveTextContent('2');
-    expect(within(chips).queryByRole('button', { name: /Validaciones/ })).toBeNull();
-    await user.click(within(chips).getByRole('button', { name: /Calidad/ }));
+    await waitFor(() => expect(within(box).getAllByRole('option')).toHaveLength(4));
+    const filter = screen.getByRole('combobox', { name: 'Filtrar pendientes' });
+    expect(
+      within(filter)
+        .getAllByRole('option')
+        .map((option) => option.textContent),
+    ).toEqual(['Todo (4)', 'Alertas (2)', 'Calidad de datos (1)', 'Situaciones (1)']);
+    expect(
+      screen.queryByRole('button', { name: /^(Todo|Alertas|Calidad de datos|Situaciones)/ }),
+    ).toBeNull();
+    await user.selectOptions(filter, 'alerta');
+    expect(within(box).getAllByRole('option')).toHaveLength(2);
+    expect(within(box).getByRole('option', { name: /ALT-1/ })).toBeVisible();
+    await user.selectOptions(filter, 'calidad');
     expect(within(box).getAllByRole('option')).toHaveLength(1);
     expect(within(box).getByText(/AC-1/)).toBeVisible();
+    await user.selectOptions(filter, 'situacion');
+    expect(within(box).getAllByRole('option')).toHaveLength(1);
+    expect(within(box).getByText('Situación rojo')).toBeVisible();
+    await user.selectOptions(filter, 'todo');
+    expect(within(box).getAllByRole('option')).toHaveLength(4);
   });
 
   it('never lists the expert-validation template, so the inbox can be clear', async () => {
@@ -268,7 +283,7 @@ describe('Pendientes: aggregation and grouping', () => {
     mount();
     expect(await screen.findByText('Nada pendiente. Bandeja al día.')).toBeVisible();
     expect(screen.queryByText(/Validación de indicadores/)).toBeNull();
-    expect(screen.queryByRole('option')).toBeNull();
+    expect(within(await list()).queryByRole('option')).toBeNull();
   });
 
   it('shows the empty state only when every source answered and nothing is pending', async () => {
@@ -456,5 +471,156 @@ describe('Pendientes: persistence', () => {
     await within(detail()).findByRole('heading', { level: 2 });
     await user.keyboard('j{Enter}{Escape}');
     expect(window.localStorage.length).toBe(0);
+  });
+});
+
+describe('Pendientes: selection and filter in the URL', () => {
+  it('closes on URL removal and reopens the same item when the URL restores it', async () => {
+    install({ alerts: [alert('ALT-1', 'Media')] });
+    const Harness = () => {
+      const [url, setUrl] = useState<string | undefined>('alerta:ALT-1');
+      return (
+        <>
+          <button onClick={() => setUrl(undefined)}>Remove linked item</button>
+          <button onClick={() => setUrl('alerta:ALT-1')}>Restore linked item</button>
+          <DecisionInbox
+            {...context}
+            useQuality={useStubQuality}
+            pendiente={url}
+            onUrl={(next) => setUrl(next.pendiente)}
+          />
+        </>
+      );
+    };
+    render(
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
+        <Harness />
+      </QueryClientProvider>,
+    );
+    await list();
+    const user = userEvent.setup();
+    expect(detail().parentElement).toHaveAttribute('data-open', 'true');
+    await user.click(screen.getByRole('button', { name: 'Remove linked item' }));
+    expect(detail().parentElement).toHaveAttribute('data-open', 'false');
+    await user.click(screen.getByRole('button', { name: 'Restore linked item' }));
+    expect(detail().parentElement).toHaveAttribute('data-open', 'true');
+    await user.keyboard('{Escape}');
+    expect(detail().parentElement).toHaveAttribute('data-open', 'false');
+    await user.click(screen.getByRole('button', { name: 'Restore linked item' }));
+    expect(detail().parentElement).toHaveAttribute('data-open', 'true');
+  });
+
+  it('writes the initially highlighted item to the URL when Enter opens it', async () => {
+    install({ alerts: [alert('ALT-1', 'Media')] });
+    const writes: { pendiente?: string | undefined; clase?: string | undefined }[] = [];
+    mount({ onUrl: (next) => writes.push(next) });
+    const box = await list();
+    await waitFor(() => expect(within(box).getAllByRole('option')).toHaveLength(1));
+    box.focus();
+    await userEvent.setup().keyboard('{Enter}');
+    expect(writes).toEqual([{ pendiente: 'alerta:ALT-1' }]);
+  });
+  it('opens the item the URL names, so a reload or a shared link keeps it', async () => {
+    install({ alerts: [alert('ALT-1', 'Alta'), alert('ALT-2', 'Media')] });
+    mount({ pendiente: 'alerta:ALT-2', onUrl: () => undefined });
+    const box = await list();
+    await waitFor(() => expect(selected(box)[0]).toMatch(/ALT-2/));
+    expect(within(detail()).getByRole('heading', { level: 2 })).toHaveTextContent(/ALT-2/);
+  });
+  it('scrolls the row the URL names into view once, after every source has loaded', async () => {
+    install({
+      alerts: [alert('ALT-1', 'Alta'), alert('ALT-2', 'Media')],
+      actors: [{ _id: 'ACT-1', Nombre: 'Actor sintético' }],
+    });
+    const scrolled: string[] = [];
+    Element.prototype.scrollIntoView = function (this: Element) {
+      scrolled.push(this.textContent);
+    };
+    try {
+      mount({ pendiente: 'alerta:ALT-2', onUrl: () => undefined });
+      const box = await list();
+      await waitFor(() => expect(within(box).getAllByRole('option')).toHaveLength(3));
+      const row = within(box).getByRole('option', { name: /ALT-2/ });
+      // Under the 5 s test timeout, so a missing scroll fails as an assertion.
+      await waitFor(() => expect(scrolled).toEqual([row.textContent]), { timeout: 2000 });
+      await userEvent.click(within(box).getByRole('option', { name: /ALT-1/ }));
+      expect(scrolled).toEqual([row.textContent]);
+    } finally {
+      // jsdom has no scrollIntoView of its own.
+      delete (Element.prototype as Partial<Element>).scrollIntoView;
+    }
+  });
+
+  it('writes the chosen item to the URL on click and on J/K, and clears it with Escape', async () => {
+    install({ alerts: [alert('ALT-1', 'Alta'), alert('ALT-2', 'Media')] });
+    const writes: { pendiente?: string | undefined; clase?: string | undefined }[] = [];
+    mount({ onUrl: (next) => writes.push(next) });
+    const box = await list();
+    const user = userEvent.setup();
+    await waitFor(() => expect(within(box).getAllByRole('option')).toHaveLength(2));
+    expect(writes).toEqual([]);
+    await user.click(within(box).getByRole('option', { name: /ALT-2/ }));
+    expect(writes.at(-1)).toEqual({ pendiente: 'alerta:ALT-2' });
+    await user.keyboard('k');
+    expect(writes.at(-1)).toEqual({ pendiente: 'alerta:ALT-1' });
+    await user.keyboard('{Enter}');
+    expect(within(detail()).getByRole('heading', { level: 2 })).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(writes.at(-1)).toEqual({ pendiente: undefined });
+    expect(box).toHaveFocus();
+    expect(window.localStorage.length).toBe(0);
+  });
+
+  it('reads the type filter from the URL and writes a new choice back', async () => {
+    install({
+      alerts: [alert('ALT-1', 'Alta')],
+      situations: [situation('rojo', 'Rojo')],
+    });
+    const writes: { pendiente?: string | undefined; clase?: string | undefined }[] = [];
+    mount({ clase: 'situacion', onUrl: (next) => writes.push(next) });
+    const box = await list();
+    await waitFor(() => expect(within(box).getAllByRole('option')).toHaveLength(1));
+    expect(within(box).getByText('Situación rojo')).toBeVisible();
+    const filter = screen.getByRole('combobox', { name: 'Filtrar pendientes' });
+    expect(filter).toHaveValue('situacion');
+    await userEvent.setup().selectOptions(filter, 'alerta');
+    expect(writes.at(-1)).toEqual({ clase: 'alerta', pendiente: undefined });
+  });
+
+  it('treats an unknown type in the URL as «Todo»', async () => {
+    install({ alerts: [alert('ALT-1', 'Alta')], situations: [situation('rojo', 'Rojo')] });
+    mount({ clase: 'nada', onUrl: () => undefined });
+    const box = await list();
+    await waitFor(() => expect(within(box).getAllByRole('option')).toHaveLength(2));
+    expect(screen.getByRole('combobox', { name: 'Filtrar pendientes' })).toHaveValue('todo');
+  });
+});
+
+describe('Pendientes: row status', () => {
+  it('shows the four-eyes state of an alert as one status badge per row', async () => {
+    install({
+      alerts: [
+        alert('ALT-1', 'Alta'),
+        alert('ALT-2', 'Alta', { first_validator: 'otra.persona' }),
+        alert('ALT-3', 'Alta', { first_validator: 'demo' }),
+        alert('ALT-4', 'Media'),
+      ],
+    });
+    mount();
+    const box = await list();
+    await waitFor(() => expect(within(box).getAllByRole('option')).toHaveLength(4));
+    const badge = (id: string) =>
+      within(box)
+        .getByRole('option', { name: new RegExp(id) })
+        .querySelector('[data-tone]');
+    expect(badge('ALT-1')).toHaveTextContent('Cuatro ojos');
+    expect(badge('ALT-1')).toHaveAttribute('data-tone', 'info');
+    expect(badge('ALT-2')).toHaveTextContent('Falta confirmar');
+    expect(badge('ALT-2')).toHaveAttribute('data-tone', 'warning');
+    expect(badge('ALT-3')).toHaveTextContent('Primera validación tuya');
+    expect(badge('ALT-3')).toHaveAttribute('data-tone', 'neutral');
+    expect(badge('ALT-4')).toBeNull();
   });
 });

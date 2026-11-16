@@ -23,6 +23,7 @@ import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { useReveal } from '../../shared/lib/reveal.ts';
 import { z } from 'zod';
 import styles from './Operations.module.css';
+import { DateText } from '../../shared/ui/DateText.tsx';
 const labels: Record<string, string> = {
   digital_alerts: 'Alertas digitales',
   high_priority_alerts: 'Alertas de prioridad alta',
@@ -36,7 +37,7 @@ const labels: Record<string, string> = {
   registered_commitments: 'Compromisos registrados',
   overdue_commitments_explicit: 'Compromisos explícitamente vencidos',
 };
-export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
+export const ManagementPage = ({ scope, projectId, projectLabel, role }: FeatureContext) => {
   const writable = role !== 'consulta';
   const client = useQueryClient();
   const [alertId, setAlertId] = useState('');
@@ -168,7 +169,8 @@ export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
           {(data) => (
             <>
               <p>
-                Proyecto: {data.project_id} · Generado: {data.generated_at}
+                Proyecto: {projectLabel || data.project_id} · Generado:{' '}
+                <DateText value={data.generated_at} time />
               </p>
               <dl className={styles.metrics}>
                 {Object.entries(data.metrics).map(([name, value]) => (
@@ -189,7 +191,7 @@ export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
               </details>
               <div className={styles.split}>
                 <section>
-                  <h4>Prioridad de alertas</h4>
+                  <h3>Prioridad de alertas</h3>
                   <BarList
                     empty="Sin alertas digitales registradas."
                     bars={Object.entries(data.alerts_by_level).map(([name, total]) => ({
@@ -200,7 +202,7 @@ export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
                   />
                 </section>
                 <section>
-                  <h4>Estado de acciones</h4>
+                  <h3>Estado de acciones</h3>
                   <BarList
                     empty="Sin acciones preventivas registradas."
                     bars={Object.entries(data.actions_by_status).map(([name, total]) => ({
@@ -211,12 +213,13 @@ export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
                   />
                 </section>
               </div>
-              <h4>Alertas recientes</h4>
+              <h3>Alertas recientes</h3>
               {data.recent_alerts.length ? (
                 <ul>
                   {data.recent_alerts.map((a) => (
                     <li key={a.id}>
-                      {a.id} · {a.created_at} · {a.status} · Prioridad {a.level} ({a.score})
+                      {a.id} · <DateText value={a.created_at} time /> · {a.status} · Prioridad{' '}
+                      {a.level} ({a.score})
                       <p className={styles.fragment}>
                         {a.source_type} · {a.source_url || 'Sin enlace'}
                       </p>
@@ -226,7 +229,7 @@ export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
               ) : (
                 <p>No hay alertas recientes.</p>
               )}
-              <h4>Acciones críticas</h4>
+              <h3>Acciones críticas</h3>
               {data.critical_actions.length ? (
                 <ul>
                   {data.critical_actions.map((a) => (
@@ -238,7 +241,7 @@ export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
               ) : (
                 <p>No hay acciones críticas.</p>
               )}
-              <h4>Responsables</h4>
+              <h3>Responsables</h3>
               {data.actions_by_responsible.length ? (
                 <ul>
                   {data.actions_by_responsible.map((a) => (
@@ -250,7 +253,7 @@ export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
               ) : (
                 <p>Sin responsables asignados.</p>
               )}
-              <h4>Compromisos</h4>
+              <h3>Compromisos</h3>
               {data.commitments.length ? (
                 <ul>
                   {data.commitments.map((c) => (
@@ -281,7 +284,7 @@ export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
         </QueryState>
         {writable && (
           <>
-            <h4>Crear plan preventivo</h4>
+            <h3>Crear plan preventivo</h3>
             <QueryState query={alerts} label="alertas verificadas">
               {() =>
                 actionable.length ? (
@@ -372,7 +375,7 @@ export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
           {(data) => (
             <>
               <p>En curso sin bloqueos: {data.moving}</p>
-              <h4>Bloqueadas</h4>
+              <h3>Bloqueadas</h3>
               {data.blocked.length ? (
                 <ul>
                   {data.blocked.map((a) => (
@@ -385,7 +388,7 @@ export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
               ) : (
                 <p>Ningún plan espera a nadie.</p>
               )}
-              <h4>Vencidas</h4>
+              <h3>Vencidas</h3>
               {data.overdue.length ? (
                 <ul>
                   {data.overdue.map((a) => (
@@ -456,16 +459,17 @@ export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
         </QueryState>
         {current && (
           <div className={styles.form}>
-            <h4 ref={planHeading} tabIndex={-1}>
+            <h3 ref={planHeading} tabIndex={-1}>
               {current.title}
-            </h4>
+            </h3>
             <p>{current.description || 'Sin descripción'}</p>
             <p>Alerta: {current.alert_id}</p>
-            <h4>Historial de avances</h4>
+            <h3>Historial de avances</h3>
             <ol>
               {current.history.map((h) => (
                 <li key={h.id}>
-                  {h.created_at} · {h.status} · {h.progress}% · {h.note || 'Sin nota'}
+                  <DateText value={h.created_at} time /> · {h.status} · {h.progress}% ·{' '}
+                  {h.note || 'Sin nota'}
                   {h.evidence_url && <p className={styles.fragment}>Evidencia: {h.evidence_url}</p>}
                   {h.receipt && (
                     <p className={styles.fragment}>

@@ -2,6 +2,16 @@
   display: grid;
   gap: var(--space-4);
 }
+/* The page title: the top bar of a phone or tablet already says «Auditoría». */
+.title {
+  margin: 0;
+  font-size: var(--text-xl);
+}
+@media (max-width: 60rem) {
+  .title {
+    display: none;
+  }
+}
 .filters {
   display: flex;
   flex-wrap: wrap;
@@ -33,5 +43,69 @@
   text-align: left;
   padding: var(--space-2);
   border-bottom: 1px solid var(--color-border);
-  overflow-wrap: anywhere;
+  /* Breaks a word only when it cannot fit a line on its own (a long id). «anywhere» also let the
+     table shrink a column below its words, so «Automatizaciones» read «Automatiz / iones». */
+  overflow-wrap: break-word;
+}
+.scroll thead th {
+  white-space: nowrap;
+}
+.nowrap {
+  white-space: nowrap;
+}
+
+/* Phones: each operation is a card of label/value rows (the Registros pattern) instead of five
+   columns squeezed into 360 px, which broke every word letter by letter. */
+@media (max-width: 40rem) {
+  .scroll {
+    overflow: visible;
+  }
+  .scroll thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  /* Tracks of the card width, not of the widest unbroken word in it (an auto track grows to it). */
+  .scroll tbody {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+  .scroll tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+  /* Label and value share a line when they fit; a value that does not (a long id or detail)
+     moves under its label at the card's full width instead of being split mid-word. */
+  .scroll td {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-1) var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    /* A value that fits keeps its words whole (it moves under its label first); only a single
+       word wider than the card, such as a long unspaced rule name, breaks inside it. */
+    overflow-wrap: anywhere;
+  }
+  .scroll tr td:last-child {
+    border-bottom: 0;
+  }
+  /* Drawn for the eye only (empty alternative text): the column header already names the cell
+     for assistive technology, and the cell's name stays its value. */
+  .scroll td::before {
+    content: attr(data-label);
+    content: attr(data-label) / '';
+    flex: 0 0 min(7.5rem, 100%);
+    color: var(--color-muted);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+  .nowrap {
+    white-space: normal;
+  }
 }

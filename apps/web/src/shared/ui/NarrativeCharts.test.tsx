@@ -14,7 +14,7 @@ it('shows totals per category instead of the trend with fewer than two dated day
   expect(screen.getByText('Medio ambiente')).toBeInTheDocument();
   expect(screen.getByText('Gobernanza')).toBeInTheDocument();
   expect(screen.getByText(/al menos dos días distintos/)).toBeInTheDocument();
-  expect(screen.getByText(/1 narrativa\(s\) sin fecha utilizable/)).toBeInTheDocument();
+  expect(screen.getByText(/1 narrativa sin fecha utilizable/)).toBeInTheDocument();
 });
 
 it('compact view leaves out the «Por día» heading when there is no trend to draw', () => {

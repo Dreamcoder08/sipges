@@ -7,6 +7,8 @@ import { GEOCATMIN_VIEWER } from './MiningCadastreLayer.tsx';
 import type { MapPoint } from './territorial-model.ts';
 import { EVIDENCE_LABELS } from './evidence.ts';
 import styles from './TerritorialMap.module.css';
+import { count, plural } from '../../shared/lib/plural.ts';
+import { DateText } from '../../shared/ui/DateText.tsx';
 
 /** Record modules with a 360° view; other related modules are listed without a link. */
 const LINKABLE = new Set(['eventos', 'demandas', 'actores', 'narrativas']);
@@ -78,7 +80,7 @@ export const ConcessionCard = ({
   return (
     <div className={styles.sheetBody}>
       <p className={styles.kicker}>Concesión minera · INGEMMET</p>
-      <h4 className={styles.sheetTitle}>{concession.name}</h4>
+      <h3 className={styles.sheetTitle}>{concession.name}</h3>
       <dl className={styles.detail}>
         <dt>Código</dt>
         <dd>{concession.code}</dd>
@@ -103,7 +105,9 @@ export const ConcessionCard = ({
         {concession.formulatedAt ? (
           <>
             <dt>Formulación</dt>
-            <dd>{concession.formulatedAt}</dd>
+            <dd>
+              <DateText value={concession.formulatedAt} />
+            </dd>
           </>
         ) : null}
         {concession.place ? (
@@ -117,7 +121,13 @@ export const ConcessionCard = ({
           <a href={`${source}?f=pjson`} target="_blank" rel="noreferrer">
             Catastro minero GEOCATMIN
           </a>
-          {concession.updatedAt ? ` · actualizado ${concession.updatedAt}` : ''} ·{' '}
+          {concession.updatedAt ? (
+            <>
+              {' '}
+              · actualizado <DateText value={concession.updatedAt} />
+            </>
+          ) : null}{' '}
+          ·{' '}
           <a href={GEOCATMIN_VIEWER} target="_blank" rel="noreferrer">
             visor oficial
           </a>
@@ -132,7 +142,7 @@ export const ConcessionCard = ({
         </Button>
       </div>
 
-      <h5 className={styles.subhead}>Registros SIPGES vinculados</h5>
+      <h4 className={styles.subhead}>Registros SIPGES vinculados</h4>
       <div className={styles.filter}>
         <label htmlFor={`influence-${concession.code}`}>Área de influencia</label>
         <select
@@ -198,13 +208,14 @@ export const ConcessionCard = ({
           )}
           {relation.data.unlocated.length ? (
             <p className={styles.note}>
-              {relation.data.unlocated.length} registro(s) sin coordenadas WGS84 no se pueden
-              vincular geométricamente; la localidad escrita no basta.
+              {count(relation.data.unlocated.length, 'registro', 'registros')} sin coordenadas WGS84{' '}
+              {plural(relation.data.unlocated.length, 'no se puede', 'no se pueden')} vincular
+              geométricamente; la localidad escrita no basta.
             </p>
           ) : null}
           {history.length ? (
             <>
-              <h5 className={styles.subhead}>Evolución en la concesión</h5>
+              <h4 className={styles.subhead}>Evolución en la concesión</h4>
               <ol className={styles.history}>
                 {history.map((p) => (
                   <li key={`${p.layer}-${p.id}`}>

@@ -1,5 +1,5 @@
 import { recordDueDate } from '@sipges/kernel';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { isCompactField, safePublicUrl, recordPayload, initialValues } from './model.ts';
 import { MODULES } from './modules.ts';
 
@@ -10,6 +10,16 @@ describe('isCompactField', () => {
     expect(isCompactField(field('Telefono'))).toBe(true);
     expect(isCompactField(field('Prioridad'))).toBe(true);
     expect(isCompactField(field('Institucion'))).toBe(false);
+  });
+});
+
+describe('initialValues', () => {
+  afterEach(() => vi.useRealTimers());
+  it('dates a new record on the Lima calendar day, not the UTC one', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    // 23:30 in Lima (UTC−5) is already 04:30 of the next day in UTC.
+    vi.setSystemTime(new Date('2026-11-13T23:30:00-05:00'));
+    expect(initialValues('buzon').Fecha).toBe('2026-11-13');
   });
 });
 

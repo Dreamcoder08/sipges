@@ -1,4 +1,5 @@
 import { runtimeRoutes } from './contexts/system/http/runtime-routes.ts';
+import { desktopUpdateRoutes } from './contexts/system/http/desktop-update-routes.ts';
 import { geographyRequestLimit, geographyRoutes } from './contexts/geography/http/index.ts';
 import { sourceRequestLimit, sourceRoutes } from './contexts/integration/http/source-routes.ts';
 import { mediaRoutes } from './contexts/integration/http/media-routes.ts';
@@ -98,6 +99,8 @@ export const createApp = (
   app.route('/', sourceRoutes({ sources: container.authorizedSources }));
   app.route('/', signalRoutes({ keys: container.apiKeys, ingest: container.ingest }));
   app.route('/', metricsRoutes(metrics));
+  // Managed desktop installs only: the cloud and development builds never mount these routes.
+  if (container.desktopUpdate) app.route('/', desktopUpdateRoutes(container.desktopUpdate));
   app.route('/', referenceRoutes(container.reference));
   app.route('/', tenancyRoutes({ tenancy, identity, cookieSecure: config.cookieSecure }));
   app.route('/', analyticsRoutes({ analytics }));

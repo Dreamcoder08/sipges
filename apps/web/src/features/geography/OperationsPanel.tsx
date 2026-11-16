@@ -1,4 +1,5 @@
 import { RecordNeighbourhood } from '@sipges/contracts';
+import { limaToday } from '@sipges/kernel';
 import { useQuery } from '@tanstack/react-query';
 import { requestJson } from '../../shared/api/client.ts';
 import { InternalLink, objectHref } from '../../shared/lib/navigation.tsx';
@@ -15,6 +16,10 @@ import {
   DOSSIER_HOPS,
 } from './operations.ts';
 import styles from './Operations.module.css';
+import { count } from '../../shared/lib/plural.ts';
+import { formatDay } from '../../shared/lib/format.ts';
+
+const LINKED_OPEN_ALERTS = 'Alertas abiertas vinculadas';
 
 const RecordLink = ({ record }: { record: DossierRef }) => (
   <InternalLink href={objectHref(record.module, record.id)}>{record.title}</InternalLink>
@@ -45,8 +50,6 @@ const ActionItem = ({ action }: { action: DossierAction }) => (
     </small>
   </li>
 );
-
-const today = () => new Date().toISOString().slice(0, 10);
 
 /**
  * Operational intelligence of what is selected on the territorial map (ODD
@@ -100,13 +103,16 @@ export const OperationsPanel = ({
     );
   if (!query.data) return <p role="status">Reuniendo señales, alertas y acciones vinculadas…</p>;
 
-  const dossier = buildDossier(query.data, seeds, today());
+  // Lima's calendar day: the UTC one turns over at 19:00 and marked today's deadlines «vencida».
+  const dossier = buildDossier(query.data, seeds, limaToday());
   const openAlerts = dossier.alerts.filter((a) => a.open);
   const attending = new Set(dossier.alerts.flatMap((a) => a.actions.map((x) => x.id)));
   const demandActions = dossier.actions.filter((a) => !attending.has(a.id));
+  // «vinculadas»: only the open alerts linked to these records; the page's own card below counts
+  // every open alert of the project (functional-10 T14).
   const counts: [string, number][] = [
     ['Señales', dossier.signals.length],
-    ['Alertas abiertas', openAlerts.length],
+    [LINKED_OPEN_ALERTS, openAlerts.length],
     ['Acciones', dossier.actions.length],
     ['Compromisos', dossier.commitments.length],
     ['Actores', dossier.actors.length],
@@ -115,12 +121,12 @@ export const OperationsPanel = ({
   return (
     <div className={styles.panel}>
       <p className={styles.note}>
-        {context}: {dossier.signals.length} señal(es) documentada(s)
+        {context}: {count(dossier.signals.length, 'señal documentada', 'señales documentadas')}
         {capped ? ' (las 100 más recientes de la vista)' : ''}.
       </p>
       <dl className={styles.counts}>
         {counts.map(([label, value]) => (
-          <div key={label} data-alert={label === 'Alertas abiertas' && value > 0}>
+          <div key={label} data-alert={label === LINKED_OPEN_ALERTS && value > 0}>
             <dt>{label}</dt>
             <dd>{value}</dd>
           </div>
@@ -128,7 +134,7 @@ export const OperationsPanel = ({
       </dl>
 
       <section aria-label="Requiere atención" className={styles.section}>
-        <h4 className={styles.heading}>Requiere atención</h4>
+        <h3 className={styles.heading}>Requiere atención</h3>
         {dossier.attention.length ? (
           <ul className={styles.list}>
             {dossier.attention.map((a) => (
@@ -147,7 +153,7 @@ export const OperationsPanel = ({
       </section>
 
       <section aria-label="Alertas y su sustento" className={styles.section}>
-        <h4 className={styles.heading}>Alertas y su sustento</h4>
+        <h3 className={styles.heading}>Alertas y su sustento</h3>
         {dossier.alerts.length ? (
           <ul className={styles.list}>
             {dossier.alerts.map((alert) => (
@@ -157,7 +163,7 @@ export const OperationsPanel = ({
                 </span>
                 <small>
                   {alert.status || 'Sin estado'}
-                  {alert.date ? ` · ${alert.date}` : ''}
+                  {alert.date ? ` · ${formatDay(alert.date)}` : ''}
                 </small>
                 <p className={styles.label}>Señales que la originan</p>
                 <ul className={styles.sublist}>
@@ -166,7 +172,7 @@ export const OperationsPanel = ({
                       <EvidenceTag state={s.evidence} /> <RecordLink record={s} />
                       <small>
                         {s.typeLabel}
-                        {s.date ? ` · ${s.date}` : ''} · {s.basis}
+                        {s.date ? ` · ${formatDay(s.date)}` : ''} · {s.basis}
                       </small>
                     </li>
                   ))}
@@ -196,7 +202,7 @@ export const OperationsPanel = ({
 
       {demandActions.length ? (
         <section aria-label="Acciones sobre demandas" className={styles.section}>
-          <h4 className={styles.heading}>Acciones sobre demandas</h4>
+          <h3 className={styles.heading}>Acciones sobre demandas</h3>
           <ul className={styles.list}>
             {demandActions.map((a) => (
               <ActionItem key={a.id} action={a} />
@@ -206,7 +212,7 @@ export const OperationsPanel = ({
       ) : null}
 
       <section aria-label="Compromisos" className={styles.section}>
-        <h4 className={styles.heading}>Compromisos</h4>
+        <h3 className={styles.heading}>Compromisos</h3>
         {dossier.commitments.length ? (
           <ul className={styles.list}>
             {dossier.commitments.map((c) => (
@@ -243,7 +249,7 @@ export const OperationsPanel = ({
       </section>
 
       <section aria-label="Actores involucrados" className={styles.section}>
-        <h4 className={styles.heading}>Actores involucrados</h4>
+        <h3 className={styles.heading}>Actores involucrados</h3>
         {dossier.actors.length ? (
           ACTOR_GROUPS.map((group) => {
             const members = dossier.actors.filter((a) => a.group === group);

@@ -12,6 +12,7 @@ import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
 import { Field } from '../../shared/ui/Field.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
+import { AccountSection } from './AccountSection.tsx';
 import { AppearanceSection } from './AppearanceSection.tsx';
 import { ExternalAiCard } from './ExternalAiCard.tsx';
 import { LocationCard } from './LocationCard.tsx';
@@ -41,12 +42,15 @@ type SettingsPageProps = FeatureContext & {
 
 /**
  * Configuración as one settings screen with a section list, like Claude's settings
- * (docs/adr/0018, docs/adr/0020): Apariencia, Proyecto, Privacidad y datos, Notificaciones and
- * a link to Integraciones. One section shows at a time and each one has its own URL.
+ * (docs/adr/0018, docs/adr/0020): Cuenta, Apariencia, Proyecto, Privacidad y datos and
+ * Notificaciones. One section shows at a time and each one has its own URL.
  */
 export const SettingsPage = ({
   scope,
+  projectLabel,
   role,
+  username,
+  fullName,
   section,
   onNavigate,
   notifications,
@@ -59,14 +63,17 @@ export const SettingsPage = ({
     <div className={layout.layout}>
       <SettingsNav
         current={current}
-        onNavigate={onNavigate}
         onSection={(next) => (onNavigate ? onNavigate(settingsHref(next)) : setLocal(next))}
       />
       <div className={layout.content}>
+        {current === 'cuenta' ? (
+          <AccountSection scope={scope} username={username} fullName={fullName} role={role} />
+        ) : null}
         {current === 'apariencia' ? <AppearanceSection /> : null}
         {current === 'proyecto' || current === 'privacidad' ? (
           <ProjectSettingsSection
             scope={scope}
+            projectLabel={projectLabel}
             section={current}
             admin={role === 'admin'}
             onSaved={(text) => setNotice(text ? { section: current, text } : null)}
@@ -89,11 +96,13 @@ export const SettingsPage = ({
 
 const ProjectSettingsSection = ({
   scope,
+  projectLabel,
   section,
   admin,
   onSaved,
 }: {
   scope: string;
+  projectLabel: string;
   section: 'proyecto' | 'privacidad';
   admin: boolean;
   onSaved: (notice: string) => void;
@@ -105,6 +114,7 @@ const ProjectSettingsSection = ({
         <SettingsForm
           key={data.updated_at ?? 'default'}
           scope={scope}
+          projectLabel={projectLabel}
           section={section}
           data={data}
           admin={admin}
@@ -117,12 +127,14 @@ const ProjectSettingsSection = ({
 
 const SettingsForm = ({
   scope,
+  projectLabel,
   section,
   data,
   admin,
   onSaved,
 }: {
   scope: string;
+  projectLabel: string;
   section: 'proyecto' | 'privacidad';
   data: ProjectSettings;
   admin: boolean;
@@ -172,7 +184,8 @@ const SettingsForm = ({
     );
   return (
     <>
-      <Card eyebrow="Proyecto" title="SIPGES">
+      {/* The card names the active project; the list below says what SIPGES does for it. */}
+      <Card eyebrow="Proyecto" title={projectLabel || 'Proyecto activo'}>
         <p>Este proyecto funciona con SIPGES. Estas son sus funciones:</p>
         <ul>
           {FEATURES.map((feature) => (

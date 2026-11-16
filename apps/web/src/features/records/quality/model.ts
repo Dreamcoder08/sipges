@@ -3,7 +3,7 @@ import { foldText } from '../../../shared/lib/text.ts';
 import { isPendingActorIdentity } from '../insights/actor-identity.ts';
 import { actorGroups, actorName, positionTone } from '../insights/actor-map.ts';
 import { alertTerritory, MISSING_TERRITORY, recordedLevel } from '../insights/alert-heatmap.ts';
-import type { RecordModule } from '../modules.ts';
+import { MODULES, type RecordModule } from '../modules.ts';
 
 export const QUALITY_MODULES = [
   'actores',
@@ -23,6 +23,9 @@ export type QualityIssue = {
   field: string;
   reason: string;
 };
+/** The field as the record form names it («Referencia de fuente»), never its stored key. */
+export const qualityFieldLabel = (issue: Pick<QualityIssue, 'module' | 'field'>) =>
+  MODULES[issue.module].fields.find((field) => field.key === issue.field)?.label ?? issue.field;
 const text = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
 export const recordTitle = (module: RecordModule, row: ModuleRecord) =>
   module === 'actores'

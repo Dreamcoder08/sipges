@@ -5,7 +5,7 @@ PostgreSQL, `apps/api-go`, `engines/`, `apps/web` React/Vite, `packages/*`. The 
 in one feature document per feature under `odd/tasks/` (`pnpm odd:status` lists the open tasks; superseded plans
 move to `odd/archive/`); decisions live in `docs/adr/`.
 
-## Skills (`.agents/skills/`; the `sipges-*`, `neon` and `neon-postgres` ones are linked from `.claude/skills/`)
+## Skills (`.agents/skills/`; the `sipges-*`, `neon`, `neon-postgres` and `modern-web-guidance` ones are linked from `.claude/skills/`)
 
 | Skill | Use it to |
 | --- | --- |
@@ -32,10 +32,13 @@ with provenance in `skills-lock.json`. They are vendor instructions, not newly a
 SIPGES workflows. Use them for Neon setup and PostgreSQL connections; installing skills
 does not authenticate the CLI or authorize additional services.
 
+The official `modern-web-guidance` skill (GoogleChrome) is installed at the owner's explicit request: use it before
+writing HTML, CSS or client JS in `apps/web`. It needs network for its CLI; prefer `pnpx modern-web-guidance@latest …`.
+
 Generic Gentle AI skills (`chained-pr`, `work-unit-commits`, `cognitive-doc-design`, `judgment-day`,
 `skill-creator`, `skill-improver`, `typescript`, `zod-4`) are not copied into the repo: they come from the
 global `gentle-ai install` (or Gentle Shell), so there is one copy per machine and no shadowing. The repo
-keeps only SIPGES-specific skills and the requested Neon ones. Setup in
+keeps only SIPGES-specific skills and the requested Neon and modern-web-guidance ones. Setup in
 [docs/agents/gentle-ai.md](docs/agents/gentle-ai.md).
 
 ## Scripts

@@ -6,9 +6,16 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { Alert } from '../../shared/ui/Alert.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
 import { Field } from '../../shared/ui/Field.tsx';
+import {
+  FieldErrorText,
+  FormErrorSummary,
+  errorProps,
+  useFormErrors,
+} from '../../shared/ui/form-errors.tsx';
 import { displayValue, extraFields, initialExtras, initialValues } from './model.ts';
 import { MODULES, type RecordModule } from './modules.ts';
 import styles from './Records.module.css';
+import { formatPercent } from '../../shared/lib/format.ts';
 
 export const RecordEditor = ({
   module,
@@ -33,6 +40,7 @@ export const RecordEditor = ({
   const form = useRef<HTMLFormElement>(null);
   const prefix = useId();
   const [revision, setRevision] = useState(0);
+  const formErrors = useFormErrors();
   const locked = useRef(false);
   const controller = useRef<AbortController | null>(null);
   useEffect(() => () => controller.current?.abort(), []);
@@ -61,11 +69,15 @@ export const RecordEditor = ({
       ref={form}
       className={styles.form}
       aria-label={record ? 'Editar registro' : 'Nuevo registro'}
+      // The native constraints stay on the fields; the page, not the browser bubble, reports them.
+      noValidate
       onSubmit={(event) => {
         event.preventDefault();
+        if (!formErrors.validate(event.currentTarget)) return;
         if (!pending && !classify.isPending) onSave(values, extras);
       }}
     >
+      <FormErrorSummary errors={formErrors.errors} />
       <p>
         Registra información verificable. Después de guardar, abre la ficha para añadir evidencias.
       </p>
@@ -75,11 +87,14 @@ export const RecordEditor = ({
         {MODULES[module].fields.map((field, index) => {
           const id = `${prefix}-${index}`;
           const value = values[field.key] ?? '';
+          const message = formErrors.messageFor(id);
           const common = {
             id,
             value,
             required: field.required,
-            onChange: (event: { target: { value: string } }) => {
+            ...errorProps(id, message),
+            onChange: (event: { target: EventTarget & { value: string } }) => {
+              formErrors.recheck(event.target);
               setRevision((current) => current + 1);
               if (!classify.isPending) classify.reset();
               setValues((current) => ({ ...current, [field.key]: event.target.value }));
@@ -97,6 +112,7 @@ export const RecordEditor = ({
                     </option>
                   ))}
                 </select>
+                <FieldErrorText id={id} message={message} />
               </div>
             );
           }
@@ -105,6 +121,7 @@ export const RecordEditor = ({
               <div className={`${styles.field} ${styles.wide}`} key={field.key}>
                 <label htmlFor={id}>{field.label}</label>
                 <textarea {...common} rows={3} />
+                <FieldErrorText id={id} message={message} />
               </div>
             );
           return (
@@ -112,6 +129,7 @@ export const RecordEditor = ({
               key={field.key}
               {...common}
               label={field.label}
+              error={message}
               type={field.type ?? 'text'}
               {...(field.type === 'number'
                 ? {
@@ -183,7 +201,7 @@ export const RecordEditor = ({
             <>
               <p>
                 {suggestion.dimension} · {suggestion.dimension_label} · confianza orientativa{' '}
-                {suggestion.confidence.toFixed(0)}%
+                {formatPercent(suggestion.confidence, 0)}
               </p>
               <p>{suggestion.nota}</p>
               <p>

@@ -259,7 +259,34 @@ it('counts every record of the tenant, with or without Proyecto_ID (S13)', async
   const kpi = (label: string) =>
     screen.getByText(label, { selector: 'dt' }).nextElementSibling?.textContent;
   expect(kpi('Eventos georreferenciados')).toBe('1');
-  await vi.waitFor(() => expect(kpi('Alertas abiertas')).toBe('1'));
+  await vi.waitFor(() => expect(kpi('Alertas abiertas del proyecto')).toBe('1'));
+});
+
+// functional-10 T14: the page showed «Alertas abiertas 0» in Inteligencia operacional and
+// «Alertas abiertas 8» below it. They count different things (open alerts linked to the records on
+// the map, every open alert of the project), so each one says which.
+it('labels the two open-alert counts by what each one counts (T14)', async () => {
+  serve();
+  server.use(
+    http.get(
+      '/api/alertas',
+      records([
+        { _id: 'AL-1', Estado: 'Abierta', Nivel: 'Naranja' },
+        { _id: 'AL-2', Estado: 'Abierta', Nivel: 'Rojo' },
+      ]),
+    ),
+  );
+  renderPage();
+  const panel = (await screen.findByRole('heading', { name: 'Inteligencia operacional' })).closest(
+    'section',
+  );
+  if (!panel) throw new Error('operations card expected');
+  const value = (scope: HTMLElement, label: string) =>
+    within(scope).getByText(label, { selector: 'dt' }).nextElementSibling?.textContent;
+  // Only AL-1 is linked to a record on the map (the dossier's «origina» edge).
+  await vi.waitFor(() => expect(value(panel, 'Alertas abiertas vinculadas')).toBe('1'));
+  await vi.waitFor(() => expect(value(document.body, 'Alertas abiertas del proyecto')).toBe('2'));
+  expect(screen.queryByText('Alertas abiertas', { selector: 'dt', exact: true })).toBeNull();
 });
 
 afterEach(() => {
@@ -445,4 +472,108 @@ it('reads every page of each layer instead of one capped request', async () => {
   const list = await screen.findByRole('list', { name: 'Registros del periodo' });
   expect(within(list).getByText('Observado')).toBeVisible();
   expect(asked).toEqual(['?limit=500&offset=0&q=', '?limit=500&offset=500&q=']);
+});
+
+// closure-roadmap T31 (direction 03, inside Territorio): list ↔ numbered marker.
+it('numbers each listed record like its marker and keeps the selection in step', async () => {
+  serve();
+  renderPage();
+  const list = await screen.findByRole('list', { name: 'Registros en el mapa' });
+  const rows = within(list).getAllByRole('button');
+  // Newest first: EV-2 (September) is 1, EV-1 (August) is 2, on the row and on the marker.
+  expect(rows.map((row) => row.textContent)).toEqual([
+    expect.stringMatching(/^1Escenario de bloqueo de prueba/),
+    expect.stringMatching(/^2Asamblea comunal sintética/),
+  ]);
+  const marker = (n: number, title: string) =>
+    screen.getByRole('button', {
+      name: `${n}. Eventos: ${title} (${n === 1 ? 'Bayóvar' : 'Vice'})`,
+    });
+  expect(marker(1, 'Escenario de bloqueo de prueba')).toHaveTextContent('1');
+  expect(marker(2, 'Asamblea comunal sintética')).toHaveTextContent('2');
+  // Row → marker.
+  await userEvent.click(rows[1] as HTMLElement);
+  expect(marker(2, 'Asamblea comunal sintética')).toHaveAttribute('aria-pressed', 'true');
+  expect(rows[1]).toHaveAttribute('aria-pressed', 'true');
+  // Marker → row, by keyboard.
+  marker(1, 'Escenario de bloqueo de prueba').focus();
+  await userEvent.keyboard('{Enter}');
+  expect(rows[0]).toHaveAttribute('aria-pressed', 'true');
+  expect(rows[1]).toHaveAttribute('aria-pressed', 'false');
+  expect(marker(2, 'Asamblea comunal sintética')).toHaveAttribute('aria-pressed', 'false');
+});
+
+it('on phones a list row scrolls the page to the map only, not to the evolution', async () => {
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: true,
+    media: query,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+  }));
+  const scrolled: Element[] = [];
+  Element.prototype.scrollIntoView = function (this: Element) {
+    scrolled.push(this);
+  };
+  try {
+    serve();
+    renderPage();
+    const list = await screen.findByRole('list', { name: 'Registros en el mapa' });
+    await userEvent.click(within(list).getByRole('button', { name: /Asamblea comunal sintética/ }));
+    expect(scrolled).toEqual([screen.getByRole('region', { name: 'Mapa' })]);
+  } finally {
+    // jsdom has no scrollIntoView of its own.
+    delete (Element.prototype as Partial<Element>).scrollIntoView;
+  }
+});
+
+it.each([
+  ['with reduced motion, jumps to the map at once', true, 'auto'],
+  ['without reduced motion, glides to the map', false, 'smooth'],
+] as const)('on phones a list row %s', async (_, reduce, behavior) => {
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: query.includes('prefers-reduced-motion') ? reduce : true,
+    media: query,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+  }));
+  const options: unknown[] = [];
+  Element.prototype.scrollIntoView = function (
+    this: Element,
+    arg?: boolean | ScrollIntoViewOptions,
+  ) {
+    options.push(arg);
+  };
+  try {
+    serve();
+    renderPage();
+    const list = await screen.findByRole('list', { name: 'Registros en el mapa' });
+    await userEvent.click(within(list).getByRole('button', { name: /Asamblea comunal sintética/ }));
+    expect(options).toEqual([{ block: 'start', behavior }]);
+  } finally {
+    // jsdom has no scrollIntoView of its own.
+    delete (Element.prototype as Partial<Element>).scrollIntoView;
+  }
+});
+
+it('groups records without a place under «Sin ubicación» with a way to complete them', async () => {
+  serve();
+  server.use(
+    http.get(
+      '/api/eventos',
+      records([
+        ...EVENTS,
+        { _id: 'EV-3', Territorio: 'Lugar sintético', Descripcion_Hecho: 'Reunión sin lugar' },
+      ]),
+    ),
+  );
+  renderPage();
+  const group = await screen.findByRole('group', { name: '1 registro sin ubicación' });
+  expect(within(group).getByText(/^No aparecen en el mapa.*use «Editar»/)).toBeInTheDocument();
+  expect(within(group).getByRole('link', { name: /Reunión sin lugar/ })).toHaveAttribute(
+    'href',
+    '/registros?tipo=eventos&ficha=eventos.EV-3',
+  );
+  // Never drawn or listed as if it had a place.
+  const list = screen.getByRole('list', { name: 'Registros en el mapa' });
+  expect(within(list).queryByText('Reunión sin lugar')).toBeNull();
 });

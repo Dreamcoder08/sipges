@@ -36,7 +36,7 @@ export const METHOD =
   'Puntaje transparente de factores con pesos fijos, calibrado con el historial del propio proyecto (ADR 0031). Se calcula dentro de SIPGES, sin IA externa.';
 
 const LIMITATIONS = [
-  'Es una ayuda para priorizar, no un pronóstico de hechos: la probabilidad tiene el error que muestra el back-test.',
+  'Es una ayuda para priorizar, no un pronóstico de hechos: la probabilidad tiene el error que muestra la prueba retrospectiva.',
   'Solo cuenta lo que el proyecto registró; la falta de registros no demuestra ausencia de riesgo.',
   'El IRSA se mide por proyecto, así que sube o baja el riesgo de todas las localidades y actores por igual.',
   'Validar con el equipo territorial antes de decidir o comunicar.',
@@ -167,18 +167,22 @@ const calibrate = (
 const confidenceOf = (calibration: Calibration, signals: number): [Confidence, string] => {
   const { backtest } = calibration;
   if (!calibration.platt)
-    return ['baja', 'Historial insuficiente para calibrar; el detalle está en el back-test.'];
+    return [
+      'baja',
+      'Historial insuficiente para calibrar; el detalle está en la prueba retrospectiva.',
+    ];
   if (signals < 2) return ['baja', 'Una sola señal registrada en los últimos 180 días.'];
   const skill = backtest.skill ?? 0;
-  if (skill <= 0) return ['baja', 'En el back-test el modelo no supera la tasa base del proyecto.'];
+  if (skill <= 0)
+    return ['baja', 'En la prueba retrospectiva el modelo no supera la tasa base del proyecto.'];
   return backtest.train.events >= 20
     ? [
         'alta',
-        `Supera la tasa base en el back-test (${backtest.train.events} escalamientos de entrenamiento).`,
+        `Supera la tasa base en la prueba retrospectiva (${backtest.train.events} escalamientos de entrenamiento).`,
       ]
     : [
         'media',
-        `Supera la tasa base en el back-test, con pocos escalamientos (${backtest.train.events}).`,
+        `Supera la tasa base en la prueba retrospectiva, con pocos escalamientos (${backtest.train.events}).`,
       ];
 };
 

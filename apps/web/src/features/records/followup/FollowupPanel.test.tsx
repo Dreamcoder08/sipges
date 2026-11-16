@@ -28,7 +28,11 @@ it('filters deadlines, preserves free text and opens the original record with a 
       ]}
     />,
   );
-  expect(screen.getByText(/2026-10-14.*America\/Lima/)).toBeInTheDocument();
+  // functional-10 T13 (F29): the reference day in Spanish, not ISO and an IANA zone name.
+  const reference = screen.getByText(/^Fecha de referencia:/);
+  expect(reference).toHaveTextContent(/^Fecha de referencia: 14 oct\. 2026 \(hora de Lima\)\./);
+  expect(reference).not.toHaveTextContent(/2026-10-14|America\/Lima/);
+  expect(reference.querySelector('time')).toHaveAttribute('datetime', '2026-10-14');
   await user.click(screen.getByRole('button', { name: 'Vencidos: 1' }));
   expect(screen.queryByText('Sesión pública')).not.toBeInTheDocument();
   const button = screen.getByRole('button', { name: 'Abrir compromiso C-1' });

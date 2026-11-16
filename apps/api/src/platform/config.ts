@@ -1,4 +1,14 @@
+import { isAbsolute } from 'node:path';
+
 export type AppConfig = {
+  /** Optional managed reference directory; unset keeps repository references. */
+  readonly referenceDir?: string | undefined;
+  /**
+   * Folder shared with the managed desktop launcher (SIPGES_DESKTOP_UPDATE_DIR, absolute). Set
+   * only by deploy/desktop/updater/launcher.mjs; unset (cloud, development) the update notice
+   * routes do not exist.
+   */
+  readonly desktopUpdateDir?: string | undefined;
   readonly cookieSecure: boolean;
   readonly host: string;
   readonly port: number;
@@ -36,6 +46,12 @@ export type AppConfig = {
   };
   /** Hybrid search with stored embeddings from the Ollama model (SIPGES_SEMANTIC_SEARCH=1). */
   readonly semanticSearch: boolean;
+  /**
+   * Endpoint the Defensoría connector asks (SIPGES_DEFENSORIA_URL); unset, the official
+   * https://www.defensoria.gob.pe/wp-json/wp/v2/posts. Only a test double needs another one:
+   * imported posts must still link to the official host.
+   */
+  readonly defensoriaUrl: string | undefined;
   /**
    * Language model that rewrites extractive briefings (docs/adr/0013). Off unless
    * SIPGES_ANALYST_PROVIDER=anthropic (the key comes from ANTHROPIC_API_KEY at the SDK) or
@@ -193,6 +209,26 @@ const parseOllama = (env: Env) => {
   return { baseUrl, model, configured };
 };
 
+const parseDefensoriaUrl = (value: string | undefined): string | undefined => {
+  if (!value) return undefined;
+  const invalid = new Error(
+    'SIPGES_DEFENSORIA_URL must be an absolute http or https URL without a query',
+  );
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw invalid;
+  }
+  if (
+    (url.protocol !== 'http:' && url.protocol !== 'https:') ||
+    value.includes('?') ||
+    value.includes('#')
+  )
+    throw invalid;
+  return value;
+};
+
 const MODEL_ID = /^[a-z0-9][a-z0-9.-]{1,63}$/;
 
 const OPENAI_MODEL_ID = /^[A-Za-z0-9._:/-]{1,128}$/;
@@ -309,6 +345,18 @@ const parseOcr = (env: Env): AppConfig['ocr'] => {
   return { languages };
 };
 
+const parseReferenceDir = (value: string | undefined): string | undefined => {
+  if (value === undefined) return undefined;
+  if (!isAbsolute(value)) throw new Error('SIPGES_REFERENCE_DIR must be an absolute path');
+  return value;
+};
+
+const parseDesktopUpdateDir = (value: string | undefined): string | undefined => {
+  if (value === undefined) return undefined;
+  if (!isAbsolute(value)) throw new Error('SIPGES_DESKTOP_UPDATE_DIR must be an absolute path');
+  return value;
+};
+
 /** Validates the whole environment once, before any resource is created. */
 export const loadConfig = (env: Env): AppConfig => ({
   cookieSecure: parseSwitch('SIPGES_COOKIE_SECURE', env.SIPGES_COOKIE_SECURE, true),
@@ -328,8 +376,11 @@ export const loadConfig = (env: Env): AppConfig => ({
   storage: parseStorage(env),
   ollama: parseOllama(env),
   semanticSearch: parseSwitch('SIPGES_SEMANTIC_SEARCH', env.SIPGES_SEMANTIC_SEARCH, false),
+  defensoriaUrl: parseDefensoriaUrl(env.SIPGES_DEFENSORIA_URL),
   analyst: parseAnalyst(env),
   webDir: env.SIPGES_WEB_DIR || undefined,
+  referenceDir: parseReferenceDir(env.SIPGES_REFERENCE_DIR),
+  desktopUpdateDir: parseDesktopUpdateDir(env.SIPGES_DESKTOP_UPDATE_DIR),
   requireMfa: parseSwitch('SIPGES_REQUIRE_MFA', env.SIPGES_REQUIRE_MFA, true),
   accessLog: parseSwitch('SIPGES_ACCESS_LOG', env.SIPGES_ACCESS_LOG, true),
   allowedHosts: parseAllowedHosts(env.SIPGES_ALLOWED_HOSTS),

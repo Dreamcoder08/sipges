@@ -4,6 +4,7 @@ package domain
 import (
 	"strings"
 
+	kernel "github.com/Dreamcoder08/sipges/apps/api-go/internal/management/domain"
 	js "github.com/Dreamcoder08/sipges/apps/api-go/internal/situations/domain"
 )
 
@@ -95,7 +96,7 @@ type Field struct {
 func ReviewRecordFields(item ReviewItem, projectID string) []Field {
 	target := ReviewTargetFor(item.Theme)
 	id := ReviewRecordID(item.ID)
-	date := item.UpdatedAt.UTC().Format("2006-01-02")
+	date := kernel.LimaToday(item.UpdatedAt)
 	reviewer := ""
 	if item.Reviewer != "" {
 		reviewer = " por " + item.Reviewer

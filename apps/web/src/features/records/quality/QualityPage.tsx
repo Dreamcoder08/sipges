@@ -12,15 +12,12 @@ import { moduleAttachmentsQuery } from '../evidence-api.ts';
 import { MODULES } from '../modules.ts';
 import {
   QUALITY_MODULES,
+  qualityFieldLabel as fieldLabel,
   qualityIssues,
   sourceInventory,
   type QualityData,
-  type QualityIssue,
 } from './model.ts';
 import styles from '../Records.module.css';
-
-const fieldLabel = (issue: QualityIssue) =>
-  MODULES[issue.module].fields.find((field) => field.key === issue.field)?.label ?? issue.field;
 
 const countLabel = (count: number, one: string, many: string) =>
   `${count} ${count === 1 ? one : many}`;
@@ -159,7 +156,7 @@ export const QualityPage = ({ scope }: FeatureContext) => {
                       <td data-label="Campo">{fieldLabel(issue)}</td>
                       <td data-label="Motivo">{issue.reason}</td>
                       <td data-label="Acción">
-                        <InternalLink href={objectHref(issue.module, issue.id)}>
+                        <InternalLink href={`${objectHref(issue.module, issue.id)}?desde=calidad`}>
                           Revisar {issue.id}: {fieldLabel(issue)}
                         </InternalLink>
                       </td>
@@ -251,7 +248,9 @@ export const QualityPage = ({ scope }: FeatureContext) => {
                           </td>
                           <td data-label="Disponibilidad">{source.status}</td>
                           <td data-label="Acción">
-                            <InternalLink href={objectHref('fuentes', source.id)}>
+                            <InternalLink
+                              href={`${objectHref('fuentes', source.id)}?desde=calidad`}
+                            >
                               Abrir fuente {source.id}
                             </InternalLink>
                           </td>

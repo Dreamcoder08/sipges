@@ -31,6 +31,11 @@
   background: var(--color-surface);
   color: inherit;
 }
+/* WebKit lets a chosen option wider than the field («Automático con respaldo por reglas» at 360 px)
+   overflow it and scroll the page sideways; `overflow` does not apply to its select, paint containment does. */
+.form select {
+  contain: paint;
+}
 .form textarea {
   min-height: 8rem;
   resize: vertical;
@@ -73,6 +78,53 @@
   text-align: left;
   border-bottom: 1px solid var(--color-border);
 }
+/* Phones: each row becomes a card of label/value lines instead of a table wider than the screen,
+   as in Registros and Automatizaciones; every column, its name and its buttons stay in view. */
+@media (max-width: 40rem) {
+  .cardsWrap {
+    overflow: visible;
+  }
+  .cards thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .cards,
+  .cards tbody,
+  .cards tr {
+    display: grid;
+  }
+  .cards tbody {
+    gap: var(--space-3);
+  }
+  .cards tr {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+  .cards td {
+    display: grid;
+    grid-template-columns: minmax(5rem, 35%) minmax(0, 1fr);
+    align-items: center;
+    gap: var(--space-3);
+    overflow-wrap: anywhere;
+  }
+  /* Visual label only: the cell keeps its value as its accessible name and its header in thead. */
+  .cards td::before {
+    content: attr(data-label) / '';
+    color: var(--color-muted);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+  .cards td > * {
+    justify-self: start;
+    max-width: 100%;
+  }
+  .cards tr td:last-child {
+    border-bottom: 0;
+  }
+}
 .fragment {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -86,8 +138,8 @@
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
   gap: var(--space-4);
 }
-.split h4,
-.stack h4 {
+.split h3,
+.stack h3 {
   margin: var(--space-4) 0 var(--space-2);
 }
 .notes {

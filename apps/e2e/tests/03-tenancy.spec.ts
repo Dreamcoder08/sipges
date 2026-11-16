@@ -179,7 +179,7 @@ test('cross-tenant access is refused with 403 (scope) and 404 (foreign ids)', as
   await signIn(page, analyst);
   await expect(page.getByRole('heading', { level: 1, name: 'Inicio' })).toBeVisible();
   await expect(page.getByLabel('Proyecto activo').locator('option')).toHaveText([
-    'Proyecto Sechura (migración)',
+    'Proyecto principal',
   ]);
 });
 

@@ -30,7 +30,7 @@ it('defers top-bar layout writes until the observer batch ends and removes them 
   }));
   resetApi({ me: { username: 'demo', full_name: 'Persona de prueba', role: 'admin' } });
   const { unmount } = render(<App />);
-  const heading = await screen.findByRole('heading', { level: 1, name: 'Dashboard ejecutivo' });
+  const heading = await screen.findByRole('heading', { level: 1, name: 'Panel ejecutivo' });
   const bar = heading.closest('header');
   if (!bar) throw new Error('Top bar missing');
   vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {

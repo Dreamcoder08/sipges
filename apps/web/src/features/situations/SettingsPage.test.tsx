@@ -96,10 +96,13 @@ it('shows the colour alone until the settings load, then colour with meaning, wi
   expect(screen.getByText('Naranja – Requiere intervención preventiva')).toBeInTheDocument();
 });
 
-it('presents the project as SIPGES with no switch to turn it on or off', async () => {
+it('names the active project on its card, with no switch to turn SIPGES on or off', async () => {
   server.use(http.get('*/system/v4/settings', () => HttpResponse.json(settings())));
   renderPage('admin');
-  expect(await screen.findByRole('heading', { name: 'SIPGES' })).toBeInTheDocument();
+  // functional-10 T13 (F31): the card names the project, not the product («Proyecto · SIPGES»).
+  await screen.findByText('Significado de cada color');
+  expect(screen.getByRole('heading', { name: 'Proyecto Uno' })).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'SIPGES' })).not.toBeInTheDocument();
   expect(screen.queryByText(/SIPGES 3\.0/)).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: /Activar|Volver a/ })).not.toBeInTheDocument();
   expect(screen.getByText('Significado de cada color')).toBeInTheDocument();
@@ -115,21 +118,22 @@ it('opens on Apariencia for every role, with a section nav like Claude settings'
     within(nav)
       .getAllByRole('link')
       .map((link) => link.textContent),
-  ).toEqual(['Apariencia', 'Proyecto', 'Privacidad y datos', 'Notificaciones', 'Integraciones']);
+  ).toEqual(['Cuenta', 'Apariencia', 'Proyecto', 'Privacidad y datos', 'Notificaciones']);
+  expect(within(nav).getByRole('link', { name: 'Cuenta' })).toHaveAttribute(
+    'href',
+    '/configuracion?seccion=cuenta',
+  );
   expect(within(nav).getByRole('link', { name: 'Apariencia' })).toHaveAttribute(
     'aria-current',
     'page',
   );
   expect(within(nav).getByRole('link', { name: 'Proyecto' })).toHaveAttribute(
     'href',
-    '/version-4?seccion=proyecto',
+    '/configuracion?seccion=proyecto',
   );
-  expect(within(nav).getByRole('link', { name: 'Integraciones' })).toHaveAttribute(
-    'href',
-    '/integraciones',
-  );
+  expect(within(nav).queryByRole('link', { name: 'Integraciones' })).not.toBeInTheDocument();
   expect(screen.getByRole('group', { name: 'Tema' })).toBeInTheDocument();
-  expect(screen.queryByRole('heading', { name: 'SIPGES' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'Proyecto Uno' })).not.toBeInTheDocument();
   expect(screen.queryByRole('checkbox', { name: 'Envío a IA externa' })).not.toBeInTheDocument();
 });
 
@@ -148,8 +152,7 @@ it('shows one section at a time and goes to another through the URL', async () =
   );
   within(nav).getByRole('link', { name: 'Proyecto' }).focus();
   await user.keyboard('{Enter}');
-  await user.click(within(nav).getByRole('link', { name: 'Integraciones' }));
-  expect(visited).toEqual(['/version-4?seccion=proyecto', '/integraciones']);
+  expect(visited).toEqual(['/configuracion?seccion=proyecto']);
 });
 
 it('keeps the section nav working without a router', async () => {
@@ -157,7 +160,33 @@ it('keeps the section nav working without a router', async () => {
   server.use(http.get('*/system/v4/settings', () => HttpResponse.json(settings())));
   renderPage('admin', 'apariencia');
   await user.click(screen.getByRole('link', { name: 'Proyecto' }));
-  expect(await screen.findByRole('heading', { name: 'SIPGES' })).toBeInTheDocument();
+  await screen.findByText('Significado de cada color');
+  expect(screen.getByRole('heading', { name: 'Proyecto Uno' })).toBeInTheDocument();
+});
+
+it('shows Cuenta with the signed-in user and the active sessions', async () => {
+  server.use(
+    http.get('*/system/auth/sessions', () =>
+      HttpResponse.json({
+        sessions: [
+          {
+            id: 'a'.repeat(32),
+            created_at: '2026-11-12T11:00:00Z',
+            expires_at: '2026-11-12T19:00:00Z',
+            method: 'password',
+            current: true,
+          },
+        ],
+      }),
+    ),
+  );
+  renderPage('consulta', 'cuenta');
+  expect(screen.getByRole('heading', { name: 'Cuenta' })).toBeInTheDocument();
+  expect(screen.getByText('Admin Demo')).toBeInTheDocument();
+  expect(await screen.findByText('Este dispositivo')).toBeInTheDocument();
+  const nav = screen.getByRole('navigation', { name: 'Secciones de Configuración' });
+  expect(within(nav).getByRole('link', { name: 'Cuenta' })).toHaveAttribute('aria-current', 'page');
+  expect(screen.queryByRole('group', { name: 'Tema' })).not.toBeInTheDocument();
 });
 
 it('shows only the notification preference that exists today: this device', () => {
@@ -171,7 +200,8 @@ it('shows only the notification preference that exists today: this device', () =
 
 it('accepts only known sections in the URL', () => {
   expect(settingsSearch.parse({ seccion: 'privacidad' })).toEqual({ seccion: 'privacidad' });
-  expect(settingsSearch.parse({ seccion: 'cuenta' })).toEqual({ seccion: undefined });
+  expect(settingsSearch.parse({ seccion: 'cuenta' })).toEqual({ seccion: 'cuenta' });
+  expect(settingsSearch.parse({ seccion: 'facturacion' })).toEqual({ seccion: undefined });
   expect(settingsSearch.parse({ seccion: 7 })).toEqual({ seccion: undefined });
   expect(settingsSearch.parse({})).toEqual({ seccion: undefined });
 });
@@ -380,6 +410,22 @@ it('shows the switch to everyone else read-only', async () => {
   expect(toggle).toBeDisabled();
 });
 
+// functional-10 T5 (F13): what may receive data is said in Spanish, without «embeddings».
+it('names what may receive pseudonymised data in plain Spanish', async () => {
+  server.use(
+    http.get('*/system/v4/settings', () =>
+      HttpResponse.json({ ...settings(), external_ai: { enabled: true } }),
+    ),
+  );
+  renderPage('admin', 'privacidad');
+  expect(
+    await screen.findByText(
+      'Activado: el servidor MCP, el resumen asistido y la búsqueda por significado con un modelo externo pueden recibir datos seudonimizados. Cada envío queda en Auditoría.',
+    ),
+  ).toBeInTheDocument();
+  expect(document.body).not.toHaveTextContent(/embedding/i);
+});
+
 it('lets an administrator save and clear the project location the maps open on', async () => {
   const user = userEvent.setup();
   const sent: unknown[] = [];
@@ -435,4 +481,14 @@ it('shows the project location read-only to other roles', async () => {
   expect(await screen.findByLabelText('Lugar')).toHaveValue('Tambogrande, Piura');
   expect(screen.getByLabelText('Lugar')).toHaveAttribute('readonly');
   expect(screen.queryByRole('button', { name: 'Guardar ubicación' })).toBeNull();
+});
+
+// functional-10 T13 (F31): wide screens hide the shell's h1, so the page carries a visible title
+// that also heads the section list.
+it('titles the page «Configuración» above its section list', async () => {
+  server.use(http.get('*/system/v4/settings', () => HttpResponse.json(settings())));
+  renderPage('consulta', 'apariencia');
+  const title = screen.getByRole('heading', { level: 2, name: 'Configuración' });
+  const nav = screen.getByRole('navigation', { name: 'Secciones de Configuración' });
+  expect(nav).toContainElement(title);
 });

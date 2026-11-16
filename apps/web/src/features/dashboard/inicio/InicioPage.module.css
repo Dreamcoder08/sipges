@@ -1,17 +1,140 @@
-/* Layout and hierarchy follow design/workspace-architecture/01-inicio-composer.html. */
+/* One reading column after design/vanguard/01-calma-conversacional.html: attention, composer, week. */
+
+/* Widths of the suggestion strip's edge fades; registered so they interpolate. */
+@property --fade-start {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --fade-end {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes reveal-fade-start {
+  to {
+    --fade-start: var(--fade-size);
+  }
+}
+
+@keyframes hide-fade-end {
+  from {
+    --fade-end: var(--fade-size);
+  }
+}
 .home {
   display: grid;
-  gap: var(--space-10);
-  max-width: 64rem;
+  gap: var(--space-8);
+  max-width: 48rem;
   margin: 0 auto;
   padding-top: var(--space-4);
 }
 
-.hero {
+.head {
   display: grid;
-  justify-items: center;
+  gap: var(--space-2);
+}
+
+/* What to know before trusting the page; items wrap instead of clipping on a phone. */
+.state {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: var(--space-1);
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--text-caption);
+}
+
+/* The offline live region stays mounted while empty; only filled items take room. */
+.state > :not(:empty) {
+  margin-inline-end: var(--space-3);
+}
+
+.offline:not(:empty) {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+}
+
+.offline:not(:empty)::before {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+}
+
+.attention,
+.compose {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
   gap: var(--space-4);
-  text-align: center;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.rowText {
+  display: grid;
+  /* An implicit auto track grows to its widest child's min-content: the one-line level pill below
+     then pushed the row past a 360 px phone with wider fonts (CI, functional-10 T13). */
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.rowText b {
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+}
+
+.rowText small {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-muted);
+  font-size: var(--text-caption);
+}
+
+/*
+ * The level pill keeps to one line: the project's meaning («Rojo – Situación crítica / atención
+ * inmediata») ends in an ellipsis where the row is narrower, instead of a second line that pushed
+ * «Esta semana» under the phone composer (functional-10 T13). The whole text stays in the DOM.
+ */
+.level {
+  display: flex;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.level > * {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowAction {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
 }
 
 .eyebrow {
@@ -26,7 +149,7 @@
 .title {
   margin: 0;
   font-size: var(--text-3xl);
-  font-weight: var(--weight-bold);
+  font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-tight);
   line-height: var(--leading-tight);
 }
@@ -34,7 +157,7 @@
 .ask {
   display: grid;
   gap: var(--space-2);
-  width: min(46rem, 100%);
+  width: 100%;
   padding: var(--space-4) var(--space-4) var(--space-3);
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-xl);
@@ -47,8 +170,13 @@
   border-color: var(--color-focus);
 }
 
+/* Grows with the question where field-sizing exists (modern-web-guidance
+   form-fields-automatically-fit-contents); elsewhere it keeps two rows and scrolls. */
 .ask textarea {
+  field-sizing: content;
   width: 100%;
+  min-height: var(--control-sm);
+  max-block-size: 8lh;
   resize: none;
   border: 0;
   padding: 0;
@@ -111,9 +239,8 @@
 
 .suggest {
   display: grid;
-  justify-items: center;
-  gap: var(--space-3);
-  width: min(46rem, 100%);
+  gap: var(--space-2);
+  width: 100%;
 }
 
 .suggestLabel {
@@ -128,15 +255,19 @@
 .chips {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
   gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+/* Scroll sentinels of the phone strip (see the phone layout below). */
+.edge {
+  display: none;
+}
+
 .chip {
-  min-height: 2.25rem;
+  min-height: max(2.25rem, var(--control-sm));
   padding: 0 var(--space-3);
   border: 1px solid var(--color-hairline-strong);
   border-radius: var(--radius-pill);
@@ -159,16 +290,24 @@
   gap: var(--space-4);
 }
 
-.briefHead {
+.sectionHead {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-4);
+  gap: var(--space-2);
   padding-bottom: var(--space-2);
   border-bottom: 1px solid var(--color-hairline);
 }
 
-.briefHead h2 {
+.headLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
+  margin-left: auto;
+  font-size: var(--text-sm);
+}
+
+.sectionHead h2 {
   margin: 0;
   font-size: var(--text-lg);
   letter-spacing: var(--tracking-tight);
@@ -181,7 +320,7 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-4);
 }
 
@@ -265,9 +404,9 @@
 }
 
 /*
- * Phones read Inicio like a chat app (ChatGPT, Claude mobile): the greeting centred in the free
- * space, the briefing as one-line rows, one swipeable strip of suggestions and the composer resting
- * on the bottom bar. The order changes only visually; the DOM keeps the desktop reading order.
+ * Phones: the greeting and status line, then the attention rows right under them (the first one
+ * above the fold), the week as one-line rows, one swipeable strip of suggestions and the composer
+ * resting on the bottom. The order changes only visually; the DOM keeps the desktop reading order.
  */
 @media (max-width: 40rem) {
   .home {
@@ -279,29 +418,74 @@
     padding-top: 0;
   }
 
-  .hero {
+  .compose {
     display: contents;
   }
 
+  .head {
+    order: 1;
+    gap: var(--space-1);
+  }
+
+  .attention {
+    order: 2;
+    gap: 0;
+  }
+
   .eyebrow,
-  .briefHead,
   .suggestLabel,
-  .hint,
-  .card :is(.list, .empty, .risk) {
+  .hint {
+    display: none;
+  }
+
+  /* With external AI on, the composer still says that cited answers are not there yet. */
+  .ask[data-ai='on'] .bar {
+    flex-wrap: wrap;
+  }
+
+  .ask[data-ai='on'] .hint {
+    display: block;
+    flex-basis: 100%;
+    order: 3;
+    margin: 0;
+  }
+
+  .row {
+    position: relative;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-1);
+  }
+
+  /* The whole row is the link; its text stays the accessible name. */
+  .rowAction {
+    font-size: 0;
+    color: var(--color-muted);
+    text-decoration: none;
+  }
+
+  .rowAction::before {
+    content: '›' / '';
+    font-size: var(--text-xl);
+  }
+
+  .rowAction::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  /* A row keeps its title and the card's own link (the last child): lists, the IRSA reading and
+     hint, and secondary links are desktop detail that squeezed the title under a second chevron. */
+  .card > :not(h3, :last-child) {
     display: none;
   }
 
   .title {
-    order: 1;
-    margin-block: auto;
-    padding-block: var(--space-6);
-    font-size: var(--text-2xl);
-    font-weight: var(--weight-semibold);
-    text-align: center;
+    font-size: var(--text-xl);
   }
 
   .brief {
-    order: 2;
+    order: 3;
     gap: 0;
   }
 
@@ -348,8 +532,8 @@
   }
 
   .suggest {
-    order: 3;
-    width: 100%;
+    order: 4;
+    margin-top: auto;
   }
 
   .chips {
@@ -359,6 +543,57 @@
     overflow-x: auto;
     scroll-snap-type: x proximity;
     scrollbar-width: none;
+    /* The scrollbar is hidden, so an edge fades while more chips lie that way
+       (modern-web-guidance scrollability-affordance-hints); snapped and focused chips stop clear of it. */
+    --fade-size: 2.5rem;
+    scroll-padding-inline: var(--fade-size);
+    mask:
+      linear-gradient(black, black) no-clip subtract,
+      linear-gradient(to right, black, transparent) 0 0 / var(--fade-start) 100% no-repeat no-clip,
+      linear-gradient(to right, transparent, black) 100% 0 / var(--fade-end) 100% no-repeat no-clip;
+    transition:
+      --fade-start var(--motion-fast),
+      --fade-end var(--motion-fast);
+  }
+
+  /* 1 px sentinels at both ends, laid over the end chips so they add no width or gap. */
+  .edge {
+    display: block;
+    flex: none;
+    inline-size: 1px;
+    block-size: 1px;
+  }
+
+  .edge:first-child {
+    margin-inline-end: calc(-1px - var(--space-2));
+  }
+
+  .edge:last-child {
+    margin-inline-start: calc(-1px - var(--space-2));
+  }
+
+  /* Without a scroll timeline, or under reduced motion, useScrollHints sets these instead. */
+  .chips[data-more-start] {
+    --fade-start: var(--fade-size);
+  }
+
+  .chips[data-more-end] {
+    --fade-end: var(--fade-size);
+  }
+
+  @supports (animation-timeline: scroll()) {
+    /* Longhands: the minifier expands the shorthand with a 0s duration, which ends a scroll
+       timeline animation at once; scroll timelines need `auto`. */
+    .chips {
+      animation-name: reveal-fade-start, hide-fade-end;
+      animation-duration: auto;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: scroll(self inline);
+      animation-range:
+        0 var(--fade-size),
+        calc(100% - var(--fade-size)) 100%;
+    }
   }
 
   .chip {
@@ -367,11 +602,27 @@
     scroll-snap-align: start;
   }
 
-  .ask {
+  /* Focused controls and anchors stop above the composer's strip (its height set by InicioPage). */
+  :global(html):has(.dock) {
+    scroll-padding-bottom: calc(var(--composer-height, 0px) + var(--space-2));
+  }
+
+  /*
+   * The composer rests on the bottom of the screen in a full-width strip of the page colour: the
+   * content area ends above it at rest and while scrolling, so nothing shows under or around the
+   * composer. At the end of the page the strip is back in the flow, below the suggestions.
+   */
+  .dock {
     position: sticky;
-    bottom: calc(env(safe-area-inset-bottom) + var(--space-3));
+    bottom: 0;
     z-index: 1;
-    order: 4;
+    order: 5;
+    margin-inline: calc(-1 * var(--space-3));
+    padding: var(--space-3) var(--space-3) calc(env(safe-area-inset-bottom) + var(--space-3));
+    background: var(--color-bg);
+  }
+
+  .ask {
     grid-template-columns: minmax(0, 1fr);
     width: 100%;
     padding: var(--space-3) var(--space-2) var(--space-2) var(--space-4);

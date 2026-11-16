@@ -6,6 +6,7 @@ import type { FeatureContext } from '../../shared/api/feature-context.ts';
 import { errorDetail } from '../../shared/api/feedback.ts';
 import {
   raisedSituations,
+  SITUATION_KINDS as KIND,
   situationAlertsQuery,
   situationsReportQuery,
 } from '../../shared/api/situations.ts';
@@ -18,11 +19,15 @@ import { EmptyState } from '../../shared/ui/EmptyState.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { situationAlertPayload, citationHref } from './model.ts';
 import styles from './Situations.module.css';
+import { count, plural } from '../../shared/lib/plural.ts';
+import { DateText } from '../../shared/ui/DateText.tsx';
 
-const KIND: Readonly<Record<Situation['kind'], string>> = {
-  tema: 'Tema',
-  actor: 'Actor',
-  territorio: 'Territorio',
+/** «alerta» is feminine: the colour agrees with it («alerta roja», «alerta amarilla»). */
+const ALERT_COLOUR: Readonly<Record<Situation['level'], string>> = {
+  Verde: 'verde',
+  Amarillo: 'amarilla',
+  Naranja: 'naranja',
+  Rojo: 'roja',
 };
 
 /** Related records, their trend and suggested actions (docs/adr/0020). */
@@ -67,8 +72,12 @@ const SituationList = ({
 }) => (
   <>
     <p className={styles.muted}>
-      {data.considered} registro(s) con fecha en los últimos {data.window_days} días
-      {data.undated ? ` · ${data.undated} sin fecha no se consideran` : ''}.
+      {count(data.considered, 'registro', 'registros')} con fecha en los últimos{' '}
+      {count(data.window_days, 'día', 'días')}
+      {data.undated
+        ? ` · ${data.undated} sin fecha no ${plural(data.undated, 'se considera', 'se consideran')}`
+        : ''}
+      .
     </p>
     {data.situations.length ? (
       <ol className={styles.list}>
@@ -142,7 +151,7 @@ const SituationCard = ({
     >
       <p className={styles.summary}>{situation.summary}</p>
       <section aria-label={`Por qué: ${situation.label}`}>
-        <h4>Por qué</h4>
+        <h3>Por qué</h3>
         <ul className={styles.reasons}>
           {situation.reasons.map((reason) => (
             <li key={reason.text}>
@@ -168,7 +177,7 @@ const SituationCard = ({
         </ul>
       </section>
       <section aria-label={`Acciones sugeridas: ${situation.label}`}>
-        <h4>Acciones sugeridas</h4>
+        <h3>Acciones sugeridas</h3>
         <ul>
           {situation.recommendations.map((text) => (
             <li key={text}>{text}</li>
@@ -178,7 +187,7 @@ const SituationCard = ({
       </section>
       {situation.lessons && situation.lessons.length > 0 && (
         <section>
-          <h4>Lecciones previas</h4>
+          <h3>Lecciones previas</h3>
           <ul>
             {situation.lessons.map((lesson) => (
               <li key={lesson.id}>
@@ -197,7 +206,7 @@ const SituationCard = ({
               <InternalLink href={citationHref(record.module, record.id)}>
                 {record.module} {record.id}
               </InternalLink>{' '}
-              · {record.date} · {record.title}
+              · <DateText value={record.date} /> · {record.title}
             </li>
           ))}
         </ul>
@@ -209,7 +218,7 @@ const SituationCard = ({
         </Alert>
       ) : writable ? (
         <Button disabled={create.isPending} onClick={() => create.mutate()}>
-          Crear alerta {situation.level.toLowerCase()} con esta explicación
+          Crear alerta {ALERT_COLOUR[situation.level]} con esta explicación
         </Button>
       ) : null}
       {create.isError ? <Alert tone="error">{errorDetail(create.error)}</Alert> : null}
@@ -223,7 +232,8 @@ const NarrativeCard = ({ narratives }: { narratives: Report['narratives'] }) => 
     {narratives.total ? (
       <>
         <p>
-          {narratives.total} publicación(es) con fecha · {narratives.recent} en los últimos 7 días.
+          {count(narratives.total, 'publicación', 'publicaciones')} con fecha · {narratives.recent}{' '}
+          en los últimos 7 días.
         </p>
         {narratives.tone ? (
           <p className={styles.summary}>
@@ -233,11 +243,11 @@ const NarrativeCard = ({ narratives }: { narratives: Report['narratives'] }) => 
         ) : null}
         {narratives.topics.length ? (
           <>
-            <h4>Temas que se repiten</h4>
+            <h3>Temas que se repiten</h3>
             <ul>
               {narratives.topics.map((topic) => (
                 <li key={topic.name}>
-                  {topic.name}: {topic.count} publicación(es)
+                  {topic.name}: {count(topic.count, 'publicación', 'publicaciones')}
                   {topic.recent ? `, ${topic.recent} esta semana` : ''}
                 </li>
               ))}

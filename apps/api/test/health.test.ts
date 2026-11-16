@@ -1,8 +1,16 @@
-import { HealthResponse } from '@sipges/contracts';
+import { readFileSync } from 'node:fs';
+import { HealthResponse, SIPGES_VERSION } from '@sipges/contracts';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { healthRoutes } from '../src/contexts/system/http/health.routes.ts';
 import { readinessProbe } from '../src/platform/database/readiness.ts';
 import { createTestApp } from './support/test-app.ts';
+
+/** The one version source (functional-10 T8): the root package.json. */
+const ROOT_VERSION = (
+  JSON.parse(readFileSync(new URL('../../../package.json', import.meta.url), 'utf8')) as {
+    version: string;
+  }
+).version;
 
 let t: Awaited<ReturnType<typeof createTestApp>>;
 beforeEach(async () => {
@@ -18,8 +26,13 @@ describe('GET /health', () => {
     expect(HealthResponse.parse(body)).toEqual({
       status: 'ok',
       service: 'SIPGES',
-      version: 'V0.5.1',
+      version: ROOT_VERSION,
     });
+  });
+
+  it('reports the root package.json version, the one the model status names (functional-10 T8)', () => {
+    expect(ROOT_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(SIPGES_VERSION).toBe(ROOT_VERSION);
   });
 
   it('sets the parity security headers', async () => {

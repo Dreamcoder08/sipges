@@ -52,7 +52,7 @@ test('CSV imports refresh the cached dashboard and uploaded evidence refreshes t
   await page.getByRole('button', { name: 'Subir evidencia' }).click();
   await expect(page.getByText('Evidencia guardada.')).toBeVisible();
   await page.getByRole('button', { name: 'Volver a la lista' }).click();
-  await expect(row).toContainText('1 archivo(s)');
+  await expect(row).toContainText('1 archivo ·');
 });
 
 test('directory pagination reaches a stored contact beyond the API first page', async ({
@@ -82,7 +82,13 @@ test('directory pagination reaches a stored contact beyond the API first page', 
   expect(response.ok()).toBe(true);
   expect(await response.json()).toMatchObject({ created: 500, updated: 0 });
   await page.goto('/directorio');
-  await page.getByLabel('Territorio / ciudad').selectOption(city);
+  // The place filter lives in the one «Filtros» sheet (closure-roadmap T31).
+  await page.getByRole('button', { name: 'Filtros' }).click();
+  await page
+    .getByRole('dialog', { name: 'Filtros' })
+    .getByLabel('Territorio / ciudad')
+    .selectOption(city);
+  await page.keyboard.press('Escape');
   await expect(page.getByRole('button', { name: `Ver ${id}` })).toHaveCount(0);
   for (let number = 2; number <= 11; number++) {
     await page.getByRole('button', { name: 'Página siguiente' }).click();

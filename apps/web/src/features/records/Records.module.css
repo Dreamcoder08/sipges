@@ -43,37 +43,9 @@
 }
 .table td {
   max-width: 24rem;
-  overflow-wrap: anywhere;
+  /* Never mid-word («Corroborad / a», a split id): the table scrolls in its region instead. */
+  overflow-wrap: break-word;
   vertical-align: middle;
-}
-.pill {
-  display: inline-block;
-  padding: var(--space-0) var(--space-3);
-  border-radius: var(--radius-pill);
-  font-weight: var(--weight-bold);
-  font-size: var(--text-sm);
-  line-height: var(--leading-snug);
-  white-space: nowrap;
-}
-.pill[data-tone='negative'] {
-  background: var(--tone-negative-bg);
-  color: var(--tone-negative-fg);
-}
-.pill[data-tone='warning'] {
-  background: var(--tone-warning-bg);
-  color: var(--tone-warning-fg);
-}
-.pill[data-tone='info'] {
-  background: var(--tone-info-bg);
-  color: var(--tone-info-fg);
-}
-.pill[data-tone='positive'] {
-  background: var(--tone-positive-bg);
-  color: var(--tone-positive-fg);
-}
-.pill[data-tone='neutral'] {
-  background: var(--tone-neutral-bg);
-  color: var(--tone-neutral-fg);
 }
 .progress {
   display: inline-flex;
@@ -117,6 +89,21 @@
 .rowActions > button {
   padding-inline: 0.6rem;
   white-space: nowrap;
+}
+/* The record's own text (an event's description) keeps about five words a line; the column
+   header sets the width of the whole column (functional-10 T14, tablet Eventos). */
+.table th.titleCell {
+  min-width: 12rem;
+}
+/* Tablets: «Ver», «Editar» and «Eliminar» stack, so the actions column stops taking the width
+   the description needs. Phones turn rows into cards below 40rem. */
+@media (40rem < width <= 60rem) {
+  .rowActions {
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+  }
 }
 .form {
   display: grid;
@@ -183,7 +170,7 @@
   padding-top: var(--space-4);
   border-top: 1px solid var(--color-border);
 }
-.evidence h4 {
+.evidence h3 {
   font-size: var(--text-body);
   margin: 0 0 var(--space-4);
 }
@@ -253,6 +240,7 @@
     gap: var(--space-3);
     max-width: none;
     padding: var(--space-2) var(--space-3);
+    overflow-wrap: anywhere;
   }
   .table td::before {
     content: attr(data-label);
@@ -338,7 +326,7 @@
   gap: var(--space-2);
   margin-bottom: var(--space-3);
 }
-.graphHeader h4 {
+.graphHeader h3 {
   margin: 0;
 }
 
@@ -358,7 +346,7 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   padding: 0.15rem 0.5rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--color-info-soft);
   color: var(--color-info);
 }
@@ -375,14 +363,14 @@
   display: grid;
   gap: var(--space-3);
 }
-.importPanel h4 {
+.importPanel h3 {
   margin: 0;
 }
 .importPanel select {
   min-width: 12rem;
 }
 
-.briefing h5 {
+.briefing h4 {
   margin: var(--space-4) 0 var(--space-2);
   font-size: var(--text-md);
 }
@@ -435,18 +423,17 @@
   align-items: center;
   justify-content: space-between;
 }
-.panelHeader h3 {
+.panelHeader h2 {
   margin: 0;
+  font-size: var(--text-lg);
 }
+/* «Filtros» and the chips of the facets in force; the selects themselves live in the sheet. */
 .filters {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-3);
+  align-items: center;
+  gap: var(--space-2);
   margin-bottom: var(--space-3);
-}
-.filters > .field {
-  min-width: min(12rem, 100%);
-  flex: 1;
 }
 .viewer {
   flex-basis: 100%;
@@ -464,7 +451,7 @@
   font-family: inherit;
   font-size: var(--text-base);
 }
-.viewer h5 {
+.viewer h4 {
   margin: 0 0 var(--space-2);
   font-size: var(--text-sm);
   color: var(--color-muted);

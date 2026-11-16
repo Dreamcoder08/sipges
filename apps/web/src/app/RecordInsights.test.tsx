@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { limaToday } from '@sipges/kernel';
 import { beforeEach, expect, it } from 'vitest';
 import { installRecordsApi } from '../test/records-api.ts';
 import { resetApi } from '../test/server.ts';
@@ -14,7 +15,7 @@ it('starts the alert centre on an overview whose heatmap opens the actual alert'
     'DEMO/PRJ-DEMO/alertas': [
       {
         _id: 'AL-1',
-        Fecha: new Date().toISOString().slice(0, 10),
+        Fecha: limaToday(),
         Causa: 'Alerta de prueba',
         Dimension: 'G',
         Nivel_Preliminar: 'Naranja',
@@ -23,7 +24,7 @@ it('starts the alert centre on an overview whose heatmap opens the actual alert'
       },
       {
         _id: 'AL-2',
-        Fecha: new Date().toISOString().slice(0, 10),
+        Fecha: limaToday(),
         Causa: 'Alerta sin ubicar',
         Dimension: 'E',
         Nivel_Preliminar: 'Rojo',
@@ -39,16 +40,16 @@ it('starts the alert centre on an overview whose heatmap opens the actual alert'
     'true',
   );
   const cell = await screen.findByRole('button', {
-    name: 'G · Territorio de prueba: Medio-alto 1 alerta(s) (Naranja)',
+    name: 'G · Territorio de prueba: Medio-alto 1 alerta (Naranja)',
   });
   expect(
     screen.getByRole('button', {
-      name: 'E · Sin territorio registrado: Crítico 1 alerta(s) (Rojo)',
+      name: 'E · Sin territorio registrado: Crítico 1 alerta (Rojo)',
     }),
   ).toBeVisible();
   const ranking = screen.getByRole('region', { name: 'Comunidades prioritarias' });
   expect(ranking).toHaveTextContent('Territorio de prueba');
-  expect(ranking).toHaveTextContent('1 alerta(s) activa(s) sin comunidad registrada');
+  expect(ranking).toHaveTextContent('1 alerta activa sin comunidad registrada');
   expect(screen.getByRole('region', { name: 'Alertas recientes' })).toHaveTextContent(
     'Acción de prueba',
   );

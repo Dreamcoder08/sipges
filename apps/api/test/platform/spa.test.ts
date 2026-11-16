@@ -56,6 +56,61 @@ describe('single-page app delivery', () => {
     }
   });
 
+  it('serves the brotli or gzip variant the build wrote when the client accepts it (functional-10 T9)', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'sipges-web-'));
+    await mkdir(join(dir, 'assets'));
+    await writeFile(join(dir, 'index.html'), SHELL);
+    await writeFile(join(dir, 'assets', 'index-abc.js'), 'ok()');
+    await writeFile(join(dir, 'assets', 'index-abc.js.br'), 'br bytes');
+    await writeFile(join(dir, 'assets', 'index-abc.js.gz'), 'gzip bytes');
+    await writeFile(join(dir, 'assets', 'only-gz.css'), 'a{}');
+    await writeFile(join(dir, 'assets', 'only-gz.css.gz'), 'css gzip');
+    await writeFile(join(dir, 'assets', 'logo.png'), 'png');
+    await writeFile(join(dir, 'assets', 'logo.png.br'), 'never');
+    const t = await createTestApp({}, { web: fileWebAssets(dir) });
+    const get = (path: string, acceptEncoding?: string) =>
+      t.request(
+        path,
+        acceptEncoding === undefined ? {} : { headers: { 'accept-encoding': acceptEncoding } },
+      );
+    const cases: ReadonlyArray<readonly [string, string | undefined, string, string | null]> = [
+      ['/assets/index-abc.js', 'gzip, deflate, br, zstd', 'br bytes', 'br'],
+      ['/assets/index-abc.js', 'gzip', 'gzip bytes', 'gzip'],
+      ['/assets/index-abc.js', 'br;q=0, gzip;q=0.5', 'gzip bytes', 'gzip'],
+      ['/assets/index-abc.js', '*', 'br bytes', 'br'],
+      ['/assets/index-abc.js', 'BR;Q=1', 'br bytes', 'br'],
+      ['/assets/index-abc.js', 'gzip;q=0, br;q=0', 'ok()', null],
+      ['/assets/index-abc.js', '*;q=0', 'ok()', null],
+      ['/assets/index-abc.js', 'identity', 'ok()', null],
+      ['/assets/index-abc.js', '', 'ok()', null],
+      ['/assets/index-abc.js', undefined, 'ok()', null],
+      ['/assets/only-gz.css', 'br, gzip', 'css gzip', 'gzip'],
+      ['/assets/only-gz.css', 'br', 'a{}', null],
+    ];
+    for (const [path, acceptEncoding, body, encoding] of cases) {
+      const res = await get(path, acceptEncoding);
+      const label = `${path} with ${String(acceptEncoding)}`;
+      expect(res.status, label).toBe(200);
+      expect(await res.text(), label).toBe(body);
+      expect(res.headers.get('content-encoding'), label).toBe(encoding);
+      expect(res.headers.get('vary'), label).toBe('Accept-Encoding');
+      expect(res.headers.get('content-type'), label).toBe(
+        path.endsWith('.js') ? 'text/javascript; charset=utf-8' : 'text/css; charset=utf-8',
+      );
+      expect(res.headers.get('cache-control'), label).toBe(ASSET_CACHE);
+      expect(res.headers.get('content-security-policy'), label).toBe(
+        (await t.request('/assets/missing.js')).headers.get('content-security-policy'),
+      );
+    }
+    // Images are not negotiated: already compressed, and no variant is ever read for them.
+    const png = await get('/assets/logo.png', 'br, gzip');
+    expect(await png.text()).toBe('png');
+    expect(png.headers.get('content-encoding')).toBeNull();
+    expect(png.headers.get('vary')).toBeNull();
+    // A variant is never an address of its own.
+    expect((await get('/assets/index-abc.js.br', 'br')).status).toBe(404);
+  });
+
   it('serves the CesiumJS workers and assets under the SPA policy, refusing anything else', async () => {
     const read: string[] = [];
     const web: WebAssets = {
@@ -122,6 +177,10 @@ describe('single-page app delivery', () => {
       'application/manifest+json',
     );
     expect((await t.request('/icon.svg')).status).toBe(404);
+    // An asset of a host without variants (the Cloudflare Worker) answers as before.
+    const js = await t.request('/assets/index-abc.js', { headers: { 'accept-encoding': 'br' } });
+    expect(js.headers.get('content-encoding')).toBeNull();
+    expect(js.headers.get('vary')).toBeNull();
     expect((await (await createTestApp({}, { web: memoryWeb })).request('/sw.js')).status).toBe(
       404,
     );

@@ -78,7 +78,7 @@ export const recordsExtrasJourney = async (page: Page, stamp: string) => {
 
   await page.goto('/auditoria');
   await page.getByLabel('Buscar en auditoría').fill('actores');
-  await expect(page.getByRole('cell', { name: /IMPORT/ }).first()).toBeVisible();
+  await expect(page.getByRole('cell', { name: /^Importación$/ }).first()).toBeVisible();
 };
 
 /** Document lab to human decision, plus the strategic and chronology screens. */

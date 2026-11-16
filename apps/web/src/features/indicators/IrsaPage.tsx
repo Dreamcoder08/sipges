@@ -8,17 +8,32 @@ import { Alert } from '../../shared/ui/Alert.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
 import { Field } from '../../shared/ui/Field.tsx';
+import { IrsaPendingBadge, isIrsaPending } from '../../shared/ui/IrsaPendingBadge.tsx';
 import { useLevelLabel } from '../../shared/lib/project-settings.tsx';
-import { LEVELS } from '../../shared/lib/text.ts';
+import { DIMENSIONS, LEVELS, dimensionLabel } from '../../shared/lib/text.ts';
+import {
+  decimalInput,
+  formatDateTime,
+  formatFractions,
+  formatIndex,
+  formatNumber,
+  formatPercent,
+  formatShares,
+  formatShortDay,
+  parseDecimal,
+} from '../../shared/lib/format.ts';
+import { DateText } from '../../shared/ui/DateText.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { LineChart, RadarChart } from '../../shared/ui/charts/Charts.tsx';
 import { configQuery, historyQuery, irsaQuery } from './api.ts';
 import { IndicatorTable } from './IndicatorTable.tsx';
+import { contributionLabel, irsaMethodLabel } from './labels.ts';
 import styles from './Indicators.module.css';
 
-/** IRSA configuration status while the weights and thresholds lack expert validation. */
-const PENDING_STATUS = 'PENDIENTE_DE_VALIDACION_METODOLOGICA';
-const dimensions = ['G', 'A', 'D', 'N', 'E', 'I'] as const;
+const dimensions = DIMENSIONS;
+/** The six weights as shares of 100 % in dimension order, so they add up on screen. */
+const weightShares = (weights: Readonly<Record<string, number>>) =>
+  formatShares(dimensions.map((d) => weights[d] ?? 0));
 export const IrsaPage = (context: FeatureContext) => (
   <IrsaWorkspace key={context.scope} {...context} />
 );
@@ -61,25 +76,31 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
                 </>
               ) : (
                 <p className={styles.score}>
-                  {data.irsa.toFixed(2)} / 100 · {withMeaning(data.level)}
+                  {formatIndex(data.irsa)} / 100 · {withMeaning(data.level)}
                 </p>
               )}
-              {config.data?.status === PENDING_STATUS ? (
+              {isIrsaPending(config.data?.status) ? (
                 <p>
-                  <span className={styles.pending}>Metodología pendiente de validación</span>
+                  <IrsaPendingBadge status={config.data?.status} />
                 </p>
               ) : null}
-              <Alert tone="info">{data.status}</Alert>
-              <p>Versión de configuración: {data.config_version}</p>
-              {data.notes.map((note) => (
-                <p key={note}>{note}</p>
-              ))}
               <div className={styles.split}>
                 <div className={styles.radar}>
                   <RadarChart
                     caption="Puntuación IRSA por dimensión (0 a 100)"
-                    data={dimensions.map((d) => ({ key: d, label: d, value: data.scores[d] }))}
+                    data={dimensions.map((d) => ({
+                      key: d,
+                      label: dimensionLabel(d),
+                      value: data.scores[d],
+                    }))}
+                    renderLabel={(d) => d.key}
                   />
+                  {/* The axes keep the letter; the names sit beside them here (functional-10 T3). */}
+                  <ul className={styles.legend} aria-label="Dimensiones del gráfico">
+                    {dimensions.map((d) => (
+                      <li key={d}>{dimensionLabel(d)}</li>
+                    ))}
+                  </ul>
                 </div>
                 <div
                   className={styles.table}
@@ -88,7 +109,11 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
                   aria-label="Puntuaciones por dimensión"
                 >
                   <table>
-                    <caption>Puntuación y disponibilidad por dimensión</caption>
+                    <caption>
+                      <span className={styles.captionText}>
+                        Puntuación y disponibilidad por dimensión
+                      </span>
+                    </caption>
                     <thead>
                       <tr>
                         <th scope="col">Dimensión</th>
@@ -98,29 +123,48 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
                       </tr>
                     </thead>
                     <tbody>
-                      {dimensions.map((d) => (
+                      {dimensions.map((d, index) => (
                         <tr key={d}>
-                          <th scope="row">{d}</th>
-                          <td>{data.scores[d].toFixed(2)}</td>
-                          <td>{data.weights[d] ?? 0}</td>
-                          <td>{data.availability[d].toFixed(1)}%</td>
+                          <th scope="row">{dimensionLabel(d)}</th>
+                          <td>{formatIndex(data.scores[d])}</td>
+                          <td>{weightShares(data.weights)[index]}</td>
+                          <td>{formatPercent(data.availability[d])}</td>
                         </tr>
                       ))}
+                      <tr>
+                        <th scope="row">Total</th>
+                        <td />
+                        <td>
+                          {formatPercent(
+                            dimensions.reduce((sum, d) => sum + (data.weights[d] ?? 0), 0) * 100,
+                          )}
+                        </td>
+                        <td />
+                      </tr>
                     </tbody>
                   </table>
                 </div>
               </div>
-              <p>
-                La disponibilidad mide cuántos indicadores son calculables; no representa precisión
-                científica.
-              </p>
+              {/* The badge above is the one caveat; how the index is computed waits here. */}
+              <details>
+                <summary>Cómo se calcula</summary>
+                <p>{data.status}</p>
+                <p>{irsaMethodLabel(data.config_version)}</p>
+                {data.notes.map((note) => (
+                  <p key={note}>{note}</p>
+                ))}
+                <p>
+                  La disponibilidad mide cuántos indicadores son calculables; no representa
+                  precisión científica.
+                </p>
+              </details>
               <details>
                 <summary>Factores que explican el índice</summary>
                 {data.drivers.length ? (
                   <ul>
                     {data.drivers.map((driver) => (
                       <li key={`${driver.dimension}/${driver.id}`}>
-                        {driver.id} · {driver.label}: {driver.points.toFixed(2)} puntos
+                        {driver.id} · {driver.label}: {formatIndex(driver.points)} puntos
                       </li>
                     ))}
                   </ul>
@@ -176,6 +220,16 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
         <QueryState query={history} label="historial">
           {(rows) => (
             <>
+              {rows.length > 0 &&
+                (() => {
+                  const latest = [...rows].sort((a, b) => b.ts.localeCompare(a.ts))[0];
+                  return latest ? (
+                    <p>
+                      Último corte guardado: {formatIndex(latest.irsa)} / {latest.level} ·{' '}
+                      {formatDateTime(latest.ts)}
+                    </p>
+                  ) : null;
+                })()}
               <LineChart
                 caption="Evolución del IRSA en los cortes guardados"
                 empty="Guarde al menos dos cortes para ver la evolución del índice."
@@ -183,29 +237,33 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
                   .sort((a, b) => a.ts.localeCompare(b.ts))
                   .map((row) => ({
                     key: String(row.id),
-                    label: row.ts.slice(5, 10),
+                    label: formatShortDay(row.ts),
                     value: Math.round(row.irsa * 10) / 10,
                   }))}
               />
               <div className={styles.table} tabIndex={0} role="region" aria-label="Historial IRSA">
                 <table>
-                  <caption>Últimos 50 cortes del proyecto</caption>
+                  <caption>
+                    <span className={styles.captionText}>Últimos 50 cortes del proyecto</span>
+                  </caption>
                   <thead>
                     <tr>
                       <th scope="col">Fecha</th>
                       <th scope="col">IRSA / nivel</th>
-                      <th scope="col">Versión</th>
+                      <th scope="col">Método IRSA</th>
                       <th scope="col">Nota</th>
                     </tr>
                   </thead>
                   <tbody>
                     {rows.map((row) => (
                       <tr key={row.id}>
-                        <td>{row.ts}</td>
                         <td>
-                          {row.irsa.toFixed(2)} / {row.level}
+                          <DateText value={row.ts} time />
                         </td>
-                        <td>{row.config_version ?? 'Sin versión'}</td>
+                        <td>
+                          {formatIndex(row.irsa)} / {row.level}
+                        </td>
+                        <td>{irsaMethodLabel(row.config_version)}</td>
                         <td>{row.note || 'Sin nota'}</td>
                       </tr>
                     ))}
@@ -225,10 +283,10 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
             ) : (
               <>
                 <p>Solo un administrador puede modificar los parámetros.</p>
-                <ul>
-                  {Object.entries(data.weights).map(([key, value]) => (
-                    <li key={key}>
-                      Peso {key}: {value}
+                <ul aria-label="Pesos de dimensiones">
+                  {dimensions.map((d, index) => (
+                    <li key={d}>
+                      Peso {dimensionLabel(d)}: {weightShares(data.weights)[index]}
                     </li>
                   ))}
                 </ul>
@@ -241,23 +299,50 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
   );
 };
 
+/**
+ * A decimal field in Spanish: text with the decimal keypad, so it shows and accepts «0,167» (a
+ * number input would show «0.167» and drop the comma); a point is still accepted.
+ */
+const DECIMAL_FIELD = {
+  type: 'text',
+  inputMode: 'decimal',
+  autoComplete: 'off',
+  spellCheck: false,
+  required: true,
+} as const;
+
 const ConfigurationForm = ({ scope, config }: { scope: string; config: IrsaConfig }) => {
-  const [weights, setWeights] = useState(
-    Object.fromEntries(Object.entries(config.weights).map(([key, value]) => [key, String(value)])),
+  // Weights show as fractions that add up (0,167 ×4 and 0,166 ×2, like the shares above); one the
+  // person leaves as shown keeps its stored value, so an untouched save stores the same numbers.
+  const shownWeights = Object.fromEntries(
+    formatFractions(dimensions.map((d) => config.weights[d] ?? 0)).map((text, index) => [
+      dimensions[index] as string,
+      text,
+    ]),
   );
+  const initialWeights = Object.fromEntries(
+    Object.entries(config.weights).map(([key, value]) => [
+      key,
+      shownWeights[key] ?? decimalInput(value),
+    ]),
+  );
+  const [weights, setWeights] = useState(initialWeights);
   const [thresholds, setThresholds] = useState<Record<string, [string, string]>>(
     Object.fromEntries(
       Object.entries(config.thresholds).map(([key, [low, high]]) => [
         key,
-        [String(low), String(high)],
+        [decimalInput(low), decimalInput(high)],
       ]),
     ),
   );
   const [contributions, setContributions] = useState(
     Object.fromEntries(
-      Object.entries(config.contributions).map(([key, value]) => [key, String(value)]),
+      Object.entries(config.contributions).map(([key, value]) => [key, decimalInput(value)]),
     ),
   );
+  const weightValue = (key: string, text: string) =>
+    text === initialWeights[key] ? (config.weights[key] ?? NaN) : parseDecimal(text);
+  const weightSum = dimensions.reduce((total, d) => total + weightValue(d, weights[d] ?? ''), 0);
   const [validation, setValidation] = useState('');
   const [notice, setNotice] = useState('');
   const client = useQueryClient();
@@ -286,25 +371,16 @@ const ConfigurationForm = ({ scope, config }: { scope: string; config: IrsaConfi
         if (save.isPending) return;
         setNotice('');
         const parsedWeights = Object.fromEntries(
-          Object.entries(weights).map(([key, value]) => [
-            key,
-            value.trim() === '' ? NaN : Number(value),
-          ]),
+          Object.entries(weights).map(([key, value]) => [key, weightValue(key, value)]),
         );
         const parsedThresholds = Object.fromEntries(
           Object.entries(thresholds).map(([key, [low, high]]) => [
             key,
-            [low.trim() === '' ? NaN : Number(low), high.trim() === '' ? NaN : Number(high)] as [
-              number,
-              number,
-            ],
+            [parseDecimal(low), parseDecimal(high)] as [number, number],
           ]),
         );
         const parsedContributions = Object.fromEntries(
-          Object.entries(contributions).map(([key, value]) => [
-            key,
-            value.trim() === '' ? NaN : Number(value),
-          ]),
+          Object.entries(contributions).map(([key, value]) => [key, parseDecimal(value)]),
         );
         const sum = dimensions.reduce((total, d) => total + (parsedWeights[d] ?? 0), 0);
         if (!Number.isFinite(sum) || Math.abs(sum - 1) > 0.02) {
@@ -339,16 +415,17 @@ const ConfigurationForm = ({ scope, config }: { scope: string; config: IrsaConfi
           {dimensions.map((d) => (
             <Field
               key={d}
-              label={`Peso ${d}`}
-              type="number"
-              step="any"
-              min="0"
-              required
+              label={`Peso ${dimensionLabel(d)}`}
+              {...DECIMAL_FIELD}
               value={weights[d] ?? 0}
               onChange={(e) => setWeights({ ...weights, [d]: e.target.value })}
             />
           ))}
         </div>
+        <p className={styles.hint} aria-live="polite">
+          Suma de los pesos:{' '}
+          {Number.isFinite(weightSum) ? formatNumber(weightSum, 3) : 'revise los valores'}
+        </p>
       </fieldset>
       <fieldset disabled={save.isPending}>
         <legend>Bandas de riesgo</legend>
@@ -357,9 +434,7 @@ const ConfigurationForm = ({ scope, config }: { scope: string; config: IrsaConfi
             <div key={name}>
               <Field
                 label={`Límite inferior ${name}`}
-                type="number"
-                step="any"
-                required
+                {...DECIMAL_FIELD}
                 value={band[0]}
                 onChange={(e) =>
                   setThresholds({ ...thresholds, [name]: [e.target.value, band[1]] })
@@ -367,9 +442,7 @@ const ConfigurationForm = ({ scope, config }: { scope: string; config: IrsaConfi
               />
               <Field
                 label={`Límite superior ${name}`}
-                type="number"
-                step="any"
-                required
+                {...DECIMAL_FIELD}
                 value={band[1]}
                 onChange={(e) =>
                   setThresholds({ ...thresholds, [name]: [band[0], e.target.value] })
@@ -389,10 +462,8 @@ const ConfigurationForm = ({ scope, config }: { scope: string; config: IrsaConfi
           {Object.entries(contributions).map(([name, value]) => (
             <Field
               key={name}
-              label={`Contribución ${name}`}
-              type="number"
-              step="any"
-              required
+              label={contributionLabel(name)}
+              {...DECIMAL_FIELD}
               value={value}
               onChange={(e) => setContributions({ ...contributions, [name]: e.target.value })}
             />

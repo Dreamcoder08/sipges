@@ -71,6 +71,9 @@ func withEmbedder(t *testing.T) (*embedderDouble, string) {
 
 func clearEmbeddings(t *testing.T) {
 	t.Helper()
+	if scratch == nil {
+		return // the test skipped itself; there is nothing to clear
+	}
 	ctx := context.Background()
 	conn, err := pgx.Connect(ctx, scratch.URL)
 	if err != nil {

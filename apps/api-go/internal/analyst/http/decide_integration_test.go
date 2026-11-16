@@ -38,6 +38,7 @@ func post(t *testing.T, base, user, body string) (int, string) {
 // undoDecisions keeps the proposals the read tests of this package compare exactly.
 func undoDecisions(t *testing.T) {
 	t.Helper()
+	needsDatabase(t)
 	t.Cleanup(func() {
 		ctx := context.Background()
 		conn, err := pgx.Connect(ctx, scratch.URL)
@@ -59,6 +60,7 @@ func undoDecisions(t *testing.T) {
 
 func scalar[T any](t *testing.T, sql string, args ...any) T {
 	t.Helper()
+	needsDatabase(t)
 	ctx := context.Background()
 	conn, err := pgx.Connect(ctx, scratch.URL)
 	if err != nil {

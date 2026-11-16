@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/analyst/domain"
+	kernel "github.com/Dreamcoder08/sipges/apps/api-go/internal/management/domain"
 )
 
 // Bounds of ontology-service.ts.
@@ -62,8 +63,8 @@ type Reader interface {
 	Decided(ctx context.Context, fingerprints []string) (map[string]bool, error)
 }
 
-// Today is the UTC calendar date of now, as toISOString().slice(0, 10).
-func Today(now time.Time) string { return now.UTC().Format(time.DateOnly) }
+// Today is limaToday(now): the calendar day in Peru, YYYY-MM-DD.
+func Today(now time.Time) string { return kernel.LimaToday(now) }
 
 // refFor is refFor: the stored ref of a slug and a usable id.
 func refFor(slug, id string) (NodeRef, bool) {

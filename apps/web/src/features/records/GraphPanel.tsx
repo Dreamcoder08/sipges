@@ -28,7 +28,7 @@ export const GraphPanel = ({
   return (
     <section className={styles.evidence} aria-labelledby={`graph-${id}`}>
       <div className={styles.graphHeader}>
-        <h4 id={`graph-${id}`}>Grafo de relaciones</h4>
+        <h3 id={`graph-${id}`}>Grafo de relaciones</h3>
         <div className={styles.actions} role="group" aria-label="Profundidad del grafo">
           {[1, 2].map((value) => (
             <Button

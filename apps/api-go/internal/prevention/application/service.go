@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	kernel "github.com/Dreamcoder08/sipges/apps/api-go/internal/management/domain"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/prevention/domain"
 	records "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/domain"
 	tenancy "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/domain"
@@ -66,7 +67,7 @@ type Service struct {
 	Evidence EvidenceLookup
 	// RandomHex returns that many upper-case random hexadecimal digits.
 	RandomHex func(length int) string
-	// Now is the clock that decides "today" (UTC) for the overdue rule; nil means time.Now.
+	// Now is the clock that decides "today" (Lima) for the overdue rule; nil means time.Now.
 	Now func() time.Time
 }
 
@@ -77,8 +78,8 @@ func (s Service) now() time.Time {
 	return time.Now()
 }
 
-// Today is today(): the UTC calendar date, YYYY-MM-DD.
-func (s Service) Today() string { return s.now().UTC().Format(time.DateOnly) }
+// Today is today(): limaToday, the calendar day in Peru, YYYY-MM-DD.
+func (s Service) Today() string { return kernel.LimaToday(s.now()) }
 
 // Create is create: a plan follows an alert of the scope a person verified.
 func (s Service) Create(ctx context.Context, scope tenancy.Scope, in domain.CreateInput) (domain.PreventiveAction, domain.UpdateError, error) {

@@ -41,6 +41,9 @@ export type MapPoint = {
   readonly precision: 'exacta' | 'localidad';
 };
 
+/** A record with no coordinates and no known locality: listed apart, never dropped silently. */
+export type Unplaced = { readonly id: string; readonly layer: Layer; readonly title: string };
+
 const text = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
 const number = (value: unknown) => {
   const parsed = typeof value === 'number' ? value : Number.parseFloat(text(value));
@@ -99,14 +102,18 @@ export const mapPoints = (
   sechura = true,
 ) => {
   const points: MapPoint[] = [];
-  let unlocated = 0;
+  const unlocated: Unplaced[] = [];
   const seen = new Map<string, number>();
   for (const layer of LAYERS) {
     const describe = DESCRIPTORS[layer];
     for (const record of layers[layer]) {
       const place = placeOf(record, sechura);
       if (!place) {
-        unlocated += 1;
+        unlocated.push({
+          id: record._id,
+          layer,
+          title: first(record, describe.title) || record._id,
+        });
         continue;
       }
       const key = place.at.join(',');
@@ -196,3 +203,12 @@ export const atCursor = (
     if (!month || month > cursor) return [];
     return [{ point, emphasis: month === cursor ? 'current' : 'dim' }];
   });
+
+/**
+ * The records on the map as the list shows them, newest first (undated last), each with the
+ * number its marker carries, so a row and its marker always say the same number.
+ */
+export const numbered = <T extends { point: MapPoint }>(items: readonly T[]) =>
+  [...items]
+    .sort((a, b) => b.point.date.localeCompare(a.point.date))
+    .map((item, index) => ({ ...item, n: index + 1 }));

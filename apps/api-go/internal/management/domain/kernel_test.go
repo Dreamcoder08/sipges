@@ -48,6 +48,26 @@ func TestLimaTodayUsesThePeruvianCalendarDay(t *testing.T) {
 	}
 }
 
+func TestLimaTodayAcrossDayMonthAndYearBoundaries(t *testing.T) {
+	minus5 := time.FixedZone("UTC-5", -5*60*60)
+	for _, c := range []struct {
+		at   time.Time
+		want string
+	}{
+		{time.Date(2026, 11, 13, 23, 30, 0, 0, minus5), "2026-11-13"},
+		{time.Date(2026, 11, 14, 0, 0, 0, 0, minus5), "2026-11-14"},
+		{time.Date(2026, 11, 30, 23, 30, 0, 0, minus5), "2026-11-30"},
+		{time.Date(2026, 12, 1, 0, 0, 0, 0, minus5), "2026-12-01"},
+		{time.Date(2026, 12, 31, 23, 30, 0, 0, minus5), "2026-12-31"},
+		{time.Date(2027, 1, 1, 0, 0, 0, 0, minus5), "2027-01-01"},
+		{time.Date(2027, 1, 1, 4, 59, 59, 0, time.UTC), "2026-12-31"},
+	} {
+		if got := LimaToday(c.at); got != c.want {
+			t.Errorf("LimaToday(%s) = %s, want %s", c.at.UTC().Format(time.RFC3339), got, c.want)
+		}
+	}
+}
+
 func TestRecordDueDateStopsAtTheFirstPresentKey(t *testing.T) {
 	for raw, want := range map[string]string{
 		`{"Fecha_Vencimiento":"2026-10-15","Fecha_Limite":"2026-10-16","Plazo":"2026-10-17"}`: "2026-10-15",

@@ -47,3 +47,44 @@ it('selects a month, extends with Shift and clears on a second click', async () 
   await user.keyboard('{Enter}');
   expect(screen.getByRole('status')).toHaveTextContent('..');
 });
+
+const axisLabels = (container: HTMLElement) =>
+  [...container.querySelectorAll('figcaption span')].map((s) => s.textContent);
+
+it('names one month once, and each month under its bar when there are few', () => {
+  const one = render(
+    <TimeHistogram
+      series={[{ month: '2026-11', count: 2 }]}
+      from=""
+      to=""
+      label="Actividad"
+      onChange={() => {}}
+    />,
+  );
+  expect(axisLabels(one.container)).toEqual(['Noviembre de 2026']);
+  one.unmount();
+
+  const two = render(
+    <TimeHistogram
+      series={[
+        { month: '2026-10', count: 1 },
+        { month: '2026-11', count: 4 },
+      ]}
+      from=""
+      to=""
+      label="Actividad"
+      onChange={() => {}}
+    />,
+  );
+  expect(axisLabels(two.container)).toEqual(['Octubre de 2026', 'Noviembre de 2026']);
+  two.unmount();
+
+  const many = Array.from({ length: 12 }, (_, i) => ({
+    month: `2026-${String(i + 1).padStart(2, '0')}`,
+    count: i,
+  }));
+  const year = render(
+    <TimeHistogram series={many} from="" to="" label="Actividad" onChange={() => {}} />,
+  );
+  expect(axisLabels(year.container)).toEqual(['Enero de 2026', 'Diciembre de 2026']);
+});

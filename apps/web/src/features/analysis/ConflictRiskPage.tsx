@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { requestJson } from '../../shared/api/client.ts';
 import type { FeatureContext } from '../../shared/api/feature-context.ts';
 import { InternalLink, objectHref } from '../../shared/lib/navigation.tsx';
+import { formatNumber } from '../../shared/lib/format.ts';
+import { DateText } from '../../shared/ui/DateText.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
@@ -30,9 +32,7 @@ const sourceHref = (source: Source) => {
   return module ? objectHref(module, source.id) : '/bandeja?vista=alertas';
 };
 
-/** Same decimal point as the IRSA card; at most `digits` decimals. */
-const number = (value: number, digits = 2) =>
-  String(Math.round(value * 10 ** digits) / 10 ** digits);
+const number = (value: number, digits = 2) => formatNumber(value, digits);
 const percent = (value: number) => `${Math.round(value * 100)} %`;
 /** A skill at or below zero is not an improvement; say so instead of «mejora −15 %». */
 const skillText = (skill: number | null) =>
@@ -79,7 +79,7 @@ const UnitCard = ({ unit, horizon }: { unit: ConflictRiskPrediction; horizon: Ho
   return (
     <article className={styles.unit}>
       <header className={styles.unitHeader}>
-        <h4>{unit.name}</h4>
+        <h2>{unit.name}</h2>
         <span className={`${styles.band} ${styles[prediction.band]}`}>
           {BAND_LABEL[prediction.band]}
         </span>
@@ -98,12 +98,13 @@ const UnitCard = ({ unit, horizon }: { unit: ConflictRiskPrediction; horizon: Ho
       <p className={styles.muted}>
         Confianza {unit.confidence}. {unit.confidenceReason}
       </p>
-      <h5 className={styles.factorsTitle}>En qué se basa</h5>
+      <h3 className={styles.factorsTitle}>En qué se basa</h3>
       <ul className={styles.factors}>
         {unit.factors.map((factor) => (
           <li key={factor.id}>
             <span>
-              {factor.label}: <b>{number(factor.count, 1)}</b>{' '}
+              {factor.id === 'irsa' ? 'IRSA del último corte guardado' : factor.label}:{' '}
+              <b>{number(factor.count, Number.isInteger(factor.count) ? 0 : 1)}</b>{' '}
               <small className={styles.muted}>(aporta {number(factor.contribution)})</small>
             </span>
             {factor.records.length ? (
@@ -111,7 +112,7 @@ const UnitCard = ({ unit, horizon }: { unit: ConflictRiskPrediction; horizon: Ho
                 {factor.records.map((source) => (
                   <li key={`${source.module}-${source.id}`}>
                     <InternalLink href={sourceHref(source)}>
-                      {source.title} · {source.date}
+                      {source.title} · <DateText value={source.date} />
                     </InternalLink>
                   </li>
                 ))}
@@ -128,14 +129,16 @@ const BacktestCard = ({ backtest }: { backtest: Backtest }) => {
   const samples = backtest.train.samples + backtest.test.samples;
   const events = backtest.train.events + backtest.test.events;
   return (
-    <Card title={`Último back-test a ${backtest.horizon} días`}>
+    <Card title={`Última prueba retrospectiva a ${backtest.horizon} días`}>
       {backtest.calibrated && backtest.brier !== null ? (
         <>
           <p>
-            Brier {number(backtest.brier, 3)} frente a {number(backtest.brierReference ?? 0, 3)} de
-            la tasa base ({skillText(backtest.skill)}). {samples} muestras y {events} escalamientos
-            en {backtest.cutoffs} cortes, del {backtest.from} al {backtest.to}; se entrenó con los
-            cortes más antiguos ({backtest.train.samples} muestras) y se evaluó con los más
+            Puntaje de Brier {number(backtest.brier, 3)} (error medio entre la probabilidad estimada
+            y lo que ocurrió; cuanto más bajo, mejor) frente a{' '}
+            {number(backtest.brierReference ?? 0, 3)} de la tasa base ({skillText(backtest.skill)}).{' '}
+            {samples} muestras y {events} escalamientos en {backtest.cutoffs} cortes, del{' '}
+            <DateText value={backtest.from} /> al <DateText value={backtest.to} />; se entrenó con
+            los cortes más antiguos ({backtest.train.samples} muestras) y se evaluó con los más
             recientes ({backtest.test.samples}).
           </p>
           <div className={styles.tableWrap}>
@@ -163,7 +166,7 @@ const BacktestCard = ({ backtest }: { backtest: Backtest }) => {
           </div>
         </>
       ) : (
-        <p>{backtest.reason}</p>
+        <p>{backtest.reason ?? ''}</p>
       )}
     </Card>
   );
@@ -254,7 +257,7 @@ export const ConflictRiskPage = (context: FeatureContext) => {
               )}
               <BacktestCard backtest={data.backtest[horizon]} />
               <p className={styles.muted}>
-                Generado: {data.generatedOn}. {data.method}
+                Generado: <DateText value={data.generatedOn} />. {data.method}
               </p>
               <Limitations items={data.limitations} />
             </>

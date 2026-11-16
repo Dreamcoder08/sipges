@@ -9,21 +9,43 @@ import { canWriteRecords } from '../model.ts';
 import type { RecordModule } from '../modules.ts';
 import { RecordsPage } from '../RecordsPage.tsx';
 import { type Density, useDensity } from './density.ts';
-import { useDocked } from './dock.ts';
+import { useDocked, useTypeRows } from './dock.ts';
 import styles from './Hub.module.css';
-import { HUB_TYPES } from './types.ts';
-import { type OpenRecord, RecordSheet } from './RecordSheet.tsx';
-import type { RecordSummary } from './summary.ts';
+import { HUB_SUBTYPES, HUB_TYPES } from './types.ts';
+import { type OpenRecord, type OpenWay, RecordSheet } from './RecordSheet.tsx';
+import { type RecordSummary, VERIFICATION_LETTERS, type VerificationLetter } from './summary.ts';
 import { TodosList } from './TodosList.tsx';
 import { TypePicker } from './TypePicker.tsx';
 
 const isType = (value: string | undefined): value is (typeof HUB_TYPES)[number][0] =>
   HUB_TYPES.some(([module]) => module === value);
 
+/** A type the sheet may open: a hub chip, or a sub-list under one (Compromisos). */
+const isRecordType = (
+  value: string | undefined,
+): value is (typeof HUB_TYPES)[number][0] | (typeof HUB_SUBTYPES)[number] =>
+  isType(value) || HUB_SUBTYPES.some((module) => module === value);
+
+/** `?ficha=<type>.<id>`: the record open in the sheet, so a reload or a link keeps it. */
+const fichaOf = (record: OpenRecord | null) =>
+  record ? `${record.module}.${record.id}` : undefined;
+const parseFicha = (ficha: string | undefined): OpenRecord | null => {
+  const at = ficha?.indexOf('.') ?? -1;
+  const module = ficha?.slice(0, at);
+  const id = ficha?.slice(at + 1);
+  return at > 0 && isRecordType(module) && id ? { module, id } : null;
+};
+
 type Props = {
   /** `?tipo=`: a record type, or `todos` (also the default) for the cross-type list. */
   tipo: string | undefined;
   onTipo: (tipo: string) => void;
+  /** `?ficha=`: the record open in the sheet; `onFicha` writes it back to the URL. */
+  ficha?: string | undefined;
+  onFicha?: (ficha: string | undefined) => void;
+  /** `?verificacion=`: the A–E filter of Todos; `onVerificacion` writes a change back. */
+  verificacion?: string | undefined;
+  onVerificacion?: (letter: VerificationLetter | undefined) => void;
   scope: string;
   projectId: string;
   projectLabel: string;
@@ -40,7 +62,18 @@ const DENSITIES: readonly (readonly [Density, string])[] = [
  * with counts, one cross-type list, and the type screens unchanged underneath. Counts and the
  * cross-type list come from one request, GET /api/registros/summary.
  */
-export const RegistrosHub = ({ tipo, onTipo, ...context }: Props) => {
+const asLetter = (value: string | undefined): VerificationLetter | null =>
+  VERIFICATION_LETTERS.find((letter) => letter === value) ?? null;
+
+export const RegistrosHub = ({
+  tipo,
+  onTipo,
+  ficha,
+  onFicha,
+  verificacion,
+  onVerificacion,
+  ...context
+}: Props) => {
   const selected: 'todos' | RecordModule = isType(tipo) ? tipo : 'todos';
   const summary = useQuery(recordsSummaryQuery(context.scope));
   const pending = summary.isError ? '—' : '…';
@@ -53,13 +86,31 @@ export const RegistrosHub = ({ tipo, onTipo, ...context }: Props) => {
     refetch: () => void summary.refetch(),
     data: summary.data?.rows,
   };
-  const [open, setOpen] = useState<OpenRecord | null>(null);
+  const [open, setRecord] = useState<OpenRecord | null>(() => parseFicha(ficha));
+  const [way, setWay] = useState<OpenWay>('select');
+  // A link to another record while the hub is open (the URL changed, not this component).
+  const [linked, setLinked] = useState(ficha);
+  if (ficha !== linked) {
+    setLinked(ficha);
+    if (ficha !== fichaOf(open)) setRecord(parseFicha(ficha));
+  }
+  const setOpen = (record: OpenRecord | null, how: OpenWay = 'select') => {
+    setWay(how);
+    setRecord(record);
+    if (fichaOf(record) !== fichaOf(open)) onFicha?.(fichaOf(record));
+  };
   const [intent, setIntent] = useState<{ module: RecordModule; kind: 'create' | 'import' } | null>(
     null,
   );
+  // The A–E filter lives in the URL when the router supplies it, so Ctrl K can set it.
+  const [ownLetter, setOwnLetter] = useState<VerificationLetter | null>(null);
+  const letter = onVerificacion ? asLetter(verificacion) : ownLetter;
+  const setLetter = (next: VerificationLetter | null) =>
+    onVerificacion ? onVerificacion(next ?? undefined) : setOwnLetter(next);
   const docked = useDocked();
   const choose = (next: string) => {
     setIntent(null);
+    setOwnLetter(null);
     onTipo(next);
   };
   const begin = (kind: 'create' | 'import') => (module: RecordModule) => {
@@ -118,9 +169,12 @@ export const RegistrosHub = ({ tipo, onTipo, ...context }: Props) => {
             selected={selected}
             everything={everything}
             onOpen={setOpen}
-            docked={docked && open !== null}
+            open={open}
+            docked={docked}
             start={intent?.module === selected ? intent.kind : undefined}
             onStarted={() => setIntent(null)}
+            letter={letter}
+            onLetter={setLetter}
             {...context}
           />
         </div>
@@ -130,6 +184,7 @@ export const RegistrosHub = ({ tipo, onTipo, ...context }: Props) => {
           scope={context.scope}
           role={context.role}
           docked={docked}
+          way={way}
         />
       </div>
     </div>
@@ -140,19 +195,30 @@ const Workspace = ({
   selected,
   everything,
   onOpen,
+  open,
   docked,
   start,
   onStarted,
+  letter,
+  onLetter,
   ...context
-}: Omit<Props, 'tipo' | 'onTipo'> & {
+}: Omit<Props, 'tipo' | 'onTipo' | 'verificacion' | 'onVerificacion'> & {
+  letter: VerificationLetter | null;
+  onLetter: (letter: VerificationLetter | null) => void;
   selected: 'todos' | RecordModule;
   everything: Parameters<typeof QueryState<readonly RecordSummary[]>>[0]['query'];
-  onOpen: (record: OpenRecord) => void;
+  onOpen: (record: OpenRecord, way?: OpenWay) => void;
+  open: OpenRecord | null;
+  /** Desktop: the sheet docks beside the list and Todos starts as the compact table. */
   docked: boolean;
   start: 'create' | 'import' | undefined;
   onStarted: () => void;
 }) => {
-  const [density, setDensity] = useDensity(selected);
+  const [density, setDensity] = useDensity(
+    selected,
+    docked && selected === 'todos' ? 'compact' : 'cozy',
+  );
+  const typeRows = useTypeRows() && selected !== 'todos';
   // The intent only opens the type screen once; later remounts must not reopen the form.
   useEffect(() => {
     if (start) onStarted();
@@ -173,16 +239,28 @@ const Workspace = ({
   );
   return (
     <>
-      {selected === 'todos' ? null : <div className={styles.densityRow}>{control}</div>}
+      {selected === 'todos' || typeRows ? null : <div className={styles.densityRow}>{control}</div>}
       <div className={styles.density} data-density={density}>
         {selected === 'todos' ? (
           <QueryState query={everything} label="los registros">
-            {(rows) => <TodosList rows={rows} onOpen={onOpen} density={control} narrow={docked} />}
+            {(rows) => (
+              <TodosList
+                rows={rows}
+                onOpen={onOpen}
+                density={docked ? control : null}
+                selected={open}
+                docked={docked}
+                letter={letter}
+                onLetter={onLetter}
+              />
+            )}
           </QueryState>
         ) : (
           <RecordsPage
             module={selected}
-            onView={(id) => onOpen({ module: selected, id })}
+            list={open?.module}
+            onView={(id, module) => onOpen({ module, id })}
+            twoLineRows={typeRows}
             start={start}
             {...context}
           />

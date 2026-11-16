@@ -4,9 +4,11 @@ import { useLevelLabel } from '../../../shared/lib/project-settings.tsx';
 import { DIMENSION_NAMES, type DimensionCode } from '../../../shared/lib/text.ts';
 import { Alert } from '../../../shared/ui/Alert.tsx';
 import { Button } from '../../../shared/ui/Button.tsx';
+import { ScrollCues } from '../../../shared/ui/ScrollCues.tsx';
 import { alertHeatmap, LEVEL_ORDER, MISSING_TERRITORY } from './alert-heatmap.ts';
 import { LEVEL_LABEL } from './alert-overview.ts';
 import styles from './Insights.module.css';
+import { count } from '../../../shared/lib/plural.ts';
 
 export const AlertHeatmap = ({
   rows,
@@ -37,7 +39,7 @@ export const AlertHeatmap = ({
       <div className={styles.heading}>
         <div>
           <p className={styles.eyebrow}>Clasificación territorial</p>
-          <h4 id={id}>Mapa de calor de relacionamiento comunitario</h4>
+          <h2 id={id}>Mapa de calor de relacionamiento comunitario</h2>
         </div>
         <span className={styles.count}>{data.active.length} activas</span>
       </div>
@@ -62,7 +64,7 @@ export const AlertHeatmap = ({
         <>
           {data.active.length ? (
             <>
-              <div
+              <ScrollCues
                 className={styles.scroller}
                 role="region"
                 aria-label="Matriz de calor por dimensión y territorio"
@@ -120,7 +122,7 @@ export const AlertHeatmap = ({
                                 {cell.rows.length ? (
                                   <>
                                     {' '}
-                                    <span>{cell.rows.length} alerta(s)</span>
+                                    <span>{count(cell.rows.length, 'alerta', 'alertas')}</span>
                                   </>
                                 ) : null}
                                 {cell.unknown ? (
@@ -140,7 +142,7 @@ export const AlertHeatmap = ({
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </ScrollCues>
               <ul className={styles.legend} aria-label="Leyenda de niveles de riesgo">
                 <li className={styles.legendTitle}>Nivel de riesgo:</li>
                 {LEVEL_ORDER.map((level) => (
@@ -157,15 +159,15 @@ export const AlertHeatmap = ({
               <p className={styles.explanation}>
                 Territorio tomado de la alerta o de una referencia exacta a su evento de origen.{' '}
                 {missing
-                  ? `${missing} alerta(s) requieren completar o verificar su territorio. `
+                  ? `${count(missing, 'alerta requiere', 'alertas requieren')} completar o verificar su territorio. `
                   : ''}
                 Las alertas cerradas y descartadas siguen disponibles en «Alertas territoriales».
               </p>
               {chosen ? (
                 <div className={styles.selection} aria-live="polite">
-                  <h5>
+                  <h3>
                     {chosen.territory} · {chosen.dimension}
-                  </h5>
+                  </h3>
                   <ul className={styles.recordList}>
                     {chosen.rows.map((row) => (
                       <li key={row._id}>

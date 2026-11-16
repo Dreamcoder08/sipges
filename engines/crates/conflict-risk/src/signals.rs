@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use serde_json::{Map, Value};
 use sipges_analytics_common::{EngineError, js};
 
-use crate::dates::{day_of, record_due_date};
+use crate::dates::{day_of, lima_day_of, record_due_date};
 use crate::text::{fold, fold_value, is_terminal_status, to_js_string, utf16_len, utf16_prefix};
 
 /// A record of the tenant (`RiskRecord`).
@@ -284,7 +284,7 @@ fn record_signals(record: &RiskRecord<'_>, names: &mut Names) -> Result<Vec<Sign
     let state = payload.get("Estado");
     let closed_day = record
         .updated_at
-        .and_then(day_of)
+        .and_then(lima_day_of)
         .unwrap_or_else(|| date.clone());
     let base = Signal {
         module: record.module.to_owned(),
@@ -358,7 +358,7 @@ fn record_signals(record: &RiskRecord<'_>, names: &mut Names) -> Result<Vec<Sign
 }
 
 fn alert_signals(alert: &RiskAlert<'_>, names: &mut Names) -> Vec<Signal> {
-    let Some(date) = day_of(alert.created_at) else {
+    let Some(date) = lima_day_of(alert.created_at) else {
         return Vec::new();
     };
     let territory = js::trim(alert.territory.unwrap_or_default());
@@ -377,7 +377,7 @@ fn alert_signals(alert: &RiskAlert<'_>, names: &mut Names) -> Vec<Signal> {
         closed_on: discarded.then(|| {
             alert
                 .reviewed_at
-                .and_then(day_of)
+                .and_then(lima_day_of)
                 .unwrap_or_else(|| date.clone())
         }),
         date,
@@ -474,6 +474,143 @@ pub fn index_signals(input: &RiskInput<'_>) -> Result<SignalIndex, EngineError> 
         names: names.by_key,
         first_day,
     })
+}
+
+#[cfg(test)]
+mod lima_day_tests {
+    //! Stored instants become Lima calendar days (UTC−5); civil dates and zoneless values keep
+    //! their written day. Mirrors `apps/api/test/analytics/conflict-risk-lima-days.test.ts`.
+    use super::*;
+    use serde_json::json;
+
+    const INSTANTS: &[(&str, &str)] = &[
+        ("2026-11-02T02:00:00Z", "2026-11-01"),
+        ("2026-11-02T04:59:59Z", "2026-11-01"),
+        ("2026-11-02T05:00:00Z", "2026-11-02"),
+        ("2026-11-02T05:00:00.000Z", "2026-11-02"),
+        ("2026-10-31T23:59:59-05:00", "2026-10-31"),
+        ("2026-11-01T01:00:00+02:00", "2026-10-31"),
+        ("2026-12-01T04:59:59.999Z", "2026-11-30"),
+        ("2027-01-01T03:00:00Z", "2026-12-31"),
+        ("2027-01-01T05:00:00Z", "2027-01-01"),
+        ("2024-03-01T02:00:00Z", "2024-02-29"),
+    ];
+
+    const NOT_INSTANTS: &[(&str, Option<&str>)] = &[
+        ("2026-11-02", Some("2026-11-02")),
+        ("2026-11-02T02:00:00", Some("2026-11-02")),
+        ("2026-11-02T25:00:00Z", Some("2026-11-02")),
+        ("2026-11-02T02:00:00+25:00", Some("2026-11-02")),
+        ("2/11/2026", Some("2026-11-02")),
+        ("2026-02-30T10:00:00Z", None),
+        ("sin fecha", None),
+    ];
+
+    fn first_signal(records: &[RiskRecord<'_>], alerts: &[RiskAlert<'_>]) -> Option<Signal> {
+        let input = RiskInput {
+            records: records.to_vec(),
+            alerts: alerts.to_vec(),
+            irsa: Vec::new(),
+            today: "2027-06-30",
+        };
+        index_signals(&input).ok()?.signals.into_iter().next()
+    }
+
+    fn demand<'a>(payload: &'a Map<String, Value>, updated_at: Option<&'a str>) -> RiskRecord<'a> {
+        RiskRecord {
+            module: "Demandas",
+            id: "DE-1",
+            payload,
+            updated_at,
+        }
+    }
+
+    fn closed_payload() -> Map<String, Value> {
+        let value = json!({"Territorio": "Pampa Alta", "Fecha_Registro": "2026-10-01", "Estado": "Atendido"});
+        value.as_object().cloned().unwrap_or_default()
+    }
+
+    fn alert<'a>(
+        created_at: &'a str,
+        status: &'a str,
+        reviewed_at: Option<&'a str>,
+    ) -> RiskAlert<'a> {
+        RiskAlert {
+            id: "AT-1",
+            created_at,
+            territory: Some("Pampa Alta"),
+            level: "Media",
+            status,
+            reviewed_at,
+        }
+    }
+
+    fn closed_on(signal: Option<Signal>) -> Option<String> {
+        signal.and_then(|s| s.closed_on)
+    }
+
+    #[test]
+    fn r1_a_closed_record_closes_on_the_lima_day_of_its_last_update() {
+        let payload = closed_payload();
+        for &(updated_at, day) in INSTANTS {
+            let signal = first_signal(&[demand(&payload, Some(updated_at))], &[]);
+            assert_eq!(closed_on(signal).as_deref(), Some(day), "{updated_at}");
+        }
+    }
+
+    #[test]
+    fn r2_a_territorial_alert_is_dated_on_the_lima_day_it_was_created() {
+        for &(created_at, day) in INSTANTS {
+            let signal = first_signal(&[], &[alert(created_at, "Pendiente", None)]);
+            assert_eq!(signal.map(|s| s.date).as_deref(), Some(day), "{created_at}");
+        }
+    }
+
+    #[test]
+    fn r3_a_discarded_territorial_alert_closes_on_the_lima_day_it_was_reviewed() {
+        for &(reviewed_at, day) in INSTANTS {
+            let discarded = alert("2026-10-01T15:00:00Z", "Descartado", Some(reviewed_at));
+            let signal = first_signal(&[], &[discarded]);
+            assert_eq!(closed_on(signal).as_deref(), Some(day), "{reviewed_at}");
+        }
+    }
+
+    #[test]
+    fn values_that_are_not_zoned_instants_keep_their_written_day_and_fallbacks() {
+        let payload = closed_payload();
+        for &(value, day) in NOT_INSTANTS {
+            let fallback = day.unwrap_or("2026-10-01");
+            let record = first_signal(&[demand(&payload, Some(value))], &[]);
+            assert_eq!(closed_on(record).as_deref(), Some(fallback), "{value}");
+            let created = first_signal(&[], &[alert(value, "Pendiente", None)]);
+            assert_eq!(created.map(|s| s.date).as_deref(), day, "{value}");
+            let discarded = alert("2026-10-01T15:00:00Z", "Descartado", Some(value));
+            let reviewed = first_signal(&[], &[discarded]);
+            assert_eq!(closed_on(reviewed).as_deref(), Some(fallback), "{value}");
+        }
+        let record = first_signal(&[demand(&payload, None)], &[]);
+        assert_eq!(closed_on(record).as_deref(), Some("2026-10-01"));
+        let discarded = alert("2026-10-01T15:00:00Z", "Descartado", None);
+        assert_eq!(
+            closed_on(first_signal(&[], &[discarded])).as_deref(),
+            Some("2026-10-01")
+        );
+    }
+
+    #[test]
+    fn payload_dates_typed_by_people_are_read_as_written() {
+        for typed in ["2026-11-02T02:00:00Z", "2/11/2026", "2026-11-02"] {
+            let value =
+                json!({"Territorio": "Pampa Alta", "Fecha_Registro": typed, "Estado": "Nueva"});
+            let payload = value.as_object().cloned().unwrap_or_default();
+            let signal = first_signal(&[demand(&payload, None)], &[]);
+            assert_eq!(
+                signal.map(|s| s.date).as_deref(),
+                Some("2026-11-02"),
+                "{typed}"
+            );
+        }
+    }
 }
 
 #[cfg(test)]

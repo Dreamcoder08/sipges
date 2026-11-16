@@ -17,6 +17,7 @@ import (
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/app/apitest"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database/dbtest"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/leakcheck"
 )
 
 // The records read routes against a migrated synthetic PostgreSQL, through the composed handler
@@ -24,7 +25,7 @@ import (
 
 var scratch *dbtest.Scratch
 
-func TestMain(m *testing.M) { os.Exit(run(m)) }
+func TestMain(m *testing.M) { os.Exit(leakcheck.After(run(m))) }
 
 func run(m *testing.M) int {
 	adminURL := os.Getenv(dbtest.EnvAdminURL)

@@ -102,7 +102,7 @@ CSP, security headers and host allowlist. The Worker then splits them (`src/inde
 
 | Request | Served by | Database |
 | --- | --- | --- |
-| `GET`/`HEAD` of `/assets/*`, `/cesium/*`, `/manifest.webmanifest`, `/sw.js`, `/icon.svg` | Static branch (`createWebApp`), body streamed from the `ASSETS` binding | Never |
+| `GET`/`HEAD` of `/assets/*`, `/cesium/*`, `/manifest.webmanifest`, `/sw.js`, `/icon.svg`, `/favicon.ico`, `/favicon.svg`, `/robots.txt` | Static branch (`createWebApp`), body streamed from the `ASSETS` binding | Never |
 | `GET`/`HEAD` browser navigation (`Accept: text/html`) to a client route | Static branch: the HTML shell under the SPA CSP | Never |
 | Everything else, including `/health` and `/health/ready` | API backend (migrations check, container, Hyperdrive connection per request) | Yes |
 

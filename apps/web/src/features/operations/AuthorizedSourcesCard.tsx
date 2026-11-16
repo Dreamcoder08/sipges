@@ -11,6 +11,7 @@ import { errorDetail } from '../../shared/api/feedback.ts';
 import type { FeatureContext } from '../../shared/api/feature-context.ts';
 import { Card } from '../../shared/ui/Card.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
+import { DateText } from '../../shared/ui/DateText.tsx';
 import styles from './AuthorizedSourcesCard.module.css';
 const BASE = '/system/intelligence/sources';
 const Configuration = ({
@@ -47,7 +48,7 @@ const Configuration = ({
   };
   return (
     <div className={styles.form}>
-      <label>
+      <label className={styles.check}>
         <input
           type="checkbox"
           checked={enabled}
@@ -72,7 +73,7 @@ const Configuration = ({
         <textarea maxLength={1000} value={note} onChange={(event) => setNote(event.target.value)} />
       </label>
       {enabled ? (
-        <label>
+        <label className={styles.check}>
           <input
             type="checkbox"
             checked={confirmed}
@@ -156,13 +157,15 @@ const SourceCard = ({ context }: { context: FeatureContext }) => {
               <a href={catalog.data.url} target="_blank" rel="noreferrer">
                 {catalog.data.name}
               </a>{' '}
-              · comprobada el {catalog.data.checked_at}
+              · comprobada el <DateText value={catalog.data.checked_at} />
             </p>
             <p>{catalog.data.attribution}</p>
             <p>
               Consulta periódica: {catalog.data.state.enabled ? 'activada' : 'desactivada'}. Último
-              intento: {catalog.data.state.last_poll_at ?? 'sin ejecución'}. Importadas:{' '}
-              {catalog.data.state.last_imported}; duplicadas: {catalog.data.state.last_duplicates}.
+              intento:{' '}
+              <DateText value={catalog.data.state.last_poll_at} time fallback="sin ejecución" />.
+              Importadas: {catalog.data.state.last_imported}; duplicadas:{' '}
+              {catalog.data.state.last_duplicates}.
             </p>
             {catalog.data.state.last_poll_error ? (
               <p role="alert">Error de la fuente: {catalog.data.state.last_poll_error}</p>
@@ -212,7 +215,9 @@ const SourceCard = ({ context }: { context: FeatureContext }) => {
                   {post.title}
                 </a>
                 <p>{post.excerpt}</p>
-                <small>{post.published_at}</small>
+                <small>
+                  <DateText value={post.published_at} />
+                </small>
                 {writable ? (
                   <Button disabled={busy} onClick={() => void importPost(post.id)}>
                     Importar publicación

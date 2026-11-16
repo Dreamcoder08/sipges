@@ -103,3 +103,46 @@ func TestMigrateDatabaseWaitsForTheLockOfScratchMigrations(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// Roles are cluster-wide, and migration 0030 grants every member of a role by name
+// (r.member::regrole::text). A test package dropping its scratch login while another package
+// migrated turned that name into a bare OID: `GRANT sipges_tenant TO 44888` failed with a syntax
+// error in CI. Dropping a scratch login must wait for migrations in progress.
+func TestDropWaitsForAMigrationInProgress(t *testing.T) {
+	adminURL := os.Getenv("SIPGES_TEST_DATABASE_URL")
+	if adminURL == "" {
+		t.Skip("SIPGES_TEST_DATABASE_URL not set")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+	scratch, err := dbtest.NewOwnedScratch(ctx, adminURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lock, err := pgx.Connect(ctx, adminURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = lock.Close(context.Background()) }()
+	if _, err := lock.Exec(ctx, "SELECT pg_advisory_lock($1)", dbtest.ScratchLockKey); err != nil {
+		t.Fatal(err)
+	}
+	done := make(chan error, 1)
+	go func() { done <- scratch.Drop(ctx) }()
+	select {
+	case err := <-done:
+		t.Fatalf("Drop finished while a migration held the lock (err %v)", err)
+	case <-time.After(700 * time.Millisecond):
+	}
+	if _, err := lock.Exec(ctx, "SELECT pg_advisory_unlock($1)", dbtest.ScratchLockKey); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatalf("Drop after the lock was released: %v", err)
+		}
+	case <-time.After(30 * time.Second):
+		t.Fatal("Drop did not finish after the lock was released")
+	}
+}

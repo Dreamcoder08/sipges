@@ -6,6 +6,7 @@ import { saveBlob } from '../../shared/api/download.ts';
 import { moduleRecordsQuery } from '../../shared/api/module-records.ts';
 import type { FeatureContext } from '../../shared/api/feature-context.ts';
 import { COMPACT_QUERY, useMediaQuery } from '../../shared/lib/media.ts';
+import { scrollBehavior } from '../../shared/lib/motion.ts';
 import { useProjectSettings } from '../../shared/lib/project-settings.tsx';
 import {
   DIMENSIONS,
@@ -29,6 +30,7 @@ import {
   queryExtent,
   relationPolygon,
 } from './concessions.ts';
+import { clearLabels } from './engine/labels.ts';
 import type { CanvasPoint, Focus } from './engine/types.ts';
 import { RELIEF } from './engine/terrarium.ts';
 import { supportsWebGl2 } from './engine/webgl.ts';
@@ -37,6 +39,7 @@ import { EvidenceTag } from './EvidenceTag.tsx';
 import { LOCALITIES } from './localities.ts';
 import { MapErrorBoundary } from './MapErrorBoundary.tsx';
 import { MapFrame } from './MapFrame.tsx';
+import { MapList, UnplacedGroup } from './MapList.tsx';
 import { MapSheet } from './MapSheet.tsx';
 import { SIGNAL_MODULES } from './operations.ts';
 import { OperationsPanel } from './OperationsPanel.tsx';
@@ -53,12 +56,14 @@ import {
   mapPoints,
   monthlyCounts,
   monthsOf,
+  numbered,
   type TerritorialRecord,
 } from './territorial-model.ts';
 import { TerritorialTimeline } from './TerritorialTimeline.tsx';
 import { type Basemap, TileLayer } from './TileLayer.tsx';
 import { useMapView } from './useMapView.ts';
 import styles from './TerritorialMap.module.css';
+import { count } from '../../shared/lib/plural.ts';
 
 // The WebGL engine (MapLibre GL JS + deck.gl) is a separate chunk, loaded only for this map.
 const GeoCanvas = lazy(() => import('./engine/GeoCanvas.tsx'));
@@ -226,6 +231,8 @@ const TerritorialWorkspace = ({
   const placed = filterPlace(points, { ...filters, evidence }).filter(related);
   const visible = placed.filter((p) => inPeriod(p, filters.from, filters.to));
   const drawn = atCursor(visible, cursor);
+  // One number per record, the same on its list row and its marker.
+  const listed = numbered(drawn);
   const months = monthsOf(points);
   const activity = monthlyCounts(placed);
   const selectedPoint =
@@ -326,7 +333,8 @@ const TerritorialWorkspace = ({
   const focusPoint = (point: MapPoint) => {
     setSelection({ kind: 'point', id: point.id });
     // On phones the list sits below the map: bring the map back above the sheet.
-    if (compact) mapSection.current?.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
+    if (compact)
+      mapSection.current?.scrollIntoView?.({ block: 'start', behavior: scrollBehavior() });
     map.focus(point.at, Math.max(map.zoom, 4));
     setFocus({ at: point.at, zoom: 13 });
   };
@@ -404,14 +412,51 @@ const TerritorialWorkspace = ({
     </div>
   );
 
-  const canvasPoints: CanvasPoint[] = drawn.map(({ point, emphasis }) => ({
+  const canvasPoints: CanvasPoint[] = listed.map(({ point, emphasis, n }) => ({
     id: point.id,
+    label: String(n),
     at: point.at,
     color: DIMENSION_RGB[point.dimension],
     evidence: point.evidence,
     emphasis,
   }));
   const mapLabel = `Mapa territorial de ${area.place}`;
+  // SVG markers: close ones overlap, so only the numbers that clear each other are drawn, by the
+  // rule the WebGL engine follows (engine/labels.ts), and, but for the selected record's, none
+  // that a marker painted later would cover. Every marker keeps its name and its button.
+  const markers = spread(listed, unit).map((entry) => {
+    const key = `${entry.point.layer}-${entry.point.id}`;
+    const active = entry.point.id === selectedPoint?.id;
+    const r = unit * (active ? 3.4 : entry.emphasis === 'current' ? 3.2 : 2.6);
+    const digits = String(entry.n).length;
+    const size = r * (digits > 2 ? 0.75 : digits > 1 ? 0.95 : 1.1);
+    // The number's box, with the margin labels.ts gives the canvas digits.
+    const box = {
+      id: key,
+      emphasis: entry.emphasis,
+      x: entry.at[0],
+      y: entry.at[1],
+      w: digits * size * 0.7 + size * 0.5,
+      h: (size * 4) / 3,
+    };
+    return { ...entry, key, active, r, size, box };
+  });
+  const uncovered = ({ box }: (typeof markers)[number], i: number) =>
+    markers
+      .slice(i + 1)
+      .every(
+        (o) =>
+          Math.abs(o.at[0] - box.x) * 2 >= o.r * 2 + box.w ||
+          Math.abs(o.at[1] - box.y) * 2 >= o.r * 2 + box.h,
+      );
+  const labelled = clearLabels(
+    markers
+      .filter((marker, i) => marker.active || uncovered(marker, i))
+      // In list order, as on the canvas; the markers are grouped by locality.
+      .sort((a, b) => a.n - b.n)
+      .map((marker) => marker.box),
+    selectedPoint ? `${selectedPoint.layer}-${selectedPoint.id}` : '',
+  );
 
   const svgMap = (
     <MapFrame map={map} homeLabel={area.home}>
@@ -456,17 +501,15 @@ const TerritorialWorkspace = ({
               />
             );
           })}
-          {spread(drawn, unit).map(({ point: p, emphasis, at }) => {
-            const active = p.id === selectedPoint?.id;
-            const r = unit * (active ? 3.4 : emphasis === 'current' ? 3.2 : 2.6);
+          {markers.map(({ point: p, emphasis, at, n, key, active, r, size }) => {
             return (
               <g
-                key={`${p.layer}-${p.id}`}
+                key={key}
                 className={`${styles.marker} ${styles[p.dimension] ?? ''} ${styles[`ev_${p.evidence}`] ?? ''}`}
                 data-emphasis={emphasis}
                 role="button"
                 tabIndex={0}
-                aria-label={`${p.layer}: ${p.title} (${p.locality})`}
+                aria-label={`${n}. ${p.layer}: ${p.title} (${p.locality})`}
                 aria-pressed={active}
                 onClick={() => selectPoint(p.id)}
                 onKeyDown={(event) => {
@@ -477,9 +520,11 @@ const TerritorialWorkspace = ({
                 }}
               >
                 <circle cx={at[0]} cy={at[1]} r={r} strokeWidth={unit * 0.4} />
-                <text x={at[0]} y={at[1] + r * 0.38} fontSize={r * 1.1} textAnchor="middle">
-                  {p.dimension}
-                </text>
+                {labelled.has(key) ? (
+                  <text x={at[0]} y={at[1] + r * 0.36} fontSize={size} textAnchor="middle">
+                    {n}
+                  </text>
+                ) : null}
               </g>
             );
           })}
@@ -564,14 +609,15 @@ const TerritorialWorkspace = ({
             ? 'Consultando el catastro minero de INGEMMET…'
             : cadastre.error
               ? null
-              : `${concessions.length} concesión(es) de INGEMMET en esta vista${cadastre.data?.truncated ? '; se muestran las primeras 200, acerque el mapa para ver el resto' : ''}. Pulse una para ver su ficha.`;
+              : `${count(concessions.length, 'concesión', 'concesiones')} de INGEMMET en esta vista${cadastre.data?.truncated ? '; se muestran las primeras 200, acerque el mapa para ver el resto' : ''}. Pulse una para ver su ficha.`;
 
   return (
     <div className={styles.page}>
       <details className={styles.filters} key={String(compact)} open={!compact || undefined}>
         <summary>
-          Capas y filtros{activeFilters ? ` (${activeFilters} activos)` : ''} · {visible.length}{' '}
-          registro(s) en el mapa
+          Capas y filtros
+          {activeFilters ? ` (${count(activeFilters, 'activo', 'activos')})` : ''} ·{' '}
+          {count(visible.length, 'registro', 'registros')} en el mapa
         </summary>
         <div className={styles.toolbar}>
           {select('layer', 'Capa', [['', 'Todas'], ...LAYERS.map((l): [string, string] => [l, l])])}
@@ -754,20 +800,25 @@ const TerritorialWorkspace = ({
             ) : null}{' '}
             Concesiones: catastro minero GEOCATMIN de INGEMMET. Los registros sin coordenadas se
             ubican aproximadamente en su localidad.
-            {unlocated ? ` ${unlocated} registro(s) sin localidad no se muestran.` : ''}
           </p>
         </section>
 
-        {compact ? null : (
-          <Card title="Ficha territorial">
-            {sheet ?? (
-              <p className={styles.note}>
-                Seleccione una concesión o un registro en el mapa, o un registro de la evolución
-                temporal, para ver sus fuentes, verificación y registros vinculados.
-              </p>
-            )}
+        <div className={styles.side}>
+          <Card title="Registros en el mapa" eyebrow={`${listed.length} con ubicación`}>
+            <MapList items={listed} selectedId={selectedPoint?.id ?? ''} onSelect={focusPoint} />
+            <UnplacedGroup records={unlocated} sechura={area.sechura} />
           </Card>
-        )}
+          {compact ? null : (
+            <Card title="Ficha territorial">
+              {sheet ?? (
+                <p className={styles.note}>
+                  Seleccione una concesión o un registro en el mapa, o un registro de la evolución
+                  temporal, para ver sus fuentes, verificación y registros vinculados.
+                </p>
+              )}
+            </Card>
+          )}
+        </div>
       </div>
 
       {compact && sheet ? (
@@ -785,6 +836,7 @@ const TerritorialWorkspace = ({
           cursor={cursor}
           playing={playing}
           selectedId={selectedPoint?.id ?? ''}
+          revealSelection={!compact}
           onPeriod={(from, to) => {
             setFilters((f) => ({ ...f, from, to }));
             setSelection((s) => (s?.kind === 'point' ? null : s));
@@ -820,8 +872,9 @@ const TerritorialWorkspace = ({
           <dt>Registros observados</dt>
           <dd>{visible.filter((p) => p.evidence === 'observado').length}</dd>
         </div>
+        {/* Every open alert of the project; Inteligencia operacional counts only the linked ones. */}
         <div className={openAlerts ? styles.alertKpi : undefined}>
-          <dt>Alertas abiertas</dt>
+          <dt>Alertas abiertas del proyecto</dt>
           <dd>{openAlerts}</dd>
         </div>
       </dl>

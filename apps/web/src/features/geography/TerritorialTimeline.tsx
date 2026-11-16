@@ -7,6 +7,7 @@ import { TimeHistogram } from '../../shared/ui/time/TimeHistogram.tsx';
 import { EvidenceTag } from './EvidenceTag.tsx';
 import { type MapPoint, monthOf } from './territorial-model.ts';
 import styles from './TerritorialMap.module.css';
+import { DateText } from '../../shared/ui/DateText.tsx';
 
 /** Entries listed at once; the map still draws every visible record. */
 export const LIST_LIMIT = 150;
@@ -27,6 +28,7 @@ export const TerritorialTimeline = ({
   cursor,
   playing,
   selectedId,
+  revealSelection = true,
   onPeriod,
   onCursor,
   onPlaying,
@@ -39,6 +41,12 @@ export const TerritorialTimeline = ({
   cursor: string;
   playing: boolean;
   selectedId: string;
+  /**
+   * Scroll the list to the selected entry, inside its own scroll box only: the page stays where
+   * it is, so a marker just picked on the map stays on screen. Phones turn it off, since there
+   * the page brings the map back above the sheet.
+   */
+  revealSelection?: boolean;
   onPeriod: (from: string, to: string) => void;
   onCursor: (month: string) => void;
   onPlaying: (playing: boolean) => void;
@@ -64,10 +72,17 @@ export const TerritorialTimeline = ({
 
   const list = useRef<HTMLOListElement>(null);
   useEffect(() => {
-    if (!selectedId) return;
-    const item = list.current?.querySelector<HTMLElement>(`[data-id="${CSS.escape(selectedId)}"]`);
-    item?.scrollIntoView?.({ block: 'nearest' });
-  }, [selectedId]);
+    if (!selectedId || !revealSelection) return;
+    const box = list.current;
+    const item = box?.querySelector<HTMLElement>(`[data-id="${CSS.escape(selectedId)}"]`);
+    if (!box || !item) return;
+    // Like `scrollIntoView({ block: 'nearest' })`, but that also scrolls the page.
+    const top = box.getBoundingClientRect().top + box.clientTop;
+    const entry = item.getBoundingClientRect();
+    if (entry.top < top) box.scrollTop += entry.top - top;
+    else if (entry.bottom > top + box.clientHeight)
+      box.scrollTop += entry.bottom - (top + box.clientHeight);
+  }, [selectedId, revealSelection]);
 
   const sorted = [...points].sort((a, b) => b.date.localeCompare(a.date));
   const shown = sorted.slice(0, LIST_LIMIT);
@@ -144,7 +159,7 @@ export const TerritorialTimeline = ({
             >
               <span className={`${styles.dot} ${styles[p.dimension] ?? ''}`} aria-hidden="true" />
               <small>
-                {p.date || 'Sin fecha'} · {p.locality} · {p.layer}
+                <DateText value={p.date} fallback="Sin fecha" /> · {p.locality} · {p.layer}
               </small>
               <button
                 type="button"

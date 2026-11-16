@@ -93,7 +93,8 @@ ON CONFLICT DO NOTHING;
  * keeps them apart. Rows of the other project carry "AJENA" so a leak is plain in a mismatch
  * report. The hashes are synthetic placeholders: no answer may contain them.
  * Ids are explicit and every insert is ON CONFLICT DO NOTHING, so the seed does not depend on
- * other contexts' seeds or their order.
+ * other contexts' seeds or their order. Feed hosts are under the reserved `.example` name, so a
+ * poll (the cron's or a forced one) never reaches a real site.
  */
 export const seed = `
 INSERT INTO api_keys (id, tenant_id, name, prefix, secret_hash, access, clearance, created_by,
@@ -110,12 +111,12 @@ ON CONFLICT DO NOTHING;
 INSERT INTO media_feeds (tenant_id, id, name, url, keywords, territory, authorization_note, enabled,
   updated_by, updated_at, last_poll_at, last_poll_error, last_imported, last_matched)
   OVERRIDING SYSTEM VALUE VALUES
-  ('SIPGES/PRJ-SECHURA', 32002, 'Diario B', 'https://example.org/b.xml', '[]', '', 'Nota', false,
+  ('SIPGES/PRJ-SECHURA', 32002, 'Diario B', 'https://diario-b.example/b.xml', '[]', '', 'Nota', false,
    'parity', '2026-10-03 00:00:00+00', NULL, '', 0, 0),
-  ('SIPGES/PRJ-SECHURA', 32001, 'Diario A', 'https://example.org/a.xml?x=1&y=<2>',
+  ('SIPGES/PRJ-SECHURA', 32001, 'Diario A', 'https://diario-a.example/a.xml?x=1&y=<2>',
    '["agua", "minería"]', 'Costa', 'Autorizado', true, 'parity', '2026-10-01 08:00:00.123456+00',
    '2026-10-02 09:30:00.5+00', 'La fuente no respondió a tiempo.', 3, 5),
-  ('PARITY/OTRO', 32001, 'Diario AJENA', 'https://example.org/ajena.xml', '["AJENA"]', '', 'AJENA',
+  ('PARITY/OTRO', 32001, 'Diario AJENA', 'https://diario-ajena.example/ajena.xml', '["AJENA"]', '', 'AJENA',
    true, 'AJENA', '2026-10-01 00:00:00+00', NULL, '', 0, 0)
 ON CONFLICT DO NOTHING;
 INSERT INTO source_import_settings (tenant_id, source_id, enabled, query, territory,

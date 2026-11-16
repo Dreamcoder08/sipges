@@ -22,4 +22,4 @@ export const embedderAvailabilityQuery = (scope: string) =>
 export const unavailableReason = (reason: z.infer<typeof EmbedderAvailability>['reason']) =>
   reason === 'external_ai_disabled'
     ? 'el envío a IA externa está desactivado para este proyecto'
-    : 'no se pudo contactar el modelo de embeddings';
+    : 'no se pudo contactar el modelo de representaciones semánticas';

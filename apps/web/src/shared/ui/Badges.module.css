@@ -55,3 +55,59 @@
   background: var(--level-red-soft);
   color: var(--level-red-text);
 }
+
+/* Status family: tone background and text, plus a shape drawn before the word. */
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-0) var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--tone-neutral-bg);
+  color: var(--tone-neutral-fg);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  white-space: nowrap;
+}
+.status::before {
+  content: '';
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+}
+.status[data-tone='positive'] {
+  background: var(--tone-positive-bg);
+  color: var(--tone-positive-fg);
+}
+.status[data-tone='positive']::before {
+  background: currentColor;
+}
+.status[data-tone='info'] {
+  background: var(--tone-info-bg);
+  color: var(--tone-info-fg);
+}
+.status[data-tone='info']::before {
+  background: linear-gradient(90deg, currentColor 50%, transparent 50%);
+}
+.status[data-tone='warning'] {
+  background: var(--tone-warning-bg);
+  color: var(--tone-warning-fg);
+}
+.status[data-tone='warning']::before {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 1px;
+  background: currentColor;
+  transform: rotate(45deg);
+}
+.status[data-tone='negative'] {
+  background: var(--tone-negative-bg);
+  color: var(--tone-negative-fg);
+}
+.status[data-tone='negative']::before {
+  border-radius: 1px;
+  background: currentColor;
+}

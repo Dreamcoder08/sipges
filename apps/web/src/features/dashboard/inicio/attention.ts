@@ -1,0 +1,83 @@
+import type { IrsaSummary, TerritorialAlerts } from '@sipges/contracts';
+import type { z } from 'zod';
+import { objectHref } from '../../../shared/lib/navigation.tsx';
+import type { Level } from '../../../shared/lib/text.ts';
+import { hasNoEvidence } from '../IrsaStatus.tsx';
+import type { TodayItem } from '../model.ts';
+import { formatShortDay, limaDay } from '../../../shared/lib/format.ts';
+
+/** One row of «Necesita tu atención»: what it is, a line of context and the one next step. */
+export type AttentionItem = {
+  key: string;
+  title: string;
+  meta: string;
+  level?: Level;
+  href: string;
+  action: string;
+  /** The link's accessible name when the visible action alone would repeat on several rows. */
+  label?: string;
+};
+
+/** The digital alert state Bandeja › Pendientes decides (contracts AlertState). */
+const AWAITING = 'Pendiente de verificación';
+const MAX_ROWS = 5;
+
+const day = (date: string) => (limaDay(date) ? formatShortDay(date) : null);
+
+/**
+ * Inicio's attention list from data other screens already load: digital alerts awaiting
+ * verification (one row, decided in Bandeja), open alerts at Amarillo or above, and an IRSA that
+ * cannot be computed. Sources that have not loaded add nothing; at most five rows.
+ */
+export const attentionItems = ({
+  alerts,
+  digital,
+  irsa,
+}: {
+  alerts: readonly (TodayItem & { level: Level; place?: string })[];
+  digital?: z.infer<typeof TerritorialAlerts>;
+  irsa?: IrsaSummary;
+}): AttentionItem[] => {
+  const awaiting = digital?.filter((alert) => alert.status === AWAITING).length ?? 0;
+  // A title that repeats gets the record id, so the rows and their links never read alike.
+  const repeated = (title: string) => alerts.filter((alert) => alert.title === title).length > 1;
+  return [
+    ...(awaiting
+      ? [
+          {
+            key: 'digital',
+            title:
+              awaiting === 1
+                ? '1 alerta digital espera verificación'
+                : `${awaiting} alertas digitales esperan verificación`,
+            meta: 'Bandeja › Pendientes',
+            href: '/bandeja',
+            action: 'Revisar en Bandeja',
+          },
+        ]
+      : []),
+    ...alerts.map((alert) => {
+      const id = repeated(alert.title) ? alert.id : null;
+      return {
+        key: `alerta:${alert.id}`,
+        title: alert.title,
+        meta: ['Alerta activa', day(alert.date), alert.place, id].filter(Boolean).join(' · '),
+        level: alert.level,
+        href: objectHref('alertas', alert.id),
+        action: 'Abrir alerta',
+        label: [`Abrir alerta ${alert.title}`, id].filter(Boolean).join(' · '),
+      };
+    }),
+    ...(irsa && hasNoEvidence(irsa)
+      ? [
+          {
+            key: 'irsa',
+            title: 'El IRSA no tiene datos suficientes',
+            meta: 'Carga registros del proyecto para calcular el IRSA.',
+            href: '/registros',
+            action: 'Ir a Registros',
+          },
+        ]
+      : []),
+  ].slice(0, MAX_ROWS);
+};

@@ -23,6 +23,17 @@ Behavior contract §2 and §8.8: PBKDF2-SHA256 (310k) hashes, opaque sessions st
 
 See [ADR 0009](0009-internet-exposure-hardening.md) for the stricter Origin rule, API CSP, host allowlist, mandatory MFA and MFA reset added before publishing the API.
 
+## Addendum 2026-11-12: own-session management (Cuenta)
+Configuración › Cuenta lets a person see and end their own sessions (odd/tasks/compact-sidebar.md T4), identically in the TypeScript and Go APIs and proved by parity (`apps/parity/src/contexts/sessions.ts`, `sessions-hardening.ts`).
+- **Routes:** `GET /system/auth/sessions` (own unexpired sessions, newest first: `id`, `created_at`, `expires_at`, `method` `password|google`, `current`; SIPGES records no device or address), `DELETE /system/auth/sessions/:id` and `POST /system/auth/sessions/revoke-others` (keeps the requesting session, returns `count`). Every role may use them: they are self-service like MFA enrollment, so `consulta` passes the role gate only for exactly `DELETE /system/auth/sessions/<one segment>` and `POST /system/auth/sessions/revoke-others`; any other method or path shape under them stays read-only.
+- **Opaque id:** the first 32 hex characters of SHA-256(`sipges-session-id:` + stored token hash). It is one-way and domain-separated, so it can neither sign in nor be matched against the `token_hash` column; neither the token nor its hash is ever shown or accepted as an id.
+- **Another user's session answers 404:** an id of another account, an unknown, expired or malformed id all answer the same 404 «Sesión inexistente» and end nothing, so the route reveals nothing about other accounts.
+- **Ending this device's session is a logout:** it clears `sipges_session` and `sipges_scope` with the same `Set-Cookie` headers as `/logout`.
+- **Only active sessions count:** revoke-others ends and counts only sessions that have not expired, the ones the list shows; expired rows wait for the purge at the next sign-in.
+- **Audit:** each write appends a row to the active project's trail (module `Sesiones`, actions `SESSION_END` and `SESSIONS_END_OTHERS`, the actor as record id, no token or hash) in the same transaction as the delete; if the row cannot be written, nothing ends. Ending no session writes no row, so any role repeating revoke-others cannot fill the trail.
+- **A project scope is required:** the audit row needs a tenant, so the three routes resolve the project like any business route, and an account with no project grant gets 403 «Seleccione un proyecto autorizado…». `/logout` stays public and scope-free, so that account can still sign out.
+- **Out of scope:** the pre-existing Origin rule treats `Origin: null` as absent and then accepts a same-host `Referer` (`apps/api/src/platform/http/origin.ts`); these routes inherit it unchanged. `Origin: null` alone, a cross-site Origin or Referer, and no header at all are refused with 403.
+
 ## Consequences
 - Users keep their passwords; hashes upgrade transparently.
 - `SIPGES_DATA_KEY` becomes a required production secret; key rotation is a documented procedure: the API also opens values sealed with `SIPGES_DATA_KEY_PREVIOUS` while `pnpm --filter @sipges/api rotate:data-key` re-encrypts them ([docs/operations/data-key-rotation.md](../operations/data-key-rotation.md), 2026-11-02).

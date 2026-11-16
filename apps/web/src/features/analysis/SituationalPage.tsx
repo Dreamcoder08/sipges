@@ -16,8 +16,23 @@ import {
 import { DocumentLab } from './DocumentLab.tsx';
 import { NarrativeOverview } from './NarrativeOverview.tsx';
 import styles from './Analysis.module.css';
+import { DateText } from '../../shared/ui/DateText.tsx';
 
-export const SituationalPage = (context: FeatureContext) => {
+/** The record modules whose excerpts the analysis lists. */
+export type ExcerptModule = 'eventos' | 'alertas' | 'demandas' | 'actores';
+
+export const SituationalPage = ({
+  fieldLabel,
+  ...context
+}: FeatureContext & {
+  /**
+   * The record form's label of a stored field. Features never import each other, so the app
+   * passes the records feature's labels; without it a field reads as words (functional-10 T3).
+   */
+  fieldLabel?: (module: ExcerptModule, key: string) => string;
+}) => {
+  const label = (module: ExcerptModule) =>
+    fieldLabel ? (key: string) => fieldLabel(module, key) : undefined;
   const query = useQuery({
     queryKey: ['analysis', context.scope, 'situational'],
     queryFn: ({ signal }) =>
@@ -52,7 +67,7 @@ export const SituationalPage = (context: FeatureContext) => {
           <>
             <Card title="Estado del proyecto">
               <p className={styles.muted}>
-                Generado: {data.generated_at}. {data.method}
+                Generado: <DateText value={data.generated_at} time />. {data.method}
               </p>
               <Counts values={data.counts} />
               <Counts
@@ -71,14 +86,26 @@ export const SituationalPage = (context: FeatureContext) => {
             <Card title="Observaciones">
               <TextList items={data.observaciones} />
             </Card>
-            <Excerpts title="Eventos recientes" records={data.eventos_recientes} />
-            <Excerpts title="Alertas prioritarias" records={data.alertas_prioritarias} />
-            <Excerpts title="Demandas abiertas" records={data.demandas_abiertas} />
-            <Excerpts title="Actores" records={data.actores} />
+            <Excerpts
+              title="Eventos recientes"
+              records={data.eventos_recientes}
+              fieldLabel={label('eventos')}
+            />
+            <Excerpts
+              title="Alertas prioritarias"
+              records={data.alertas_prioritarias}
+              fieldLabel={label('alertas')}
+            />
+            <Excerpts
+              title="Demandas abiertas"
+              records={data.demandas_abiertas}
+              fieldLabel={label('demandas')}
+            />
+            <Excerpts title="Actores" records={data.actores} fieldLabel={label('actores')} />
             <Card title="Escenarios orientativos">
               {data.escenarios.map((scenario, i) => (
                 <article key={i}>
-                  <h4>{scenario.nombre}</h4>
+                  <h3>{scenario.nombre}</h3>
                   <p>{scenario.supuesto}</p>
                 </article>
               ))}

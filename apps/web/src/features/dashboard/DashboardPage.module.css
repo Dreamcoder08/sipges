@@ -88,6 +88,8 @@
 .irsa {
   margin: 0;
   display: flex;
+  /* On a phone the value, the level and the caveat wrap between them, not inside each. */
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
 }
@@ -96,20 +98,32 @@
   font-size: var(--text-3xl);
 }
 
+/* Each score with its letter and name (functional-10 T14): one column on a phone, more when they fit. */
 .dims {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
+  gap: var(--space-2) var(--space-4);
 }
 
 .dims li {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.dimName {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.dimScore {
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .note {

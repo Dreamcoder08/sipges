@@ -14,6 +14,7 @@ import {
   useNavigate,
   useLocation,
   useRouter,
+  useRouterState,
 } from '@tanstack/react-router';
 import { z } from 'zod';
 import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
@@ -39,7 +40,6 @@ import {
   scopesQuery,
 } from '../features/tenancy/index.ts';
 import { isApiError, isMfaRequired } from '../shared/api/client.ts';
-import { Card } from '../shared/ui/Card.tsx';
 import { SearchPalette, openSearch } from '../features/search/index.ts';
 import { LiveUpdates } from '../features/live/index.ts';
 import {
@@ -49,13 +49,16 @@ import {
 } from '../features/notifications/index.ts';
 import { SETTINGS_PATH, settingsSearch } from '../features/situations/sections.ts';
 import { AppShell } from './layout/AppShell.tsx';
+import { MISSING_PAGE_TITLE, NotFoundPage } from './NotFoundPage.tsx';
 import { useQualityReview } from './pending-quality.ts';
+import { recordFieldLabel } from '../features/records/modules.ts';
 
 import {
   DESTINATIONS,
   type Destination,
   SCREENS,
   type ScreenPath,
+  filterCommandsFor,
   hubHref,
   HOME_PATH,
   safeRedirect,
@@ -186,13 +189,19 @@ type RouterContext = { queryClient: QueryClient };
 
 const rootRoute = createRootRouteWithContext<RouterContext>()({
   component: Outlet,
-  notFoundComponent: () => (
-    <Card title="Página no encontrada">
-      <p>
-        La dirección no existe. <Link to="/">Volver al dashboard</Link>
-      </p>
-    </Card>
-  ),
+  notFoundComponent: () => <NotFoundPage />,
+});
+
+/**
+ * Configuración's first address. Old links, bookmarks and «Recientes» entries keep working:
+ * they land on /configuracion with the same `?seccion=` (functional-10 T6).
+ */
+const legacySettingsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/version-4',
+  beforeLoad: ({ location }) => {
+    throw redirect({ href: `${SETTINGS_PATH}${location.searchStr}`, replace: true });
+  },
 });
 
 const loginRoute = createRoute({
@@ -314,14 +323,23 @@ const appRoute = createRoute({
     const unread = useUnreadNotifications(scope.scope);
     // Colour meanings of the project; until known the labels use their plain names.
     const settings = useQuery(projectSettingsQuery(scope.scope)).data ?? null;
+    // Ctrl K offers the filters the current screen reads from its URL.
+    const pathname = useLocation({ select: (location) => location.pathname });
+    const searchStr = useLocation({ select: (location) => location.searchStr });
+    const commands = filterCommandsFor(pathname, searchStr);
+    // An address no screen answers keeps the shell and names itself in the title (functional-10 T13).
+    const missing = useRouterState({
+      select: (state) => state.matches.some((match) => match.routeId === missingRoute.id),
+    });
     usePreloadScreens();
     return (
       <ProjectSettingsProvider value={settings}>
         <NavigateProvider value={(href) => void router.navigate({ href })}>
           <AppShell
+            {...(missing ? { title: MISSING_PAGE_TITLE } : {})}
             projectLabel={projectLabel}
             projectKey={scope.scope}
-            search={<SearchPalette scope={scope.scope} />}
+            search={<SearchPalette scope={scope.scope} commands={commands} />}
             unread={unread}
             live={<LiveUpdates scope={scope.scope} />}
             projectSwitcher={
@@ -341,6 +359,19 @@ const appRoute = createRoute({
         </NavigateProvider>
       </ProjectSettingsProvider>
     );
+  },
+});
+
+/**
+ * Signed in, an address no screen answers shows the not-found notice inside the shell, so the
+ * sidebar and menu stay one click away (functional-10 T13, F31). Signed out, the app route's
+ * session check sends the person to sign in first, as for any other screen.
+ */
+const missingRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '$',
+  component: function MissingRoute() {
+    return <NotFoundPage inShell />;
   },
 });
 
@@ -473,6 +504,10 @@ const PendingScreen = (context: FeatureContext) => (
   <DecisionInbox {...context} useQuality={useQualityReview} />
 );
 const AvisosScreen = (context: FeatureContext) => <AvisosPanel scope={context.scope} />;
+/** Situación names excerpt columns with the record forms' labels (functional-10 T3). */
+const SituationalScreen = (context: FeatureContext) => (
+  <SituationalPage {...context} fieldLabel={recordFieldLabel} />
+);
 const featurePages = {
   '/pendientes': PendingScreen,
   '/avisos': AvisosScreen,
@@ -486,7 +521,7 @@ const featurePages = {
   '/mapa': TerritorialMapPage,
   '/cronologia': TimelinePage,
   '/ubicacion': GeographyPage,
-  '/situacion': SituationalPage,
+  '/situacion': SituationalScreen,
   '/estrategia': StrategicPage,
   '/irsa': IrsaPage,
   '/riesgo': ConflictRiskPage,
@@ -537,10 +572,14 @@ const settingsRoute = createRoute({
 const objectRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/objeto/$module/$id',
+  // `?desde=calidad`: the sheet was opened from Calidad de datos and goes back there.
+  validateSearch: (search: Record<string, unknown>): { desde?: 'calidad' } =>
+    search['desde'] === 'calidad' ? { desde: 'calidad' } : {},
   component: function ObjectRoute() {
     const context = useFeatureContext();
     const { module, id } = objectRoute.useParams();
-    return <ObjectPage module={module} id={id} {...context} />;
+    const { desde } = objectRoute.useSearch();
+    return <ObjectPage module={module} id={id} from={desde} {...context} />;
   },
 });
 
@@ -555,24 +594,64 @@ const screenFor = (path: ScreenPath): ((context: FeatureContext) => ReactNode) =
   return featurePages[path as keyof typeof featurePages];
 };
 
+/** Adds the given search params, those with a value, to a hub href (`ficha=`, `pendiente=`…). */
+const withSearch = (href: string, params: Readonly<Record<string, string | undefined>>) =>
+  Object.entries(params).reduce(
+    (out, [key, value]) =>
+      value ? `${out}${out.includes('?') ? '&' : '?'}${key}=${encodeURIComponent(value)}` : out,
+    href,
+  );
+/** Adds `ficha=` (the record open in the Registros sheet) to a hub href. */
+const withFicha = (href: string, ficha: string | undefined) => withSearch(href, { ficha });
+
+/** What a hub keeps in the URL besides its tab (closure-roadmap T31). */
+const HUB_SEARCH: Readonly<Record<string, readonly string[]>> = {
+  // Registros: the record open in its sheet and the A–E filter of Todos.
+  '/registros': ['ficha', 'verificacion'],
+  // Bandeja › Pendientes: the chosen item and the type filter.
+  '/bandeja': ['pendiente', 'clase'],
+};
+
 /** A destination: tabs in the URL search (`?vista=`), each tab one of today's screens. */
 const hubRoute = (hub: Destination) => {
   const route = createRoute({
     getParentRoute: () => appRoute,
     path: hub.path,
-    validateSearch: z.object({ [hub.param]: z.string().optional().catch(undefined) }),
+    validateSearch: z.object({
+      [hub.param]: z.string().optional().catch(undefined),
+      ...Object.fromEntries(
+        (HUB_SEARCH[hub.path] ?? []).map((key) => [key, z.string().optional().catch(undefined)]),
+      ),
+    }),
     component: function HubRoute() {
       const context = useFeatureContext();
       const navigate = useNavigate();
-      const asked = (route.useSearch() as Record<string, string | undefined>)[hub.param];
+      const search = route.useSearch() as Record<string, string | undefined>;
+      const asked = search[hub.param];
       // Riesgo de conflicto reads `?localidad=` on mount; a new one remounts it (ADR 0031).
       const searchStr = useLocation({ select: (location) => location.searchStr });
+      // The tab as written, so `?tipo=todos` stays in the address it came from.
+      const here = asked ? `${hub.path}?${hub.param}=${encodeURIComponent(asked)}` : hub.path;
       if (hub.path === '/registros')
         return (
           <RegistrosHub
             key={context.scope}
             tipo={asked}
-            onTipo={(tipo) => void navigate({ href: hubHref(hub, tipo) })}
+            onTipo={(tipo) => void navigate({ href: withFicha(hubHref(hub, tipo), search.ficha) })}
+            ficha={search.ficha}
+            onFicha={(ficha) =>
+              void navigate({
+                href: withSearch(here, { ficha, verificacion: search.verificacion }),
+                replace: true,
+              })
+            }
+            verificacion={search.verificacion}
+            onVerificacion={(verificacion) =>
+              void navigate({
+                href: withSearch(here, { ficha: search.ficha, verificacion }),
+                replace: true,
+              })
+            }
             {...context}
           />
         );
@@ -592,10 +671,30 @@ const hubRoute = (hub: Destination) => {
               </Button>
             ))}
           </ChipRow>
-          <Screen
-            key={`${context.scope}/${tab.value}${tab.value === 'riesgo' ? searchStr : ''}`}
-            {...context}
-          />
+          {hub.path === '/bandeja' && tab.value === 'pendientes' ? (
+            <DecisionInbox
+              key={`${context.scope}/${tab.value}`}
+              {...context}
+              useQuality={useQualityReview}
+              pendiente={search.pendiente}
+              clase={search.clase}
+              onUrl={(next) =>
+                void navigate({
+                  href: withSearch(here, {
+                    clase: search.clase,
+                    pendiente: search.pendiente,
+                    ...next,
+                  }),
+                  replace: true,
+                })
+              }
+            />
+          ) : (
+            <Screen
+              key={`${context.scope}/${tab.value}${tab.value === 'riesgo' ? searchStr : ''}`}
+              {...context}
+            />
+          )}
         </>
       );
     },
@@ -605,6 +704,7 @@ const hubRoute = (hub: Destination) => {
 const hubRoutes = DESTINATIONS.map(hubRoute);
 
 const routeTree = rootRoute.addChildren([
+  legacySettingsRoute,
   loginRoute,
   mfaRoute,
   selectProjectRoute,
@@ -615,6 +715,7 @@ const routeTree = rootRoute.addChildren([
     ...hubRoutes,
     ...recordRoutes,
     ...featureRoutes,
+    missingRoute,
   ]),
 ]);
 

@@ -2,10 +2,12 @@ import { useQuery } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { InternalLink, objectHref } from '../../shared/lib/navigation.tsx';
 import { DimensionBadge, LevelPill } from '../../shared/ui/Badges.tsx';
+import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { IrsaNoDataHint, IrsaStatus, hasNoEvidence } from './IrsaStatus.tsx';
 import { dashboardQuery, irsaQuery, moduleRecordsQuery } from './api.ts';
 import { criticalAlerts, recentEvents } from './model.ts';
 import styles from './TodayView.module.css';
+import { formatIndex, formatLongDay, formatShortDay, limaDay } from '../../shared/lib/format.ts';
 
 const TILES = [
   ['alertas_activas', 'Alertas activas', '/alertas'],
@@ -21,16 +23,35 @@ const SHORTCUTS = [
   ['/fuentes', 'Consultar evidencia'],
 ] as const;
 
-const today = () =>
-  new Date().toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' });
+const today = () => formatLongDay();
 
-const when = (date: string) =>
-  /^\d{4}-\d{2}-\d{2}/.test(date)
-    ? new Date(`${date.slice(0, 10)}T12:00:00`).toLocaleDateString('es-PE', {
-        day: 'numeric',
-        month: 'short',
-      })
-    : 'Sin fecha';
+const when = (date: string) => (limaDay(date) ? formatShortDay(date) : 'Sin fecha');
+
+/**
+ * The line under an alert: its day and place, and its id when another alert shown has the same
+ * title, so two alerts never read alike (functional-10 T14, as T5 did on desktop Inicio). The id
+ * is one word: it moves to its own line whole instead of breaking after a hyphen.
+ */
+const AlertLine = ({
+  item,
+  shown,
+}: {
+  item: { id: string; title: string; date: string; place: string };
+  shown: readonly { title: string }[];
+}) => {
+  const repeated = shown.filter((other) => other.title === item.title).length > 1;
+  return (
+    <small>
+      {[when(item.date), item.place].filter(Boolean).join(' · ')}
+      {repeated ? (
+        <>
+          {' · '}
+          <span className={styles.code}>{item.id}</span>
+        </>
+      ) : null}
+    </small>
+  );
+};
 
 /**
  * Phone home (odd/archive/mobile-first-redesign.md T9): what matters today in one screen —
@@ -63,7 +84,7 @@ export const TodayView = ({
                 '/irsa',
                 <>
                   Riesgo IRSA{' '}
-                  {hasNoEvidence(irsa.data) ? null : <strong>{irsa.data.irsa.toFixed(1)}</strong>}
+                  {hasNoEvidence(irsa.data) ? null : <strong>{formatIndex(irsa.data.irsa)}</strong>}
                 </>,
               )}{' '}
               <IrsaStatus scope={scope} irsa={irsa.data} />
@@ -74,27 +95,27 @@ export const TodayView = ({
       </section>
 
       <section aria-label="Indicadores del día">
-        {summary.error ? (
-          <p role="alert">No se pudo cargar el resumen.</p>
-        ) : (
-          <ul className={styles.tiles}>
-            {TILES.map(([key, label, to]) => (
-              <li
-                key={key}
-                className={styles.tile}
-                data-alert={key === 'alertas_activas' && (summary.data?.[key] ?? 0) > 0}
-              >
-                {renderLink(
-                  to,
-                  <>
-                    <span className={styles.value}>{summary.data ? summary.data[key] : '–'}</span>
-                    <span className={styles.label}>{label}</span>
-                  </>,
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
+        <QueryState query={summary} label="el resumen">
+          {(data) => (
+            <ul className={styles.tiles}>
+              {TILES.map(([key, label, to]) => (
+                <li
+                  key={key}
+                  className={styles.tile}
+                  data-alert={key === 'alertas_activas' && data[key] > 0}
+                >
+                  {renderLink(
+                    to,
+                    <>
+                      <span className={styles.value}>{data[key]}</span>
+                      <span className={styles.label}>{label}</span>
+                    </>,
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </QueryState>
       </section>
 
       <section className={styles.block} aria-labelledby="hoy-alertas">
@@ -118,7 +139,7 @@ export const TodayView = ({
                   </span>
                   <span className={styles.itemText}>
                     <b>{item.title}</b>
-                    <small>{when(item.date)}</small>
+                    <AlertLine item={item} shown={urgent} />
                   </span>
                 </InternalLink>
               </li>

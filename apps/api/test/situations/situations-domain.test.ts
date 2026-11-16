@@ -71,12 +71,15 @@ describe('situations engine', () => {
       'Naranja – Requiere intervención preventiva: existen 3 registros recientes relacionados con empleo local y participación de Comunidad Norte y Frente de Defensa, en aumento.',
     );
     expect(topic?.reasons[0]).toEqual({
-      text: '3 registros relacionados con el tema «Empleo local» en 5 día(s).',
+      text: '3 registros relacionados con el tema «Empleo local» en 5 días.',
       records: ['Demandas:D-1', 'Narrativas:N-1', 'Eventos:EV-1'],
     });
     expect(topic?.reasons.map((r) => r.text)).toContain(
-      'En aumento: 3 registro(s) en los últimos 7 días frente a 0 por semana en las 4 semanas anteriores; por eso el nivel sube de Amarillo a Naranja.',
+      'En aumento: 3 registros en los últimos 7 días frente a 0 por semana en las 4 semanas anteriores; por eso el nivel sube de Amarillo a Naranja.',
     );
+    // functional-10 T2 and T4: the score uses a decimal comma, like every number in the app.
+    const score = topic?.reasons.map((r) => r.text).find((text) => text.startsWith('Puntaje '));
+    expect(score).toMatch(/^Puntaje \d+(?:,\d+)?: cada registro/);
     expect(topic?.recommendations).toEqual([
       'Coordinar una reunión con los actores involucrados.',
       'Contactar a Comunidad Norte y Frente de Defensa para conocer su posición.',

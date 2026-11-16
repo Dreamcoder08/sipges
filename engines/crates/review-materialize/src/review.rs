@@ -1,10 +1,13 @@
 //! Approved review findings as records: `contexts/documents/domain/review-records.ts`.
 
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime};
 
 use sipges_tools_common::time;
 
 use crate::records::Fields;
+
+/// America/Lima: UTC−5 all year, with no daylight saving since 1994 (`limaToday`).
+const LIMA_OFFSET: Duration = Duration::from_hours(5);
 
 /// `APPROVAL_STATUSES`.
 pub const APPROVAL_STATUSES: [&str; 2] = ["aceptado_para_revision", "corroborado_documentalmente"];
@@ -173,7 +176,13 @@ fn own_fields(item: &ReviewItem, id: String, date: String) -> Vec<(&'static str,
 /// `updated_at` outside JavaScript's `Date` range.
 pub fn review_record_fields(item: &ReviewItem, project_id: &str) -> Result<Fields, InvalidDate> {
     let id = review_record_id(&item.id);
-    let iso = time::to_iso_string(item.updated_at).ok_or(InvalidDate)?;
+    time::to_iso_string(item.updated_at).ok_or(InvalidDate)?;
+    // `limaToday(item.updatedAt)`: the decision's calendar day in Peru.
+    let lima = item
+        .updated_at
+        .checked_sub(LIMA_OFFSET)
+        .ok_or(InvalidDate)?;
+    let iso = time::to_iso_string(lima).ok_or(InvalidDate)?;
     let date: String = iso.chars().take(10).collect();
     let reviewer = if item.reviewer.is_empty() {
         String::new()
@@ -281,5 +290,29 @@ mod tests {
         assert_eq!(other.get(2).map(|(_, v)| v.as_str()), Some("validado"));
         assert_eq!(project_of("C/P/Q"), "P/Q");
         assert_eq!(project_of("sin"), "sin");
+    }
+
+    /// `limaToday(item.updatedAt)`: the decision's calendar day in Peru (UTC−5, no DST).
+    #[test]
+    fn dates_the_record_with_the_lima_day_of_the_decision() {
+        for (ms, want) in [
+            // 2026-01-02T03:04:05.678Z is 22:04 on 2026-01-01 in Lima.
+            (1_767_323_045_678_u64, "2026-01-01"),
+            // 2026-03-31T23:59:59-05:00 (2026-04-01T04:59:59Z).
+            (1_775_019_599_000, "2026-03-31"),
+            // 2026-04-01T05:00:00Z is midnight in Lima: the next day starts.
+            (1_775_019_600_000, "2026-04-01"),
+            // Daytime: 2026-06-15T15:00:00Z, the same day in UTC and Lima.
+            (1_781_535_600_000, "2026-06-15"),
+        ] {
+            let mut decided = item("Demandas e intereses", "aceptado_para_revision");
+            decided.updated_at = UNIX_EPOCH + Duration::from_millis(ms);
+            let fields = review_record_fields(&decided, "PRJ").unwrap_or_default();
+            let date = fields
+                .iter()
+                .find(|(k, _)| k == "Fecha_Registro")
+                .map(|(_, v)| v.as_str());
+            assert_eq!(date, Some(want), "updated_at {ms} ms");
+        }
     }
 }

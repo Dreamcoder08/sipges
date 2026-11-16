@@ -5,6 +5,8 @@ import {
   SCREENS,
   SYSTEM_PATHS,
   destinationFor,
+  filterCommandsFor,
+  hubHref,
   safeRedirect,
   titleFor,
   visitFor,
@@ -27,6 +29,22 @@ describe('navigation', () => {
     expect(titleFor('/nope')).toBe('SIPGES');
   });
 
+  it('names the executive screen at «/» in Spanish, apart from the Inicio tab', () => {
+    expect(SCREENS.find((s) => s.path === '/')).toMatchObject({
+      label: 'Panel',
+      title: 'Panel ejecutivo',
+    });
+    expect(DESTINATIONS[0].tabs.map((tab) => tab.label)).toEqual([
+      'Inicio',
+      'Panel',
+      'Centro gerencial',
+    ]);
+    expect(visitFor('/inicio', '?vista=dashboard')).toEqual({
+      href: '/inicio?vista=dashboard',
+      label: 'Inicio · Panel',
+    });
+  });
+
   it('offers five destinations whose tabs absorb 24 screens, the rest being Sistema', () => {
     expect(DESTINATIONS.map((hub) => hub.path)).toEqual([
       '/inicio',
@@ -41,14 +59,14 @@ describe('navigation', () => {
       '/automatizaciones',
       '/metodologia',
       '/auditoria',
-      '/version-4',
+      '/configuracion',
     ]);
     const reachable = [
       ...DESTINATIONS.flatMap((hub) => hub.tabs.map((t) => t.screen)),
       ...SYSTEM_PATHS,
       '/integraciones',
     ];
-    // The Inicio tab shares «/» with the Dashboard tab.
+    // The Inicio tab shares «/» with the Panel tab.
     expect(new Set(reachable).size).toBe(SCREENS.length);
     expect(new Set(reachable)).toEqual(new Set(SCREENS.map((s) => s.path)));
   });
@@ -69,14 +87,26 @@ describe('navigation', () => {
     expect(destinationFor('/objeto/eventos/EV-1')).toBeUndefined();
   });
 
+  it('folds only the view a hub opens on into its bare path', () => {
+    const [inicio, registros] = DESTINATIONS;
+    expect(hubHref(inicio, 'inicio')).toBe('/inicio');
+    expect(hubHref(inicio, 'gerencial')).toBe('/inicio?vista=gerencial');
+    // Registros opens on «Todos»: its first type, Eventos, needs its own address.
+    expect(hubHref(registros, 'todos')).toBe('/registros');
+    expect(hubHref(registros, 'eventos')).toBe('/registros?tipo=eventos');
+    expect(hubHref(registros, 'actores')).toBe('/registros?tipo=actores');
+  });
+
   it('names a visit by its screen or by its hub tab', () => {
     expect(visitFor('/irsa', '')).toEqual({ href: '/irsa', label: 'IRSA-SIPGES' });
     expect(visitFor('/registros', '?tipo=actores')).toEqual({
       href: '/registros?tipo=actores',
       label: 'Registros · Actores',
     });
-    expect(visitFor('/registros', '')).toEqual({
-      href: '/registros',
+    // Registros opens on «Todos», its own page with its sidebar link; Eventos keeps `?tipo=`.
+    expect(visitFor('/registros', '')).toBeNull();
+    expect(visitFor('/registros', '?tipo=eventos')).toEqual({
+      href: '/registros?tipo=eventos',
       label: 'Registros · Eventos',
     });
     // Inicio is where sign-in lands and it already has its own link: no «Recientes» copy.
@@ -84,8 +114,8 @@ describe('navigation', () => {
     expect(visitFor('/inicio', '?vista=inicio')).toBeNull();
     // Configuración is one screen in «Recientes», whichever section was open.
     for (const search of ['', '?seccion=proyecto', '?seccion=privacidad'])
-      expect(visitFor('/version-4', search)).toEqual({
-        href: '/version-4',
+      expect(visitFor('/configuracion', search)).toEqual({
+        href: '/configuracion',
         label: 'Configuración',
       });
     expect(visitFor('/inicio', '?vista=gerencial')).toEqual({
@@ -96,6 +126,32 @@ describe('navigation', () => {
     expect(visitFor('/integraciones', '')).toBeNull();
   });
 
+  it('offers «Filtrar» commands only where a screen reads the filter from the URL', () => {
+    const bandeja = [
+      { label: 'Filtrar Bandeja: todo', href: '/bandeja' },
+      { label: 'Filtrar Bandeja: alertas', href: '/bandeja?clase=alerta' },
+      { label: 'Filtrar Bandeja: calidad de datos', href: '/bandeja?clase=calidad' },
+      { label: 'Filtrar Bandeja: situaciones', href: '/bandeja?clase=situacion' },
+    ];
+    expect(filterCommandsFor('/bandeja', '')).toEqual(bandeja);
+    expect(filterCommandsFor('/bandeja', '?vista=pendientes&clase=calidad')).toEqual(bandeja);
+    const registros = ['A', 'B', 'C', 'D', 'E'].map((letter) => ({
+      label: `Filtrar Registros: verificación ${letter}`,
+      href: `/registros?verificacion=${letter}`,
+    }));
+    expect(filterCommandsFor('/registros', '')).toEqual(registros);
+    expect(filterCommandsFor('/registros', '?tipo=todos&ficha=eventos.E-1')).toEqual(registros);
+    // Tabs and screens that do not read these filters get none, so no command is a dead link.
+    for (const [path, search] of [
+      ['/bandeja', '?vista=avisos'],
+      ['/registros', '?tipo=eventos'],
+      ['/pendientes', ''],
+      ['/inicio', ''],
+      ['/territorio', ''],
+    ] as const)
+      expect(filterCommandsFor(path, search)).toEqual([]);
+  });
+
   it('gives every screen an icon', () => {
     expect(Object.keys(SCREEN_ICONS).sort()).toEqual(SCREENS.map((s) => s.path).sort());
     for (const hub of DESTINATIONS) expect(hub.icon).toBeTruthy();
@@ -104,5 +160,15 @@ describe('navigation', () => {
   it('gives each screen its own icon', () => {
     const icons = Object.values(SCREEN_ICONS);
     expect(new Set(icons).size).toBe(icons.length);
+  });
+
+  it('gives Configuración an icon no destination or other screen uses', () => {
+    const others = [
+      ...DESTINATIONS.map((hub) => hub.icon),
+      ...Object.entries(SCREEN_ICONS)
+        .filter(([path]) => path !== '/configuracion')
+        .map(([, icon]) => icon),
+    ];
+    expect(others).not.toContain(SCREEN_ICONS['/configuracion']);
   });
 });

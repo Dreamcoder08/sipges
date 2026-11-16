@@ -24,9 +24,14 @@ import {
 } from './contexts/integration/infrastructure/index.ts';
 import {
   createAutomationRuntime,
+  createDesktopUpdateService,
   type AutomationRuntime,
+  type DesktopUpdateService,
 } from './contexts/system/application/index.ts';
-import { createSqlAutomationRuntimeStore } from './contexts/system/infrastructure/index.ts';
+import {
+  createFileDesktopUpdateChannel,
+  createSqlAutomationRuntimeStore,
+} from './contexts/system/infrastructure/index.ts';
 import { formatScope, parseScope } from './contexts/tenancy/application/index.ts';
 import { runWithRequestContext } from './platform/request-context.ts';
 import { log } from './platform/observability/logger.ts';
@@ -36,7 +41,10 @@ import {
   type ReferenceReader,
   type ReferenceService,
 } from './contexts/reference/application/index.ts';
-import { fileReferenceReader } from './contexts/reference/infrastructure/file-reference-reader.ts';
+import {
+  createManagedReferenceReader,
+  fileReferenceReader,
+} from './contexts/reference/infrastructure/file-reference-reader.ts';
 import {
   type AnalystService,
   type Narrator,
@@ -190,6 +198,8 @@ export type Container = {
   /** Readiness probe for /health/ready: resolves once the database answers SELECT 1. */
   readonly ready: () => Promise<void>;
   readonly reference: ReferenceService;
+  /** Managed desktop installs only (SIPGES_DESKTOP_UPDATE_DIR); undefined in the cloud. */
+  readonly desktopUpdate: DesktopUpdateService | undefined;
   readonly config: AppConfig;
   readonly identity: IdentityService;
   /** Present only when a Google OAuth client is configured (ADR 0010). */
@@ -550,7 +560,8 @@ export const buildContainer = async (deps: {
     },
   };
   const authorizedSources = createAuthorizedSourcesService({
-    gateway: deps.sourceGateway ?? createOfficialSourceGateway(),
+    gateway:
+      deps.sourceGateway ?? createOfficialSourceGateway({ baseUrl: deps.config.defensoriaUrl }),
     settings: createSqlSourceSettings(deps.sql),
     clock: deps.clock.now,
     importer: sourceImporter,
@@ -613,7 +624,16 @@ export const buildContainer = async (deps: {
     media,
     runtime,
     ready: readinessProbe(deps.sql),
-    reference: createReferenceService(deps.referenceReader ?? fileReferenceReader),
+    reference: createReferenceService(
+      deps.referenceReader ??
+        (deps.config.referenceDir === undefined
+          ? fileReferenceReader
+          : createManagedReferenceReader(deps.config.referenceDir)),
+    ),
+    desktopUpdate:
+      deps.config.desktopUpdateDir === undefined
+        ? undefined
+        : createDesktopUpdateService(createFileDesktopUpdateChannel(deps.config.desktopUpdateDir)),
     config: deps.config,
     identity,
     googleSignIn:

@@ -1,7 +1,14 @@
-import { type ModuleRecord, SituationsReport } from '@sipges/contracts';
+import { type ModuleRecord, type Situation, SituationsReport } from '@sipges/contracts';
 import { queryOptions } from '@tanstack/react-query';
 import { requestJson } from './client.ts';
 import { fetchModuleRecords } from './module-records.ts';
+
+/** What a situation is about, as people read it; its `key` (`tema:…`) is never shown. */
+export const SITUATION_KINDS: Readonly<Record<Situation['kind'], string>> = {
+  tema: 'Tema',
+  actor: 'Actor',
+  territorio: 'Territorio',
+};
 
 /** Alerts created from a situation carry this origin; the engine never counts them again. */
 export const GENERATED_ORIGIN = 'SIPGES';

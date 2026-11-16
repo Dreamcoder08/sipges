@@ -14,6 +14,7 @@ import { Card } from '../../shared/ui/Card.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { Counts, Limitations, ReportDownload, TextList } from './ReportParts.tsx';
 import styles from './Analysis.module.css';
+import { DateText } from '../../shared/ui/DateText.tsx';
 
 export type StrategicRecordModule = 'intereses' | 'dialogos' | 'oportunidades' | 'hechos' | 'aarc';
 const modules: Array<[StrategicRecordModule, string]> = [
@@ -91,7 +92,9 @@ export const StrategyPage = (
         {(data) => (
           <>
             <Card title="Evaluación estratégica">
-              <p className={styles.muted}>Generado: {data.generated_at}</p>
+              <p className={styles.muted}>
+                Generado: <DateText value={data.generated_at} time />
+              </p>
               <Counts values={data.counts} />
               <Counts
                 values={{
@@ -121,7 +124,7 @@ export const StrategyPage = (
               {data.recommendations.length ? (
                 data.recommendations.map((item, i) => (
                   <article className={styles.item} key={i}>
-                    <h4>{item.titulo}</h4>
+                    <h3>{item.titulo}</h3>
                     <p>{item.motivo}</p>
                     <p>{item.accion_sugerida}</p>
                     <dl>
@@ -151,7 +154,7 @@ export const StrategyPage = (
           <>
             <Card title="Análisis integrado">
               <Counts values={data.summary} />
-              <h4>Cruces candidatos</h4>
+              <h3>Cruces candidatos</h3>
               {data.candidate_links.length ? (
                 data.candidate_links.map((item, i) => (
                   <article className={styles.item} key={i}>
@@ -168,13 +171,13 @@ export const StrategyPage = (
               ) : (
                 <p>Sin cruces candidatos.</p>
               )}
-              <h4>Plan sugerido para revisión</h4>
+              <h3>Plan sugerido para revisión</h3>
               {data.action_plan.length ? (
                 data.action_plan.map((item) => (
                   <article className={styles.item} key={item.numero}>
-                    <h4>
+                    <h3>
                       {item.numero}. {item.accion}
-                    </h4>
+                    </h3>
                     <p>{item.objetivo}</p>
                     <p>Fundamento: {item.fundamento}</p>
                     <p>Registros: {item.registros.join(', ')}</p>
@@ -188,10 +191,10 @@ export const StrategyPage = (
               ) : (
                 <p>Sin acciones sugeridas.</p>
               )}
-              <h4>Escenarios orientativos</h4>
+              <h3>Escenarios orientativos</h3>
               {data.scenarios.map((item, i) => (
                 <article className={styles.item} key={i}>
-                  <h4>{item.tipo}</h4>
+                  <h3>{item.tipo}</h3>
                   <p>{item.supuesto}</p>
                   <TextList items={item.indicadores_a_observar} />
                 </article>

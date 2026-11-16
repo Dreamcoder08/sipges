@@ -46,6 +46,7 @@ func init() {
 				Store:    store,
 				Accounts: store,
 				Google:   store,
+				Sessions: store,
 				Hasher:   identity.Passwords{},
 				Tokens:   identity.Tokens{},
 				TOTP:     identity.TOTP{},

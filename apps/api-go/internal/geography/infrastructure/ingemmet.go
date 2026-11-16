@@ -60,7 +60,8 @@ func NewGateway(now func() time.Time) *Gateway {
 	if now == nil {
 		now = time.Now
 	}
-	return &Gateway{origin: Origin, client: &http.Client{CheckRedirect: refuseRedirect}, now: now,
+	client := &http.Client{CheckRedirect: refuseRedirect, Transport: ingemmetTransport()}
+	return &Gateway{origin: Origin, client: client, now: now,
 		timeout: defaultTimeout, maxBytes: defaultMaxBytes}
 }
 
@@ -318,13 +319,31 @@ func (g *Gateway) Query(ctx context.Context, q domain.Query) (application.Offici
 	if q.Polygon != nil {
 		geometryType = "esriGeometryPolygon"
 	}
-	params := formEncode([][2]string{
-		{"f", "json"}, {"where", "1=1"}, {"outFields", "*"}, {"returnGeometry", "true"},
-		{"outSR", "4326"}, {"inSR", "4326"}, {"spatialRel", "esriSpatialRelIntersects"},
-		{"resultRecordCount", strconv.Itoa(maxFeatures)}, {"geometryType", geometryType},
-		{"geometry", geometry(q)},
-	})
-	data, err := g.fetch(ctx, g.serviceURL(q.ServiceID)+"/"+strconv.Itoa(q.LayerID)+"/query?"+params)
+	// GEOCATMIN's layers do not support pagination (resultRecordCount is refused with "Pagination
+	// is not supported"), so the bound is applied by id: first the ids that intersect the area,
+	// then the first maxFeatures of them, in the server's order.
+	queryURL := g.serviceURL(q.ServiceID) + "/" + strconv.Itoa(q.LayerID) + "/query?"
+	idsData, err := g.fetch(ctx, queryURL+formEncode([][2]string{
+		{"f", "json"}, {"where", "1=1"}, {"returnIdsOnly", "true"},
+		{"inSR", "4326"}, {"spatialRel", "esriSpatialRelIntersects"},
+		{"geometryType", geometryType}, {"geometry", geometry(q)},
+	}))
+	if err != nil {
+		return application.Official{}, err
+	}
+	ids, err := objectIDs(idsData)
+	if err != nil {
+		return application.Official{}, err
+	}
+	if len(ids) == 0 {
+		return application.Official{Features: []application.Feature{}, Source: layer.MetadataURL}, nil
+	}
+	truncated := len(ids) > maxFeatures
+	ids = ids[:min(len(ids), maxFeatures)]
+	data, err := g.fetch(ctx, queryURL+formEncode([][2]string{
+		{"f", "json"}, {"objectIds", strings.Join(ids, ",")}, {"outFields", "*"},
+		{"returnGeometry", "true"}, {"outSR", "4326"},
+	}))
 	if err != nil {
 		return application.Official{}, err
 	}
@@ -350,7 +369,29 @@ func (g *Gateway) Query(ctx context.Context, q domain.Query) (application.Offici
 	}
 	return application.Official{
 		Features:  features,
-		Truncated: data.get("exceededTransferLimit") == true || len(list) >= maxFeatures,
+		Truncated: truncated || data.get("exceededTransferLimit") == true || len(list) > maxFeatures,
 		Source:    layer.MetadataURL,
 	}, nil
+}
+
+// objectIDs reads a returnIdsOnly answer: the ids as decimal text, none when ArcGIS answers null
+// (nothing intersects). Anything but non-negative integers is an invalid answer.
+func objectIDs(data *object) ([]string, error) {
+	raw, present := data.vals["objectIds"]
+	if !present || raw == nil {
+		return nil, nil
+	}
+	list, ok := raw.([]any)
+	if !ok {
+		return nil, errors.New("respuesta geográfica oficial inválida")
+	}
+	ids := make([]string, 0, len(list))
+	for _, v := range list {
+		n, ok := v.(float64)
+		if !ok || n < 0 || n != math.Trunc(n) || n > 1<<53 {
+			return nil, errors.New("respuesta geográfica oficial inválida")
+		}
+		ids = append(ids, strconv.FormatFloat(n, 'f', -1, 64))
+	}
+	return ids, nil
 }

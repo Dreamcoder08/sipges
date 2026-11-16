@@ -2,8 +2,43 @@ package domain
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
+
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/release"
 )
+
+// TestModelStatusNamesTheRelease: the model status reports the one SIPGES version (functional-10
+// T8), first and last as modelStatusFor orders it, with no «Motor V0.5.1» or «Web Final RC 1.0».
+func TestModelStatusNamesTheRelease(t *testing.T) {
+	if !strings.HasPrefix(ModelStatus, `{"version":"SIPGES `+release.Version+` · Prototipo final de tesis",`) ||
+		!strings.HasSuffix(ModelStatus, `"ui_release":"`+release.Version+`"}`) {
+		t.Fatalf("model status: %s", ModelStatus)
+	}
+	for _, old := range []string{"V0.5.1", "RC 1.0", "Motor"} {
+		if strings.Contains(ModelStatus, old) {
+			t.Errorf("model status still says %q", old)
+		}
+	}
+}
+
+// TestModelStatusWording pins the Spanish wording of the two model status strings, byte-identical
+// to modelStatusFor in apps/api/src/contexts/indicators/domain/defaults.ts.
+func TestModelStatusWording(t *testing.T) {
+	var status map[string]any
+	if err := json.Unmarshal([]byte(ModelStatus), &status); err != nil {
+		t.Fatal(err)
+	}
+	for key, want := range map[string]string{
+		"release_rule": "La interfaz está finalizada para la tesis. La condición de “modelo validado” solo se " +
+			"asignará después del juicio de expertos y la evaluación funcional contra el patrón de referencia.", //nolint:misspell // Spanish text kept verbatim from the TypeScript API.
+		"functional_validation": "Protocolo preparado; patrón de referencia pendiente",
+	} {
+		if status[key] != want {
+			t.Errorf("%s = %q, want %q", key, status[key], want)
+		}
+	}
+}
 
 // TestHistoryLimit pins IrsaHistoryQuery's coercion: the values below are what
 // `z.coerce.number().int().default(50)` gave on Node 26 (FAIL = 422), negatives meaning all.

@@ -244,7 +244,9 @@ func TestCompatibleStopsWithItsContext(t *testing.T) {
 	if _, err := narrator.Narrate(ctx, cleared("b")); err == nil {
 		t.Fatal("expected the error")
 	}
-	if calls.Load() != 1 {
+	// Under load the 20 ms deadline can expire before the request reaches the server (0 calls);
+	// what must never happen is a retry after the cancellation.
+	if calls.Load() > 1 {
 		t.Fatalf("a cancelled call was retried: %d", calls.Load())
 	}
 }

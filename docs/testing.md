@@ -30,6 +30,8 @@ API HTTP fixtures migrate a synthetic PGlite template per test file, clone it pe
 
 ## Check a browser change
 
+CI budgets (accessibility, bundle size, Inicio time): [testing/budgets.md](testing/budgets.md).
+
 Build the web app first so Playwright exercises the intended build:
 
 ```sh

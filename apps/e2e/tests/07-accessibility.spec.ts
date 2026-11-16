@@ -4,7 +4,7 @@ import { DESTINATIONS, SCREENS } from '../../web/src/app/navigation.ts';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
 import { watchNetwork } from '../support/network.ts';
 
-/** WCAG 2.1 A/AA rules checked by axe-core; runs after the CRUD specs, so screens hold data. */
+/** WCAG 2.2 A/AA rules checked by axe-core; runs after the CRUD specs, so screens hold data. */
 const expectNoViolations = async (page: Page, where: string) => {
   const { violations } = await analyzeAccessibility(page);
   const summary = violations.map(
@@ -14,7 +14,7 @@ const expectNoViolations = async (page: Page, where: string) => {
 };
 
 for (const colorScheme of ['light', 'dark'] as const) {
-  test(`sign-in and every screen pass the automated WCAG 2.1 AA checks (${colorScheme})`, async ({
+  test(`sign-in and every screen pass the automated WCAG 2.2 AA checks (${colorScheme})`, async ({
     page,
     admin,
   }) => {

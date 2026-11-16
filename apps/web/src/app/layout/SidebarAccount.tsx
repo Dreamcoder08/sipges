@@ -4,9 +4,8 @@ import { type KeyboardEvent, useEffect, useId, useRef, useState } from 'react';
 import { accountDisplayName, accountInitials } from '../../shared/ui/account-name.ts';
 import { Icon } from '../../shared/ui/Icon.tsx';
 import { logout, meQuery } from '../../features/auth/index.ts';
+import { SETTINGS_PATH } from '../../features/situations/sections.ts';
 import { SYSTEM_PATHS, iconFor, labelFor } from '../navigation.ts';
-
-const SETTINGS_PATH = '/version-4';
 import { NavLink } from './NavLink.tsx';
 import styles from './SidebarAccount.module.css';
 

@@ -13,7 +13,8 @@
   align-items: center;
   flex-wrap: wrap;
 }
-.heading h4 {
+.heading h2,
+.heading h3 {
   margin: 0.25rem 0;
   font-size: var(--text-lg);
   color: var(--color-text);
@@ -30,7 +31,7 @@
   padding: 0.4rem 0.8rem;
   background: var(--color-accent-tint);
   color: var(--color-brand-text);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: var(--text-base);
   font-weight: 700;
 }
@@ -226,7 +227,7 @@
   background: var(--color-surface-alt);
   border-radius: var(--radius-md);
 }
-.selection h5 {
+.selection h3 {
   margin: 0;
   font-size: var(--text-body);
 }
@@ -322,7 +323,7 @@
 }
 .actorAside select {
   width: 100%;
-  min-height: 44px;
+  min-height: var(--touch-target);
 }
 .actorList {
   max-height: 34rem;
@@ -345,7 +346,7 @@
 }
 .position {
   justify-self: start;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 0.25rem 0.65rem;
 }
 .favor {

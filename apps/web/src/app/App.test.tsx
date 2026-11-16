@@ -48,6 +48,29 @@ describe('sign-in', () => {
     expect(window.location.pathname).toBe('/inicio');
   });
 
+  // The server answers «Código de autenticación inválido» both when the code is missing and when
+  // it is wrong; asking for the code must not read as an error before one was typed.
+  it('asks for the second factor without calling it invalid, and flags a wrong code', async () => {
+    api.otpRequired = true;
+    at('/');
+    render(<App />);
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText('Usuario'), 'persona');
+    await user.type(screen.getByLabelText('Contraseña'), 'synthetic-pass-123');
+    await user.click(screen.getByRole('button', { name: 'Ingresar' }));
+    const otp = await screen.findByLabelText('Código de autenticación');
+    // Focus moves to the new field, so screen readers announce what to type next.
+    await waitFor(() => expect(otp).toHaveFocus());
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Ingrese el código de seis dígitos de su aplicación de autenticación.',
+    );
+
+    await user.type(otp, '000000');
+    await user.click(screen.getByRole('button', { name: 'Ingresar' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Código de autenticación inválido');
+  });
+
   it('offers Google sign-in only when the server has it configured', async () => {
     at('/login');
     const { unmount } = render(<App />);
@@ -171,7 +194,7 @@ describe('dashboard and navigation', () => {
     expect(
       within(demands as HTMLElement).getByRole('link', { name: 'Ver registros' }),
     ).toHaveAttribute('href', '/demandas');
-    expect(await screen.findByText('42.3')).toBeVisible();
+    expect(await screen.findByText('42,3')).toBeVisible();
     // The colour always carries its meaning; there is no per-project switch.
     expect(
       await screen.findByText('Amarillo – Requiere atención y seguimiento', {
@@ -264,9 +287,7 @@ describe('phone shell', () => {
     signIn();
     at('/');
     render(<App />);
-    expect(
-      await screen.findByRole('heading', { level: 1, name: 'Dashboard ejecutivo' }),
-    ).toBeVisible();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Panel ejecutivo' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Abrir menú' })).toBeVisible();
     expect(screen.queryByRole('navigation', { name: 'Secciones' })).toBeNull();
     expect(screen.queryByRole('navigation', { name: 'Navegación principal' })).toBeNull();
@@ -323,6 +344,36 @@ describe('phone shell', () => {
     expect(await screen.findByText('Conflicto por agua')).toBeVisible();
   });
 
+  it('offers a retry when the day summary fails, and shows the counters once it loads', async () => {
+    let fail = true;
+    server.use(
+      http.get('/api/dashboard', () =>
+        fail
+          ? HttpResponse.json({ detail: 'Resumen no disponible' }, { status: 400 })
+          : HttpResponse.json({
+              eventos: 2,
+              actores: 7,
+              demandas_abiertas: 3,
+              alertas_activas: 6,
+              directorio: 4,
+              priorizados: 5,
+              niveles: {},
+            }),
+      ),
+    );
+    signIn();
+    at('/');
+    render(<App />);
+    const user = userEvent.setup();
+    const tiles = await screen.findByRole('region', { name: 'Indicadores del día' });
+    expect(await within(tiles).findByText('Resumen no disponible')).toBeVisible();
+    fail = false;
+    await user.click(within(tiles).getByRole('button', { name: 'Reintentar' }));
+    expect(await within(tiles).findByRole('link', { name: /Alertas activas/ })).toHaveTextContent(
+      '6',
+    );
+  });
+
   it('keeps the project selector, inbox and sign-out inside the menu', async () => {
     signIn();
     at('/');
@@ -339,5 +390,17 @@ describe('phone shell', () => {
     const account = screen.getByRole('menu', { name: 'Cuenta' });
     expect(within(account).getByRole('menuitem', { name: 'Cerrar sesión' })).toBeVisible();
     expect(within(account).queryByRole('menuitemradio')).toBeNull();
+  });
+});
+
+// functional-10 T5 (F13): the missing page sends people back to Inicio in Spanish.
+describe('missing page', () => {
+  it('links back to Inicio, not to a «dashboard»', async () => {
+    signIn();
+    at('/direccion-sintetica-inexistente');
+    render(<App />);
+    const back = await screen.findByRole('link', { name: 'Volver al inicio' });
+    expect(back).toHaveAttribute('href', '/inicio');
+    expect(screen.queryByText(/dashboard/i)).toBeNull();
   });
 });

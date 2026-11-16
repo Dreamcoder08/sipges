@@ -12,7 +12,7 @@ export const PointCard = ({ point, onClose }: { point: MapPoint; onClose: () => 
     <p className={styles.kicker}>
       {point.layer} · <EvidenceTag state={point.evidence} />
     </p>
-    <h4 className={styles.sheetTitle}>{point.title}</h4>
+    <h3 className={styles.sheetTitle}>{point.title}</h3>
     <dl className={styles.detail}>
       <dt>Fecha</dt>
       <dd>{point.date || 'Sin fecha'}</dd>

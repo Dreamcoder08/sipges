@@ -62,7 +62,9 @@ test('conflict risk ranks a synthetic locality with linked factors and fits 360 
       'href',
       `/objeto/alertas/AL-R-${stamp}`,
     );
-    await expect(page.getByRole('heading', { name: /Último back-test a 90 días/ })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /Última prueba retrospectiva a 90 días/ }),
+    ).toBeVisible();
     await fits(page, 360);
     await fits(page, 412);
   }

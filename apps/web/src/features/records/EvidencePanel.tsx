@@ -17,6 +17,7 @@ import {
 
 import type { RecordModule } from './modules.ts';
 import styles from './Records.module.css';
+import { formatNumber } from '../../shared/lib/format.ts';
 
 const errorText = (error: unknown) =>
   isApiError(error)
@@ -77,7 +78,7 @@ export const EvidencePanel = ({
   });
   return (
     <section className={styles.evidence} aria-labelledby={`evidence-${id}`}>
-      <h4 id={`evidence-${id}`}>Evidencias vinculadas</h4>
+      <h3 id={`evidence-${id}`}>Evidencias vinculadas</h3>
       {upload.isSuccess ? <Alert tone="success">Evidencia guardada.</Alert> : null}
       {upload.error || download.error ? (
         <Alert tone="error">{errorText(upload.error ?? download.error)}</Alert>
@@ -91,7 +92,7 @@ export const EvidencePanel = ({
                   <div>
                     <strong>{item.original_name}</strong>
                     <small>
-                      {(item.size_bytes / 1024).toFixed(1)} KB · {item.document_type} ·{' '}
+                      {formatNumber(item.size_bytes / 1024, 1)} KB · {item.document_type} ·{' '}
                       {item.verification}
                       {item.author ? ` · ${item.author}` : ''} · {item.created_at.slice(0, 10)}
                     </small>
@@ -229,7 +230,7 @@ const EvidenceViewer = ({ attachment, scope }: { attachment: Attachment; scope: 
             <>
               {data.pages.map((page, index) => (
                 <article key={index}>
-                  {data.format === 'pdf' ? <h5>Página {index + 1}</h5> : null}
+                  {data.format === 'pdf' ? <h4>Página {index + 1}</h4> : null}
                   <pre>{page}</pre>
                 </article>
               ))}

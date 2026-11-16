@@ -29,7 +29,8 @@ test('Registros lists a new record, opens it in a side sheet and keeps density i
 
   // The cross-type list shows it, and the sheet opens beside the list.
   await types.getByRole('button', { name: /^Todos/ }).click();
-  await expect(page).toHaveURL(/tipo=todos/);
+  // Todos is the hub's own page: the bare path, while each type keeps `?tipo=`.
+  await expect(page).toHaveURL(/\/registros$/);
   const opener = page.getByRole('button', { name: new RegExp(`Abrir ${id}`) });
   await opener.click();
   const sheet = page.getByRole('dialog', { name: `Ficha ${id}` });
@@ -55,8 +56,9 @@ test('Registros lists a new record, opens it in a side sheet and keeps density i
 });
 
 /**
- * Visual fidelity to design/workspace-architecture/03-registros-unificado.html: the filters are
- * one toolbar row, the table sits on the page, and the sheet docks to the right of the list.
+ * Visual fidelity to design/workspace-architecture/03-registros-unificado.html: search, «Filtros»
+ * (A–E and validation open in one panel, closure-roadmap T31), density and the count are one
+ * toolbar row, the table sits on the page, and the sheet docks to the right of the list.
  * With SIPGES_SCREENSHOT=<file>.png the list and the docked sheet are saved as 1440×900
  * screenshots (<file>.png and <file>-sheet.png).
  */
@@ -85,8 +87,7 @@ test('Registros keeps its filters in one toolbar row and docks the sheet at 1440
   const centres = await Promise.all(
     [
       toolbar.getByRole('searchbox', { name: 'Buscar en registros' }),
-      toolbar.getByRole('group', { name: 'Verificación A a E' }),
-      toolbar.getByRole('group', { name: 'Validación' }),
+      toolbar.getByRole('button', { name: /^Filtros/ }),
       toolbar.getByRole('group', { name: 'Densidad de filas' }),
       toolbar.getByRole('status'),
     ].map(async (item) => {
@@ -116,4 +117,39 @@ test('Registros keeps its filters in one toolbar row and docks the sheet at 1440
   await expect(sheet).toHaveCount(1);
   await expect(sheet.getByRole('heading', { name: /^Ficha / })).toBeVisible();
   if (shot) await page.screenshot({ path: shot.replace(/\.png$/, '-sheet.png') });
+});
+
+/** A compromiso lives under the Demandas tab, yet «Ver» opens it as a compromiso, not a demanda. */
+test('Registros opens a compromiso from the Demandas tab as its own record and keeps it after a reload', async ({
+  page,
+  admin,
+}) => {
+  await signInToProject(page, admin, DEFAULT_SCOPE);
+  const stamp = Date.now();
+  const id = `C-HUB-${stamp}`;
+  const description = `Compromiso sintético del hub ${stamp}`;
+  const headers = { 'X-SIPGES-Scope': DEFAULT_SCOPE, Origin: new URL(page.url()).origin };
+  const created = await page.request.post('/api/compromisos', {
+    headers,
+    data: { payload: { ID_Compromiso: id, Descripcion: description, Estado: 'Pendiente' } },
+  });
+  expect(created.status(), await created.text()).toBe(200);
+
+  await page.goto('/registros?tipo=demandas');
+  const compromisos = page.getByRole('button', { name: 'Compromisos', exact: true });
+  await compromisos.click();
+  await page.getByLabel('Buscar registros').fill(String(stamp));
+  await page.locator('#contenido').getByRole('button', { name: 'Buscar', exact: true }).click();
+  await page.getByRole('button', { name: `Ver ${id}`, exact: true }).click();
+  const sheet = page.getByRole('dialog', { name: `Ficha ${id}` });
+  await expect(sheet.getByText(description).first()).toBeVisible();
+  await expect(sheet.getByRole('link', { name: 'Abrir ficha completa' })).toHaveAttribute(
+    'href',
+    `/objeto/compromisos/${id}`,
+  );
+  await expect(page).toHaveURL(new RegExp(`tipo=demandas.*ficha=compromisos\\.${id}`));
+
+  await page.reload();
+  await expect(sheet.getByText(description).first()).toBeVisible();
+  await expect(compromisos).toHaveAttribute('aria-pressed', 'true');
 });

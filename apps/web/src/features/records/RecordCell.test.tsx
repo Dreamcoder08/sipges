@@ -26,6 +26,42 @@ describe('demandProgress', () => {
 });
 
 describe('RecordCell', () => {
+  // functional-10 T14 (F10): tablet Eventos showed «N», «E», «G» alone in «Dimensión principal».
+  it('names a dimension stored as its letter alone, and keeps a value that already names it', () => {
+    const eventos = MODULES.eventos;
+    const dimension = eventos.fields.find((item) => item.key === 'Dimension_Principal');
+    if (!dimension) throw new Error('Dimension_Principal expected');
+    const cell = (value: string) =>
+      render(
+        <RecordCell
+          module="eventos"
+          row={{ _id: 'EV-5', Dimension_Principal: value }}
+          field={dimension}
+        />,
+      ).container;
+    expect(cell('N')).toHaveTextContent(/^N · Narrativas$/);
+    expect(cell(' e ')).toHaveTextContent(/^E · Ambiental-territorial$/);
+    expect(cell('G - Gobernanza y representación')).toHaveTextContent(
+      /^G - Gobernanza y representación$/,
+    );
+    expect(cell('Otra')).toHaveTextContent(/^Otra$/);
+  });
+
+  // functional-10 T1 (F1): lists show the shared date style, never the raw ISO day.
+  it('shows a date field as the Lima day in Spanish and keeps the stored day for machines', () => {
+    const { container } = render(
+      <RecordCell
+        module="demandas"
+        row={{ _id: 'D-5', Fecha_Registro: '2026-11-14' }}
+        field={field('Fecha_Registro')}
+      />,
+    );
+    const time = container.querySelector('time');
+    expect(time).toHaveAttribute('datetime', '2026-11-14');
+    expect(container).toHaveTextContent('14 nov. 2026');
+    expect(container).not.toHaveTextContent('2026-11-14');
+  });
+
   it('shows the requests table columns in the tracking order', () => {
     expect(demandas.columns).toEqual([
       'Fecha_Registro',
@@ -47,7 +83,7 @@ describe('RecordCell', () => {
     );
     const bar = screen.getByRole('progressbar', { name: 'Avance' });
     expect(bar).toHaveAttribute('aria-valuenow', '25');
-    expect(screen.getByText('25%')).toBeInTheDocument();
+    expect(screen.getByText('25 %')).toBeInTheDocument();
   });
 
   it('shows a dash when the status has no known progress', () => {

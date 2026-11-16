@@ -1,3 +1,4 @@
+import { settingsTitle } from '../features/situations/sections.ts';
 import type { IconName } from '../shared/ui/icons.ts';
 
 /**
@@ -5,7 +6,7 @@ import type { IconName } from '../shared/ui/icons.ts';
  * chronology (docs/adr/0011 §7); `ready` ones are rebuilt.
  */
 export const SCREENS = [
-  { path: '/', label: 'Dashboard', title: 'Dashboard ejecutivo', ready: true },
+  { path: '/', label: 'Panel', title: 'Panel ejecutivo', ready: true },
   { path: '/eventos', label: 'Eventos', title: 'Eventos', ready: true },
   { path: '/actores', label: 'Actores', title: 'Mapa y gestión de actores', ready: true },
   {
@@ -84,7 +85,13 @@ export const SCREENS = [
   { path: '/integraciones', label: 'Integraciones', title: 'Integraciones', ready: true },
   { path: '/metodologia', label: 'Metodología', title: 'Metodología SIPGES', ready: true },
   { path: '/auditoria', label: 'Auditoría', title: 'Auditoría', ready: true },
-  { path: '/version-4', label: 'Configuración', title: 'Configuración del proyecto', ready: true },
+  // The heading names the section shown (settingsTitle); old `/version-4` links redirect here.
+  {
+    path: '/configuracion',
+    label: 'Configuración',
+    title: 'Configuración · Apariencia',
+    ready: true,
+  },
 ] as const satisfies readonly {
   path: string;
   label: string;
@@ -100,7 +107,7 @@ export const SYSTEM_PATHS = [
   '/automatizaciones',
   '/metodologia',
   '/auditoria',
-  '/version-4',
+  '/configuracion',
 ] as const satisfies readonly ScreenPath[];
 
 export const labelFor = (path: string): string =>
@@ -131,7 +138,7 @@ export const DESTINATIONS = [
     icon: 'home',
     param: 'vista',
     // The first tab is the briefing page (features/dashboard/inicio); it has no screen of its own
-    // and shares «/» with the Dashboard tab, which keeps the old route's content.
+    // and shares «/» with the Panel tab (DashboardPage), which keeps the old route's content.
     tabs: tabs(['inicio', '/', 'Inicio'], ['dashboard', '/'], ['gerencial', '/gerencia']),
   },
   {
@@ -139,6 +146,8 @@ export const DESTINATIONS = [
     label: 'Registros',
     icon: 'layers',
     param: 'tipo',
+    // Opens on «Todos», the cross-type list, which is not one of the type tabs.
+    home: 'todos',
     tabs: tabs(
       ['eventos', '/eventos'],
       ['actores', '/actores'],
@@ -191,6 +200,8 @@ export const DESTINATIONS = [
   label: string;
   icon: IconName;
   param: string;
+  /** The view at the bare path when it is not the first tab. */
+  home?: string;
   tabs: Tabs;
 }[];
 
@@ -202,8 +213,11 @@ export type Destination = (typeof DESTINATIONS)[number];
 export const destinationFor = (path: string): Destination | undefined =>
   DESTINATIONS.find((hub) => hub.path === path || hub.tabs.some((tab) => tab.screen === path));
 
+/** The view a hub shows at its bare path: its first tab, or its own `home` (Registros › Todos). */
+const homeOf = (hub: Destination): string => ('home' in hub ? hub.home : hub.tabs[0].value);
+
 export const hubHref = (hub: Destination, value: string) =>
-  value === hub.tabs[0].value ? hub.path : `${hub.path}?${hub.param}=${value}`;
+  value === homeOf(hub) ? hub.path : `${hub.path}?${hub.param}=${value}`;
 
 /** What the «Recientes» list stores for a screen or hub tab; null for routes outside the menu. */
 export const visitFor = (path: string, search: string): { href: string; label: string } | null => {
@@ -212,15 +226,15 @@ export const visitFor = (path: string, search: string): { href: string; label: s
   const hub = DESTINATIONS.find((item) => item.path === path);
   if (!hub) {
     // Configuración's sections (`?seccion=`) are one screen, so they share one entry.
-    const kept = path === '/version-4' ? '' : search;
+    const kept = path === '/configuracion' ? '' : search;
     return SCREENS.some((screen) => screen.path === path)
       ? { href: path + kept, label: labelFor(path) }
       : null;
   }
   const asked = new URLSearchParams(search).get(hub.param);
-  const tab = hub.tabs.find((item) => item.value === asked) ?? hub.tabs[0];
-  // A hub's own page (Inicio, where sign-in lands) already has its sidebar link.
-  if (tab.label === hub.label) return null;
+  const tab = hub.tabs.find((item) => item.value === asked) ?? ('home' in hub ? null : hub.tabs[0]);
+  // A hub's own page (Inicio, where sign-in lands; Registros › Todos) already has its sidebar link.
+  if (!tab || tab.label === hub.label) return null;
   return {
     href: hubHref(hub, tab.value),
     label: tab.label === hub.label ? hub.label : `${hub.label} · ${tab.label}`,
@@ -258,7 +272,7 @@ export const SCREEN_ICONS: Readonly<Record<ScreenPath, IconName>> = {
   '/integraciones': 'plug',
   '/metodologia': 'bookOpen',
   '/auditoria': 'shield',
-  '/version-4': 'layers',
+  '/configuracion': 'settings',
 };
 
 export const iconFor = (path: NavPath): IconName =>
@@ -266,10 +280,21 @@ export const iconFor = (path: NavPath): IconName =>
     ? SCREEN_ICONS[path as ScreenPath]
     : (DESTINATIONS.find((hub) => hub.path === path)?.icon ?? 'layers');
 
-export const titleFor = (path: string) =>
-  SCREENS.find((screen) => screen.path === path)?.title ??
-  DESTINATIONS.find((hub) => hub.path === path)?.label ??
-  'SIPGES';
+/** The 360° view of one record (docs/adr/0011), whatever its type or id. */
+const OBJECT_PATH = /^\/objeto\/[^/]+\/[^/]+\/?$/;
+
+/**
+ * The page heading and tab title of a path. Configuración names its section (from `search`),
+ * and a record's 360° view says what it is instead of the bare product name.
+ */
+export const titleFor = (path: string, search = '') =>
+  path === '/configuracion'
+    ? settingsTitle(search)
+    : OBJECT_PATH.test(path)
+      ? 'Ficha del registro'
+      : (SCREENS.find((screen) => screen.path === path)?.title ??
+        DESTINATIONS.find((hub) => hub.path === path)?.label ??
+        'SIPGES');
 
 /** Bandeja › «Avisos», the notification inbox the shell's bell opens (functional-closure S9). */
 export const AVISOS_HREF = '/bandeja?vista=avisos';
@@ -283,3 +308,35 @@ export const HOME_PATH = '/inicio';
  */
 export const safeRedirect = (value: unknown) =>
   typeof value === 'string' && value !== '/' && /^\/(?![/\\])/.test(value) ? value : HOME_PATH;
+
+/** A Ctrl K command that applies a filter of the current screen by navigating to its URL. */
+export type FilterCommand = { label: string; href: string };
+
+const BANDEJA_FILTERS: readonly (readonly [label: string, clase: string | null])[] = [
+  ['todo', null],
+  ['alertas', 'alerta'],
+  ['calidad de datos', 'calidad'],
+  ['situaciones', 'situacion'],
+];
+const VERIFICATION = ['A', 'B', 'C', 'D', 'E'] as const;
+
+/**
+ * The «Filtrar» group of the search palette (closure-roadmap T31): only the filters a screen
+ * reads from its URL, Bandeja › Pendientes `?clase=` and Registros › Todos `?verificacion=`, so
+ * every command lands on the filtered view and none is a dead link.
+ */
+export const filterCommandsFor = (path: string, search: string): FilterCommand[] => {
+  const params = new URLSearchParams(search);
+  const tab = (param: string, home: string) => (params.get(param) ?? home) === home;
+  if (path === '/bandeja' && tab('vista', 'pendientes'))
+    return BANDEJA_FILTERS.map(([label, clase]) => ({
+      label: `Filtrar Bandeja: ${label}`,
+      href: clase ? `/bandeja?clase=${clase}` : '/bandeja',
+    }));
+  if (path === '/registros' && tab('tipo', 'todos'))
+    return VERIFICATION.map((letter) => ({
+      label: `Filtrar Registros: verificación ${letter}`,
+      href: `/registros?verificacion=${letter}`,
+    }));
+  return [];
+};

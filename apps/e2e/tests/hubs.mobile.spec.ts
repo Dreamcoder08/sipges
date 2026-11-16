@@ -1,13 +1,14 @@
+import path from 'node:path';
 import { analyzeAccessibility } from '../support/accessibility.ts';
 import type { Locator, Page } from '@playwright/test';
-import { DESTINATIONS, hubHref } from '../../web/src/app/navigation.ts';
+import { DESTINATIONS, hubHref, titleFor } from '../../web/src/app/navigation.ts';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
 import { watchNetwork } from '../support/network.ts';
 
 /**
  * Hub tabs, record pages and open sheets on a phone (functional-closure S11): at 360 and 412 px,
  * in light and dark, the page never scrolls sideways, the key controls sit inside the width and
- * axe finds no WCAG 2.1 AA violation.
+ * axe finds no WCAG 2.2 AA violation.
  */
 const WIDTHS = [360, 412] as const;
 const SCHEMES = ['light', 'dark'] as const;
@@ -112,6 +113,40 @@ const atBothWidths = async (
   }
 };
 
+/**
+ * Territorio and Análisis on a phone (workspace-architecture T5): the chosen view survives a reload
+ * and every old route still opens its screen (deep link, no redirect).
+ */
+for (const path of ['/territorio', '/analisis'] as const) {
+  const hub = DESTINATIONS.find((item) => item.path === path);
+  if (!hub) throw new Error(`Unknown hub ${path}`);
+  test(`${hub.label}: a view survives a reload and the old routes open on a phone`, async ({
+    page,
+    admin,
+  }) => {
+    test.setTimeout(120_000);
+    await page.setViewportSize({ width: WIDTHS[0], height: 800 });
+    await signInToProject(page, admin, DEFAULT_SCOPE);
+    const group = page.getByRole('group', { name: hub.label, exact: true });
+    for (const tab of hub.tabs) {
+      const href = hubHref(hub, tab.value);
+      const chip = group.getByRole('button', { name: tab.label, exact: true });
+      await page.goto(href);
+      await expect(chip).toHaveAttribute('aria-pressed', 'true');
+      await page.reload();
+      await expect(chip).toHaveAttribute('aria-pressed', 'true');
+      await expectWithin(chip, WIDTHS[0], `${hub.label} › ${tab.label} after a reload`);
+
+      await page.goto(tab.screen);
+      await expect(
+        page.getByRole('heading', { level: 1, name: titleFor(tab.screen) }),
+      ).toBeVisible();
+      expect(new URL(page.url()).pathname).toBe(tab.screen);
+      await expectFits(page, `${tab.screen} at ${WIDTHS[0]}px`);
+    }
+  });
+}
+
 for (const colorScheme of SCHEMES) {
   for (const path of HUBS) {
     const hub = DESTINATIONS.find((item) => item.path === path);
@@ -214,9 +249,35 @@ for (const colorScheme of SCHEMES) {
       page,
       async () => {
         await page.goto('/bandeja');
-        await page.getByRole('option').first().tap();
+        const first = page
+          .getByRole('listbox', { name: 'Pendientes de decisión' })
+          .getByRole('option')
+          .first();
+        // Two-line rows of at least 44 px; no keyboard hint on a touch screen (T31 audit L10).
+        await expect(first).toBeVisible();
+        expect((await first.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(43.5);
+        await expect(page.getByLabel('Atajos de teclado')).toBeHidden();
+        if (process.env.SIPGES_SCREENSHOT_DIR) {
+          await page.screenshot({
+            path: path.join(
+              process.env.SIPGES_SCREENSHOT_DIR,
+              `bandeja-${page.viewportSize()?.width}-${colorScheme}-list.png`,
+            ),
+            animations: 'disabled',
+          });
+        }
+        await first.tap();
         await expect(back).toBeVisible();
         await settled();
+        if (process.env.SIPGES_SCREENSHOT_DIR) {
+          await page.screenshot({
+            path: path.join(
+              process.env.SIPGES_SCREENSHOT_DIR,
+              `bandeja-${page.viewportSize()?.width}-${colorScheme}-detail.png`,
+            ),
+            animations: 'disabled',
+          });
+        }
       },
       (width, where) => expectReachable(back, width, `${where}: back`),
       `the pending detail (${colorScheme})`,

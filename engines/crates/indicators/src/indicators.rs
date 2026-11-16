@@ -956,7 +956,7 @@ fn institutional(r: &Modules) -> Result<Vec<Raw>> {
             "I5",
             Some(100.0 - completeness),
             "Alta",
-            "Riesgo inverso del porcentaje de registros clave con Fuente_ID o evidencia asociada.",
+            "Riesgo inverso del porcentaje de registros clave con referencia de fuente o evidencia asociada.",
             n_key,
             format!(
                 "{with_source} de {n_key} registros clave cuentan con fuente/evidencia estructurada ({}%).",

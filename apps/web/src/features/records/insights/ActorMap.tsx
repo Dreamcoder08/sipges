@@ -3,6 +3,7 @@ import { useEffect, useId, useMemo, useRef, useState, type PointerEvent } from '
 import { foldText } from '../../../shared/lib/text.ts';
 import { Button } from '../../../shared/ui/Button.tsx';
 import { Icon } from '../../../shared/ui/Icon.tsx';
+import { ScrollCues } from '../../../shared/ui/ScrollCues.tsx';
 import { ICON_PATHS, type IconName } from '../../../shared/ui/icons.ts';
 import {
   CARD,
@@ -21,6 +22,8 @@ import {
 } from './actor-map.ts';
 import styles from './Insights.module.css';
 import map from './ActorMap.module.css';
+import { formatNumber } from '../../../shared/lib/format.ts';
+import { count } from '../../../shared/lib/plural.ts';
 
 const tones = [
   ['favor', 'Favorable'],
@@ -242,10 +245,10 @@ export const ActorMap = ({
       <div className={styles.heading}>
         <div>
           <p className={styles.eyebrow}>Relacionamiento del proyecto</p>
-          <h4 id={id}>Mapa estratégico de actores</h4>
+          <h3 id={id}>Mapa estratégico de actores</h3>
           <p className={map.subtitle}>Actores, influencia y relaciones en una sola vista</p>
         </div>
-        <span className={styles.count}>{rows.length} actores</span>
+        <span className={styles.count}>{count(rows.length, 'actor', 'actores')}</span>
       </div>
       <p className={styles.explanation}>
         Cuadrantes por sector y anillos por influencia registrada: Control (influencia alta) al
@@ -317,13 +320,14 @@ export const ActorMap = ({
           </div>
           <div className={map.status}>
             <p role="status">
-              {visible.length} de {placed.length} actores en el mapa
+              {formatNumber(visible.length)} de {count(placed.length, 'actor', 'actores')} en el
+              mapa
             </p>
             <p className={map.hint}>
               Arrastre para mover; use los botones, Ctrl + rueda o dos dedos para acercar.
             </p>
           </div>
-          <div
+          <ScrollCues
             ref={stageRef}
             className={map.stage}
             onPointerLeave={() => setActive((a) => (a?.pinned ? a : null))}
@@ -541,10 +545,10 @@ export const ActorMap = ({
                 </div>
               ) : null}
             </div>
-          </div>
+          </ScrollCues>
           <div className={map.legends}>
             <div>
-              <h5>Posición frente al proyecto</h5>
+              <h4>Posición frente al proyecto</h4>
               <ul className={styles.legend} aria-label="Leyenda de posición">
                 {tones.map(([tone, label]) => (
                   <li key={tone}>
@@ -555,7 +559,7 @@ export const ActorMap = ({
               </ul>
             </div>
             <div>
-              <h5>Tipo de relación</h5>
+              <h4>Tipo de relación</h4>
               <ul className={map.lineLegend}>
                 <li>
                   <svg viewBox="0 0 40 10" aria-hidden="true">
@@ -578,7 +582,7 @@ export const ActorMap = ({
               </ul>
             </div>
             <div>
-              <h5>Sentido de la relación</h5>
+              <h4>Sentido de la relación</h4>
               <ul className={map.lineLegend}>
                 {(
                   [

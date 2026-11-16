@@ -24,6 +24,10 @@ A case without an answer in 15 s fails, an API that cannot start or dies before 
 (with its exit code or signal), and Ctrl-C or a cancelled job still stops both APIs and drops the database.
 CI runs it in the `Go/TypeScript parity` job of `.github/workflows/go.yml`.
 
+No run reaches a real site. A local double (`embedder-double.ts`) stands in for Ollama, the Anthropic API
+and the Defensoría connector (`SIPGES_DEFENSORIA_URL`, set for both APIs by `externalDoubles()`); seeded feed
+hosts use the reserved `.example` name. A live site that stops answering once timed out the cron case.
+
 ## Adding a route
 
 Add one or more entries to `CASES` in [`src/cases.ts`](src/cases.ts) when a route moves to Go, or, for a
@@ -73,6 +77,7 @@ path present on only one side is still a difference, and a path that names no fi
 | `GET /system/v4/settings`, `/situations`                        | each: active project (saved settings, records, a `restringido` row hidden from `consulta`), second project (defaults), `multi` on the default one, no session, a choice, an ungranted scope, `project_id` of another and the active project, trailing slash, `HEAD`                             |
 | `GET /system/project-coordinates`                               | 401 (no or unknown session); 200 (with and without `project_id`); 403 (ungranted project or `project_id`); 404 write; `available: false` for `consulta` on another project, via `multi`                                                                                                         |
 | `GET /system/canonical-entities`                                | the same nine cases                                                                                                                                                                                                                                                                             |
+| `/system/auth/sessions` (list, `DELETE /:id`, `revoke-others`)  | own sessions only; foreign, expired, unknown and malformed ids answer 404; Origin refusals; no project grant (and `/logout` still works); `consulta` path shapes; active-only count and no audit row for zero (`src/contexts/sessions.ts`, `sessions-hardening.ts`)                             |
 
 The runner seeds `consulta` (read-only, one project) and `multi` (analista, two projects) through the
 TypeScript API ([`src/seed.ts`](src/seed.ts)); the administrator keeps one project. Each project also gets a verified territorial alert and preventive plans (overdue, blocked by two parties, cancelled, in progress; one in the second project), so a read that crossed projects would differ. `/health/ready` with the database down (503), expiry, MFA, role gates and cross-tenant reads are

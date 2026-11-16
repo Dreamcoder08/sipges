@@ -104,7 +104,7 @@ describe('ConflictRiskPage', () => {
     respond(thinReport);
     mount();
     const items = await screen.findAllByRole('article');
-    expect(items.map((i) => within(i).getByRole('heading', { level: 4 }).textContent)).toEqual([
+    expect(items.map((i) => within(i).getByRole('heading', { level: 2 }).textContent)).toEqual([
       'Pampa Alta',
       'Loma Verde',
     ]);
@@ -155,12 +155,16 @@ describe('ConflictRiskPage', () => {
     const card = await screen.findByRole('article');
     expect(within(card).getByText('Riesgo alto')).toBeInTheDocument();
     expect(within(card).getByText('45 %')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Último back-test a 90 días' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Última prueba retrospectiva a 90 días' }),
+    ).toBeInTheDocument();
     expect(screen.getByText('Razón propia de 90 días.')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: '30 días' }));
     expect(within(card).getByText('Riesgo bajo')).toBeInTheDocument();
     expect(within(card).getByText('10 %')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Último back-test a 30 días' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Última prueba retrospectiva a 30 días' }),
+    ).toBeInTheDocument();
     expect(screen.queryByText('Razón propia de 90 días.')).toBeNull();
   });
 
@@ -197,8 +201,40 @@ describe('ConflictRiskPage', () => {
     });
     mount();
     expect(await screen.findByText('45 %')).toBeInTheDocument();
-    expect(screen.getByText(/Brier 0.12/)).toBeInTheDocument();
+    expect(screen.getByText(/Brier 0,120/)).toBeInTheDocument();
     expect(screen.getByText(/170 muestras/)).toBeInTheDocument();
+  });
+
+  // functional-10 T1 (F1), T2 (F4, F6): the IRSA factor names the saved cut it comes from.
+  it('labels the IRSA factor as the last saved cut and writes numbers and dates in one style', async () => {
+    const top = unit('Pampa Alta', 'locality', 3.1, 'alta');
+    respond({
+      ...thinReport,
+      localities: [
+        {
+          ...top,
+          factors: [
+            ...top.factors,
+            {
+              id: 'irsa',
+              label: 'IRSA del proyecto',
+              count: 2.8,
+              value: 0.028,
+              contribution: 0.0224,
+              records: [],
+            },
+          ],
+        },
+      ],
+    });
+    mount();
+    const card = await screen.findByRole('article');
+    expect(card).toHaveTextContent('IRSA del último corte guardado: 2,8 (aporta 0,02)');
+    expect(card).not.toHaveTextContent('IRSA del proyecto');
+    expect(card).toHaveTextContent('Alertas (últimos 90 días, por nivel): 2 (aporta 0,99)');
+    expect(within(card).getByRole('link', { name: /Bloqueo de vía/ })).toHaveTextContent(
+      'Bloqueo de vía · 30 oct. 2026',
+    );
   });
 
   it('says «Sin datos suficientes» instead of an empty ranking', async () => {
@@ -214,7 +250,7 @@ describe('ConflictRiskPage', () => {
     mount();
     const items = await screen.findAllByRole('article');
     expect(items).toHaveLength(1);
-    expect(within(items[0] as HTMLElement).getByRole('heading', { level: 4 }).textContent).toBe(
+    expect(within(items[0] as HTMLElement).getByRole('heading', { level: 2 }).textContent).toBe(
       'Loma Verde',
     );
     await userEvent.click(screen.getByRole('button', { name: 'Ver todas' }));
@@ -241,5 +277,49 @@ describe('ConflictRiskPage', () => {
     mount();
     expect(await screen.findByText(/no supera la tasa base/)).toBeInTheDocument();
     expect(screen.queryByText(/mejora/)).toBeNull();
+  });
+
+  // functional-10 T5 (F13), T15: the engine's own sentences say «prueba retrospectiva» and the
+  // screen prints them as they come; the Brier score says what it measures.
+  it('says «prueba retrospectiva» and explains the Brier score', async () => {
+    respond({
+      ...thinReport,
+      localities: thinReport.localities.map((item) => ({
+        ...item,
+        confidenceReason:
+          'Historial insuficiente para calibrar; el detalle está en la prueba retrospectiva.',
+      })),
+      backtest: {
+        '30': thin(30),
+        '90': {
+          ...thin(90),
+          calibrated: true,
+          reason: null,
+          train: { samples: 120, events: 30 },
+          test: { samples: 50, events: 12 },
+          brier: 0.12,
+          brierReference: 0.18,
+          skill: 0.333,
+          bins: [],
+        },
+      },
+      limitations: [
+        'Es una ayuda para priorizar, no un pronóstico de hechos: la probabilidad tiene el error que muestra la prueba retrospectiva.',
+      ],
+    });
+    mount();
+    expect(
+      await screen.findByRole('heading', { name: 'Última prueba retrospectiva a 90 días' }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText(/el detalle está en la prueba retrospectiva\./)[0]).toBeVisible();
+    expect(
+      screen.getByText(/la probabilidad tiene el error que muestra la prueba retrospectiva\./),
+    ).toBeVisible();
+    expect(
+      screen.getByText(
+        /Puntaje de Brier 0,120 \(error medio entre la probabilidad estimada y lo que ocurrió; cuanto más bajo, mejor\) frente a 0,180 de la tasa base/,
+      ),
+    ).toBeVisible();
+    expect(document.body).not.toHaveTextContent(/back-test/i);
   });
 });

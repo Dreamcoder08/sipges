@@ -180,9 +180,11 @@ func (s *Scratch) URLAs(user, password string) string {
 	return parsed.String()
 }
 
-// AdminExec runs one statement on the admin server (roles are cluster-wide).
+// AdminExec runs one statement on the admin server (roles are cluster-wide), under the lock that
+// serializes migrations: a role created or dropped while another package migrates can break a
+// migration that names roles.
 func (s *Scratch) AdminExec(ctx context.Context, sql string) error {
-	return adminExec(ctx, s.admin, sql)
+	return adminExecLocked(ctx, s.admin, sql)
 }
 
 // Drop removes the scratch database, closing any connection still open to it.
@@ -193,7 +195,25 @@ func (s *Scratch) Drop(ctx context.Context) error {
 	if s.owner == "" {
 		return nil
 	}
-	return adminExec(ctx, s.admin, "DROP ROLE IF EXISTS "+s.owner)
+	// Under the migration lock: migration 0030 grants each member of a role by name, and a login
+	// dropped mid-migration reads back as a bare OID («GRANT sipges_tenant TO 44888»).
+	return adminExecLocked(ctx, s.admin, "DROP ROLE IF EXISTS "+s.owner)
+}
+
+// adminExecLocked is adminExec under scratchLockKey, on the same connection.
+func adminExecLocked(ctx context.Context, adminURL, sql string) error {
+	conn, err := pgx.Connect(ctx, adminURL)
+	if err != nil {
+		return fmt.Errorf("connect admin database: %w", err)
+	}
+	defer func() { _ = conn.Close(context.WithoutCancel(ctx)) }() // closing releases the lock
+	if _, err := conn.Exec(ctx, "SELECT pg_advisory_lock($1)", scratchLockKey); err != nil {
+		return fmt.Errorf("lock migrations: %w", err)
+	}
+	if _, err := conn.Exec(ctx, sql); err != nil {
+		return err
+	}
+	return nil
 }
 
 func adminExec(ctx context.Context, adminURL, sql string) error {

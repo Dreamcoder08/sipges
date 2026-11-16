@@ -70,7 +70,7 @@ const expected = (
         module: 'Eventos',
         record_id: id,
         action: 'CREATE',
-        detail: 'Registro creado desde prototipo V0.2',
+        detail: 'Registro creado en SIPGES',
         event_payload: null,
       },
     ],

@@ -99,7 +99,7 @@ func (d Deps) now() time.Time {
 func write[T any](r *http.Request, d Deps, fn func(context.Context, application.Writes) (T, error)) (T, error) {
 	at := d.now()
 	return tenancyhttp.WithRequestTenant(r, d.DB, func(ctx context.Context, q database.Querier) (T, error) {
-		return fn(ctx, application.Writes{Store: infrastructure.Store{Q: q}, Now: at})
+		return fn(ctx, application.Writes{Store: infrastructure.Store{Q: q, Records: d.Records}, Now: at})
 	})
 }
 

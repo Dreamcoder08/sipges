@@ -94,6 +94,7 @@ const key = (access: 'read' | 'write', revoked = false) => ({
 });
 
 type Api = {
+  geography?: 'verified' | 'unavailable';
   feeds?: unknown[];
   defensoria?: boolean;
   keys?: unknown[];
@@ -101,6 +102,7 @@ type Api = {
 };
 
 const useApi = ({
+  geography = 'verified',
   feeds = [feed],
   defensoria: configured = true,
   keys = [key('read')],
@@ -126,7 +128,7 @@ const useApi = ({
     http.get('*/system/intelligence/sources', () => HttpResponse.json(defensoria(configured))),
     http.get('*/system/geography/catalogue', () =>
       HttpResponse.json({
-        status: 'verified',
+        status: geography,
         checkedAt: '2026-10-14T09:00:00Z',
         serviceUrl: 'https://geocatmin.ingemmet.gob.pe',
         attribution: 'INGEMMET – GEOCATMIN',
@@ -161,18 +163,19 @@ const cardNamed = async (name: string) => {
 it('lists what the project has, one section per kind, with trust label and status', async () => {
   useApi();
   renderPage();
-  for (const title of ['Conectores entrantes', 'Conectores salientes', 'Skills', 'Programadas']) {
-    expect(
-      await screen.findByRole('heading', { level: 2, name: new RegExp(`^${title}`) }),
-    ).toBeVisible();
-  }
   const media = await cardNamed('Medios RSS');
-  expect(media.getByText('Integrado')).toBeVisible();
+  expect(
+    screen.getAllByRole('heading', { level: 2 }).map((h) => h.firstChild?.textContent),
+  ).toEqual(['Conectores entrantes', 'Conectores salientes', 'Habilidades', 'Programadas']);
+  expect(media.getByText('De SIPGES')).toBeVisible();
   expect(media.getByText('Conectado')).toBeVisible();
+  // Status is the shared badge family: the word plus a tone that picks colour and shape.
+  expect(media.getByText('Conectado')).toHaveAttribute('data-tone', 'positive');
   const channel = await cardNamed('Equipo social');
-  expect(channel.getByText('Personalizado')).toBeVisible();
+  expect(channel.getByText('Del equipo')).toBeVisible();
   const paused = await cardNamed('Control de calidad');
   expect(paused.getByText('Pausada')).toBeVisible();
+  expect(paused.getByText('Pausada')).toHaveAttribute('data-tone', 'neutral');
   const active = await cardNamed('Alertas altas');
   expect(active.getByText('Activa')).toBeVisible();
   expect(screen.queryByText(/Power BI/)).toBeNull();
@@ -188,17 +191,17 @@ it('filters by kind with the chips and keeps the counts', async () => {
     'aria-pressed',
     'true',
   );
-  await user.click(within(chips).getByRole('button', { name: /^Skills/ }));
-  expect(within(chips).getByRole('button', { name: /^Skills/ })).toHaveAttribute(
+  await user.click(within(chips).getByRole('button', { name: /^Habilidades/ }));
+  expect(within(chips).getByRole('button', { name: /^Habilidades/ })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
-  expect(screen.getByRole('heading', { level: 2, name: /^Skills/ })).toBeVisible();
+  expect(screen.getByRole('heading', { level: 2, name: /^Habilidades/ })).toBeVisible();
   expect(screen.queryByRole('heading', { level: 2, name: /^Programadas/ })).toBeNull();
   expect(screen.queryByRole('button', { name: 'Medios RSS' })).toBeNull();
   await user.click(within(chips).getByRole('button', { name: /^Programadas/ }));
   expect(screen.getByRole('button', { name: 'Alertas altas' })).toBeVisible();
-  expect(screen.queryByRole('heading', { level: 2, name: /^Skills/ })).toBeNull();
+  expect(screen.queryByRole('heading', { level: 2, name: /^Habilidades/ })).toBeNull();
 });
 
 it('searches names and descriptions without caring about accents', async () => {
@@ -211,7 +214,28 @@ it('searches names and descriptions without caring about accents', async () => {
   expect(screen.queryByRole('button', { name: 'Medios RSS' })).toBeNull();
   await user.clear(screen.getByRole('searchbox', { name: 'Buscar integraciones' }));
   await user.type(screen.getByRole('searchbox', { name: 'Buscar integraciones' }), 'zzz');
-  expect(screen.getByText('Nada para mostrar con este filtro.')).toBeVisible();
+  expect(screen.getByText('Ninguna integración coincide con estos filtros.')).toBeVisible();
+});
+
+it('offers to clear the search and the type filter when nothing matches', async () => {
+  const user = userEvent.setup();
+  useApi();
+  renderPage();
+  await cardNamed('Medios RSS');
+  await user.click(
+    within(screen.getByRole('group', { name: 'Filtrar por tipo' })).getByRole('button', {
+      name: /^Programadas/,
+    }),
+  );
+  await user.type(screen.getByRole('searchbox', { name: 'Buscar integraciones' }), 'zzz');
+  await user.click(screen.getByRole('button', { name: 'Limpiar filtros' }));
+  expect(screen.getByRole('searchbox', { name: 'Buscar integraciones' })).toHaveValue('');
+  expect(
+    within(screen.getByRole('group', { name: 'Filtrar por tipo' })).getByRole('button', {
+      name: /^Todos/,
+    }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.getByRole('button', { name: 'Medios RSS' })).toBeVisible();
 });
 
 it('moves what is not configured yet to Descubrir, and nothing the code cannot enable', async () => {
@@ -254,7 +278,7 @@ it('opens the existing key management in a detail view and returns to the list',
   await user.click(await screen.findByRole('button', { name: 'Claude vía MCP' }));
   expect(await screen.findByRole('heading', { level: 2, name: 'Claude vía MCP' })).toHaveFocus();
   expect(await screen.findByLabelText(/Nombre de la clave/)).toBeVisible();
-  expect(screen.queryByRole('heading', { level: 2, name: /^Skills/ })).toBeNull();
+  expect(screen.queryByRole('heading', { level: 2, name: /^Habilidades/ })).toBeNull();
   await user.click(screen.getByRole('button', { name: 'Integraciones' }));
   expect(await screen.findByRole('button', { name: 'Claude vía MCP' })).toHaveFocus();
 });
@@ -285,12 +309,48 @@ it('shows skills as built-in screens and links to them', async () => {
   useApi();
   renderPage();
   const strategic = await cardNamed('Informe estratégico');
+  expect(
+    strategic.getByText(
+      (_, node) =>
+        node?.tagName === 'SMALL' && node.textContent === 'Habilidad · Pantalla integrada',
+    ),
+  ).toBeVisible();
+  const record = await cardNamed('Informe de registro');
+  expect(
+    record.getByText(
+      'Informe de un registro con sus vínculos y fuentes citadas; se abre desde la ficha de cada registro.',
+    ),
+  ).toBeVisible();
+  // Our own copy is Spanish: no «Skill» or «briefing» left on the page.
+  expect(document.body).not.toHaveTextContent(/skill|briefing/i);
   expect(strategic.getByText('Pantalla integrada')).toBeVisible();
-  expect(strategic.getByText('Integrado')).toBeVisible();
+  expect(strategic.getByText('De SIPGES')).toBeVisible();
   expect(strategic.getByRole('link', { name: 'Abrir: Informe estratégico' })).toHaveAttribute(
     'href',
     '/estrategia',
   );
+});
+
+// functional-10 T5 (F14): a card states one condition; who made it is not a second state.
+it('shows one state on an integration whose service cannot be reached', async () => {
+  useApi({ geography: 'unavailable' });
+  renderPage();
+  const card = await cardNamed('GEOCATMIN INGEMMET');
+  expect(card.getByText('No disponible')).toHaveAttribute('data-tone', 'negative');
+  expect(card.queryByText(/Integrad|Conectad|Activ/)).toBeNull();
+  expect(card.getByText('De SIPGES')).toBeVisible();
+  expect(card.queryAllByText(/^(No disponible|Conectado|Pausado|Disponible)$/)).toHaveLength(1);
+});
+
+it('writes the rule processing sentence whole', async () => {
+  useApi();
+  renderPage();
+  const card = await cardNamed('Procesamiento de reglas');
+  expect(
+    card.getByText(
+      'Reglas al guardar registros; sin programador diario verificado en este servidor.',
+    ),
+  ).toBeVisible();
 });
 
 it('keeps the other cards when one source cannot be read', async () => {

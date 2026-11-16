@@ -25,9 +25,11 @@ const labels: Record<DocumentReviewStatus, string> = {
   corroborado_documentalmente: 'Corroborado documentalmente',
 };
 const PAGE_SIZE = 50;
-/** Link to the record an approval created (T23), named by its module's label. */
+/** Link to the record an approval created (T23), named by its module's label; it stands alone. */
 const RecordLink = ({ module, id, label }: { module: string; id: string; label: string }) => (
-  <InternalLink href={objectHref(module, id)}>Ver el registro en {label}</InternalLink>
+  <InternalLink href={objectHref(module, id)} className="standalone-link">
+    Ver el registro en {label}
+  </InternalLink>
 );
 const ReviewDecision = ({
   item,
@@ -288,7 +290,7 @@ export const ReviewInbox = (context: FeatureContext) => {
                       Seleccionar
                     </label>
                   ) : null}
-                  <h4>{item.theme}</h4>
+                  <h3>{item.theme}</h3>
                   <p>{item.excerpt}</p>
                   <p>
                     Fuente: {item.source_file} · {item.location}

@@ -11,6 +11,7 @@ import (
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/automation/application"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/automation/domain"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/audittrail"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 	records "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/domain"
 )
@@ -26,9 +27,6 @@ import (
 const CursorSettle = 60 * time.Second
 
 const (
-	appendAudit = `INSERT INTO audit (tenant_id, ts, module, record_id, action, detail)
-     VALUES (current_setting('app.tenant_id', true), $1, $2, $3, $4, $5)`
-
 	duplicateRule = `SELECT 1 FROM automation_rules WHERE name = $1 AND ($2::integer IS NULL OR id <> $2)`
 
 	insertRule = `INSERT INTO automation_rules
@@ -122,8 +120,9 @@ const (
 )
 
 func (Store) audit(ctx context.Context, q database.Querier, recordID *string, action, detail string, at time.Time) error {
-	_, err := q.Exec(ctx, appendAudit, at, domain.AuditModule, recordID, action, domain.PGText(detail))
-	return err
+	return audittrail.Append(ctx, q, audittrail.Entry{
+		At: at, Module: domain.AuditModule, RecordID: recordID, Action: action, Detail: domain.PGText(detail),
+	})
 }
 
 // AppendAudit is the SendAudit writer: one row of module Automatizaciones.

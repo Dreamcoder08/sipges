@@ -18,6 +18,8 @@ import (
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database/dbtest"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/engines"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/leakcheck"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/release"
 )
 
 // The indicators read routes against a migrated synthetic PostgreSQL, through the composed
@@ -26,7 +28,7 @@ import (
 
 var scratch *dbtest.Scratch
 
-func TestMain(m *testing.M) { os.Exit(run(m)) }
+func TestMain(m *testing.M) { os.Exit(leakcheck.After(run(m))) }
 
 func run(m *testing.M) int {
 	adminURL := os.Getenv(dbtest.EnvAdminURL)
@@ -279,8 +281,8 @@ func TestServesTheConfigurationAndHistory(t *testing.T) {
 func TestServesTheStaticDocuments(t *testing.T) {
 	base := start(t)
 	status, body := get(t, base, "/system/model-status", "reader", nil)
-	if status != http.StatusOK || !strings.HasPrefix(body, `{"version":"SIPGES · Prototipo final de tesis | Motor V0.5.1",`) ||
-		!strings.HasSuffix(body, `"ui_release":"Web Final RC 1.0"}`) {
+	if status != http.StatusOK || !strings.HasPrefix(body, `{"version":"SIPGES `+release.Version+` · Prototipo final de tesis",`) ||
+		!strings.HasSuffix(body, `"ui_release":"`+release.Version+`"}`) {
 		t.Fatalf("model status: %d %s", status, body)
 	}
 	status, body = get(t, base, "/system/validation-template", "reader", nil)

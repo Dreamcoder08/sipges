@@ -1,11 +1,13 @@
-import { act, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { HttpResponse, http } from 'msw';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { limaToday } from '@sipges/kernel';
+import { HttpResponse, delay, http } from 'msw';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { installRecordsApi } from '../test/records-api.ts';
 import { resetApi, server } from '../test/server.ts';
+import { formatDay } from '../shared/lib/format.ts';
 import { App } from './App.tsx';
-import { DESTINATIONS } from './navigation.ts';
+import { DESTINATIONS, hubHref, titleFor } from './navigation.ts';
 
 beforeEach(() =>
   resetApi({ me: { username: 'demo', full_name: 'Persona de prueba', role: 'admin' } }),
@@ -41,6 +43,83 @@ describe('destination hubs', () => {
     await waitFor(() => expect(screen.getByText('Hecho sintético')).toBeVisible());
   });
 });
+
+/**
+ * Territorio and Análisis as tabbed views (workspace-architecture T5): every view opens from
+ * `?vista=`, survives a reload, is reachable from the keyboard, and its old route stays a working
+ * deep link that the sidebar files under the same destination (no redirect, like T3 and T4).
+ */
+describe.each(DESTINATIONS.filter((hub) => ['/territorio', '/analisis'].includes(hub.path)))(
+  '$label tabbed views',
+  (hub) => {
+    const sidebar = () => screen.getByRole('navigation', { name: 'Secciones' });
+
+    it.each(hub.tabs.map((tab) => ({ ...tab, href: hubHref(hub, tab.value) })))(
+      'opens $label from $href and keeps it after a reload',
+      { timeout: 20_000 },
+      async ({ label, href }) => {
+        installRecordsApi();
+        at(href);
+        const first = render(<App />);
+        expect(await screen.findByRole('heading', { level: 1, name: hub.label })).toBeVisible();
+        expect(pressed(await screen.findByRole('group', { name: hub.label }))).toEqual([label]);
+        first.unmount();
+
+        // A reload starts the app again from the same address.
+        expect(window.location.pathname + window.location.search).toBe(href);
+        render(<App />);
+        expect(pressed(await screen.findByRole('group', { name: hub.label }))).toEqual([label]);
+      },
+    );
+
+    it.each(hub.tabs.map((tab) => ({ ...tab, title: titleFor(tab.screen) })))(
+      'keeps the old route $screen as a deep link filed under its destination',
+      { timeout: 20_000 },
+      async ({ screen: path, title }) => {
+        installRecordsApi();
+        at(path);
+        render(<App />);
+        expect(await screen.findByRole('heading', { level: 1, name: title })).toBeVisible();
+        expect(window.location.pathname).toBe(path);
+        const link = within(sidebar()).getByRole('link', { name: hub.label });
+        expect(link).toHaveAttribute('aria-current', 'page');
+        expect(link).toHaveAttribute('href', hub.path);
+      },
+    );
+
+    it(
+      'reaches every tab with Tab and opens it with Enter, in the URL',
+      { timeout: 30_000 },
+      async () => {
+        installRecordsApi();
+        at(hub.path);
+        render(<App />);
+        const user = userEvent.setup();
+        const group = await screen.findByRole('group', { name: hub.label });
+        const buttons = within(group).getAllByRole('button');
+        expect(buttons.map((button) => button.textContent)).toEqual(hub.tabs.map((t) => t.label));
+        buttons[0]?.focus();
+        for (const [index, tab] of hub.tabs.entries()) {
+          const current = within(await screen.findByRole('group', { name: hub.label })).getByRole(
+            'button',
+            { name: tab.label },
+          );
+          if (index > 0) await user.tab();
+          expect(current).toHaveFocus();
+        }
+        const last = hub.tabs[hub.tabs.length - 1];
+        if (!last) throw new Error('hub without tabs');
+        await user.keyboard('{Enter}');
+        await waitFor(() =>
+          expect(window.location.pathname + window.location.search).toBe(hubHref(hub, last.value)),
+        );
+        expect(pressed(await screen.findByRole('group', { name: hub.label }))).toEqual([
+          last.label,
+        ]);
+      },
+    );
+  },
+);
 
 describe('Riesgo de conflicto', () => {
   // Synthetic localities only.
@@ -92,14 +171,14 @@ describe('Riesgo de conflicto', () => {
       );
       at('/analisis?vista=riesgo&localidad=Loma%20Verde');
       render(<App />);
-      expect(await screen.findByRole('heading', { level: 4, name: 'Loma Verde' })).toBeVisible();
-      expect(screen.queryByRole('heading', { level: 4, name: 'Pampa Alta' })).toBeNull();
+      expect(await screen.findByRole('heading', { level: 2, name: 'Loma Verde' })).toBeVisible();
+      expect(screen.queryByRole('heading', { level: 2, name: 'Pampa Alta' })).toBeNull();
       act(() => {
         window.history.pushState(null, '', '/analisis?vista=riesgo&localidad=Pampa%20Alta');
         window.dispatchEvent(new PopStateEvent('popstate'));
       });
-      expect(await screen.findByRole('heading', { level: 4, name: 'Pampa Alta' })).toBeVisible();
-      expect(screen.queryByRole('heading', { level: 4, name: 'Loma Verde' })).toBeNull();
+      expect(await screen.findByRole('heading', { level: 2, name: 'Pampa Alta' })).toBeVisible();
+      expect(screen.queryByRole('heading', { level: 2, name: 'Loma Verde' })).toBeNull();
     },
   );
 });
@@ -144,7 +223,7 @@ describe('Integraciones', () => {
     ).toEqual([
       expect.stringMatching(/^Todos/),
       expect.stringMatching(/^Conectores/),
-      expect.stringMatching(/^Skills/),
+      expect.stringMatching(/^Habilidades/),
       expect.stringMatching(/^Programadas/),
     ]);
     page.unmount();
@@ -191,11 +270,65 @@ describe('Registros hub', () => {
     expect(pressed(await chips()).map(label)).toEqual(['Actores']);
   });
 
+  it('opens Eventos, the first type, from its chip and from its address', async () => {
+    installRecordsApi({
+      'DEMO/PRJ-DEMO/eventos': [{ _id: 'E-1', Descripcion_Hecho: 'Hecho sintético' }],
+    });
+    at('/registros');
+    const first = render(<App />);
+    const user = userEvent.setup();
+    await user.click(within(await chips()).getByRole('button', { name: /^Eventos/ }));
+    await waitFor(() =>
+      expect(window.location.pathname + window.location.search).toBe('/registros?tipo=eventos'),
+    );
+    expect(pressed(await chips()).map(label)).toEqual(['Eventos']);
+    expect(await screen.findByRole('button', { name: 'Ver E-1' })).toBeVisible();
+    first.unmount();
+
+    // A reload, or a shared link, keeps the type.
+    render(<App />);
+    expect(await screen.findByRole('button', { name: 'Ver E-1' })).toBeVisible();
+    expect(pressed(await chips()).map(label)).toEqual(['Eventos']);
+  });
+
   it('falls back to Todos when the URL names an unknown type', async () => {
     installRecordsApi();
     at('/registros?tipo=inexistente');
     render(<App />);
     expect(pressed(await chips()).map(label)).toEqual(['Todos']);
+  });
+
+  it('keeps the open record in the URL: a link opens it, choosing and closing update it', async () => {
+    installRecordsApi({
+      'DEMO/PRJ-DEMO/eventos': [
+        { _id: 'E-1', Descripcion_Hecho: 'Hecho sintético' },
+        { _id: 'E-2', Descripcion_Hecho: 'Otro hecho sintético' },
+      ],
+    });
+    at('/registros?tipo=todos&ficha=eventos.E-1');
+    render(<App />);
+    const user = userEvent.setup();
+    const sheet = await screen.findByRole('dialog', { name: 'Ficha E-1' });
+    await user.click(within(sheet).getByRole('button', { name: 'Cerrar' }));
+    await waitFor(() =>
+      expect(window.location.pathname + window.location.search).toBe('/registros?tipo=todos'),
+    );
+    await user.click(await screen.findByRole('button', { name: /Abrir E-2/ }));
+    expect(await screen.findByRole('dialog', { name: 'Ficha E-2' })).toBeInTheDocument();
+    await waitFor(() => expect(window.location.search).toBe('?tipo=todos&ficha=eventos.E-2'));
+  });
+
+  it('keeps the type screen when a record opens from it', async () => {
+    installRecordsApi({
+      'DEMO/PRJ-DEMO/eventos': [{ _id: 'E-1', Descripcion_Hecho: 'Hecho sintético' }],
+    });
+    at('/registros?tipo=eventos');
+    render(<App />);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: 'Ver E-1' }));
+    expect(await screen.findByRole('dialog', { name: 'Ficha E-1' })).toBeInTheDocument();
+    await waitFor(() => expect(window.location.search).toBe('?tipo=eventos&ficha=eventos.E-1'));
+    expect(pressed(await chips()).map(label)).toEqual(['Eventos']);
   });
 
   it('puts the chosen type in the URL, and back/forward restore it', async () => {
@@ -222,8 +355,8 @@ describe('Registros hub', () => {
 });
 
 describe('Inicio hub', () => {
-  const day = (offset: number) =>
-    new Date(Date.now() - offset * 86_400_000).toISOString().slice(0, 10);
+  // Lima's calendar, like the week window; the UTC date is tomorrow after 19:00 in Lima.
+  const day = (offset: number) => limaToday(new Date(Date.now() - offset * 86_400_000));
   const searched: string[] = [];
   const counters = {
     eventos: 2,
@@ -233,10 +366,58 @@ describe('Inicio hub', () => {
     directorio: 4,
     priorizados: 5,
   };
-  const open = async () => {
+  const digitalAlert = (id: string, status: string) => ({
+    id,
+    project_id: 'PRJ-DEMO',
+    created_at: '2026-11-01T10:00:00Z',
+    source_url: 'https://example.invalid/nota',
+    source_type: 'web',
+    excerpt: `Nota sintética ${id}`,
+    sha256: 'x',
+    level: 'Media',
+    score: 40,
+    method: 'reglas',
+    semantic_active: false,
+    status,
+    analyst_note: '',
+    reviewer_note: null,
+    reviewed_at: null,
+    themes: [],
+    signals: [],
+    suggestions: [],
+  });
+  const withExternalAi = (enabled: boolean) =>
+    server.use(
+      http.get('/system/v4/settings', () =>
+        HttpResponse.json({
+          level_meanings: {
+            Verde: 'Estable',
+            Amarillo: 'Atención',
+            Naranja: 'Intervención',
+            Rojo: 'Crítica',
+          },
+          window_days: 90,
+          half_life_days: 14,
+          thresholds: { Amarillo: 2, Naranja: 4, Rojo: 7 },
+          recommendations: [],
+          phase: null,
+          phases: [],
+          external_ai: { enabled },
+          updated_by: '',
+          updated_at: null,
+        }),
+      ),
+    );
+  const PENDING = [
+    digitalAlert('TA-1', 'Pendiente de verificación'),
+    digitalAlert('TA-2', 'Pendiente de verificación'),
+    digitalAlert('TA-3', 'Corroborado'),
+  ];
+  const open = async (digital: unknown[] = PENDING) => {
     searched.length = 0;
     server.use(
       http.get('/api/dashboard', () => HttpResponse.json({ ...counters, niveles: {} })),
+      http.get('/system/intelligence/territorial-alerts', () => HttpResponse.json(digital)),
       http.get('/api/eventos', () =>
         HttpResponse.json([
           { _id: 'E-1', Descripcion_Hecho: 'Hecho de hoy', Fecha: day(0), Proyecto_ID: 'PRJ-DEMO' },
@@ -261,15 +442,17 @@ describe('Inicio hub', () => {
     render(<App />);
     return userEvent.setup();
   };
+  const SEARCH = 'Buscar en registros de Proyecto Demo';
+  const attention = () => screen.findByRole('region', { name: /Necesita tu atención/ });
 
-  it('opens on the Inicio tab with Dashboard and Centro gerencial next to it', async () => {
+  it('opens on the Inicio tab with Panel and Centro gerencial next to it', async () => {
     await open();
     const tabs = await screen.findByRole('group', { name: 'Inicio' });
     expect(
       within(tabs)
         .getAllByRole('button')
         .map((b) => b.textContent),
-    ).toEqual(['Inicio', 'Dashboard', 'Centro gerencial']);
+    ).toEqual(['Inicio', 'Panel', 'Centro gerencial']);
     expect(pressed(tabs)).toEqual(['Inicio']);
   });
 
@@ -282,23 +465,158 @@ describe('Inicio hub', () => {
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
   });
 
-  it('searches the typed question in the existing palette without calling a model', async () => {
+  it('lists what needs attention first, each row with a direct link, and the composer below', async () => {
+    await open();
+    const list = await attention();
+    const decisions = await within(list).findByRole('link', { name: 'Revisar en Bandeja' });
+    expect(decisions).toHaveAttribute('href', '/bandeja');
+    expect(within(list).getByText('2 alertas digitales esperan verificación')).toBeVisible();
+    // The visible word stays «Abrir alerta»; the name says which one (functional-10 T5).
+    const alert = await within(list).findByRole('link', {
+      name: 'Abrir alerta Alerta sin causa documentada',
+    });
+    expect(alert).toHaveTextContent(/^Abrir alerta$/);
+    expect(alert).toHaveAttribute('href', '/objeto/alertas/AL-1');
+    expect(within(list).getByRole('link', { name: 'Abrir Bandeja' })).toHaveAttribute(
+      'href',
+      '/bandeja',
+    );
+    const rows = within(within(list).getByRole('list')).getAllByRole('listitem');
+    expect(rows.length).toBeGreaterThanOrEqual(2);
+    expect(rows.length).toBeLessThanOrEqual(5);
+    const composer = screen.getByRole('textbox', { name: SEARCH });
+    expect(list.compareDocumentPosition(composer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('says calmly that nothing needs attention when no source has pending work', async () => {
+    server.use(
+      http.get('/api/alertas', () =>
+        HttpResponse.json([{ _id: 'AL-9', Estado: 'Cerrada', Nivel: 'Rojo' }]),
+      ),
+    );
+    await open([]);
+    const list = await attention();
+    expect(await within(list).findByText('Nada necesita tu atención ahora.')).toBeVisible();
+    expect(within(list).queryByRole('list')).toBeNull();
+  });
+
+  it('offers a retry when the alerts behind the attention list fail', async () => {
+    let fail = true;
+    server.use(
+      http.get('/api/alertas', () =>
+        fail
+          ? HttpResponse.json({ detail: 'Alertas no disponibles' }, { status: 400 })
+          : HttpResponse.json([{ _id: 'AL-1', Estado: 'Abierta', Nivel: 'Rojo', Causa: 'Corte' }]),
+      ),
+    );
     const user = await open();
-    const composer = await screen.findByRole('textbox', { name: 'Pregunta a SIPGES' });
+    const list = await attention();
+    expect(await within(list).findByText('Alertas no disponibles')).toBeVisible();
+    fail = false;
+    await user.click(within(list).getByRole('button', { name: 'Reintentar' }));
+    expect(await within(list).findByText('Corte')).toBeVisible();
+  });
+
+  it('labels the composer «Buscar en registros» while external AI is off and searches with Enter', async () => {
+    const user = await open();
+    const composer = await screen.findByRole('textbox', { name: SEARCH });
+    expect(await screen.findByText('IA externa desactivada')).toBeVisible();
+    expect(screen.getByText('Enter busca · Mayús+Enter, nueva línea')).toBeVisible();
     await user.type(composer, 'demandas abiertas en Vice');
-    await user.click(screen.getByRole('button', { name: 'Enviar pregunta' }));
+    await user.click(screen.getByRole('button', { name: 'Buscar en registros' }));
     const palette = await screen.findByRole('dialog', { name: 'Búsqueda global' });
     expect(within(palette).getByRole('combobox')).toHaveValue('demandas abiertas en Vice');
     await waitFor(() => expect(searched).toContain('demandas abiertas en Vice'));
     expect(localStorage.length).toBe(0);
   });
 
+  it('labels the composer «Preguntar, con citas» when external AI is on and says answers are not there yet', async () => {
+    withExternalAi(true);
+    const user = await open();
+    const composer = await screen.findByRole('textbox', { name: 'Preguntar, con citas' });
+    expect(await screen.findByText('IA externa activada')).toBeVisible();
+    expect(
+      screen.getByText(
+        'Las respuestas con citas aún no están disponibles: Enter abre la búsqueda.',
+      ),
+    ).toBeVisible();
+    expect(composer).toHaveAccessibleDescription(
+      'Las respuestas con citas aún no están disponibles: Enter abre la búsqueda.',
+    );
+    await user.type(composer, 'agua{Enter}');
+    const palette = await screen.findByRole('dialog', { name: 'Búsqueda global' });
+    expect(within(palette).getByRole('combobox')).toHaveValue('agua');
+  });
+
+  it('says so while the device is offline and clears it when the connection returns', async () => {
+    const online = vi.spyOn(window.navigator, 'onLine', 'get').mockReturnValue(false);
+    try {
+      await open();
+      await screen.findByRole('textbox', { name: SEARCH });
+      expect(screen.getByText('Sin conexión · lo que ves puede no estar al día')).toBeVisible();
+      online.mockReturnValue(true);
+      act(() => void window.dispatchEvent(new Event('online')));
+      expect(screen.queryByText(/Sin conexión/)).toBeNull();
+      online.mockReturnValue(false);
+      act(() => void window.dispatchEvent(new Event('offline')));
+      expect(screen.getByText('Sin conexión · lo que ves puede no estar al día')).toBeVisible();
+    } finally {
+      online.mockRestore();
+      // TanStack Query pauses every query after `offline` (one onlineManager per module): end online.
+      act(() => void window.dispatchEvent(new Event('online')));
+    }
+  });
+
+  it('does not call the list empty while a source behind it is still loading', async () => {
+    server.use(http.get('/api/alertas', () => HttpResponse.json([])));
+    await open();
+    // Registered after open(), so it overrides the handler open() adds.
+    server.use(http.get('/system/intelligence/territorial-alerts', () => delay('infinite')));
+    const list = await attention();
+    await screen.findByRole('region', { name: /Registros nuevos/ });
+    expect(within(list).queryByText('Nada necesita tu atención ahora.')).toBeNull();
+    expect(within(list).getByRole('status')).toHaveTextContent(/Cargando/);
+  });
+
+  it('offers a retry instead of an empty list when the pending decisions fail', async () => {
+    let fail = true;
+    server.use(http.get('/api/alertas', () => HttpResponse.json([])));
+    const user = await open();
+    server.use(
+      http.get('/system/intelligence/territorial-alerts', () =>
+        fail
+          ? HttpResponse.json({ detail: 'Bandeja no disponible' }, { status: 400 })
+          : HttpResponse.json([digitalAlert('TA-7', 'Pendiente de verificación')]),
+      ),
+    );
+    const list = await attention();
+    expect(await within(list).findByText('Bandeja no disponible')).toBeVisible();
+    expect(within(list).queryByText('Nada necesita tu atención ahora.')).toBeNull();
+    fail = false;
+    await user.click(within(list).getByRole('button', { name: 'Reintentar' }));
+    expect(await within(list).findByText('1 alerta digital espera verificación')).toBeVisible();
+  });
+
   it('submits with Enter and ignores an empty question', async () => {
     const user = await open();
-    const composer = await screen.findByRole('textbox', { name: 'Pregunta a SIPGES' });
+    const composer = await screen.findByRole('textbox', { name: SEARCH });
     await user.type(composer, '   {Enter}');
     expect(screen.queryByRole('dialog')).toBeNull();
     await user.type(composer, 'agua{Enter}');
+    expect(await screen.findByRole('dialog', { name: 'Búsqueda global' })).toBeVisible();
+  });
+
+  it('does not send while an input method is still composing the question', async () => {
+    const user = await open();
+    const composer = await screen.findByRole('textbox', { name: SEARCH });
+    await user.type(composer, 'agua');
+    // Chromium and Firefox flag the confirming Enter as composing; Safari reports keyCode 229.
+    for (const init of [{ isComposing: true }, { keyCode: 229 }]) {
+      expect(fireEvent.keyDown(composer, { key: 'Enter', ...init })).toBe(false);
+      expect(screen.queryByRole('dialog')).toBeNull();
+    }
+    expect(composer).toHaveValue('agua');
+    await user.type(composer, '{Enter}');
     expect(await screen.findByRole('dialog', { name: 'Búsqueda global' })).toBeVisible();
   });
 
@@ -310,24 +628,12 @@ describe('Inicio hub', () => {
     expect(buttons.length).toBeLessThanOrEqual(4);
     const text = buttons[0]?.textContent ?? '';
     await user.click(buttons[0] as HTMLElement);
-    expect(screen.getByRole('textbox', { name: 'Pregunta a SIPGES' })).toHaveValue(text);
+    expect(screen.getByRole('textbox', { name: SEARCH })).toHaveValue(text);
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('says that sending opens the search with the question', async () => {
+  it('briefs the week from existing data and links to Registros and the IRSA tab of Análisis', async () => {
     await open();
-    expect(await screen.findByText('Enviar abre la búsqueda con tu pregunta')).toBeVisible();
-    expect(screen.queryByText(/citas llegan pronto/)).toBeNull();
-  });
-
-  it('briefs from existing data and links to Bandeja, Registros and the IRSA tab of Análisis', async () => {
-    await open();
-    const decision = await screen.findByRole('region', { name: /Alertas activas/ });
-    expect(within(decision).getByText('4')).toBeVisible();
-    expect(within(decision).getByRole('link', { name: /Abrir Bandeja/ })).toHaveAttribute(
-      'href',
-      '/bandeja',
-    );
     const fresh = await screen.findByRole('region', { name: /Registros nuevos/ });
     await waitFor(() => expect(within(fresh).getByText('3')).toBeVisible());
     expect(within(fresh).getByText('Hecho de hoy')).toBeVisible();
@@ -348,7 +654,19 @@ describe('Inicio hub', () => {
     ).toHaveAttribute('href', '/analisis?vista=riesgo');
   });
 
-  it('shows «Sin datos suficientes» instead of a level when the IRSA has no evidence (S3)', async () => {
+  // functional-10 T1 (F1) and T2 (F6): the week's dates in the shared style and a labelled IRSA.
+  it('labels the current IRSA with a decimal comma and dates the week like every other screen', async () => {
+    await open();
+    const fresh = await screen.findByRole('region', { name: /Registros nuevos/ });
+    await waitFor(() => expect(within(fresh).getByText('Hecho de hoy')).toBeVisible());
+    expect(fresh).toHaveTextContent(`Evento · ${formatDay(day(0))}`);
+    expect(fresh).not.toHaveTextContent(day(0));
+    const territory = await screen.findByRole('region', { name: /Riesgo del territorio/ });
+    expect(territory).toHaveTextContent('IRSA actual 42,3');
+    expect(territory).not.toHaveTextContent('42.3');
+  });
+
+  it('shows «Sin datos suficientes» and asks for records when the IRSA has no evidence (S3)', async () => {
     server.use(
       http.get('/system/irsa', () =>
         HttpResponse.json({
@@ -365,18 +683,27 @@ describe('Inicio hub', () => {
     await open();
     const territory = await screen.findByRole('region', { name: /Riesgo del territorio/ });
     expect(await within(territory).findByText('Sin datos suficientes')).toBeVisible();
-    expect(
-      within(territory).getByText('Carga registros del proyecto para calcular el IRSA.'),
-    ).toBeVisible();
     expect(within(territory).queryByText(/Verde|Amarillo|Naranja|Rojo/)).toBeNull();
     expect(within(territory).queryByText('5.6')).toBeNull();
+    const list = await attention();
+    expect(
+      within(list).getByText('Carga registros del proyecto para calcular el IRSA.'),
+    ).toBeVisible();
+    expect(within(list).getByRole('link', { name: 'Ir a Registros' })).toHaveAttribute(
+      'href',
+      '/registros',
+    );
+    expect(screen.getAllByText('Carga registros del proyecto para calcular el IRSA.')).toHaveLength(
+      1,
+    );
   });
 
-  it('badges the IRSA as pending methodological validation when the config says so (S3)', async () => {
+  it('shows the provisional IRSA caveat once, in the status line (S3)', async () => {
     await open();
+    expect(await screen.findByText('Metodología pendiente de validación')).toBeVisible();
     const territory = await screen.findByRole('region', { name: /Riesgo del territorio/ });
-    expect(await within(territory).findByText('Metodología pendiente de validación')).toBeVisible();
-    expect(within(territory).getByText(/^Amarillo/)).toBeVisible();
+    expect(await within(territory).findByText(/^Amarillo/)).toBeVisible();
+    expect(screen.getAllByText('Metodología pendiente de validación')).toHaveLength(1);
     expect(within(territory).queryByText('Sin datos suficientes')).toBeNull();
   });
 
@@ -394,7 +721,7 @@ describe('Inicio hub', () => {
     await open();
     const territory = await screen.findByRole('region', { name: /Riesgo del territorio/ });
     expect(await within(territory).findByText(/^Amarillo/)).toBeVisible();
-    expect(within(territory).queryByText('Metodología pendiente de validación')).toBeNull();
+    expect(screen.queryByText('Metodología pendiente de validación')).toBeNull();
   });
 
   it('hides the card whose source fails instead of inventing numbers', async () => {
@@ -403,7 +730,7 @@ describe('Inicio hub', () => {
       http.get('/api/eventos', () => HttpResponse.json({ detail: 'caído' }, { status: 500 })),
       http.get('/system/irsa', () => HttpResponse.json({ detail: 'caído' }, { status: 500 })),
     );
-    await screen.findByRole('region', { name: /Alertas activas/ });
+    await attention();
     await waitFor(() =>
       expect(screen.queryByRole('region', { name: /Registros nuevos/ })).toBeNull(),
     );
@@ -414,7 +741,7 @@ describe('Inicio hub', () => {
 describe('Configuración', () => {
   it('opens the section named in the URL and Apariencia for an unknown one', async () => {
     const user = userEvent.setup();
-    at('/version-4?seccion=privacidad');
+    at('/configuracion?seccion=privacidad');
     const page = render(<App />);
     const nav = await screen.findByRole('navigation', { name: 'Secciones de Configuración' });
     expect(within(nav).getByRole('link', { name: 'Privacidad y datos' })).toHaveAttribute(
@@ -427,7 +754,7 @@ describe('Configuración', () => {
     expect(await screen.findByRole('heading', { name: 'Notificaciones' })).toBeVisible();
     page.unmount();
 
-    at('/version-4?seccion=cuenta');
+    at('/version-4?seccion=facturacion');
     render(<App />);
     expect(await screen.findByRole('group', { name: 'Tema' })).toBeInTheDocument();
     expect(

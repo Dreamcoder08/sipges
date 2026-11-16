@@ -19,6 +19,7 @@ import (
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/app/apitest"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database/dbtest"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/leakcheck"
 )
 
 // The analyst read routes against a migrated synthetic PostgreSQL, through the composed handler
@@ -26,7 +27,7 @@ import (
 
 var scratch *dbtest.Scratch
 
-func TestMain(m *testing.M) { os.Exit(run(m)) }
+func TestMain(m *testing.M) { os.Exit(leakcheck.After(run(m))) }
 
 func run(m *testing.M) int {
 	adminURL := os.Getenv(dbtest.EnvAdminURL)
@@ -133,6 +134,15 @@ func seed(ctx context.Context, dsn string) error {
 			infrastructure.HashToken(tokens[user]), user, t0.Add(8*time.Hour))
 	}
 	return conn.SendBatch(ctx, batch).Close()
+}
+
+// needsDatabase skips a test before it touches the scratch database, which exists only when
+// dbtest.EnvAdminURL is set.
+func needsDatabase(t *testing.T) {
+	t.Helper()
+	if scratch == nil {
+		t.Skip(dbtest.EnvAdminURL + " is not set")
+	}
 }
 
 func start(t *testing.T) string {

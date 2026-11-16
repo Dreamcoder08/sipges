@@ -6,7 +6,7 @@
   "scripts": {
     "e2e": "playwright test",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "node --test support/cleanup.test.ts support/network.test.ts"
+    "test": "node --test support/cleanup.test.ts support/network.test.ts support/runtime.test.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",

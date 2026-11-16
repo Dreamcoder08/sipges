@@ -32,7 +32,7 @@ export const ExternalAiCard = ({
       </label>
       <p className={styles.muted}>
         {enabled
-          ? 'Activado: el servidor MCP, el resumen asistido y los embeddings externos pueden recibir datos seudonimizados. Cada envío queda en Auditoría.'
+          ? 'Activado: el servidor MCP, el resumen asistido y la búsqueda por significado con un modelo externo pueden recibir datos seudonimizados. Cada envío queda en Auditoría.'
           : 'Desactivado: ningún dato del proyecto sale hacia IA externa.'}
       </p>
     </Card>

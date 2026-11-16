@@ -1,4 +1,5 @@
 import type { ModuleRecord } from '@sipges/contracts';
+import { limaToday } from '@sipges/kernel';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { InternalLink, objectHref, useInternalNavigate } from '../../../shared/lib/navigation.tsx';
@@ -12,6 +13,8 @@ import { AlertHeatmap } from './AlertHeatmap.tsx';
 import { alertTerritory, LEVEL_ORDER, MISSING_TERRITORY, recordedLevel } from './alert-heatmap.ts';
 import { alertDay, alertOverview, LEVEL_LABEL, type OverviewPeriod } from './alert-overview.ts';
 import styles from './AlertOverview.module.css';
+import { count, plural } from '../../../shared/lib/plural.ts';
+import { DateText } from '../../../shared/ui/DateText.tsx';
 
 const PERIODS: readonly [OverviewPeriod, string][] = [
   [6, '6 meses'],
@@ -76,12 +79,8 @@ export const AlertOverview = ({ scope, onShowList }: { scope: string; onShowList
       <QueryState query={alerts} label="las alertas">
         {(rows) => {
           const eventRows: readonly ModuleRecord[] = events.data ?? [];
-          const data = alertOverview(
-            rows,
-            eventRows,
-            period,
-            new Date().toISOString().slice(0, 10),
-          );
+          // The period ends in Lima's month, not the UTC one (a day ahead after 19:00).
+          const data = alertOverview(rows, eventRows, period, limaToday());
           const previousLabel = period === 'todo' ? '' : `${period} meses anteriores`;
           const months = data.monthly.map((m) => m.month);
           const withYear = months.length > 12;
@@ -141,7 +140,7 @@ export const AlertOverview = ({ scope, onShowList }: { scope: string; onShowList
                 </div>
                 <div className={styles.side}>
                   <section className={styles.panel} aria-labelledby="alert-evolution">
-                    <h4 id="alert-evolution">Evolución de alertas</h4>
+                    <h2 id="alert-evolution">Evolución de alertas</h2>
                     <StackedColumnChart
                       labels={labels}
                       caption="Alertas registradas por mes y nivel de riesgo"
@@ -167,13 +166,14 @@ export const AlertOverview = ({ scope, onShowList }: { scope: string; onShowList
                     />
                     {data.undated ? (
                       <p className={styles.note}>
-                        {data.undated} alerta(s) sin fecha no se grafican.
+                        {count(data.undated, 'alerta', 'alertas')} sin fecha no{' '}
+                        {plural(data.undated, 'se grafica', 'se grafican')}.
                       </p>
                     ) : null}
                   </section>
                   <section className={styles.panel} aria-labelledby="alert-communities">
                     <div className={styles.panelHeading}>
-                      <h4 id="alert-communities">Comunidades prioritarias</h4>
+                      <h2 id="alert-communities">Comunidades prioritarias</h2>
                       {data.ranking.length > 5 ? (
                         <Button
                           variant="secondary"
@@ -195,7 +195,9 @@ export const AlertOverview = ({ scope, onShowList }: { scope: string; onShowList
                             >
                               {c.level ? levelName(c.level, LEVEL_LABEL[c.level]) : 'Sin nivel'}
                             </span>
-                            <span className={styles.count}>{c.count} alerta(s)</span>
+                            <span className={styles.count}>
+                              {count(c.count, 'alerta', 'alertas')}
+                            </span>
                           </li>
                         ))}
                       </ol>
@@ -206,8 +208,9 @@ export const AlertOverview = ({ scope, onShowList }: { scope: string; onShowList
                     )}
                     {data.missingTerritory ? (
                       <p className={styles.note}>
-                        {data.missingTerritory} alerta(s) activa(s) sin comunidad registrada:
-                        complete «Comunidad / territorio» en su ficha para ubicarlas.
+                        {count(data.missingTerritory, 'alerta activa', 'alertas activas')} sin
+                        comunidad registrada: complete «Comunidad / territorio» en su ficha para{' '}
+                        {plural(data.missingTerritory, 'ubicarla', 'ubicarlas')}.
                       </p>
                     ) : null}
                   </section>
@@ -216,7 +219,7 @@ export const AlertOverview = ({ scope, onShowList }: { scope: string; onShowList
 
               <section className={styles.panel} aria-labelledby="alert-recent">
                 <div className={styles.panelHeading}>
-                  <h4 id="alert-recent">Alertas recientes</h4>
+                  <h2 id="alert-recent">Alertas recientes</h2>
                   <Button variant="secondary" onClick={onShowList}>
                     Ver todas las alertas
                   </Button>
@@ -244,7 +247,9 @@ export const AlertOverview = ({ scope, onShowList }: { scope: string; onShowList
                           const territory = alertTerritory(row, eventRows);
                           return (
                             <tr key={row._id}>
-                              <td data-label="Fecha">{alertDay(row) ?? 'Sin fecha'}</td>
+                              <td data-label="Fecha">
+                                <DateText value={alertDay(row)} fallback="Sin fecha" />
+                              </td>
                               <td data-label="Dimensión">
                                 {dimension
                                   ? `${dimension} - ${DIMENSION_NAMES[dimension]}`

@@ -207,6 +207,9 @@ export const AdministrationPage = ({ scope, projectLabel, role, username }: Feat
   };
   return (
     <div className={styles.page}>
+      {/* Wide screens hide the shell's h1 and no sidebar entry names this page, so it carries its
+          visible title (functional-10 T16). The scope stays: administrators grant access by it. */}
+      <h2 className={styles.title}>Administración del sistema</h2>
       <p>
         Proyecto activo: <strong>{projectLabel}</strong> ({scope}). Los cambios de identidad y
         accesos requieren autorización del servidor.

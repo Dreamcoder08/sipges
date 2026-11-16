@@ -3,6 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { requestJson } from '../../shared/api/client.ts';
 import { GEOCATMIN_VIEWER } from './MiningCadastreLayer.tsx';
+import { count } from '../../shared/lib/plural.ts';
+import { DateText } from '../../shared/ui/DateText.tsx';
+import styles from './Geography.module.css';
 export type OfficialSelection = { serviceId: string; layerId: number; opacity: number };
 export const GeocatminControls = ({
   scope,
@@ -69,13 +72,13 @@ export const GeocatminControls = ({
           </button>
         </p>
       ) : null}
-      <a href={GEOCATMIN_VIEWER} target="_blank" rel="noreferrer">
+      <a href={GEOCATMIN_VIEWER} target="_blank" rel="noreferrer" className="standalone-link">
         Abrir visor oficial INGEMMET
       </a>
       {catalogue.data?.services.map((service) => (
         <p key={service.id}>
           {service.id}: {service.status === 'verified' ? 'verificado' : 'no disponible'} ·{' '}
-          {service.checkedAt}
+          <DateText value={service.checkedAt} />
           {service.error ? ` · ${service.error}` : ''}
         </p>
       ))}
@@ -85,7 +88,7 @@ export const GeocatminControls = ({
         return (
           <fieldset key={key}>
             <legend>{layer.name}</legend>
-            <label>
+            <label className={styles.layerToggle}>
               <input
                 type="checkbox"
                 checked={Boolean(active)}
@@ -166,7 +169,7 @@ export const GeocatminControls = ({
       {result.data ? (
         <div>
           <p>
-            {result.data.features.length} elemento(s) oficial(es).{' '}
+            {count(result.data.features.length, 'elemento oficial', 'elementos oficiales')}.{' '}
             {result.data.truncated ? 'Resultado truncado: reduzca el área.' : ''}
           </p>
           {result.data.features.map((f, i) => (

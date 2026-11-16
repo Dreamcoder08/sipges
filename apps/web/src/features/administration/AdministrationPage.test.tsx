@@ -309,3 +309,13 @@ it('links and unlinks Google sign-in for an existing account', async () => {
     { path: 'analyst', body: { email: '' } },
   ]);
 });
+
+// functional-10 T16 (ego-browser walk): at 1440 px the page had no visible title (wide screens hide
+// the shell's h1), as Auditoría before T14.
+it('titles the page «Administración del sistema»', async () => {
+  renderPage();
+  expect(
+    screen.getByRole('heading', { level: 2, name: 'Administración del sistema' }),
+  ).toBeInTheDocument();
+  await screen.findByText('Cuentas de identidad');
+});

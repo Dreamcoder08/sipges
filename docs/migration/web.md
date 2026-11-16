@@ -55,7 +55,7 @@ selected leads to `/proyecto`.
   data call still needs a session and a project.
 - SPA responses carry a strict CSP. It allows only `'self'` scripts and styles, no inline code,
   `connect-src 'self'` and `frame-ancestors 'none'`. Bar widths use React's `style` prop, which
-  goes through the CSSOM and is allowed. The favicon is a `data:` image.
+  goes through the CSSOM and is allowed. The tab icon is `/favicon.ico` with `/favicon.svg`, served without a session.
 - JSX escaping only: no `dangerouslySetInnerHTML`, no inline handlers.
 
 ## Accessibility

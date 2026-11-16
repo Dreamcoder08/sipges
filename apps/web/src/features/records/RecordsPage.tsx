@@ -21,12 +21,16 @@ import { isPendingActorIdentity } from './insights/actor-identity.ts';
 import { ActorMap } from './insights/ActorMap.tsx';
 import { NarrativeTrend } from './NarrativeTrend.tsx';
 import { ConfirmDelete } from './ConfirmDelete.tsx';
+import { type ActiveFilter, ActiveFilters, FilterSheet } from './FilterSheet.tsx';
 import { RecordDetail } from './RecordDetail.tsx';
 import { RecordCell, isCompactCell } from './RecordCell.tsx';
+import { RecordRows } from './hub/RecordRows.tsx';
+import { summarize } from './hub/summary.ts';
 import { RecordEditor } from './RecordEditor.tsx';
 import { canWriteRecords, fieldValue } from './model.ts';
 import { FACETS, MODULES, type RecordModule } from './modules.ts';
 import styles from './Records.module.css';
+import { count } from '../../shared/lib/plural.ts';
 
 type Props = {
   module: RecordModule;
@@ -34,10 +38,17 @@ type Props = {
   projectId: string;
   projectLabel: string;
   role: Role;
-  /** When set, «Ver» hands the record to the caller (the Registros hub's sheet) instead of this page's own panel. */
-  onView?: (id: string) => void;
+  /**
+   * When set, «Ver» hands the record to the caller (the Registros hub's sheet) instead of this
+   * page's own panel, with the list it came from: under Demandas that may be `compromisos`.
+   */
+  onView?: (id: string, module: RecordModule) => void;
+  /** Under Demandas, the sub-list to start on (the hub reopening a compromiso from the URL). */
+  list?: RecordModule | undefined;
   /** Open with the new-record form or the CSV import already showing (the hub's «Nuevo registro» / «Importar»). */
   start?: 'create' | 'import' | undefined;
+  /** With `onView`: two-line rows that open the hub's sheet instead of the table (below 1024 px). */
+  twoLineRows?: boolean;
 };
 const message = (error: unknown) =>
   !error
@@ -51,7 +62,9 @@ const message = (error: unknown) =>
           : 'No se pudo completar la operación.';
 
 export const RecordsPage = (props: Props) => {
-  const [module, setModule] = useState(props.module);
+  const [module, setModule] = useState<RecordModule>(
+    props.module === 'demandas' && props.list === 'compromisos' ? 'compromisos' : props.module,
+  );
   return (
     <div className={styles.page}>
       {props.module === 'demandas' ? (
@@ -93,6 +106,7 @@ const RecordsWorkspace = ({
   role,
   onView,
   start,
+  twoLineRows,
 }: Props) => {
   const [pendingActors, setPendingActors] = useState(false);
   const [searchInput, setSearchInput] = useState('');
@@ -109,6 +123,7 @@ const RecordsWorkspace = ({
   // Where focus returns when a record panel closes (the row's own «Ver»/«Editar» button).
   const returnTo = useRef<string | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
+  const filtersButton = useRef<HTMLButtonElement>(null);
   const client = useQueryClient();
   const rows = useQuery(recordsQuery(module, scope, search));
   const selectedId = panel.kind === 'view' || panel.kind === 'edit' ? panel.id : '';
@@ -181,6 +196,21 @@ const RecordsWorkspace = ({
   });
   const busy = save.isPending || remove.isPending || uploadBusy;
   const moduleFacets = FACETS[module] ?? [];
+  const setFacet = (key: string, value: string) => {
+    setFacets((current) => ({ ...current, [key]: value }));
+    setPageIndex(0);
+  };
+  const clearFacets = () => {
+    setFacets({});
+    setPageIndex(0);
+  };
+  const activeFacets: ActiveFilter[] = moduleFacets
+    .filter(({ key }) => facets[key])
+    .map(({ key, label }) => ({
+      id: key,
+      label: `${label}: ${facets[key]}`,
+      remove: () => setFacet(key, ''),
+    }));
 
   if (panel.kind !== 'list') {
     const title =
@@ -192,9 +222,9 @@ const RecordsWorkspace = ({
         {notice ? <Alert tone="success">{notice}</Alert> : null}
         <section className={styles.panel} aria-labelledby="record-panel-title">
           <header className={styles.panelHeader}>
-            <h3 id="record-panel-title" ref={heading} tabIndex={-1}>
+            <h2 id="record-panel-title" ref={heading} tabIndex={-1}>
               {title}
-            </h3>
+            </h2>
             <div className={styles.actions}>
               {panel.kind === 'view' && writable ? (
                 <Button
@@ -355,7 +385,9 @@ const RecordsWorkspace = ({
             const currentPage = Math.min(pageIndex, pageCount - 1);
             const pageRows = visible.slice(currentPage * 50, (currentPage + 1) * 50);
             const openInsight = (id: string, from?: string) =>
-              onView ? onView(id) : openPanel({ kind: 'view', id }, from ?? `insight-${id}`);
+              onView
+                ? onView(id, module)
+                : openPanel({ kind: 'view', id }, from ?? `insight-${id}`);
             return (
               <>
                 {module === 'acciones' || module === 'compromisos' ? (
@@ -395,37 +427,52 @@ const RecordsWorkspace = ({
                 ) : null}
                 {moduleFacets.length ? (
                   <div className={styles.filters}>
-                    {moduleFacets.map(({ key, label }) => {
-                      const options = [...new Set(data.map((row) => facetValue(row, module, key)))]
-                        .filter(Boolean)
-                        .sort((a, b) => a.localeCompare(b, 'es'));
-                      return (
-                        <div className={styles.field} key={key}>
-                          <label htmlFor={`facet-${module}-${key}`}>{label}</label>
-                          <select
-                            id={`facet-${module}-${key}`}
-                            value={facets[key] ?? ''}
-                            onChange={(event) => {
-                              setFacets((current) => ({ ...current, [key]: event.target.value }));
-                              setPageIndex(0);
-                            }}
-                          >
-                            <option value="">Todos</option>
-                            {options.map((option) => (
-                              <option key={option} value={option}>
-                                {option}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      );
-                    })}
+                    <FilterSheet
+                      active={activeFacets}
+                      shown={visible.length}
+                      onClear={clearFacets}
+                      buttonRef={filtersButton}
+                    >
+                      {moduleFacets.map(({ key, label }) => {
+                        const options = [
+                          ...new Set(data.map((row) => facetValue(row, module, key))),
+                        ]
+                          .filter(Boolean)
+                          .sort((a, b) => a.localeCompare(b, 'es'));
+                        return (
+                          <div className={styles.field} key={key}>
+                            <label htmlFor={`facet-${module}-${key}`}>{label}</label>
+                            <select
+                              id={`facet-${module}-${key}`}
+                              value={facets[key] ?? ''}
+                              onChange={(event) => setFacet(key, event.target.value)}
+                            >
+                              <option value="">Todos</option>
+                              {options.map((option) => (
+                                <option key={option} value={option}>
+                                  {option}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        );
+                      })}
+                    </FilterSheet>
+                    <ActiveFilters
+                      active={activeFacets}
+                      onClear={clearFacets}
+                      fallback={filtersButton}
+                    />
                   </div>
                 ) : null}
-                <p className={styles.muted} role="status">
-                  {pageRows.length} de {visible.length} registro(s) mostrados · {data.length} en la
-                  consulta
-                </p>
+                {data.length ? (
+                  <p className={styles.muted} role="status">
+                    {visible.length
+                      ? `${pageRows.length} de ${count(visible.length, 'registro mostrado', 'registros mostrados')}`
+                      : 'Ningún registro que mostrar'}{' '}
+                    · {data.length} en la consulta
+                  </p>
+                ) : null}
                 {pageCount > 1 ? (
                   <nav aria-label="Paginación de registros" className={styles.actions}>
                     <Button
@@ -447,7 +494,13 @@ const RecordsWorkspace = ({
                     </Button>
                   </nav>
                 ) : null}
-                {visible.length ? (
+                {visible.length && twoLineRows && onView ? (
+                  <RecordRows
+                    rows={pageRows.map((row) => summarize(module, row))}
+                    label={`Registros de ${definition.label.toLowerCase()} del proyecto activo`}
+                    onOpen={({ id }) => onView(id, module)}
+                  />
+                ) : visible.length ? (
                   <div
                     className={styles.tableWrap}
                     tabIndex={0}
@@ -469,7 +522,9 @@ const RecordsWorkspace = ({
                                 className={
                                   isCompactCell(module, field ?? { key, label: key })
                                     ? styles.compact
-                                    : undefined
+                                    : key === definition.titleField
+                                      ? styles.titleCell
+                                      : undefined
                                 }
                               >
                                 {field?.label ?? key}
@@ -513,7 +568,7 @@ const RecordsWorkspace = ({
                                   : files.isError
                                     ? 'No se pudieron consultar los archivos'
                                     : fileCount(row._id)
-                                      ? `${fileCount(row._id)} archivo(s) · abrir con «Ver»`
+                                      ? `${count(fileCount(row._id), 'archivo', 'archivos')} · abrir con «Ver»`
                                       : 'Sin archivo almacenado'}
                               </td>
                             ) : null}
@@ -526,7 +581,7 @@ const RecordsWorkspace = ({
                                   data-return={`ver-${row._id}`}
                                   onClick={() =>
                                     onView
-                                      ? onView(row._id)
+                                      ? onView(row._id, module)
                                       : openPanel({ kind: 'view', id: row._id }, `ver-${row._id}`)
                                   }
                                 >
@@ -591,9 +646,26 @@ const RecordsWorkspace = ({
                     Prueba con otras palabras, otros filtros o revisa la ortografía.
                   </EmptyState>
                 ) : (
-                  <EmptyState title={`Aún no hay registros de ${definition.label.toLowerCase()}.`}>
+                  <EmptyState
+                    title={`Aún no hay registros de ${definition.label.toLowerCase()}.`}
+                    action={
+                      writable ? (
+                        <Button
+                          disabled={busy}
+                          data-return="primer-registro"
+                          onClick={() => {
+                            save.reset();
+                            setNotice('');
+                            openPanel({ kind: 'create' }, 'primer-registro');
+                          }}
+                        >
+                          Crear el primer registro
+                        </Button>
+                      ) : undefined
+                    }
+                  >
                     {writable
-                      ? 'Usa «Nuevo registro» o «Importar CSV» para cargar el primero en el proyecto activo.'
+                      ? 'Crea el primero aquí o carga varios con «Importar CSV».'
                       : 'Cuando el equipo registre información aparecerá aquí.'}
                   </EmptyState>
                 )}
@@ -630,7 +702,7 @@ const DemandCommitments = ({ scope, id }: { scope: string; id: string }) => {
   const commitments = useQuery(recordsQuery('compromisos', scope, ''));
   return (
     <section aria-labelledby={`commitments-${id}`}>
-      <h4 id={`commitments-${id}`}>Compromisos de seguimiento</h4>
+      <h3 id={`commitments-${id}`}>Compromisos de seguimiento</h3>
       <QueryState query={commitments} label="los compromisos">
         {(rows) => {
           const related = rows.filter((row) => String(row.Demanda_Asociada ?? '') === id);

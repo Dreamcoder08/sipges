@@ -4,7 +4,7 @@ import { watchNetwork } from '../support/network.ts';
 
 /** Screens in the sidebar's account menu, with the name the menu gives them. */
 const ACCOUNT_MENU_LABELS: Readonly<Record<string, string>> = {
-  '/version-4': 'Configuración',
+  '/configuracion': 'Configuración',
   '/administracion': 'Administración',
   '/auditoria': 'Auditoría',
   '/metodologia': 'Ayuda y metodología',

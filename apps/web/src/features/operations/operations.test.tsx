@@ -276,6 +276,41 @@ it('coordinador creates plans only from verified alerts and saves scoped transit
     evidence_attachment_id: 'ADJ-1',
   });
 });
+it('names the project and shows the generation time in Lima, not the stored id and instant (T16)', async () => {
+  installManagement();
+  mount(<ManagementPage {...context} />);
+  const line = await screen.findByText(/Generado:/);
+  expect(line).toHaveTextContent('Proyecto: Demo · Generado: 12 oct. 2026, 19:00');
+  expect(line).not.toHaveTextContent('PRJ-DEMO');
+  expect(line.querySelector('time')).toHaveAttribute('datetime', '2026-10-13T00:00:00Z');
+});
+it('dates recent alerts and plan history in Lima time (T16)', async () => {
+  installManagement();
+  server.use(
+    http.get('*/system/management/overview', () =>
+      HttpResponse.json({
+        ...overviewFixture,
+        recent_alerts: [
+          {
+            id: 'DA-1',
+            created_at: '2026-10-13T00:00:00Z',
+            source_url: '',
+            source_type: 'Sintética',
+            level: 'Media',
+            score: 35,
+            status: 'Pendiente',
+            reviewed_at: null,
+          },
+        ],
+      }),
+    ),
+  );
+  mount(<ManagementPage {...context} />);
+  expect(await screen.findByText(/DA-1 ·/)).toHaveTextContent('DA-1 · 12 oct. 2026, 19:00 ·');
+  await userEvent.setup().click(await screen.findByRole('button', { name: 'Ver plan action-1' }));
+  expect(screen.getByText(/Reunión registrada/)).toHaveTextContent('12 oct. 2026, 19:00 ·');
+  expect(document.body).not.toHaveTextContent(/\d{4}-\d{2}-\d{2}T/);
+});
 it('consulta sees prevention history without write forms', async () => {
   installManagement();
   mount(<ManagementPage {...context} />);
@@ -285,6 +320,63 @@ it('consulta sees prevention history without write forms', async () => {
   await user.click(screen.getByRole('button', { name: 'Ver plan action-1' }));
   expect(screen.getByText(/Reunión registrada/)).toBeVisible();
   expect(screen.queryByRole('button', { name: 'Guardar avance' })).toBeNull();
+});
+it('agrees counts in number on the territorial intelligence screen', async () => {
+  const summary = (total: number) =>
+    HttpResponse.json({
+      version: '2.6',
+      project_id: 'PRJ-DEMO',
+      total,
+      by_status: {},
+      by_priority: {},
+      themes: [],
+      irsa_integration: 'Independiente',
+      caution: 'Revisión.',
+    });
+  let total = 1;
+  server.use(
+    http.get('*/system/intelligence/territorial-alerts', () => HttpResponse.json([])),
+    http.get('*/system/intelligence/territorial-summary', () => summary(total)),
+    http.post('*/system/intelligence/semantic-analyze', () =>
+      HttpResponse.json({
+        version: '2.5',
+        project_id: 'PRJ-DEMO',
+        source_url: '',
+        analyzed_chars: 20,
+        topics: [],
+        signals: [],
+        orientation: { score: 0, level: 'Baja', meaning: 'Prioridad textual' },
+        project_comparison: [
+          { tema: 'Agua', registros_relacionados_por_palabras: 1 },
+          { tema: 'Empleo', registros_relacionados_por_palabras: 3 },
+        ],
+        suggested_actions: [],
+        evidence: { fragment: 'Texto', sha256: 'abc' },
+        method: 'Reglas',
+        limitations: [],
+        verification_status: 'Pendiente',
+        source_retrieved: false,
+      }),
+    ),
+  );
+  const view = mount(<IntelligencePage {...context} />);
+  // Wait for the summary in either number, then assert the exact sentence.
+  expect(await screen.findByText(/^1 alertas? registradas?\./)).toHaveTextContent(
+    /^1 alerta registrada\. Revisión\.$/,
+  );
+  const user = userEvent.setup();
+  await user.type(screen.getByLabelText('Texto a analizar'), 'Texto sintético');
+  await user.click(screen.getByRole('button', { name: 'Analizar texto' }));
+  expect(await screen.findByText(/^Agua: 1 registros? por palabras$/)).toHaveTextContent(
+    /^Agua: 1 registro por palabras$/,
+  );
+  expect(screen.getByText('Empleo: 3 registros por palabras')).toBeVisible();
+  view.unmount();
+  total = 2;
+  mount(<IntelligencePage {...context} />);
+  expect(await screen.findByText(/^2 alertas? registradas?\./)).toHaveTextContent(
+    /^2 alertas registradas\. Revisión\.$/,
+  );
 });
 it('reports unavailable semantic models without registering an alert', async () => {
   server.use(
@@ -580,10 +672,11 @@ it('says when the semantic model is unavailable and offers rules only', async ()
     ),
   );
   mount(<IntelligencePage {...context} />);
-  expect(
-    await screen.findByText(
-      'Análisis semántico no disponible: no se pudo contactar el modelo de embeddings. El modo automático aplica solo reglas.',
-    ),
-  ).toBeVisible();
+  const warning = await screen.findByText(/^Análisis semántico no disponible/);
+  expect(warning).toHaveTextContent(
+    'Análisis semántico no disponible: no se pudo contactar el modelo de representaciones semánticas. El modo automático aplica solo reglas.',
+    { normalizeWhitespace: true },
+  );
+  expect(warning).toBeVisible();
   expect(screen.getByRole('option', { name: /Semántico/ })).toBeDisabled();
 });

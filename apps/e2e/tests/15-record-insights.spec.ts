@@ -66,7 +66,7 @@ for (const mobile of [false, true]) {
       'true',
     );
     const cell = page.getByRole('button', {
-      name: `E · ${territory}: Medio-alto 1 alerta(s) (Naranja)`,
+      name: `E · ${territory}: Medio-alto 1 alerta (Naranja)`,
     });
     await cell.click();
     await page.getByRole('button', { name: `Ficha de alerta ${alertId}`, exact: true }).click();

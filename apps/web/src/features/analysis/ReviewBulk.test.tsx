@@ -145,9 +145,9 @@ describe('bulk review decision in the inbox (T26)', () => {
       await screen.findByRole('button', { name: 'Aprobar todos los pendientes de este tema' }),
     );
     let dialog = await screen.findByRole('alertdialog');
-    await within(dialog).findByText(/Se aprobarán 1,000 hallazgos pendientes del tema/);
-    expect(dialog).toHaveTextContent('Quedan 200 para otra tanda (máximo 1,000 por vez).');
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Aprobar 1,000' }));
+    await within(dialog).findByText(/Se aprobarán 1000 hallazgos pendientes del tema/);
+    expect(dialog).toHaveTextContent('Quedan 200 para otra tanda (máximo 1000 por vez).');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Aprobar 1000' }));
     expect(
       await screen.findByText(/Quedan 200 pendientes: repita la acción para la siguiente tanda\./),
     ).toBeInTheDocument();

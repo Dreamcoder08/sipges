@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/logging"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/release"
 )
 
 func newHandler(t *testing.T, opts Options) (http.Handler, *bytes.Buffer) {
@@ -51,7 +52,7 @@ func assertJSON(t *testing.T, rec *httptest.ResponseRecorder, status int, body s
 func TestHealthIsStatic(t *testing.T) {
 	t.Parallel()
 	h, _ := newHandler(t, Options{Ready: func(context.Context) error { return errors.New("down") }})
-	assertJSON(t, do(h, http.MethodGet, "/health", nil), 200, `{"status":"ok","service":"SIPGES","version":"V0.5.1"}`)
+	assertJSON(t, do(h, http.MethodGet, "/health", nil), 200, `{"status":"ok","service":"SIPGES","version":"`+release.Version+`"}`)
 }
 
 func TestReadiness(t *testing.T) {

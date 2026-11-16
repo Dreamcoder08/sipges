@@ -1,4 +1,4 @@
-import { type ChildProcess, spawn } from 'node:child_process';
+import { type ChildProcess, execFile, spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
@@ -6,11 +6,15 @@ import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 
 export const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 export const apiMain = path.join(repoRoot, 'apps/api/src/main.ts');
 export const webDist = path.join(repoRoot, 'apps/web/dist');
 export const workerDir = path.join(repoRoot, 'apps/hosting-cloudflare');
+export const goApiDir = path.join(repoRoot, 'apps/api-go');
+/** The SQL migrations both APIs apply; Go reads them through SIPGES_MIGRATIONS_DIR. */
+export const migrationsDir = path.join(repoRoot, 'apps/api/src/platform/database/migrations');
 
 /** A free loopback port chosen by the OS (closed again before the API binds it). */
 export const freePort = () =>
@@ -62,12 +66,21 @@ const mergeEnv = (overrides: Readonly<Record<string, string | undefined>>) => {
   return { ...env, ...Object.fromEntries(set) };
 };
 
-/** Spawns the real API composition root (apps/api/src/main.ts) and waits for /health. */
-export const startApi = async (options: StartOptions): Promise<RunningApi> => {
+/**
+ * Spawns `command` on a free loopback port and polls `readyPath` until it answers 2xx. Node is
+ * probed on 127.0.0.1; a server behind a host allowlist (Go) is probed on the public name.
+ */
+const launch = async (
+  label: string,
+  command: string,
+  args: readonly string[],
+  options: StartOptions,
+  probe: { readonly path: string; readonly onPublicName: boolean },
+): Promise<RunningApi> => {
   const port = await freePort();
   const env = mergeEnv({ SIPGES_HOST: '127.0.0.1', ...options.env, SIPGES_PORT: String(port) });
   let output = '';
-  const child: ChildProcess = spawn(process.execPath, [apiMain], {
+  const child: ChildProcess = spawn(command, args, {
     cwd: repoRoot,
     env,
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -83,13 +96,16 @@ export const startApi = async (options: StartOptions): Promise<RunningApi> => {
     clearTimeout(timer);
   };
 
+  const probeUrl = `${probe.onPublicName ? url : `http://127.0.0.1:${port}`}${probe.path}`;
   const deadline = Date.now() + (options.timeoutMs ?? 60_000);
   while (Date.now() < deadline) {
     if (child.exitCode !== null) {
-      throw new Error(`API exited with code ${child.exitCode} before it was ready:\n${output}`);
+      throw new Error(
+        `${label} exited with code ${child.exitCode} before it was ready:\n${output}`,
+      );
     }
     try {
-      const response = await fetch(`http://127.0.0.1:${port}/health`);
+      const response = await fetch(probeUrl);
       if (response.ok) return { url, output: () => output, stop };
     } catch {
       // Not listening yet.
@@ -97,8 +113,91 @@ export const startApi = async (options: StartOptions): Promise<RunningApi> => {
     await new Promise((resolve) => setTimeout(resolve, 200));
   }
   await stop();
-  throw new Error(`API did not become healthy in time:\n${output}`);
+  throw new Error(`${label} did not become healthy in time:\n${output}`);
 };
+
+/** Spawns the real API composition root (apps/api/src/main.ts) and waits for /health. */
+export const startApi = (options: StartOptions): Promise<RunningApi> =>
+  launch('API', process.execPath, [apiMain], options, { path: '/health', onPublicName: false });
+
+/** The Go toolchain's own settings, on top of baseEnv, for `go build`. */
+const goToolEnv = () => ({
+  ...baseEnv(),
+  ...Object.fromEntries(
+    ['GOPATH', 'GOCACHE', 'GOMODCACHE', 'GOFLAGS', 'GOTOOLCHAIN', 'GOPROXY'].flatMap((key) =>
+      process.env[key] ? [[key, process.env[key] ?? '']] : [],
+    ),
+  ),
+});
+
+/** A cold `go build` of the API on a CI runner takes minutes; a hung one must not stall setup. */
+export const GO_BUILD_TIMEOUT_MS = 10 * 60_000;
+/** Every migration on an empty synthetic database. */
+export const GO_MIGRATE_TIMEOUT_MS = 2 * 60_000;
+
+/**
+ * Runs a tool to completion within `timeoutMs` (stopped with SIGTERM when it overruns). A failure
+ * rejects with why (the exit code or the time limit) and everything the tool printed.
+ */
+export const runBounded = async (
+  label: string,
+  file: string,
+  args: readonly string[],
+  options: { cwd: string; env: NodeJS.ProcessEnv; timeoutMs: number },
+) => {
+  try {
+    return await promisify(execFile)(file, [...args], {
+      cwd: options.cwd,
+      env: options.env,
+      timeout: options.timeoutMs,
+      // SIGKILL, not the default SIGTERM: a tool that ignores SIGTERM must not outlive its limit.
+      killSignal: 'SIGKILL',
+      maxBuffer: 64 * 1024 * 1024,
+      encoding: 'utf8',
+    });
+  } catch (error) {
+    const failure = error as { stdout?: string; stderr?: string; killed?: boolean; code?: unknown };
+    const why = failure.killed
+      ? `timed out after ${options.timeoutMs} ms`
+      : typeof failure.code === 'number'
+        ? `failed with exit code ${failure.code}`
+        : `failed (${String(failure.code ?? (error as Error).message)})`;
+    throw new Error(`${label} ${why}:\n${failure.stdout ?? ''}${failure.stderr ?? ''}`, {
+      cause: error,
+    });
+  }
+};
+
+/** Builds apps/api-go/cmd/api once into `dir` (a scratch directory) and returns the binary. */
+export const buildGoApi = async (dir: string) => {
+  const binary = path.join(dir, 'sipges-api-go');
+  await runBounded('go build ./cmd/api', 'go', ['build', '-o', binary, './cmd/api'], {
+    cwd: goApiDir,
+    env: goToolEnv(),
+    timeoutMs: GO_BUILD_TIMEOUT_MS,
+  });
+  return binary;
+};
+
+/** Runs `sipges-api-go migrate` (Go does not migrate on start); rejects with its output. */
+export const migrateGoApi = async (
+  binary: string,
+  env: Readonly<Record<string, string | undefined>>,
+) => {
+  await runBounded('sipges-api-go migrate', binary, ['migrate'], {
+    cwd: repoRoot,
+    env: mergeEnv(env),
+    timeoutMs: GO_MIGRATE_TIMEOUT_MS,
+  });
+};
+
+/**
+ * Runs the built Go API and waits for /health/ready, which answers 200 only once the database
+ * answers and the administrator of SIPGES_ADMIN_* exists. The probe uses the public host name,
+ * the one SIPGES_ALLOWED_HOSTS admits.
+ */
+export const startGoApi = (binary: string, options: StartOptions): Promise<RunningApi> =>
+  launch('Go API', binary, [], options, { path: '/health/ready', onPublicName: true });
 
 /**
  * Runs the Cloudflare Workers adapter under `wrangler dev` (workerd) against a PostgreSQL

@@ -5,7 +5,9 @@ import { Card } from '../../shared/ui/Card.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { Alert } from '../../shared/ui/Alert.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
+import { isApiError } from '../../shared/api/client.ts';
 import { errorDetail } from '../../shared/api/feedback.ts';
+import { NotFoundNotice } from '../../shared/ui/NotFoundNotice.tsx';
 import { InternalLink } from '../../shared/lib/navigation.tsx';
 import { RecordEditor } from './RecordEditor.tsx';
 import { recordQuery, saveRecord } from './api.ts';
@@ -24,6 +26,32 @@ import styles from './Records.module.css';
 
 const isRecordModule = (value: string): value is RecordModule => Object.hasOwn(MODULES, value);
 
+/** Where a missing record or type sends the person back to. */
+const backHome = <InternalLink href="/inicio">Volver al inicio</InternalLink>;
+
+/**
+ * The screen that lists each record type (its old route opens the hub tab). A sheet goes back to
+ * its own list, not to one fixed screen (functional-10 T16); a type without a list goes home.
+ */
+const LIST: Partial<Record<RecordModule, readonly [href: string, label: string]>> = {
+  eventos: ['/eventos', 'Eventos'],
+  actores: ['/actores', 'Actores'],
+  directorio: ['/directorio', 'Directorio territorial'],
+  demandas: ['/demandas', 'Demandas'],
+  compromisos: ['/demandas', 'Demandas y compromisos'],
+  narrativas: ['/narrativas', 'Narrativas'],
+  fuentes: ['/fuentes', 'Fuentes'],
+  alertas: ['/alertas', 'Alertas'],
+  buzon: ['/buzon', 'Buzón'],
+  lecciones: ['/lecciones', 'Lecciones'],
+};
+const backTo = (module: RecordModule, from: 'calidad' | undefined) => {
+  if (from === 'calidad')
+    return <InternalLink href="/calidad">Volver a calidad de datos</InternalLink>;
+  const list = LIST[module];
+  return list ? <InternalLink href={list[0]}>Volver a {list[1]}</InternalLink> : backHome;
+};
+
 const ObjectView = ({
   module,
   id,
@@ -31,6 +59,7 @@ const ObjectView = ({
   role,
   projectId,
   projectLabel,
+  from,
 }: {
   module: RecordModule;
   id: string;
@@ -38,6 +67,7 @@ const ObjectView = ({
   role: Role;
   projectId: string;
   projectLabel: string;
+  from: 'calidad' | undefined;
 }) => {
   const client = useQueryClient();
   const [editing, setEditing] = useState(false);
@@ -67,9 +97,17 @@ const ObjectView = ({
   const summary = useQuery(linksQuery(module, id, scope));
   const writable = canWriteRecords(role);
   const title = summary.data ? summary.data.record.title : id;
+  // A valid type and an id the project does not hold: the record is missing, not the type.
+  if (isApiError(record.error, 404))
+    return (
+      <NotFoundNotice title="Registro no encontrado" action={backHome}>
+        No hay un registro de {MODULES[module].label.toLowerCase()} con el identificador «{id}» en
+        el proyecto activo. Pudo ser eliminado o pertenecer a otro proyecto.
+      </NotFoundNotice>
+    );
   return (
     <div className={styles.page}>
-      <InternalLink href="/calidad">Volver a calidad de datos</InternalLink>
+      {backTo(module, from)}
       {notice ? <Alert tone="success">{notice}</Alert> : null}
       <Card
         eyebrow={`${MODULES[module].label} · ${id}`}
@@ -148,6 +186,7 @@ export const ObjectPage = ({
   role,
   projectId,
   projectLabel,
+  from,
 }: {
   module: string;
   id: string;
@@ -155,19 +194,25 @@ export const ObjectPage = ({
   role: Role;
   projectId: string;
   projectLabel: string;
-}) =>
-  isRecordModule(module) ? (
+  /** The screen that opened the sheet, when it is not the record's own list. */
+  from?: 'calidad' | undefined;
+}) => {
+  // Module keys are lower case; an address written «/objeto/Eventos/…» means the same type.
+  const key = module.toLowerCase();
+  return isRecordModule(key) ? (
     <ObjectView
-      key={`${scope}/${module}/${id}`}
-      module={module}
+      key={`${scope}/${key}/${id}`}
+      module={key}
       id={id}
       scope={scope}
       role={role}
       projectId={projectId}
       projectLabel={projectLabel}
+      from={from}
     />
   ) : (
-    <Card title="Tipo de registro no válido">
-      <p>La dirección no corresponde a un tipo de registro de SIPGES.</p>
-    </Card>
+    <NotFoundNotice title="Tipo de registro no válido" action={backHome}>
+      «{module}» no es un tipo de registro de SIPGES. Revise el enlace o vuelva al inicio.
+    </NotFoundNotice>
   );
+};

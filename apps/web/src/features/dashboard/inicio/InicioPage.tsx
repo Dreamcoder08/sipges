@@ -1,11 +1,29 @@
 import { useQuery } from '@tanstack/react-query';
-import { type FormEvent, type KeyboardEvent, type ReactNode, useId, useState } from 'react';
+import {
+  type FormEvent,
+  type KeyboardEvent,
+  type ReactNode,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react';
+import { territorialAlertsQuery } from '../../../shared/api/territorial-alerts.ts';
 import { InternalLink } from '../../../shared/lib/navigation.tsx';
+import { formatIndex, formatLongDay } from '../../../shared/lib/format.ts';
+import { DateText } from '../../../shared/ui/DateText.tsx';
+import { useOnline } from '../../../shared/lib/online.ts';
+import { useProjectSettings } from '../../../shared/lib/project-settings.tsx';
+import { useScrollHints } from '../../../shared/lib/scroll-hints.ts';
 import { LevelPill } from '../../../shared/ui/Badges.tsx';
+import { EmptyState } from '../../../shared/ui/EmptyState.tsx';
 import { Icon } from '../../../shared/ui/Icon.tsx';
-import { dashboardQuery, irsaQuery, moduleRecordsQuery } from '../api.ts';
-import { IrsaNoDataHint, IrsaStatus, hasNoEvidence } from '../IrsaStatus.tsx';
+import { IrsaPendingBadge } from '../../../shared/ui/IrsaPendingBadge.tsx';
+import { QueryState } from '../../../shared/ui/QueryState.tsx';
+import { irsaConfigQuery, irsaQuery, moduleRecordsQuery } from '../api.ts';
+import { IrsaStatus, hasNoEvidence } from '../IrsaStatus.tsx';
 import { criticalAlerts, eventsThisWeek } from '../model.ts';
+import { attentionItems } from './attention.ts';
 import styles from './InicioPage.module.css';
 
 const SUGGESTIONS = [
@@ -15,13 +33,7 @@ const SUGGESTIONS = [
   '¿Qué alertas esperan aprobación?',
 ] as const;
 
-const today = () =>
-  new Date().toLocaleDateString('es-PE', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
+const today = () => formatLongDay();
 
 const Card = ({
   title,
@@ -52,10 +64,11 @@ const Card = ({
 };
 
 /**
- * Inicio (odd/tasks/workspace-architecture.md T7a, design/workspace-architecture/01): a greeting,
- * the «Pregunta a SIPGES» composer and a calm briefing. Submitting a question does not call a
- * model: it opens the existing global search with the text (`onAsk`). Each briefing card renders
- * only when its source loaded, so a failing query hides the card instead of inventing numbers.
+ * Inicio (closure-roadmap T31, design/vanguard/01 as chosen in L11): what needs attention first,
+ * then the composer, then the week. The composer names what it does: while external AI is off it
+ * searches the project's records; when on it is labelled «Preguntar, con citas», but no cited
+ * answer exists yet, so it says so and still opens the existing global search (`onAsk`). A status
+ * line states what the reader should know before trusting the page: offline, AI, IRSA caveat.
  */
 export const InicioPage = ({
   scope,
@@ -73,71 +86,183 @@ export const InicioPage = ({
   const [question, setQuestion] = useState('');
   const fieldId = useId();
   const suggestId = useId();
-  const summary = useQuery(dashboardQuery(scope));
+  const chips = useRef<HTMLUListElement>(null);
+  useScrollHints(chips);
+  const composer = useRef<HTMLDivElement>(null);
+  // On a phone the composer rests on the bottom of the screen in a strip the layout reserves; the
+  // strip's height is the scroll padding that keeps a focused control clear of it (WCAG 2.2
+  // SC 2.4.11, the stylesheet's phone layout).
+  useEffect(() => {
+    const strip = composer.current;
+    if (!strip || typeof ResizeObserver === 'undefined') return;
+    const root = document.documentElement.style;
+    let frame: number | undefined;
+    const observer = new ResizeObserver(() => {
+      if (frame !== undefined) cancelAnimationFrame(frame);
+      // As in AppShell: a root style write must not reflow the observed strip in the same frame.
+      frame = requestAnimationFrame(() => {
+        frame = undefined;
+        root.setProperty('--composer-height', `${strip.offsetHeight}px`);
+      });
+    });
+    observer.observe(strip);
+    return () => {
+      observer.disconnect();
+      if (frame !== undefined) cancelAnimationFrame(frame);
+      root.removeProperty('--composer-height');
+    };
+  }, []);
+  const online = useOnline();
+  const aiOn = useProjectSettings()?.external_ai?.enabled ?? false;
   const alerts = useQuery(moduleRecordsQuery('alertas', scope));
+  const digital = useQuery(territorialAlertsQuery(scope));
   const events = useQuery(moduleRecordsQuery('eventos', scope));
   const irsa = useQuery(irsaQuery(scope));
+  const irsaConfig = useQuery(irsaConfigQuery(scope));
 
   const firstName = fullName.trim().split(/\s+/)[0] ?? '';
   const project = projectLabel || projectId;
-  const ask = () => {
+  const onSubmit = (event: FormEvent) => {
+    event.preventDefault();
     const text = question.trim();
     if (text) onAsk(text);
   };
-  const onSubmit = (event: FormEvent) => {
-    event.preventDefault();
-    ask();
-  };
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) return;
+    if (event.key !== 'Enter' || event.shiftKey) return;
     event.preventDefault();
-    ask();
+    // The Enter that confirms an IME candidate must not send: Safari reports it as keyCode 229
+    // with isComposing already false (modern-web-guidance ime-safe-enter-submit).
+    if (event.nativeEvent.isComposing || event.keyCode === 229) return;
+    event.currentTarget.form?.requestSubmit();
   };
 
-  const urgent = alerts.data ? criticalAlerts(alerts.data) : [];
+  // The list (and its «nothing needs attention») waits for every source behind it; a failed one
+  // shows its error with a retry that refetches only the sources that failed.
+  const sources = [alerts, digital, irsa];
+  const failed = sources.filter((query) => query.isError);
+  const items =
+    alerts.data && digital.data && irsa.data
+      ? attentionItems({
+          alerts: criticalAlerts(alerts.data),
+          digital: digital.data,
+          irsa: irsa.data,
+        })
+      : undefined;
+  const attentionQuery = {
+    isPending: sources.some((query) => query.isPending),
+    error: failed[0]?.error ?? null,
+    data: items,
+    isFetching: failed.some((query) => query.isFetching),
+    refetch: () => Promise.all(failed.map((query) => query.refetch())),
+  };
   const week = events.data ? eventsThisWeek(events.data, new Date()) : null;
   const drivers = irsa.data?.drivers.slice(0, 3) ?? [];
 
   return (
     <div className={styles.home}>
-      <section className={styles.hero} aria-labelledby={`${fieldId}-hola`}>
+      <header className={styles.head}>
         <p className={styles.eyebrow}>
           {today()}
           {project ? ` · ${project}` : ''}
         </p>
-        <h2 id={`${fieldId}-hola`} className={styles.title}>
-          Hola{firstName ? `, ${firstName}` : ''}
-        </h2>
-        <form className={styles.ask} onSubmit={onSubmit}>
-          <label className="visually-hidden" htmlFor={fieldId}>
-            Pregunta a SIPGES
-          </label>
-          <textarea
-            id={fieldId}
-            rows={2}
-            value={question}
-            placeholder="Pregunta por eventos, actores, demandas o compromisos…"
-            onChange={(event) => setQuestion(event.target.value)}
-            onKeyDown={onKeyDown}
-          />
-          <div className={styles.bar}>
-            <span className={styles.scope}>
-              <Icon name="layers" />
-              Registros de {project || 'este proyecto'}
-            </span>
-            <span className={styles.hint}>
-              <span>Enviar abre la búsqueda con tu pregunta</span>
-            </span>
-            <button type="submit" className={styles.send} aria-label="Enviar pregunta">
-              <Icon name="arrowUp" />
-            </button>
-          </div>
-        </form>
+        <h2 className={styles.title}>Hola{firstName ? `, ${firstName}` : ''}</h2>
+        <p className={styles.state}>
+          <span role="status" className={styles.offline}>
+            {online ? null : 'Sin conexión · lo que ves puede no estar al día'}
+          </span>
+          <span>{aiOn ? 'IA externa activada' : 'IA externa desactivada'}</span>
+          <IrsaPendingBadge status={irsaConfig.data?.status} />
+        </p>
+      </header>
+
+      <section className={styles.attention} aria-labelledby={`${fieldId}-att`}>
+        <div className={styles.sectionHead}>
+          <h2 id={`${fieldId}-att`}>Necesita tu atención</h2>
+          {items?.length ? <span className={styles.muted}>{items.length}</span> : null}
+          <InternalLink href="/bandeja" className={styles.headLink}>
+            Abrir Bandeja
+          </InternalLink>
+        </div>
+        <QueryState query={attentionQuery} label="lo que necesita tu atención">
+          {(rows) =>
+            rows.length ? (
+              <ul className={styles.rows}>
+                {rows.map((item) => (
+                  <li key={item.key} className={styles.row}>
+                    <span className={styles.rowText}>
+                      <b>{item.title}</b>
+                      <small>
+                        {item.level ? (
+                          <span className={styles.level}>
+                            <LevelPill level={item.level} />
+                          </span>
+                        ) : null}
+                        {item.meta}
+                      </small>
+                    </span>
+                    <InternalLink
+                      href={item.href}
+                      className={styles.rowAction}
+                      {...(item.label ? { 'aria-label': item.label } : {})}
+                    >
+                      {item.action}
+                    </InternalLink>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <EmptyState icon="check" title="Nada necesita tu atención ahora.">
+                Las alertas y decisiones nuevas aparecerán aquí.
+              </EmptyState>
+            )
+          }
+        </QueryState>
+      </section>
+
+      <div className={styles.compose}>
+        <div ref={composer} className={styles.dock}>
+          <form className={styles.ask} data-ai={aiOn ? 'on' : 'off'} onSubmit={onSubmit}>
+            <textarea
+              id={fieldId}
+              rows={2}
+              value={question}
+              aria-describedby={`${fieldId}-hint`}
+              placeholder={
+                aiOn
+                  ? 'Pregunta por eventos, actores, demandas o compromisos…'
+                  : 'Palabras de eventos, actores, demandas o compromisos…'
+              }
+              onChange={(event) => setQuestion(event.target.value)}
+              onKeyDown={onKeyDown}
+            />
+            <div className={styles.bar}>
+              <label htmlFor={fieldId} className={styles.scope}>
+                <Icon name={aiOn ? 'message' : 'search'} />
+                {aiOn
+                  ? 'Preguntar, con citas'
+                  : `Buscar en registros de ${project || 'este proyecto'}`}
+              </label>
+              <span id={`${fieldId}-hint`} className={styles.hint}>
+                {aiOn
+                  ? 'Las respuestas con citas aún no están disponibles: Enter abre la búsqueda.'
+                  : 'Enter busca · Mayús+Enter, nueva línea'}
+              </span>
+              <button
+                type="submit"
+                className={styles.send}
+                aria-label={aiOn ? 'Enviar pregunta' : 'Buscar en registros'}
+              >
+                <Icon name="arrowUp" />
+              </button>
+            </div>
+          </form>
+        </div>
         <div className={styles.suggest}>
           <p id={suggestId} className={styles.suggestLabel}>
             Prueba con
           </p>
-          <ul className={styles.chips} aria-labelledby={suggestId}>
+          <ul ref={chips} className={styles.chips} aria-labelledby={suggestId}>
+            <li className={styles.edge} aria-hidden="true" />
             {SUGGESTIONS.map((text) => (
               <li key={text}>
                 <button type="button" className={styles.chip} onClick={() => setQuestion(text)}>
@@ -145,44 +270,17 @@ export const InicioPage = ({
                 </button>
               </li>
             ))}
+            <li className={styles.edge} aria-hidden="true" />
           </ul>
         </div>
-      </section>
+      </div>
 
       <section className={styles.brief} aria-labelledby={`${fieldId}-brief`}>
-        <div className={styles.briefHead}>
-          <h2 id={`${fieldId}-brief`}>Briefing de la semana</h2>
+        <div className={styles.sectionHead}>
+          <h2 id={`${fieldId}-brief`}>Esta semana</h2>
           <span className={styles.muted}>Últimos 7 días{project ? ` · ${project}` : ''}</span>
         </div>
         <div className={styles.grid}>
-          {summary.data ? (
-            <Card
-              title="Alertas activas"
-              count={summary.data.alertas_activas}
-              to="/bandeja"
-              action={`Abrir Bandeja (${summary.data.alertas_activas})`}
-            >
-              {urgent.length ? (
-                <ul className={styles.list}>
-                  {urgent.map((alert) => (
-                    <li key={alert.id}>
-                      <span className={styles.text}>
-                        <b>{alert.title}</b>
-                        <small>Alerta activa</small>
-                      </span>
-                      <LevelPill level={alert.level} />
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className={styles.empty}>
-                  {summary.data.alertas_activas
-                    ? 'Alertas activas por revisar.'
-                    : 'Nada pendiente.'}
-                </p>
-              )}
-            </Card>
-          ) : null}
           {week ? (
             <Card
               title="Registros nuevos"
@@ -196,7 +294,9 @@ export const InicioPage = ({
                     <li key={event.id}>
                       <span className={styles.text}>
                         <b>{event.title}</b>
-                        <small>Evento · {event.date.slice(0, 10)}</small>
+                        <small>
+                          Evento · <DateText value={event.date} />
+                        </small>
                       </span>
                     </li>
                   ))}
@@ -209,11 +309,11 @@ export const InicioPage = ({
           {irsa.data ? (
             <Card title="Riesgo del territorio" to="/analisis" action="Abrir IRSA">
               <p className={styles.risk}>
-                IRSA{' '}
-                {hasNoEvidence(irsa.data) ? null : <strong>{irsa.data.irsa.toFixed(1)}</strong>}{' '}
-                <IrsaStatus scope={scope} irsa={irsa.data} />
+                IRSA actual{' '}
+                {hasNoEvidence(irsa.data) ? null : <strong>{formatIndex(irsa.data.irsa)}</strong>}{' '}
+                {/* The provisional caveat sits once, in the status line above. */}
+                <IrsaStatus scope={scope} irsa={irsa.data} caveat={false} />
               </p>
-              <IrsaNoDataHint irsa={irsa.data} />
               {drivers.length ? (
                 <ul className={styles.list}>
                   {drivers.map((driver) => (

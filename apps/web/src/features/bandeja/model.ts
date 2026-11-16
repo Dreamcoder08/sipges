@@ -3,6 +3,7 @@ import type {
   TerritorialAlert as TerritorialAlertSchema,
 } from '@sipges/contracts';
 import type { z } from 'zod';
+import { SITUATION_KINDS } from '../../shared/api/situations.ts';
 import { objectHref } from '../../shared/lib/navigation.tsx';
 import type { IconName } from '../../shared/ui/icons.ts';
 
@@ -158,7 +159,8 @@ export const situationItems = (
       {
         kind: 'situacion' as const,
         key: `situacion:${situation.key}`,
-        ref: situation.key,
+        // The kind, as Situaciones shows it; the key stays in the URL, never on screen.
+        ref: SITUATION_KINDS[situation.kind],
         title: situation.label,
         urgency,
         where: situation.territories[0] ?? null,

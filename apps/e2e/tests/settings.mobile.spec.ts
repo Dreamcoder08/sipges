@@ -2,8 +2,10 @@ import { analyzeAccessibility } from '../support/accessibility.ts';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
 
 const SECTIONS = [
+  ['cuenta', 'Cuenta', 'Sesiones activas'],
   ['apariencia', 'Apariencia', 'Apariencia'],
-  ['proyecto', 'Proyecto', 'SIPGES'],
+  // The Proyecto card names the active project (functional-10 T13), not the product.
+  ['proyecto', 'Proyecto', 'Proyecto principal'],
   ['privacidad', 'Privacidad y datos', 'IA externa'],
   ['notificaciones', 'Notificaciones', 'Notificaciones'],
 ] as const;
@@ -19,10 +21,10 @@ for (const colorScheme of ['light', 'dark'] as const) {
     for (const width of [360, 412]) {
       await page.setViewportSize({ width, height: 800 });
       for (const [section, link, heading] of SECTIONS) {
-        await page.goto(`/version-4?seccion=${section}`);
+        await page.goto(`/configuracion?seccion=${section}`);
         const nav = page.getByRole('navigation', { name: 'Secciones de Configuración' });
         await expect(nav.getByRole('link', { name: link })).toHaveAttribute('aria-current', 'page');
-        await expect(page.getByRole('heading', { level: 3, name: heading })).toBeVisible();
+        await expect(page.getByRole('heading', { level: 2, name: heading })).toBeVisible();
         const widths = await page.evaluate(() => ({
           scroll: document.documentElement.scrollWidth,
           view: document.documentElement.clientWidth,
@@ -36,7 +38,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
           expect(rect?.height ?? 0).toBeGreaterThanOrEqual(44);
         }
         if (width === 360) {
-          const axe = await analyzeAccessibility(page, ['wcag2a', 'wcag2aa']);
+          const axe = await analyzeAccessibility(page);
           expect(axe.violations, `${section} (${colorScheme})`).toEqual([]);
         }
       }

@@ -59,6 +59,19 @@ var selfServicePosts = map[string]bool{
 	"/system/notifications/push":             true,
 	"/system/notifications/push/unsubscribe": true,
 	"/system/notifications/push/test":        true,
+	// Signing one's own other devices out (Cuenta).
+	"/system/auth/sessions/revoke-others": true,
+}
+
+const ownSessions = "/system/auth/sessions/"
+
+// isSelfService is isSelfService: the posts above, and ending one of one's own sessions.
+func isSelfService(method, path string) bool {
+	if selfServicePosts[path] {
+		return true
+	}
+	id, found := strings.CutPrefix(path, ownSessions)
+	return method == "DELETE" && found && id != "" && !strings.Contains(id, "/")
 }
 
 var coordinatorWritable = []string{"/system/prevention/", "/system/intelligence/territorial-alerts"}
@@ -90,7 +103,7 @@ func CheckRoleAccess(role Role, method, path string) Decision {
 	if has("/api/proyectos") && !isRead && !isAdmin {
 		return deny("Solo el administrador puede gestionar proyectos")
 	}
-	if !isRead && !readOnlyPosts[path] && !selfServicePosts[path] {
+	if !isRead && !readOnlyPosts[path] && !isSelfService(method, path) {
 		if role == RoleReadOnly {
 			return deny("Rol de consulta: solo lectura")
 		}

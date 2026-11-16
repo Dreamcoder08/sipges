@@ -29,6 +29,18 @@ describe('dashboard model', () => {
     expect(eventsThisWeek(events, new Date('2026-01-04T12:00:00Z')).total).toBe(2);
   });
 
+  it('keeps the place of each open alert so cards with one title can be told apart', () => {
+    expect(
+      criticalAlerts([
+        { _id: 'a', Nivel: 'Rojo', Causa: 'Igual', Territorio: ' Pampa ' },
+        { _id: 'b', Nivel: 'Rojo', Causa: 'Igual' },
+      ]).map(({ id, place }) => [id, place]),
+    ).toEqual([
+      ['a', 'Pampa'],
+      ['b', ''],
+    ]);
+  });
+
   it('counts open alerts of the project by severity, like app.js', () => {
     const counts = alertsByLevel([
       { _id: '1', Nivel_Preliminar: 'Crítica', Proyecto_ID: 'P' },
@@ -143,4 +155,19 @@ describe('eventsThisWeek', () => {
     expect(week.total).toBe(2);
     expect(week.items.map((item) => item.id)).toEqual(['a']);
   });
+
+  // Seven Lima calendar days, today included: 7 to 13 November, whatever the UTC hour.
+  const edges = [
+    { _id: 'before', Fecha: '2026-11-06' },
+    { _id: 'first', Fecha: '2026-11-07' },
+    { _id: 'last', Fecha: '2026-11-13' },
+    { _id: 'after', Fecha: '2026-11-14' },
+  ];
+  it.each(['2026-11-13T23:30:00-05:00', '2026-11-13T08:00:00-05:00'])(
+    'keeps the window on the Lima calendar at %s',
+    (at) => {
+      const week = eventsThisWeek(edges, new Date(at), Number.POSITIVE_INFINITY);
+      expect(week.items.map((item) => item.id)).toEqual(['last', 'first']);
+    },
+  );
 });

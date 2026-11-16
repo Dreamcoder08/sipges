@@ -4,6 +4,8 @@ import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { historyQuery } from './api.ts';
 import { MODULES, type RecordModule } from './modules.ts';
 import styles from './Records.module.css';
+import { count } from '../../shared/lib/plural.ts';
+import { formatDateTime } from '../../shared/lib/format.ts';
 
 const OPERATIONS: Record<RecordVersion['operation'], string> = {
   BASELINE: 'Estado inicial',
@@ -12,8 +14,7 @@ const OPERATIONS: Record<RecordVersion['operation'], string> = {
   DELETE: 'Eliminación',
 };
 
-const when = (iso: string) =>
-  new Date(iso).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' });
+const when = (iso: string) => formatDateTime(iso);
 
 /**
  * A changed value as a person reads it. Lists and objects (attachments, follow-up data) were
@@ -68,7 +69,7 @@ export const HistoryPanel = ({
   const labels = new Map(MODULES[module].fields.map((field) => [field.key, field.label]));
   return (
     <section className={styles.evidence} aria-labelledby={`history-${id}`}>
-      <h4 id={`history-${id}`}>Historial de cambios</h4>
+      <h3 id={`history-${id}`}>Historial de cambios</h3>
       <QueryState query={history} label="el historial">
         {(versions) => (
           <>
@@ -149,7 +150,7 @@ const TraceSummary = ({
           {latest ? (
             <>
               {latest.actor} · <time dateTime={latest.at}>{when(latest.at)}</time> ·{' '}
-              {latest.changes.length} campo(s) cambiado(s)
+              {count(latest.changes.length, 'campo cambiado', 'campos cambiados')}
             </>
           ) : (
             'Sin cambios desde su registro'

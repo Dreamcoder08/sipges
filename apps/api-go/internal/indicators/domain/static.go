@@ -8,20 +8,23 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/release"
 )
 
-// ModelStatus is JSON.stringify(MODEL_STATUS) of domain/defaults.ts (data/model_status.json): a
-// constant the engine does not export.
+// ModelStatus is JSON.stringify(modelStatusFor(SIPGES_VERSION)) of domain/defaults.ts: a constant
+// the engine does not export. The version is the one SIPGES release, first and last
+// (functional-10 T8).
 //
 //nolint:misspell // Spanish text, verbatim from the TypeScript API.
-const ModelStatus = `{"version":"SIPGES · Prototipo final de tesis | Motor V0.5.1",` +
+const ModelStatus = `{"version":"SIPGES ` + release.Version + ` · Prototipo final de tesis",` +
 	`"content_validation":"Pendiente de juicio de expertos","aiken_status":"Sin resultados todavía",` +
 	`"indicator_count":32,"dimensions":["G","A","D","N","E","I"],` +
 	`"canonical_entity":"Comunidad Campesina San Martín de Sechura (CCSMS)",` +
 	`"release_rule":"La interfaz está finalizada para la tesis. La condición de “modelo validado” solo se ` +
-	`asignará después del juicio de expertos y la evaluación funcional contra Gold Standard.",` +
+	`asignará después del juicio de expertos y la evaluación funcional contra el patrón de referencia.",` +
 	`"classifier":"Reglas ponderadas y contextuales",` +
-	`"functional_validation":"Protocolo preparado; Gold Standard pendiente","ui_release":"Web Final RC 1.0"}`
+	`"functional_validation":"Protocolo preparado; patrón de referencia pendiente","ui_release":"` + release.Version + `"}`
 
 type templateRow struct {
 	Dimension  string  `json:"dimension"`

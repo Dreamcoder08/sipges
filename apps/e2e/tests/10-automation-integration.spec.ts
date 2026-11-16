@@ -36,7 +36,7 @@ test('automation rule, API key, inbound webhook, notification and MCP', async ({
   // An outside system sends the alert through the inbound webhook.
   const ingested = await page.request.post('/hooks/ingest/alertas', {
     headers: { authorization: `Bearer ${token}`, 'idempotency-key': `e2e-${stamp}` },
-    data: { ID_Alerta: alertId, Causa: cause, Nivel_Preliminar: 'Alto' },
+    data: { ID_Alerta: alertId, Causa: cause, Nivel_Preliminar: 'Naranja' },
   });
   expect(ingested.status(), await ingested.text()).toBe(201);
   expect(await ingested.json()).toMatchObject({ ids: [alertId] });
@@ -67,7 +67,7 @@ test('automation rule, API key, inbound webhook, notification and MCP', async ({
         params: { name: 'get_record', arguments: { module: 'alertas', id: alertId } },
       },
     });
-  await page.goto('/version-4?seccion=privacidad');
+  await page.goto('/configuracion?seccion=privacidad');
   const externalAi = page.getByRole('checkbox', { name: 'Envío a IA externa' });
   // A controlled checkbox: it flips only once the server saved the setting.
   const setExternalAi = async (on: boolean) => {
@@ -115,8 +115,8 @@ test('Integraciones: sidebar link, kind filters and the MCP card opens its keys'
   ).toBeVisible();
 
   const kinds = page.getByRole('group', { name: 'Filtrar por tipo' });
-  await kinds.getByRole('button', { name: /^Skills/ }).click();
-  await expect(page.getByRole('heading', { level: 2, name: /^Skills/ })).toBeVisible();
+  await kinds.getByRole('button', { name: /^Habilidades/ }).click();
+  await expect(page.getByRole('heading', { level: 2, name: /^Habilidades/ })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Claude vía MCP' })).toHaveCount(0);
   await kinds.getByRole('button', { name: /^Todos/ }).click();
 

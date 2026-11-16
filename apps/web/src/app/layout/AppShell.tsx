@@ -1,5 +1,6 @@
 import { useRouterState } from '@tanstack/react-router';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { DesktopUpdateNotice } from '../../features/desktop-update/index.ts';
 import { COMPACT_QUERY, useMediaQuery } from '../../shared/lib/media.ts';
 import { Icon } from '../../shared/ui/Icon.tsx';
 import { Sheet } from '../../shared/ui/Sheet.tsx';
@@ -23,9 +24,12 @@ export const AppShell = ({
   search,
   unread = 0,
   live,
+  title: titleOverride,
   children,
 }: {
   projectLabel: string;
+  /** The page's name when the address alone cannot tell it (a page that does not exist). */
+  title?: string | undefined;
   /** Stable id of the active project (its scope); the label changes once the project list loads. */
   projectKey?: string;
   projectSwitcher: ReactNode;
@@ -41,7 +45,7 @@ export const AppShell = ({
   const [drawer, setDrawer] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const topbar = useRef<HTMLElement>(null);
-  const title = titleFor(pathname);
+  const title = titleOverride ?? titleFor(pathname, searchStr);
   const first = useRef(true);
   // Any navigation (a new search string included) or a completed project switch closes the drawer,
   // and so does leaving the compact layout, so it never reappears open when the window narrows.
@@ -54,12 +58,16 @@ export const AppShell = ({
 
   useEffect(() => {
     document.title = `${title} | SIPGES`;
+  }, [title]);
+
+  // Focus follows a new screen, not a new section or tab of the same one.
+  useEffect(() => {
     if (first.current) {
       first.current = false;
       return;
     }
     heading.current?.focus();
-  }, [pathname, title]);
+  }, [pathname]);
 
   useEffect(() => {
     const visit = visitFor(pathname, searchStr);
@@ -136,6 +144,8 @@ export const AppShell = ({
           h1
         )}
         {live}
+        {/* Desktop app only: the notice renders nothing in the cloud and development builds. */}
+        <DesktopUpdateNotice scope={projectKey} />
         <main id="contenido" className={styles.main} tabIndex={-1}>
           {children}
         </main>

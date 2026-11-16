@@ -28,6 +28,18 @@ export type LoginError =
 
 export type LoginSuccess = { readonly token: string; readonly identity: Identity };
 
+/** One of the caller's own sessions, as Cuenta shows it (no token, no hash). */
+export type SessionView = {
+  readonly id: string;
+  readonly createdAt: Date;
+  readonly expiresAt: Date;
+  readonly viaGoogle: boolean;
+  readonly current: boolean;
+};
+
+/** The shape of SessionTokens.publicId; anything else cannot name a session. */
+const SESSION_ID = /^[0-9a-f]{32}$/;
+
 export type IdentityDeps = {
   readonly store: IdentityStore;
   readonly hasher: PasswordHasher;
@@ -227,6 +239,65 @@ export const createIdentityService = ({
 
     async logout(token: string | undefined): Promise<void> {
       if (token) await store.deleteSession(tokens.hash(token));
+    },
+
+    /** The caller's own unexpired sessions, newest first, with the requesting one marked. */
+    async listSessions(username: string, currentToken: string): Promise<SessionView[]> {
+      const current = tokens.hash(currentToken);
+      const sessions = await store.listSessions(username, clock.now());
+      return sessions.map((s) => ({
+        id: tokens.publicId(s.tokenHash),
+        createdAt: s.createdAt,
+        expiresAt: s.expiresAt,
+        viaGoogle: s.viaGoogle,
+        current: s.tokenHash === current,
+      }));
+    },
+
+    /**
+     * Ends one of the caller's own sessions, audited in the active project. Another user's id
+     * is indistinguishable from an unknown one, so nothing leaks about other accounts.
+     */
+    async endSession(
+      actor: Identity,
+      currentToken: string,
+      id: string,
+      tenantId: string,
+    ): Promise<Result<{ current: boolean }, 'missing'>> {
+      if (!SESSION_ID.test(id)) return err('missing');
+      const now = clock.now();
+      const target = (await store.listSessions(actor.username, now)).find(
+        (s) => tokens.publicId(s.tokenHash) === id,
+      );
+      if (!target) return err('missing');
+      const current = target.tokenHash === tokens.hash(currentToken);
+      const ended = await store.endSession(actor.username, target.tokenHash, tenantId, {
+        action: 'SESSION_END',
+        recordId: actor.username,
+        detail: `Sesión ${id}${current ? ' (este dispositivo)' : ''} cerrada por ${actor.username}`,
+        at: now,
+      });
+      return ended ? ok({ current }) : err('missing');
+    },
+
+    /**
+     * «Cerrar sesión en todos los demás dispositivos»: keeps only the requesting session and
+     * counts the active ones it ended, as the list shows them. Ending none writes no audit row,
+     * so any role repeating it cannot fill the trail.
+     */
+    async endOtherSessions(
+      actor: Identity,
+      currentToken: string,
+      tenantId: string,
+    ): Promise<number> {
+      const now = clock.now();
+      return store.endOtherSessions(actor.username, tokens.hash(currentToken), now, tenantId, {
+        action: 'SESSIONS_END_OTHERS',
+        recordId: actor.username,
+        detail: (count) =>
+          `${count} ${count === 1 ? 'sesión cerrada' : 'sesiones cerradas'} en otros dispositivos por ${actor.username}`,
+        at: now,
+      });
     },
 
     checkAccess: checkRoleAccess,

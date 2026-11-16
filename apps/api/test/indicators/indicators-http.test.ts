@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { Hono } from 'hono';
 import { IrsaSummary, ModelStatus } from '../../../../packages/contracts/src/indicators.ts';
 import { describe, expect, it } from 'vitest';
@@ -212,12 +213,31 @@ describe('client contracts', () => {
 });
 
 describe('static system documents', () => {
+  // functional-10 T8 (F24): one SIPGES version, the root package.json's, first and last as the
+  // Go constant orders it; the IRSA method version is not this one.
+  it('names the one SIPGES release in the model status', async () => {
+    const { request } = await setup();
+    const root = (
+      JSON.parse(readFileSync(new URL('../../../../package.json', import.meta.url), 'utf8')) as {
+        version: string;
+      }
+    ).version;
+    const text = await (await request('/system/model-status')).text();
+    expect(text.startsWith(`{"version":"SIPGES ${root} · Prototipo final de tesis",`)).toBe(true);
+    expect(text.endsWith(`"ui_release":"${root}"}`)).toBe(true);
+    expect(text).not.toMatch(/V0\.5\.1|RC 1\.0|Motor/);
+  });
+
   it('serves model status and the 32-row validation template', async () => {
     const { request } = await setup();
     const status = await (await request('/system/model-status')).json();
     expect(status).toMatchObject({
       indicator_count: 32,
       dimensions: ['G', 'A', 'D', 'N', 'E', 'I'],
+      // Spanish wording, byte-identical to apps/api-go/internal/indicators/domain/static.go.
+      release_rule:
+        'La interfaz está finalizada para la tesis. La condición de “modelo validado” solo se asignará después del juicio de expertos y la evaluación funcional contra el patrón de referencia.',
+      functional_validation: 'Protocolo preparado; patrón de referencia pendiente',
     });
     const template = (await (
       await request('/system/validation-template')

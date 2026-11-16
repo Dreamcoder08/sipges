@@ -162,9 +162,9 @@ export const DocumentLab = (context: FeatureContext) => {
             <p className={styles.muted}>SHA-256: {analyze.data.sha256}</p>
             {analyze.data.items.map((item) => (
               <article className={styles.item} key={item.id}>
-                <h4>
+                <h3>
                   {item.id}: {item.tema}
-                </h4>
+                </h3>
                 <p>{item.ubicacion}</p>
                 <p>{item.fragmento}</p>
                 <p>Términos: {item.terminos.join(', ')}</p>
@@ -249,7 +249,7 @@ export const DocumentLab = (context: FeatureContext) => {
             </p>
             {compare.data.comparaciones.map((item, i) => (
               <article key={i} className={styles.item}>
-                <h4>{item.tema}</h4>
+                <h3>{item.tema}</h3>
                 <p>
                   {item.a.ubicacion}: {item.a.fragmento}
                 </p>

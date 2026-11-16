@@ -11,6 +11,25 @@
 .table {
   overflow: auto;
   max-width: 100%;
+  /* Its visible width (cqi) bounds a caption longer than a phone, not the table's width. */
+  container-type: inline-size;
+  /*
+   * Scroll cue (modern-web-guidance scrollability-affordance-hints, background-attachment shadows):
+   * a soft shadow at an edge while more columns lie that way. Each shadow stays at the edge of the
+   * region; a cover of the card colour scrolls with the table and hides it at that end, so a table
+   * that fits shows none. Cells have no background of their own, so the shadow shows through.
+   */
+  --cue-shadow: color-mix(in srgb, var(--color-text) 22%, transparent);
+  background:
+    linear-gradient(to right, var(--color-surface) 30%, transparent) left / 2.5rem 100% no-repeat
+      local,
+    linear-gradient(to left, var(--color-surface) 30%, transparent) right / 2.5rem 100% no-repeat
+      local,
+    radial-gradient(farthest-side at 0 50%, var(--cue-shadow), transparent) left / 0.875rem 100%
+      no-repeat,
+    radial-gradient(farthest-side at 100% 50%, var(--cue-shadow), transparent) right / 0.875rem 100%
+      no-repeat,
+    var(--color-surface);
 }
 .table table {
   width: 100%;
@@ -27,6 +46,15 @@
   text-align: left;
   padding: var(--space-3);
   font-weight: 600;
+}
+/* A table wider than a phone scrolls inside its region; the caption text (a span in every
+   Indicators table) wraps to the visible width and stays in view while the columns scroll,
+   instead of being cut at the region's edge. */
+.captionText {
+  display: block;
+  position: sticky;
+  inset-inline-start: var(--space-3);
+  max-inline-size: calc(100cqi - 2 * var(--space-3));
 }
 .score {
   font-size: clamp(1.75rem, 7vw, 2.5rem);
@@ -85,12 +113,15 @@
   font-size: var(--text-sm);
   max-width: 62ch;
 }
-
-.pending {
-  display: inline-block;
-  padding: var(--space-0) var(--space-3);
-  border-radius: var(--radius-pill);
-  background: var(--color-track);
-  color: var(--color-muted);
+/* Dimension names beside the radar's letters (functional-10 T3): wrap on a phone, never cut. */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-1) var(--space-3);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
   font-size: var(--text-sm);
+  color: var(--color-muted);
 }

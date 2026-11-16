@@ -17,7 +17,7 @@ const expectNoHorizontalPageScroll = async (page: Page, where = 'page') => {
   expect(scrollWidth, `${where} wider than the viewport`).toBeLessThanOrEqual(viewport);
 };
 
-/** Axe at WCAG 2.1 AA over whatever is on screen (an open sheet included). */
+/** Axe at WCAG 2.2 AA over whatever is on screen (an open sheet included). */
 const expectAccessible = async (page: Page, what: string) => {
   const result = await analyzeAccessibility(page);
   expect(

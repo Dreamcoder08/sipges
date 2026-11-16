@@ -1,5 +1,5 @@
 import { MapboxOverlay } from '@deck.gl/mapbox';
-import { GeoJsonLayer, ScatterplotLayer } from '@deck.gl/layers';
+import { GeoJsonLayer, ScatterplotLayer, TextLayer } from '@deck.gl/layers';
 import {
   type LngLatBoundsLike,
   Map as MapLibreMap,
@@ -8,7 +8,7 @@ import {
 } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
-import { useEffect, useId, useLayoutEffect, useRef } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useResolvedTheme } from '../../../shared/lib/theme.ts';
 import { Icon } from '../../../shared/ui/Icon.tsx';
 import type { IconName } from '../../../shared/ui/icons.ts';
@@ -19,6 +19,7 @@ import { legendOf } from '../legend.ts';
 import { SECHURA_DISTRICTS } from '../sechura-base.ts';
 import { BASEMAPS, type Basemap } from '../TileLayer.tsx';
 import frame from '../MapFrame.module.css';
+import { labelSize, placeLabels } from './labels.ts';
 import { paintColour, paintRgb } from './paint.ts';
 import type { CanvasConcession, CanvasPoint, Focus } from './types.ts';
 import styles from './GeoCanvas.module.css';
@@ -99,7 +100,8 @@ const DISTRICTS = {
 const EMPTY = { type: 'FeatureCollection' as const, features: [] };
 
 const ALPHA = { observado: 235, estimado: 120, escenario: 0 } as const;
-const RADIUS = { current: 10, normal: 7, dim: 5 } as const;
+// Wide enough for the list number the marker carries (up to three digits).
+const RADIUS = { current: 13, normal: 11, dim: 9 } as const;
 
 /**
  * MapLibre GL JS basemap with a deck.gl overlay (ODD geospatial-timeline T2, ADR 0017): smooth
@@ -157,6 +159,8 @@ const GeoCanvas = ({
   ];
   const theme = useResolvedTheme();
   const initial = useRef({ home, basemap, theme });
+  // Zoom in quarter steps, rounded down: markers are never closer than the numbers assume.
+  const [labelZoom, setLabelZoom] = useState<number | null>(null);
 
   useEffect(() => {
     const node = container.current;
@@ -189,6 +193,9 @@ const GeoCanvas = ({
     // A basemap tile that fails (offline, blocked host) leaves the background and the SIPGES
     // layers; MapLibre would otherwise log every failed tile as a console error.
     instance.on('error', () => undefined);
+    const zoomed = () => setLabelZoom(Math.floor(instance.getZoom() * 4) / 4);
+    instance.on('load', zoomed);
+    instance.on('zoom', zoomed);
     instance.on('load', report);
     instance.on('moveend', report);
     // A lost GPU context leaves a blank canvas; the SVG map takes over instead.
@@ -231,6 +238,7 @@ const GeoCanvas = ({
 
   useEffect(() => {
     const paint = overlayPaint(theme);
+    const labelled = labelZoom === null ? null : placeLabels(points, labelZoom, selectedPoint);
     overlay.current?.setProps({
       getCursor: ({ isHovering }) => (isHovering ? 'pointer' : 'grab'),
       layers: [
@@ -283,7 +291,7 @@ const GeoCanvas = ({
           radiusUnits: 'pixels',
           lineWidthUnits: 'pixels',
           getPosition: (p) => [p.at[0], p.at[1]],
-          getRadius: (p) => (p.id === selectedPoint ? 12 : RADIUS[p.emphasis]),
+          getRadius: (p) => (p.id === selectedPoint ? 14 : RADIUS[p.emphasis]),
           getFillColor: (p) => [...p.color, p.emphasis === 'dim' ? 70 : ALPHA[p.evidence]],
           getLineColor: (p) =>
             p.id === selectedPoint
@@ -301,9 +309,25 @@ const GeoCanvas = ({
             if (object) handlers.current.onSelectPoint(object.id);
           },
         }),
+        // The number of the record's row in the list, drawn over its point.
+        new TextLayer<CanvasPoint>({
+          id: 'numeros',
+          // Only numbers that clear each other (labels.ts); none before the zoom is known.
+          data: points.filter((p) => labelled?.has(p.id)),
+          getPosition: (p) => [p.at[0], p.at[1]],
+          getText: (p) => p.label ?? '',
+          characterSet: '0123456789',
+          getSize: (p) => labelSize(p.label ?? ''),
+          fontWeight: 800,
+          fontSettings: { sdf: true },
+          getColor: [...paint.selected],
+          outlineWidth: 3,
+          outlineColor: [...paint.halo, 255],
+          updateTriggers: { getColor: theme },
+        }),
       ],
     });
-  }, [points, concessions, selectedPoint, selectedConcession, theme, showDistricts]);
+  }, [points, concessions, selectedPoint, selectedConcession, theme, showDistricts, labelZoom]);
 
   type Action = 'in' | 'out' | 'home' | '3d';
   const act = (action: Action) => {

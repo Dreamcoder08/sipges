@@ -4,6 +4,14 @@ import { MODULES, type RecordModule } from '../modules.ts';
 
 export const VERIFICATION_LETTERS = ['A', 'B', 'C', 'D', 'E'] as const;
 export type VerificationLetter = (typeof VERIFICATION_LETTERS)[number];
+/** The word each grade carries in the field options (modules.ts): «B - Corroborada». */
+export const VERIFICATION_WORDS: Readonly<Record<VerificationLetter, string>> = {
+  A: 'Confirmada',
+  B: 'Corroborada',
+  C: 'Parcial',
+  D: 'Referencial',
+  E: 'No verificada',
+};
 export const VALIDATION_STATES = ['Preliminar', 'En revisión', 'Validado'] as const;
 
 /** «B - Corroborada» → B. Other wordings («Por verificar») have no A–E grade. */

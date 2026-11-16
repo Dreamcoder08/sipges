@@ -19,7 +19,13 @@ test.beforeEach(async ({ page, admin }) => {
 test('IRSA computes the index and stores a snapshot in the history', async ({ page }) => {
   await page.goto('/irsa');
   await expect(page.getByRole('heading', { level: 1, name: 'IRSA-SIPGES' })).toBeVisible();
-  await expect(page.getByText('PROVISIONAL / PENDIENTE DE VALIDACIÓN DE EXPERTOS')).toBeVisible();
+  // One caveat next to the value; the methodology waits behind «Cómo se calcula».
+  await expect(page.getByText('Metodología pendiente de validación')).toHaveCount(1);
+  await expect(page.getByText('Metodología pendiente de validación')).toBeVisible();
+  const status = page.getByText('PROVISIONAL / PENDIENTE DE VALIDACIÓN DE EXPERTOS');
+  await expect(status).toBeHidden();
+  await page.getByText('Cómo se calcula').click();
+  await expect(status).toBeVisible();
   await expect(
     page.getByRole('table', { name: 'Puntuación y disponibilidad por dimensión' }),
   ).toBeVisible();
@@ -92,7 +98,12 @@ test('management center shows project metrics and downloads the CSV report', asy
   await expect(
     page.getByRole('heading', { level: 1, name: 'Centro de control gerencial' }),
   ).toBeVisible();
-  await expect(page.getByText(/^Proyecto: PRJ-SECHURA · Generado: /)).toBeVisible();
+  // functional-10 T16: the project by its label and the time in Lima, never the id or instant.
+  const generated = page.getByText(/^Proyecto: .+ · Generado: /);
+  await expect(generated).toHaveText(
+    /^Proyecto: .+ · Generado: \d{1,2} [a-z]{3,4}\. \d{4}, \d{2}:\d{2}$/,
+  );
+  await expect(generated).not.toContainText('PRJ-SECHURA');
   const csv = await download(page, 'Descargar CSV');
   expect(csv.file.suggestedFilename()).toBe('sipges_rc28_reporte_gerencial.csv');
   const content = csv.bytes.toString('utf8').replace(/^\uFEFF/, '');

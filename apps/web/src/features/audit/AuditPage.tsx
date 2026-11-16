@@ -9,6 +9,13 @@ import { Card } from '../../shared/ui/Card.tsx';
 import { Field } from '../../shared/ui/Field.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import styles from './AuditPage.module.css';
+import { formatDateTime, formatNumber } from '../../shared/lib/format.ts';
+import { count } from '../../shared/lib/plural.ts';
+import { DateText } from '../../shared/ui/DateText.tsx';
+import { auditActionLabel, auditModuleLabel } from './labels.ts';
+
+/** Column names; on a phone each cell shows its own (`data-label`) in a stacked card. */
+const COLUMNS = ['Fecha y hora (Lima)', 'Módulo', 'Registro', 'Acción', 'Detalle'] as const;
 
 /** Server audit is scoped, append-only and restricted to administrators. */
 export const AuditPage = ({ scope, projectLabel, role }: FeatureContext) => {
@@ -25,9 +32,13 @@ export const AuditPage = ({ scope, projectLabel, role }: FeatureContext) => {
   const needle = search.trim().toLocaleLowerCase('es');
   return (
     <div className={styles.page}>
+      {/* Wide screens hide the shell's h1, so the page carries its visible title; phones and
+          tablets read it in the top bar. The project is named by its label, not its scope
+          (functional-10 T14). */}
+      <h2 className={styles.title}>Auditoría</h2>
       <p>
-        Historial del proyecto <strong>{projectLabel}</strong> ({scope}), ordenado por fecha
-        descendente. La búsqueda se aplica a los registros cargados.
+        Historial del proyecto <strong>{projectLabel}</strong>, ordenado por fecha descendente. La
+        búsqueda se aplica a los registros cargados.
       </p>
       <Card
         title="Consultar auditoría"
@@ -61,38 +72,53 @@ export const AuditPage = ({ scope, projectLabel, role }: FeatureContext) => {
         <QueryState query={query} label="auditoría">
           {(entries) => {
             const filtered = entries.filter((entry) =>
-              [entry.module, entry.record_id, entry.action, entry.detail, entry.ts].some((value) =>
-                value?.toLocaleLowerCase('es').includes(needle),
-              ),
+              [
+                entry.module,
+                auditModuleLabel(entry.module),
+                entry.record_id,
+                entry.action,
+                auditActionLabel(entry.action),
+                entry.detail,
+                entry.ts,
+                formatDateTime(entry.ts),
+              ].some((value) => value?.toLocaleLowerCase('es').includes(needle)),
             );
             return (
               <>
                 <p aria-live="polite">
-                  {filtered.length} de {entries.length} registros cargados.
+                  {formatNumber(filtered.length)} de{' '}
+                  {count(entries.length, 'registro cargado', 'registros cargados')}.
                 </p>
                 {filtered.length ? (
-                  <div className={styles.scroll}>
+                  // A long unspaced detail can make the table wider than its card: the scroll box
+                  // is then reachable and named for the keyboard (as in Registros).
+                  <div
+                    className={styles.scroll}
+                    tabIndex={0}
+                    role="region"
+                    aria-label="Tabla de auditoría"
+                  >
                     <table>
                       <caption>Registro de operaciones del proyecto activo</caption>
                       <thead>
                         <tr>
-                          <th>Fecha UTC</th>
-                          <th>Módulo</th>
-                          <th>Registro</th>
-                          <th>Acción</th>
-                          <th>Detalle</th>
+                          {COLUMNS.map((column) => (
+                            <th key={column} scope="col">
+                              {column}
+                            </th>
+                          ))}
                         </tr>
                       </thead>
                       <tbody>
                         {filtered.map((entry) => (
                           <tr key={entry.id}>
-                            <td>
-                              <time dateTime={entry.ts}>{entry.ts}</time>
+                            <td data-label={COLUMNS[0]} className={styles.nowrap}>
+                              <DateText value={entry.ts} time />
                             </td>
-                            <td>{entry.module}</td>
-                            <td>{entry.record_id ?? '—'}</td>
-                            <td>{entry.action}</td>
-                            <td>{entry.detail ?? '—'}</td>
+                            <td data-label={COLUMNS[1]}>{auditModuleLabel(entry.module)}</td>
+                            <td data-label={COLUMNS[2]}>{entry.record_id ?? '—'}</td>
+                            <td data-label={COLUMNS[3]}>{auditActionLabel(entry.action)}</td>
+                            <td data-label={COLUMNS[4]}>{entry.detail ?? '—'}</td>
                           </tr>
                         ))}
                       </tbody>
