@@ -225,4 +225,29 @@ describe('conflict-risk prediction', () => {
     );
     expect(report.status).toBe('sin datos suficientes');
   });
+
+  // functional-10 T15 (F13): the engine itself says «prueba retrospectiva», so no screen rewords it.
+  it('speaks of «prueba retrospectiva», never «back-test», in limitations and reasons', () => {
+    const thin = conflictRisk(input([demand('Pampa Alta', addDays(TODAY, -5))]));
+    expect(thin.limitations[0]).toBe(
+      'Es una ayuda para priorizar, no un pronóstico de hechos: la probabilidad tiene el error que muestra la prueba retrospectiva.',
+    );
+    expect(thin.localities[0]?.confidenceReason).toBe(
+      'Historial insuficiente para calibrar; el detalle está en la prueba retrospectiva.',
+    );
+    const records: RiskRecord[] = [];
+    for (let l = 0; l < 12; l += 1) {
+      const name = `Localidad ${l}`;
+      const hot = l < 4;
+      for (let day = -730; day <= -1; day += hot ? 9 : 40)
+        records.push(demand(name, addDays(TODAY, day)));
+      for (let day = -700; day <= -1; day += hot ? 45 : 400)
+        records.push(redAlert(name, addDays(TODAY, day)));
+    }
+    const calibrated = conflictRisk(input(records));
+    expect(calibrated.localities[0]?.confidenceReason).toMatch(
+      /^Supera la tasa base en la prueba retrospectiva(, con pocos escalamientos)? \(\d+/,
+    );
+    expect(JSON.stringify([thin, calibrated])).not.toMatch(/back-test/i);
+  });
 });

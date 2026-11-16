@@ -34,15 +34,6 @@ const sourceHref = (source: Source) => {
 
 const number = (value: number, digits = 2) => formatNumber(value, digits);
 const percent = (value: number) => `${Math.round(value * 100)} %`;
-/**
- * The engine's sentences still say «back-test» (engines/ keeps them byte-identical across
- * TypeScript, Rust and Go); the screen says «prueba retrospectiva» (functional-10 T5, F13).
- */
-const plainRisk = (text: string) =>
-  text
-    .replace(/\bdel back-test\b/gi, 'de la prueba retrospectiva')
-    .replace(/\bel back-test\b/gi, 'la prueba retrospectiva')
-    .replace(/\bback-test\b/gi, 'prueba retrospectiva');
 /** A skill at or below zero is not an improvement; say so instead of «mejora −15 %». */
 const skillText = (skill: number | null) =>
   skill !== null && skill > 0 ? `mejora ${percent(skill)}` : 'no supera la tasa base';
@@ -105,7 +96,7 @@ const UnitCard = ({ unit, horizon }: { unit: ConflictRiskPrediction; horizon: Ho
         )}
       </p>
       <p className={styles.muted}>
-        Confianza {unit.confidence}. {plainRisk(unit.confidenceReason)}
+        Confianza {unit.confidence}. {unit.confidenceReason}
       </p>
       <h3 className={styles.factorsTitle}>En qué se basa</h3>
       <ul className={styles.factors}>
@@ -175,7 +166,7 @@ const BacktestCard = ({ backtest }: { backtest: Backtest }) => {
           </div>
         </>
       ) : (
-        <p>{plainRisk(backtest.reason ?? '')}</p>
+        <p>{backtest.reason ?? ''}</p>
       )}
     </Card>
   );
@@ -266,9 +257,9 @@ export const ConflictRiskPage = (context: FeatureContext) => {
               )}
               <BacktestCard backtest={data.backtest[horizon]} />
               <p className={styles.muted}>
-                Generado: <DateText value={data.generatedOn} />. {plainRisk(data.method)}
+                Generado: <DateText value={data.generatedOn} />. {data.method}
               </p>
-              <Limitations items={data.limitations.map(plainRisk)} />
+              <Limitations items={data.limitations} />
             </>
           );
         }}

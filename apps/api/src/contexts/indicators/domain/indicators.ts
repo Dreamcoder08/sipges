@@ -700,7 +700,7 @@ const institutional = (r: ModuleRecords): RawIndicator[] => {
       'I5',
       100 - completeness,
       'Alta',
-      'Riesgo inverso del porcentaje de registros clave con Fuente_ID o evidencia asociada.',
+      'Riesgo inverso del porcentaje de registros clave con referencia de fuente o evidencia asociada.',
       keyRecords.length,
       `${withSource.length} de ${keyRecords.length} registros clave cuentan con fuente/evidencia estructurada (${pyFloat(completeness)}%).`,
     ),

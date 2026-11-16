@@ -80,6 +80,18 @@ describe('computeIndicators (app.py compute_indicators v0.4)', () => {
     expect(result.availability).toEqual({ G: 100, A: 83.3, D: 100, N: 100, E: 100, I: 100 });
   });
 
+  // functional-10 T15 (F8): a method names the source field in words, not as the stored key.
+  it('describes I5 with «referencia de fuente» and no method prints a stored field name', () => {
+    const result = computeIndicators(EMPTY);
+    expect(result.indicators.find((x) => x.code === 'I5')?.method).toBe(
+      'Riesgo inverso del porcentaje de registros clave con referencia de fuente o evidencia asociada.',
+    );
+    const storedKey = /[a-z]+_[a-z]+|[A-Z][a-z]+_[A-Z]/;
+    expect(result.indicators.filter((x) => storedKey.test(x.method)).map((x) => x.code)).toEqual(
+      [],
+    );
+  });
+
   it('averages each dimension over its non-null indicators only', () => {
     const actor = {
       _id: 'a1',

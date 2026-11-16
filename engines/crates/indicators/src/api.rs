@@ -182,6 +182,30 @@ mod tests {
             .to_owned()
     }
 
+    /// functional-10 T15: the I5 method names the source field in words, as TypeScript does.
+    #[test]
+    fn i5_method_names_the_source_in_words() {
+        let request = r#"{"op":"indicators","records":{"Eventos":[],"Actores":[],"Demandas":[],"Compromisos":[],"Narrativas":[],"Alertas":[],"Acciones":[],"Directorio_Territorial":[]}}"#;
+        let response: Value =
+            serde_json::from_slice(&compute(request.as_bytes())).unwrap_or_default();
+        let method = response
+            .pointer("/value/indicators")
+            .and_then(Value::as_array)
+            .and_then(|items| {
+                items
+                    .iter()
+                    .find(|item| item.get("code").and_then(Value::as_str) == Some("I5"))
+            })
+            .and_then(|item| item.get("method"))
+            .and_then(Value::as_str);
+        assert_eq!(
+            method,
+            Some(
+                "Riesgo inverso del porcentaje de registros clave con referencia de fuente o evidencia asociada."
+            )
+        );
+    }
+
     #[test]
     fn rejects_malformed_requests() {
         assert_eq!(code(""), "invalid_request");
