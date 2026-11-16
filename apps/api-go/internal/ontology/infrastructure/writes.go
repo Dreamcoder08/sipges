@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/ontology/application"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/audittrail"
 )
 
 // The write queries of sql-ontology-store.ts (createLink, setLinkEvidence, setMarking,
@@ -18,6 +19,8 @@ import (
 
 // auditModule is AUDIT_MODULE: the audit module of link changes.
 const auditModule = "Vinculos"
+
+var errNoRecordsWriter = errors.New("ontology: no records writer wired")
 
 var (
 	_ application.Writer = Store{}
@@ -33,13 +36,10 @@ var (
 	evidenceHistorySQL = `INSERT INTO link_evidence_history (tenant_id, link_id, previous_source_id, next_source_id, actor, at)
      VALUES (current_setting('app.tenant_id', true), $1, $2, $3,
        COALESCE(NULLIF(current_setting('app.actor', true), ''), 'sistema'), $4)`
-	auditSQL = `INSERT INTO audit (tenant_id, ts, module, record_id, action, detail)
-     VALUES (current_setting('app.tenant_id', true), $1, $2, $3, $4, $5)`
 	lockLinkSQL = `SELECT source_module, source_id, target_module, target_id, evidence_source_id
            FROM record_links WHERE id = $1 FOR UPDATE`
 	setEvidenceSQL = `UPDATE record_links SET evidence_source_id = $2 WHERE id = $1`
 	lockMarkingSQL = `SELECT marking FROM module_records WHERE module = $1 AND id = $2 FOR UPDATE`
-	setMarkingSQL  = `UPDATE module_records SET marking = $3 WHERE module = $1 AND id = $2`
 	deleteLinkSQL  = `DELETE FROM record_links WHERE id = $1
          RETURNING id, link_type, source_module, source_id, target_module, target_id`
 )
@@ -60,8 +60,7 @@ func (s Store) count(ctx context.Context, sql string, args ...any) (int, error) 
 
 // appendAudit is appendAudit of platform/database/audit-trail.ts.
 func (s Store) appendAudit(ctx context.Context, at time.Time, module string, recordID *string, action, detail string) error {
-	_, err := s.Q.Exec(ctx, auditSQL, at, module, recordID, action, detail)
-	return err
+	return audittrail.Append(ctx, s.Q, audittrail.Entry{At: at, Module: module, RecordID: recordID, Action: action, Detail: detail})
 }
 
 // appendEvidenceHistory is appendEvidenceHistory: append-only private provenance.
@@ -181,7 +180,10 @@ func (s Store) SetMarking(ctx context.Context, ref application.NodeRef, marking 
 	if previous == marking {
 		return true, nil
 	}
-	if _, err := s.Q.Exec(ctx, setMarkingSQL, ref.Module, ref.ID, marking); err != nil {
+	if s.Records == nil {
+		return false, errNoRecordsWriter
+	}
+	if err := s.Records.SetMarking(ctx, s.Q, ref.Module, ref.ID, marking); err != nil {
 		return false, err
 	}
 	id := ref.ID

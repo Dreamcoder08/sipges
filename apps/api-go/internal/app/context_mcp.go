@@ -103,7 +103,7 @@ func (m mcpOntology) Link(ctx context.Context, tenantID string, in ontology.Link
 	}
 	at := mcpClock(m.d)().Truncate(time.Millisecond)
 	got, err := database.WithTenant(ctx, m.d.Pool, tenantID, func(ctx context.Context, q database.Querier) (created, error) {
-		id, problem, err := ontology.Writes{Store: ontologysql.Store{Q: q}, Now: at}.Link(ctx, in, actor)
+		id, problem, err := ontology.Writes{Store: ontologysql.Store{Q: q, Records: recordssql.InTx{}}, Now: at}.Link(ctx, in, actor)
 		return created{id, problem}, err
 	})
 	return got.id, got.problem, err

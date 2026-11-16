@@ -22,6 +22,7 @@ import (
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/ontology/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/httpx"
+	records "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/application"
 	js "github.com/Dreamcoder08/sipges/apps/api-go/internal/situations/domain"
 	tenancyhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/http"
 )
@@ -40,6 +41,8 @@ type Deps struct {
 	Now func() time.Time
 	// Semantic makes search hybrid; nil keeps it lexical (SIPGES_SEMANTIC_SEARCH off).
 	Semantic *application.Semantic
+	// Records changes a record's marking; required by the marking write.
+	Records records.InTxWriter
 }
 
 // Register mounts the ontology routes on mux.

@@ -10,6 +10,7 @@ import (
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/intelligence/application"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/intelligence/domain"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/audittrail"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 )
 
@@ -29,9 +30,6 @@ const decideAlert = `UPDATE digital_alert_reviews SET status = $2, reviewer_note
 const recordFirstValidation = `UPDATE digital_alert_reviews SET first_validator = $2, first_validated_at = $3,
    reviewer_note = $4
   WHERE id = $1 RETURNING ` + columns
-
-const insertAudit = `INSERT INTO audit (tenant_id, ts, module, record_id, action, detail, event_payload)
-  VALUES (current_setting('app.tenant_id', true), $1, $2, $3, $4, $5, $6::jsonb)`
 
 // Decisions is the decision side of the SQL alert store.
 type Decisions struct {
@@ -122,6 +120,7 @@ func audit(ctx context.Context, q database.Querier, a domain.Alert, action, deta
 	if err != nil {
 		return err
 	}
-	_, err = q.Exec(ctx, insertAudit, at, auditModule, a.ID, action, detail, string(payload))
-	return err
+	return audittrail.Append(ctx, q, audittrail.Entry{
+		At: at, Module: auditModule, RecordID: audittrail.ID(a.ID), Action: action, Detail: detail, Payload: payload,
+	})
 }

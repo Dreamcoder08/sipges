@@ -9,6 +9,7 @@ import (
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/documents/application"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/documents/domain"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/audittrail"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 )
 
@@ -45,18 +46,15 @@ const decidePending = `WITH picked AS (
            FROM picked WHERE id = picked.picked_id AND status = 'pendiente'
          RETURNING ` + columns
 
-// appendAudit is appendAudit of apps/api/src/platform/database/audit-trail.ts.
-const appendAudit = `INSERT INTO audit (tenant_id, ts, module, record_id, action, detail)
-     VALUES (current_setting('app.tenant_id', true), $1, $2, $3, $4, $5)`
-
 // auditModule is the audit module app.py used for review decisions.
 const auditModule = "Laboratorio_Documental"
 
 var _ application.ReviewWriter = Reviews{}
 
 func auditDecision(ctx context.Context, q database.Querier, id string, d application.Decision) error {
-	_, err := q.Exec(ctx, appendAudit, d.At, auditModule, id, "REVIEW", d.Status+" | "+d.Reviewer)
-	return err
+	return audittrail.Append(ctx, q, audittrail.Entry{
+		At: d.At, Module: auditModule, RecordID: audittrail.ID(id), Action: "REVIEW", Detail: d.Status + " | " + d.Reviewer,
+	})
 }
 
 // selectorArgs are pendingParams: nil ids, theme or document mean any.

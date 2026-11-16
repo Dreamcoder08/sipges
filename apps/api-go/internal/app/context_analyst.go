@@ -79,7 +79,7 @@ func (a proposalActions) now() time.Time {
 func (a proposalActions) Link(ctx context.Context, tenantID string, link analystdomain.ProposedLink, note, actor string) (string, error) {
 	at := a.now().Truncate(time.Millisecond)
 	return database.WithTenant(ctx, a.d.Pool, tenantID, func(ctx context.Context, q database.Querier) (string, error) {
-		writes := ontology.Writes{Store: ontologysql.Store{Q: q}, Now: at}
+		writes := ontology.Writes{Store: ontologysql.Store{Q: q, Records: recordssql.InTx{}}, Now: at}
 		_, problem, err := writes.Link(ctx, ontology.LinkInput{
 			LinkType: link.LinkType,
 			Source:   ontologydomain.Ref{Module: link.Source.Slug, ID: link.Source.ID},

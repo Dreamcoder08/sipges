@@ -16,6 +16,7 @@ import (
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/doctext"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/httpx"
+	records "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/application"
 	tenancyhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/http"
 )
 
@@ -55,13 +56,14 @@ func uploadErrors(kind application.UploadError, maxBytes int) (int, string) {
 // requestStore binds the metadata reads and the attach write to the request's tenant
 // transaction, one transaction per call, as each store call of the TypeScript service is.
 type requestFiles struct {
-	r  *http.Request
-	db database.Beginner
+	r       *http.Request
+	db      database.Beginner
+	records records.InTxWriter
 }
 
 func (s requestFiles) Attach(_ context.Context, in application.AttachInput) (*domain.Attachment, error) {
 	return tenancyhttp.WithRequestTenant(s.r, s.db, func(ctx context.Context, q database.Querier) (*domain.Attachment, error) {
-		return infrastructure.Attach(ctx, q, in)
+		return infrastructure.Attach(ctx, q, s.records, in)
 	})
 }
 
@@ -76,7 +78,7 @@ func files(r *http.Request, deps Deps) application.Files {
 	}
 	return application.Files{
 		Store:          requestStore{r: r, db: deps.DB},
-		Attacher:       requestFiles{r: r, db: deps.DB},
+		Attacher:       requestFiles{r: r, db: deps.DB, records: deps.Records},
 		Storage:        deps.Storage,
 		Text:           text,
 		Now:            deps.Now,
