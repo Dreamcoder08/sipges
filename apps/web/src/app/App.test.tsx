@@ -59,6 +59,8 @@ describe('sign-in', () => {
     await user.type(screen.getByLabelText('Contraseña'), 'synthetic-pass-123');
     await user.click(screen.getByRole('button', { name: 'Ingresar' }));
     const otp = await screen.findByLabelText('Código de autenticación');
+    // Focus moves to the new field, so screen readers announce what to type next.
+    await waitFor(() => expect(otp).toHaveFocus());
     expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.getByRole('status')).toHaveTextContent(
       'Ingrese el código de seis dígitos de su aplicación de autenticación.',

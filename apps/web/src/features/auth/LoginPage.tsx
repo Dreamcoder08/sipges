@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { type FormEvent, useId, useState } from 'react';
+import { type FormEvent, useEffect, useId, useState } from 'react';
 import { z } from 'zod';
 import { isApiError } from '../../shared/api/client.ts';
 import { Alert } from '../../shared/ui/Alert.tsx';
@@ -35,6 +35,7 @@ export const LoginPage = ({
   const [otp, setOtp] = useState('');
   const [needsOtp, setNeedsOtp] = useState(false);
   const titleId = useId();
+  const otpId = useId();
   const providers = useQuery(providersQuery);
   const mutation = useMutation({
     mutationFn: login,
@@ -44,6 +45,11 @@ export const LoginPage = ({
       if (isApiError(error, 401) && error.detail.includes('autenticación')) setNeedsOtp(true);
     },
   });
+
+  // When the code field appears, focus it: screen readers then announce what to type next.
+  useEffect(() => {
+    if (needsOtp) document.getElementById(otpId)?.focus();
+  }, [needsOtp, otpId]);
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -107,6 +113,7 @@ export const LoginPage = ({
         />
         {needsOtp ? (
           <Field
+            id={otpId}
             label="Código de autenticación"
             hint="Seis dígitos de su aplicación TOTP."
             name="otp"
