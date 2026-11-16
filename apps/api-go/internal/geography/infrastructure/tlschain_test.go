@@ -80,10 +80,20 @@ func newPKIWith(t *testing.T, leaf func(*x509.Certificate), leafDNS ...string) p
 // leafOnlyServer answers 200 over TLS and, like GEOCATMIN, sends the leaf without its intermediate.
 func leafOnlyServer(t *testing.T, p pki) *httptest.Server {
 	t.Helper()
+	return leafOnlyServerUpTo(t, p, 0)
+}
+
+// leafOnlyServerUpTo caps the TLS version (0 means no cap) before the server starts, so no
+// handshake goroutine ever reads a config that is still being written.
+func leafOnlyServerUpTo(t *testing.T, p pki, maxVersion uint16) *httptest.Server {
+	t.Helper()
 	srv := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte("{}"))
 	}))
-	srv.TLS = &tls.Config{Certificates: []tls.Certificate{{Certificate: [][]byte{p.leafDER}, PrivateKey: p.leafKey}}}
+	srv.TLS = &tls.Config{
+		Certificates: []tls.Certificate{{Certificate: [][]byte{p.leafDER}, PrivateKey: p.leafKey}},
+		MaxVersion:   maxVersion,
+	}
 	srv.StartTLS()
 	t.Cleanup(srv.Close)
 	return srv
@@ -169,6 +179,14 @@ func TestChainVerifierRejectsTheWrongHost(t *testing.T) {
 	}
 }
 
+func TestChainVerifierTreatsANilIntermediatePoolAsEmpty(t *testing.T) {
+	p := newPKI(t, testHost)
+	// Without the intermediate the chain cannot be built, but it must fail, not panic.
+	if err := get(t, leafOnlyServer(t, p), chainVerifyingTLS(pool(p.root), nil)); err == nil {
+		t.Fatal("a chain missing its intermediate was accepted")
+	}
+}
+
 func TestChainVerifierRefusesAnEmptyServerName(t *testing.T) {
 	p := newPKI(t, testHost)
 	cfg := chainVerifyingTLS(pool(p.root), pool(p.intermediate))
@@ -206,8 +224,7 @@ func TestChainVerifierRejectsALeafNotIssuedForServers(t *testing.T) {
 func TestChainVerifierReverifiesResumedSessions(t *testing.T) {
 	for _, version := range []uint16{tls.VersionTLS12, tls.VersionTLS13} {
 		p := newPKI(t, testHost)
-		srv := leafOnlyServer(t, p)
-		srv.TLS.MaxVersion = version
+		srv := leafOnlyServerUpTo(t, p, version)
 		cache := tls.NewLRUClientSessionCache(4)
 		withCache := func(cfg *tls.Config) *tls.Config { cfg.ClientSessionCache = cache; return cfg }
 		trusting := func() *tls.Config { return withCache(chainVerifyingTLS(pool(p.root), pool(p.intermediate))) }

@@ -84,8 +84,11 @@ var (
 
 // chainVerifyingTLS verifies a server exactly as crypto/tls does by default (chain to roots,
 // host name, server-auth key usage), but also offers extra as intermediates, for servers that
-// omit theirs. roots nil means the system roots.
+// omit theirs. roots nil means the system roots; extra nil means none.
 func chainVerifyingTLS(roots, extra *x509.CertPool) *tls.Config {
+	if extra == nil {
+		extra = x509.NewCertPool()
+	}
 	return &tls.Config{
 		MinVersion: tls.VersionTLS12,
 		// The default verifier is replaced, not skipped: VerifyConnection runs the same checks on
