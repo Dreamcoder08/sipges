@@ -68,8 +68,10 @@ func narrationClient() *http.Client {
 // the failure is not retried.
 type attempt func(ctx context.Context) (answer []byte, wait time.Duration, err error)
 
-// narrate runs the attempts inside the narration budget, with the one retry, and reads the answer.
-func narrate(ctx context.Context, try attempt, read func([]byte) (string, error)) (string, error) {
+// narrate runs the attempts inside the narration budget, with the one retry, and reads the answer:
+// the narrator's prose, or the next step of a question's tool loop.
+func narrate[T any](ctx context.Context, try attempt, read func([]byte) (T, error)) (T, error) {
+	var none T
 	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
 	defer cancel()
 	for attempts := 0; ; attempts++ {
@@ -78,13 +80,13 @@ func narrate(ctx context.Context, try attempt, read func([]byte) (string, error)
 			return read(answer)
 		}
 		if wait < 0 || attempts == maxRetries || !fits(ctx, wait) {
-			return "", err
+			return none, err
 		}
 		timer := time.NewTimer(wait)
 		select {
 		case <-ctx.Done():
 			timer.Stop()
-			return "", errors.New("narrator: cancelled")
+			return none, errors.New("narrator: cancelled")
 		case <-timer.C:
 		}
 	}
