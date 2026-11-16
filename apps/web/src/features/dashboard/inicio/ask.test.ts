@@ -37,3 +37,33 @@ it('posts the question to the analyst in the project and validates the answer', 
   expect(sent).toEqual({ scope: 'DEMO/PRJ-DEMO', body: { question: '¿Qué pasa?' } });
   expect(answer.sources).toEqual([sources[0]]);
 });
+
+it('keeps the known blocks, drops unknown or malformed ones, and accepts answers without blocks', async () => {
+  const record = { n: 1, module: 'eventos', id: 'EV-1', title: 'Bloqueo de vía' };
+  server.use(
+    http.post('/system/analyst/ask', () =>
+      HttpResponse.json({
+        answer: 'El bloqueo sigue [1].',
+        sources: [record],
+        blocks: [
+          { type: 'record', ...record },
+          { type: 'chart', ...record },
+          { type: 'alert', ...record },
+          { type: 'timeline', ...record, entries: [{ date: '2026-03-02', text: 'Inicio' }] },
+        ],
+      }),
+    ),
+  );
+  const answer = await askAnalyst('DEMO/PRJ-DEMO', '¿Qué pasa?');
+  expect(answer.blocks).toEqual([
+    { type: 'record', ...record },
+    { type: 'timeline', ...record, entries: [{ date: '2026-03-02', text: 'Inicio' }] },
+  ]);
+  // An answer from before blocks existed still parses, with no blocks.
+  server.use(
+    http.post('/system/analyst/ask', () =>
+      HttpResponse.json({ answer: 'Nada [1].', sources: [record] }),
+    ),
+  );
+  expect((await askAnalyst('DEMO/PRJ-DEMO', '¿Y?')).blocks).toEqual([]);
+});
