@@ -22,6 +22,21 @@ const GOOGLE_ERRORS: Record<GoogleSignInError, string> = {
     'Esa cuenta de Google no está autorizada en SIPGES. Pida al administrador que la vincule.',
 };
 
+/**
+ * Both APIs answer exactly this (401) when the account needs its second factor and the code is
+ * missing or wrong; every other sign-in failure has another text.
+ */
+const OTP_ANSWER = 'Código de autenticación inválido';
+
+const isOtpAnswer = (error: unknown) => isApiError(error, 401) && error.detail === OTP_ANSWER;
+
+/** What the form shows for a failed attempt: the server's words, or a connection problem. */
+const errorMessage = (error: unknown): string | null => {
+  if (!error) return null;
+  if (isApiError(error)) return error.detail;
+  return 'No se pudo conectar con SIPGES. Revise su conexión.';
+};
+
 /** Sign-in form (app.py POST /login). The OTP is asked only after the server requires it. */
 export const LoginPage = ({
   onSignedIn,
@@ -42,7 +57,7 @@ export const LoginPage = ({
     meta: { public: true },
     onSuccess: () => onSignedIn(),
     onError: (error) => {
-      if (isApiError(error, 401) && error.detail.includes('autenticación')) setNeedsOtp(true);
+      if (isOtpAnswer(error)) setNeedsOtp(true);
     },
   });
 
@@ -57,16 +72,9 @@ export const LoginPage = ({
   };
 
   const error = mutation.error;
-  // The server answers «Código de autenticación inválido» whether the code is missing or wrong.
-  // When the attempt carried no code, it is the request for one, not an error.
-  const asksForCode =
-    isApiError(error, 401) && error.detail.includes('autenticación') && !mutation.variables?.otp;
-  const message =
-    !error || asksForCode
-      ? null
-      : isApiError(error)
-        ? error.detail
-        : 'No se pudo conectar con SIPGES. Revise su conexión.';
+  // An attempt without a code that gets the code answer is the request for one, not an error.
+  const asksForCode = isOtpAnswer(error) && !mutation.variables?.otp;
+  const message = asksForCode ? null : errorMessage(error);
 
   return (
     <main className={styles.page}>
