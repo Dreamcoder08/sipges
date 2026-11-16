@@ -193,8 +193,8 @@ docs or help that describe it. Strings the API produces change in TypeScript and
   the HTTP API (parity, `/health`, a write and a read), the Go API, and an ego-browser walk of every screen on a
   fresh synthetic instance; each defect found becomes a fix with a test. Route: worker + parent (ego-browser).
   Commit: see L13
-- [ ] T17 — S4: release `visit-rc15` on the commit holding T14–T16 with CI and the Windows drill green, roadmap
-  entry, gallery regenerated and every image reviewed. Route: inline. Commit: —
+- [x] T17 — S4: release `visit-rc15` on the commit holding T14–T16 with CI and the Windows drill green, roadmap
+  entry, gallery regenerated and every image reviewed. Route: inline. Commit: tag visit-rc15 (f8f79ad1), see L14
 
 Owner decisions these tasks do not take: the cloud database plan (F28), grouping map circles into one
 marker with a count (F28), and the default project name of T6 if «Proyecto 1» is not wanted.
@@ -307,3 +307,13 @@ marker with a count (F28), and the default project name of T6 if «Proyecto 1» 
   histogram; the open Registros sheet hides «Eliminar» at 1440 px; MFA sign-in shows «Código de autenticación
   inválido» before a code is typed and an administrator can deactivate their own account (both identity, not touched).
   Risk: none.
+- L14 — T17 closed. `visit-rc15` (annotated tag) on f8f79ad1, main holding T14–T16 (#480, #481, #484); CI and the
+  Windows drill green on that commit (Deploy Workers fails only on the Neon quota, which is not a local release gate).
+  Gallery regenerated on that exact commit in a detached worktree: the 8 opt-in capture specs (52 passed), the full
+  e2e suite with SIPGES_SCREENSHOT_DIR and SIPGES_E2E_SCREENSHOT_DIR (225 passed) and specs 24, 29 and
+  registros-filters with SIPGES_SCREENSHOT (5 passed): 90 images, every one opened and classified, 68 ok / 22 duda / 0
+  defecto, no regression. rc14 was 93/29/0 over 122; its extra captures (Auditoría, Configuración 1440, Situacional)
+  come from no committed spec. Gone since rc14: alerts that share a title, the Territorio fifth row and counts, tablet
+  Eventos letters, the Configuración segment. Remaining: stacked map circles (12, owner decision F28) and full-page
+  capture artefacts (8). New dudas: «Alto 1» among the colour levels in the phone Panel's alert-level list, and an
+  unlabelled two-month bar in Evolución temporal.
