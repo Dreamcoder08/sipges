@@ -872,8 +872,9 @@ const TerritorialWorkspace = ({
           <dt>Registros observados</dt>
           <dd>{visible.filter((p) => p.evidence === 'observado').length}</dd>
         </div>
+        {/* Every open alert of the project; Inteligencia operacional counts only the linked ones. */}
         <div className={openAlerts ? styles.alertKpi : undefined}>
-          <dt>Alertas abiertas</dt>
+          <dt>Alertas abiertas del proyecto</dt>
           <dd>{openAlerts}</dd>
         </div>
       </dl>

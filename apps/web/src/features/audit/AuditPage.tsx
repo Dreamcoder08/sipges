@@ -32,9 +32,13 @@ export const AuditPage = ({ scope, projectLabel, role }: FeatureContext) => {
   const needle = search.trim().toLocaleLowerCase('es');
   return (
     <div className={styles.page}>
+      {/* Wide screens hide the shell's h1, so the page carries its visible title; phones and
+          tablets read it in the top bar. The project is named by its label, not its scope
+          (functional-10 T14). */}
+      <h2 className={styles.title}>Auditoría</h2>
       <p>
-        Historial del proyecto <strong>{projectLabel}</strong> ({scope}), ordenado por fecha
-        descendente. La búsqueda se aplica a los registros cargados.
+        Historial del proyecto <strong>{projectLabel}</strong>, ordenado por fecha descendente. La
+        búsqueda se aplica a los registros cargados.
       </p>
       <Card
         title="Consultar auditoría"

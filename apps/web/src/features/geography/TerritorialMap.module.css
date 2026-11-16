@@ -221,14 +221,17 @@
   background: var(--color-info-soft);
 }
 
+/* The rail and its dots sit inside the list's padding: the evolution list scrolls, and a scroll box
+   clips what lies past its padding edge, which cut every dot in half (functional-10 T14). */
 .timeline {
+  --rail: 1.5rem;
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 0 0 0 var(--rail);
   display: grid;
   gap: var(--space-3);
-  border-left: 2px solid var(--color-track);
-  padding-left: var(--space-4);
+  background: linear-gradient(var(--color-track), var(--color-track)) 5px 0 / 2px 100% no-repeat
+    local;
 }
 
 .timeline li {
@@ -244,7 +247,7 @@
 
 .dot {
   position: absolute;
-  left: calc(-1 * var(--space-4) - 7px);
+  left: calc(-1 * var(--rail));
   top: 0.25rem;
   width: 12px;
   height: 12px;
@@ -583,11 +586,22 @@
   display: grid;
   gap: var(--space-1);
 }
+/* Its height is set by MapList (useWholeRows) so it ends on a row boundary. While more rows lie
+   below or above, a soft shadow marks that edge (modern-web-guidance scrollability-affordance-hints,
+   background-attachment fallback: the rows have no background of their own at rest). */
 .mapList {
   position: relative;
-  max-height: min(50vh, 20rem);
   overflow-y: auto;
   overscroll-behavior: contain;
+  --cue-shadow: color-mix(in srgb, var(--color-text) 22%, transparent);
+  background:
+    linear-gradient(var(--color-surface) 30%, transparent) top / 100% 2.5rem no-repeat local,
+    linear-gradient(transparent, var(--color-surface) 70%) bottom / 100% 2.5rem no-repeat local,
+    radial-gradient(farthest-side at 50% 0, var(--cue-shadow), transparent) top / 100% 0.75rem
+      no-repeat,
+    radial-gradient(farthest-side at 50% 100%, var(--cue-shadow), transparent) bottom / 100% 0.75rem
+      no-repeat,
+    var(--color-surface);
 }
 .listRow {
   display: flex;

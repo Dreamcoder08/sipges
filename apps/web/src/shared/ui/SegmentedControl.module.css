@@ -49,11 +49,19 @@
   cursor: pointer;
 }
 
+/*
+ * The chosen segment carries an outline in the control-border colour. In dark mode its fill equals
+ * the track's (--color-surface-raised is --color-fill there), so the outline is what reaches 3:1
+ * against the segments beside it (WCAG 1.4.11). functional-10 T14 measured 3,67:1 dark and
+ * 3,35:1 light, from 1:1 and 1,1:1.
+ */
 .option:has(input:checked) {
   background: var(--color-surface-raised);
   color: var(--color-text);
   font-weight: var(--weight-semibold);
-  box-shadow: var(--shadow-sm);
+  box-shadow:
+    inset 0 0 0 1px var(--color-control-border),
+    var(--shadow-sm);
 }
 
 .option:has(input:focus-visible) {

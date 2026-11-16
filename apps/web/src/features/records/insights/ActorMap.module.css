@@ -69,6 +69,9 @@
 }
 .canvas {
   position: relative;
+  /* The stage is a flex row (shared ScrollCues): the canvas fills it on wide screens. */
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .svg {
   display: block;
@@ -281,6 +284,7 @@
     overscroll-behavior-x: contain;
   }
   .canvas {
+    flex: none;
     width: 900px;
   }
   .svg:not(.zoomed) {

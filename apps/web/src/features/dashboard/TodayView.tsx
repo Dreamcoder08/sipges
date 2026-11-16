@@ -28,6 +28,32 @@ const today = () => formatLongDay();
 const when = (date: string) => (limaDay(date) ? formatShortDay(date) : 'Sin fecha');
 
 /**
+ * The line under an alert: its day and place, and its id when another alert shown has the same
+ * title, so two alerts never read alike (functional-10 T14, as T5 did on desktop Inicio). The id
+ * is one word: it moves to its own line whole instead of breaking after a hyphen.
+ */
+const AlertLine = ({
+  item,
+  shown,
+}: {
+  item: { id: string; title: string; date: string; place: string };
+  shown: readonly { title: string }[];
+}) => {
+  const repeated = shown.filter((other) => other.title === item.title).length > 1;
+  return (
+    <small>
+      {[when(item.date), item.place].filter(Boolean).join(' · ')}
+      {repeated ? (
+        <>
+          {' · '}
+          <span className={styles.code}>{item.id}</span>
+        </>
+      ) : null}
+    </small>
+  );
+};
+
+/**
  * Phone home (odd/archive/mobile-first-redesign.md T9): what matters today in one screen —
  * the risk level, four counters, the alerts that need action, the latest events and the most
  * frequent tasks. The full analysis follows below it on the same page.
@@ -113,7 +139,7 @@ export const TodayView = ({
                   </span>
                   <span className={styles.itemText}>
                     <b>{item.title}</b>
-                    <small>{when(item.date)}</small>
+                    <AlertLine item={item} shown={urgent} />
                   </span>
                 </InternalLink>
               </li>
