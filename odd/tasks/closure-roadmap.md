@@ -805,3 +805,13 @@ Not chosen in S2. Each stays open in its own document.
   review-records:58, decision.go:98), so the prevention room and the Territorio panel can disagree on «vencida»
   between 19:00 and midnight; the Inicio composer covers content at 360 px; SVG map numbers overlap; English
   «Dashboard»/«Gold Standard»; the verifier's extra date probes are not in the repository.
+- L35 — visit-rc15: after `visit-rc14`, main is f8f79ad1 with functional-10 T14 (rc14 gallery dudas, #480), T15
+  (engine wording at the source, e2e on the Go API in CI, kit version check, #481) and T16 (every surface proved: CLI
+  196/196, MCP, API, parity 2626/2626, Go suite, and an ego-browser walk that fixed eleven screen details, #484). CI
+  and the Windows drill green on that commit. Gallery: 90 images, 68 ok / 22 duda / 0 defecto. Also on main since
+  rc14: Go context ports (#476, #477), GEOCATMIN through its missing intermediate and by object id (#475, #478),
+  goroutine leak checks (#473), Go 1.27.4 pins (#474), the legacy cleanup (#482, #485) and a test-role race fix
+  (#483). Open: owner decisions (stacked map circles, the cloud database plan and the Neon quota that keeps production
+  down since 2026-11-15, Cloudflare access for the R2 backup drill), the Excel importer waiting on the client's files,
+  and two identity dudas (an administrator can deactivate their own account; MFA sign-in shows «Código de
+  autenticación inválido» before a code is typed).
