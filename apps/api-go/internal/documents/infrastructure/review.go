@@ -29,8 +29,6 @@ const countMatching = `SELECT count(*) AS total FROM document_review
 const countThemes = `SELECT theme, count(*) AS total FROM document_review
  WHERE ` + byProject + ` GROUP BY theme ORDER BY theme`
 
-const existingRecords = `SELECT id FROM module_records WHERE module = $1 AND id = ANY($2::text[])`
-
 // Reviews is the read side of the SQL review store.
 type Reviews struct {
 	DB database.Beginner
@@ -77,23 +75,4 @@ func scanItem(row pgx.CollectableRow) (domain.ReviewItem, error) {
 	err := row.Scan(&it.ID, &it.ProjectID, &it.SourceFile, &it.SourceSHA256, &it.Location, &it.Theme,
 		&it.Excerpt, &it.Action, &it.Status, &it.Reviewer, &it.Note, &it.CreatedAt, &it.UpdatedAt)
 	return it, err
-}
-
-// ExistingRecords returns which ids exist in module, as the tenant's clearance sees them.
-func (s Reviews) ExistingRecords(ctx context.Context, tenantID, module string, ids []string) (map[string]bool, error) {
-	return database.WithTenant(ctx, s.DB, tenantID, func(ctx context.Context, tx database.Querier) (map[string]bool, error) {
-		rows, err := tx.Query(ctx, existingRecords, module, ids)
-		if err != nil {
-			return nil, err
-		}
-		ids, err := pgx.CollectRows(rows, pgx.RowTo[string])
-		if err != nil {
-			return nil, err
-		}
-		found := make(map[string]bool, len(ids))
-		for _, id := range ids {
-			found[id] = true
-		}
-		return found, nil
-	})
 }
