@@ -15,6 +15,7 @@ import (
 // these writes through ports wired in this composition root (odd/tasks/go-context-ports.md).
 var tableOwners = map[string]string{
 	"automation_cursors": "automation",
+	"module_records":     "records",
 }
 
 // writeStatement finds SQL that changes a table: INSERT INTO t, UPDATE t, DELETE FROM t.

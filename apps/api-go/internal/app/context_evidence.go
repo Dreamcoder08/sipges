@@ -9,6 +9,7 @@ import (
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/evidence/infrastructure/objectstore"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/config"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/doctext"
+	recordssql "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/infrastructure"
 )
 
 func init() {
@@ -32,6 +33,7 @@ func init() {
 			evidencehttp.Register(mux, evidencehttp.Deps{
 				Text:           evidenceinfra.DocText{OCR: doctext.NewOCR(ocr.Enabled, ocr.Languages)},
 				DB:             d.Pool,
+				Records:        recordssql.InTx{},
 				Logger:         d.Logger,
 				Storage:        storage,
 				MaxUploadBytes: maxUpload,

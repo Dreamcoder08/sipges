@@ -19,6 +19,8 @@ import (
 // auditModule is AUDIT_MODULE: the audit module of link changes.
 const auditModule = "Vinculos"
 
+var errNoRecordsWriter = errors.New("ontology: no records writer wired")
+
 var (
 	_ application.Writer = Store{}
 
@@ -39,7 +41,6 @@ var (
            FROM record_links WHERE id = $1 FOR UPDATE`
 	setEvidenceSQL = `UPDATE record_links SET evidence_source_id = $2 WHERE id = $1`
 	lockMarkingSQL = `SELECT marking FROM module_records WHERE module = $1 AND id = $2 FOR UPDATE`
-	setMarkingSQL  = `UPDATE module_records SET marking = $3 WHERE module = $1 AND id = $2`
 	deleteLinkSQL  = `DELETE FROM record_links WHERE id = $1
          RETURNING id, link_type, source_module, source_id, target_module, target_id`
 )
@@ -181,7 +182,10 @@ func (s Store) SetMarking(ctx context.Context, ref application.NodeRef, marking 
 	if previous == marking {
 		return true, nil
 	}
-	if _, err := s.Q.Exec(ctx, setMarkingSQL, ref.Module, ref.ID, marking); err != nil {
+	if s.Records == nil {
+		return false, errNoRecordsWriter
+	}
+	if err := s.Records.SetMarking(ctx, s.Q, ref.Module, ref.ID, marking); err != nil {
 		return false, err
 	}
 	id := ref.ID
