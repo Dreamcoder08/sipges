@@ -1,4 +1,4 @@
-import { type CSSProperties, useEffect, useId, useRef } from 'react';
+import { type CSSProperties, useEffect, useId, useLayoutEffect, useRef } from 'react';
 import { InternalLink } from '../../shared/lib/navigation.tsx';
 import { LAYER_SLUGS, type Layer, type MapPoint, type Unplaced } from './territorial-model.ts';
 import styles from './TerritorialMap.module.css';
@@ -9,6 +9,43 @@ import { DateText } from '../../shared/ui/DateText.tsx';
 export const recordSheetHref = ({ layer, id }: { layer: Layer; id: string }) => {
   const slug = LAYER_SLUGS[layer];
   return `/registros?tipo=${slug}&ficha=${encodeURIComponent(`${slug}.${id}`)}`;
+};
+
+/** Rows the list shows before it scrolls, when the screen is tall enough for them. */
+const ROWS_IN_VIEW = 5;
+
+/**
+ * Ends the list's scroll box on a row boundary, so no row shows cut in half at its edge
+ * (functional-10 T14: the fifth row at 360 px). The box holds the first five rows whole, fewer
+ * only when they would pass 80% of the screen height; the rows past them scroll inside the list.
+ * Rows wrap again when the width or the font changes, so their sizes are observed, not read once.
+ */
+const wholeRows = (box: HTMLOListElement | null) => {
+  if (!box) return;
+  const rows = [...box.children].slice(0, ROWS_IN_VIEW + 1) as HTMLElement[];
+  const fit = () => {
+    if (rows.length <= ROWS_IN_VIEW || !rows[0]?.offsetHeight) {
+      box.style.maxHeight = '';
+      return;
+    }
+    const limit = Math.max(window.innerHeight * 0.8, rows[0].offsetTop + rows[0].offsetHeight);
+    let bottom = 0;
+    for (const row of rows.slice(0, ROWS_IN_VIEW)) {
+      const end = row.offsetTop + row.offsetHeight;
+      if (end > limit) break;
+      bottom = end;
+    }
+    box.style.maxHeight = `${bottom}px`;
+  };
+  fit();
+  if (typeof ResizeObserver === 'undefined') return;
+  const observer = new ResizeObserver(fit);
+  for (const row of rows) observer.observe(row);
+  window.addEventListener('resize', fit);
+  return () => {
+    observer.disconnect();
+    window.removeEventListener('resize', fit);
+  };
 };
 
 /**
@@ -26,6 +63,8 @@ export const MapList = ({
   onSelect: (point: MapPoint) => void;
 }) => {
   const list = useRef<HTMLOListElement>(null);
+  // Rendered rows are what it measures, so it runs again whenever they change.
+  useLayoutEffect(() => wholeRows(list.current), [items]);
   useEffect(() => {
     const box = list.current;
     const row = [...(box?.querySelectorAll<HTMLElement>('[data-point]') ?? [])].find(

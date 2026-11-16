@@ -26,6 +26,27 @@ describe('demandProgress', () => {
 });
 
 describe('RecordCell', () => {
+  // functional-10 T14 (F10): tablet Eventos showed «N», «E», «G» alone in «Dimensión principal».
+  it('names a dimension stored as its letter alone, and keeps a value that already names it', () => {
+    const eventos = MODULES.eventos;
+    const dimension = eventos.fields.find((item) => item.key === 'Dimension_Principal');
+    if (!dimension) throw new Error('Dimension_Principal expected');
+    const cell = (value: string) =>
+      render(
+        <RecordCell
+          module="eventos"
+          row={{ _id: 'EV-5', Dimension_Principal: value }}
+          field={dimension}
+        />,
+      ).container;
+    expect(cell('N')).toHaveTextContent(/^N · Narrativas$/);
+    expect(cell(' e ')).toHaveTextContent(/^E · Ambiental-territorial$/);
+    expect(cell('G - Gobernanza y representación')).toHaveTextContent(
+      /^G - Gobernanza y representación$/,
+    );
+    expect(cell('Otra')).toHaveTextContent(/^Otra$/);
+  });
+
   // functional-10 T1 (F1): lists show the shared date style, never the raw ISO day.
   it('shows a date field as the Lima day in Spanish and keeps the stored day for machines', () => {
     const { container } = render(

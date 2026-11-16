@@ -19,6 +19,8 @@ import styles from './Operations.module.css';
 import { count } from '../../shared/lib/plural.ts';
 import { formatDay } from '../../shared/lib/format.ts';
 
+const LINKED_OPEN_ALERTS = 'Alertas abiertas vinculadas';
+
 const RecordLink = ({ record }: { record: DossierRef }) => (
   <InternalLink href={objectHref(record.module, record.id)}>{record.title}</InternalLink>
 );
@@ -106,9 +108,11 @@ export const OperationsPanel = ({
   const openAlerts = dossier.alerts.filter((a) => a.open);
   const attending = new Set(dossier.alerts.flatMap((a) => a.actions.map((x) => x.id)));
   const demandActions = dossier.actions.filter((a) => !attending.has(a.id));
+  // «vinculadas»: only the open alerts linked to these records; the page's own card below counts
+  // every open alert of the project (functional-10 T14).
   const counts: [string, number][] = [
     ['Señales', dossier.signals.length],
-    ['Alertas abiertas', openAlerts.length],
+    [LINKED_OPEN_ALERTS, openAlerts.length],
     ['Acciones', dossier.actions.length],
     ['Compromisos', dossier.commitments.length],
     ['Actores', dossier.actors.length],
@@ -122,7 +126,7 @@ export const OperationsPanel = ({
       </p>
       <dl className={styles.counts}>
         {counts.map(([label, value]) => (
-          <div key={label} data-alert={label === 'Alertas abiertas' && value > 0}>
+          <div key={label} data-alert={label === LINKED_OPEN_ALERTS && value > 0}>
             <dt>{label}</dt>
             <dd>{value}</dd>
           </div>

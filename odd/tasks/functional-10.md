@@ -177,11 +177,11 @@ docs or help that describe it. Strings the API produces change in TypeScript and
   capture helper regex. Each with a failing test first; then regenerate the gallery and review it again.
   Route: worker. Commit: #470 b51f2e7d
 
-- [ ] T14 — S4, L9: the rc14 gallery dudas that need no owner decision. Alerts that share a title are told
+- [x] T14 — S4, L9: the rc14 gallery dudas that need no owner decision. Alerts that share a title are told
   apart on Panel and the phone home; the Territorio list shows its fifth row whole and the page shows one «Alertas
   abiertas» count; tablet Eventos names the dimension; Auditoría at 1440 px has a visible title and shows the project
   label, not `SIPGES/PRJ-SECHURA`; the dark active segment in Configuración has enough contrast (measure it).
-  Route: worker (web). Commit: —
+  Route: worker (web). Commit: see L11
 - [ ] T15 — S4, L6: technical leftovers. «back-test» and `Fuente_ID` reworded at the source (Rust engines, their
   TypeScript twins and the wasm, byte-identical); a CI job running the e2e suite on the Go API
   (`SIPGES_E2E_RUNTIME=go`, fixed spec list); the desktop kit version (`builder.mjs --version`) checked against
@@ -263,3 +263,14 @@ marker with a count (F28), and the default project name of T6 if «Proyecto 1» 
 - L10 — «yes haslo , te autorizo todo , ve que funcione tambien por cli , mcp , api , ego-browser y mas». S4,
   T14–T17 added. Still owner decisions: stacked map circles, the cloud database plan, the real laptop's version
   and backup.
+- L11 — T14 closed (f6204e14..89298ea1, resumed by a delegated writer from the uncommitted work of the earlier tab,
+  which had died). Each rc14 gallery duda without an owner decision has a test that fails on base: the phone Panel
+  shows place and id under alerts that share a title, and the IRSA card names each dimension (F10). On Territorio the
+  map list ends on a whole fifth row, the timeline dots are whole, and the two counts read «Alertas abiertas
+  vinculadas» and «Alertas abiertas del proyecto» (they count different things; one literal «Alertas abiertas» label
+  is a one-line revert if the owner wants it). Tablet Eventos shows «N · Narrativas» with a 12rem description column.
+  Auditoría at 1440 px has a visible title and the project label without its scope. The chosen segment in
+  Configuración has an outline: 3.67:1 dark and 3.35:1 light against its neighbours (it was 1:1 and 1.1:1), text
+  15.3:1 and 19.44:1, from computed styles in Chromium. The heat map and the actor map shadow their scroll edges on
+  phones. e2e zz-gallery-rc14 (desktop 4, mobile 5) red on base then green, web unit tests 754/754, hubs.mobile and
+  spec 38 (axe at 360/930/1440 px) green; typecheck, eslint, prettier and build ok. Risk: none.

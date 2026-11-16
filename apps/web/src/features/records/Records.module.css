@@ -90,6 +90,21 @@
   padding-inline: 0.6rem;
   white-space: nowrap;
 }
+/* The record's own text (an event's description) keeps about five words a line; the column
+   header sets the width of the whole column (functional-10 T14, tablet Eventos). */
+.table th.titleCell {
+  min-width: 12rem;
+}
+/* Tablets: «Ver», «Editar» and «Eliminar» stack, so the actions column stops taking the width
+   the description needs. Phones turn rows into cards below 40rem. */
+@media (40rem < width <= 60rem) {
+  .rowActions {
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+  }
+}
 .form {
   display: grid;
   /* An `auto` track grows to the file input's min-content and pushed /objeto past 360 px. */

@@ -4,6 +4,7 @@ import { useLevelLabel } from '../../../shared/lib/project-settings.tsx';
 import { DIMENSION_NAMES, type DimensionCode } from '../../../shared/lib/text.ts';
 import { Alert } from '../../../shared/ui/Alert.tsx';
 import { Button } from '../../../shared/ui/Button.tsx';
+import { ScrollCues } from '../../../shared/ui/ScrollCues.tsx';
 import { alertHeatmap, LEVEL_ORDER, MISSING_TERRITORY } from './alert-heatmap.ts';
 import { LEVEL_LABEL } from './alert-overview.ts';
 import styles from './Insights.module.css';
@@ -63,7 +64,7 @@ export const AlertHeatmap = ({
         <>
           {data.active.length ? (
             <>
-              <div
+              <ScrollCues
                 className={styles.scroller}
                 role="region"
                 aria-label="Matriz de calor por dimensión y territorio"
@@ -141,7 +142,7 @@ export const AlertHeatmap = ({
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </ScrollCues>
               <ul className={styles.legend} aria-label="Leyenda de niveles de riesgo">
                 <li className={styles.legendTitle}>Nivel de riesgo:</li>
                 {LEVEL_ORDER.map((level) => (

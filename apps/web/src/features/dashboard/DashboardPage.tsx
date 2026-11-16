@@ -178,7 +178,11 @@ export const DashboardPage = ({
                   {DIMENSIONS.map((code) => (
                     <li key={code}>
                       <DimensionBadge code={code} />
-                      <span>{formatNumber(data.scores[code] ?? 0)}</span>
+                      {/* The name beside the letter (functional-10 T14, F10). */}
+                      <span className={styles.dimName}>{DIMENSION_NAMES[code]}</span>
+                      <span className={styles.dimScore}>
+                        {formatNumber(data.scores[code] ?? 0)}
+                      </span>
                     </li>
                   ))}
                 </ul>
