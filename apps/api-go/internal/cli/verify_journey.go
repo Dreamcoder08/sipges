@@ -669,7 +669,7 @@ func (v *verifier) isolatedReads() {
 // and its own MFA, notifications and sessions (internal/identity/domain/access.go).
 var viewerWrites = []string{
 	"/system/auth/sessions/{id}", "/system/auth/sessions/revoke-others",
-	"/system/analyze", "/system/document-lab/analyze", "/system/document-lab/compare",
+	"/system/analyze", "/system/analyst/ask", "/system/document-lab/analyze", "/system/document-lab/compare",
 	"/system/document-lab/report.docx", "/system/intelligence/semantic-analyze", "/system/geography/query",
 	"/system/graph/neighbourhood", "/system/auth/totp/setup", "/system/auth/totp/enable",
 	"/system/notifications/read", "/system/notifications/push", "/system/notifications/push/unsubscribe",
