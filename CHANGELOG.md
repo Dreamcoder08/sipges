@@ -27,7 +27,8 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ### Corregido
 
-- Al iniciar sesión con MFA, el formulario pide el código con una indicación en vez de mostrar «Código de autenticación inválido» antes de escribirlo; el error queda para un código enviado y equivocado.
+- Al iniciar sesión con MFA, el formulario pide el código con una indicación y le da el foco, en vez de mostrar «Código de autenticación inválido» antes de escribirlo; el error queda para un código enviado y equivocado.
+- Los histogramas por mes (Territorio y Cronología) nombran cada mes bajo su barra cuando hay seis meses o menos; con un solo mes ya no repiten la etiqueta.
 - Recorrido completo (T16 de `odd/tasks/functional-10.md`): CLI, MCP, API, paridad y la suite Go pasan sin defectos sobre una instalación limpia; el recorrido de cada pantalla arregla once detalles: fechas e instantes crudos ahora en hora de Lima, la ficha de registro nombra sus campos y vuelve a su lista, «1 actores» concuerda y Administración tiene título.
 - Limpieza (T12 de `odd/tasks/repo-cleanup.md`): se borran capturas de diseño sin referencias, se archivan los bocetos de la barra lateral compacta (ya construida), se quita la dependencia sin uso `@sipges/kernel` de `packages/contracts`, `readiness.md` nombra los jobs de CI reales y el README enlaza la instalación local y el contenedor Go.
 - Pruebas Go: borrar el rol de una base de pruebas espera a las migraciones en curso de otros paquetes. Sin esto, la migración 0030 podía leer un rol recién borrado como un número (`GRANT sipges_tenant TO 44888`) y fallar al azar en CI.
