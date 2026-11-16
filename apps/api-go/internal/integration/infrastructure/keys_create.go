@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/integration/domain"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/audittrail"
 	records "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/domain"
 )
 
@@ -43,7 +44,9 @@ func (k Keys) Create(ctx context.Context, tenantID string, key domain.NewKey, ac
 		return 0, false, err
 	}
 	detail := "Clave de API «" + name + "» (" + key.Access + ", " + key.Clearance + ") " + key.Prefix
-	if _, err = tx.Exec(ctx, appendAudit, at, "Integraciones", "clave-"+itoa(id), "CREATE", detail); err != nil {
+	if err = audittrail.Append(ctx, tx, audittrail.Entry{
+		At: at, Module: "Integraciones", RecordID: audittrail.ID("clave-" + itoa(id)), Action: "CREATE", Detail: detail,
+	}); err != nil {
 		return 0, false, err
 	}
 	if err = tx.Commit(ctx); err != nil {

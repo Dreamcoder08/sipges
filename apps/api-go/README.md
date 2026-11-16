@@ -26,6 +26,7 @@ production route yet: routes move here one by one, each after a parity test agai
 | `internal/platform/engines`         | The Rust engines (indicators, analytics) as embedded WebAssembly.        |
 | `internal/platform/httpx`           | `{"detail": …}` errors, request id, access log, host allowlist, health;  |
 |                                     | Hono-compatible path, cookie, query and Origin reading (`hono.go`).      |
+| `internal/platform/leakcheck`       | Test-only: fails a package whose tests leak goroutines (`TestMain`).     |
 | `internal/platform/logging`         | JSON `log/slog` logger that redacts secret-looking keys.                 |
 | `Dockerfile`                        | Static image for Cloudflare Containers (port 8080, non-root); build      |
 |                                     | context is the repository root (`-f apps/api-go/Dockerfile .`).          |
@@ -134,3 +135,13 @@ see [apps/parity](../parity/README.md).
 
 Without `SIPGES_TEST_DATABASE_URL` the integration tests skip. With it, each run creates
 `sipges_go_test_<random>`, applies every migration and drops the database at the end.
+
+Goroutine leaks: every package with integration tests, and every package whose code starts
+goroutines, ends its `TestMain` with `leakcheck.After`. It reads Go 1.27's `goroutineleak` profile
+and fails the package, printing the stacks, when a goroutine is blocked on a channel, mutex or
+condition that nothing can reach any more. Goroutines waiting on I/O or timers are not reported.
+A new package that starts goroutines adds the same one-line `TestMain`
+(`os.Exit(leakcheck.After(m.Run()))`).
+
+Run the integration tests with `TZ=UTC PGTZ=UTC` on a machine outside UTC: a few of them compare
+timestamps in UTC, as CI's PostgreSQL returns them.

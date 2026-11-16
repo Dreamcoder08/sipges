@@ -10,6 +10,7 @@ import (
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/integration/application"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/integration/domain"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/audittrail"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 	records "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/domain"
 )
@@ -26,10 +27,6 @@ type Pool interface {
 	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
 	Begin(ctx context.Context) (pgx.Tx, error)
 }
-
-// appendAudit is appendAudit of apps/api/src/platform/database/audit-trail.ts.
-const appendAudit = `INSERT INTO audit (tenant_id, ts, module, record_id, action, detail)
-     VALUES (current_setting('app.tenant_id', true), $1, $2, $3, $4, $5)`
 
 // ---- API keys ----
 
@@ -94,8 +91,10 @@ func (k Keys) Revoke(ctx context.Context, tenantID string, id int, at time.Time)
 		return false, err
 	}
 	recordID := "clave-" + itoa(id)
-	if _, err = tx.Exec(ctx, appendAudit, at, "Integraciones", recordID, "DELETE",
-		records.WellFormed("Clave de API «"+name+"» revocada")); err != nil {
+	if err = audittrail.Append(ctx, tx, audittrail.Entry{
+		At: at, Module: "Integraciones", RecordID: &recordID, Action: "DELETE",
+		Detail: records.WellFormed("Clave de API «" + name + "» revocada"),
+	}); err != nil {
 		return false, err
 	}
 	if err = tx.Commit(ctx); err != nil {
@@ -200,9 +199,6 @@ const (
 	countFeeds = `SELECT count(*) AS n FROM media_feeds WHERE tenant_id=$1`
 	insertFeed = `INSERT INTO media_feeds (tenant_id,name,url,keywords,territory,authorization_note,enabled,updated_by,updated_at)
            VALUES ($1,$2,$3,$4::jsonb,$5,$6,$7,$8,$9) RETURNING ` + feedColumns
-	startCursor = `INSERT INTO automation_cursors (tenant_id, last_audit_id)
-           SELECT current_setting('app.tenant_id', true), COALESCE(max(id), 0) FROM audit
-           ON CONFLICT (tenant_id) DO NOTHING`
 	updateFeed = `UPDATE media_feeds SET name=$3,url=$4,keywords=$5::jsonb,territory=$6,authorization_note=$7,
              enabled=$8,updated_by=$9,updated_at=$10
            WHERE tenant_id=$1 AND id=$2 RETURNING ` + feedColumns
@@ -216,8 +212,24 @@ const (
 	mediaAuditModule = "Monitoreo de medios"
 )
 
-// Feeds is sql-media-feeds.ts's write side.
-type Feeds struct{ DB database.Beginner }
+// CursorStarter starts the tenant's automation cursor when it has none, in the caller's tenant
+// transaction. Automation owns that table; internal/app wires its StartCursorIfMissing in.
+type CursorStarter func(ctx context.Context, q database.Querier) error
+
+var errNoCursorStarter = errors.New("integration: no automation cursor starter wired")
+
+func (start CursorStarter) run(ctx context.Context, q database.Querier) error {
+	if start == nil {
+		return errNoCursorStarter
+	}
+	return start(ctx, q)
+}
+
+// Feeds is sql-media-feeds.ts's write side; StartCursor is required.
+type Feeds struct {
+	DB          database.Beginner
+	StartCursor CursorStarter
+}
 
 var _ application.FeedStore = Feeds{}
 
@@ -236,8 +248,9 @@ func scanFeed(row pgx.CollectableRow) (domain.MediaFeed, error) {
 }
 
 func feedAudit(ctx context.Context, q database.Querier, detail string, at time.Time) error {
-	_, err := q.Exec(ctx, appendAudit, at, mediaAuditModule, nil, "CONFIG_UPDATE", records.WellFormed(detail))
-	return err
+	return audittrail.Append(ctx, q, audittrail.Entry{
+		At: at, Module: mediaAuditModule, Action: "CONFIG_UPDATE", Detail: records.WellFormed(detail),
+	})
 }
 
 func isUniqueViolation(err error) bool {
@@ -286,7 +299,7 @@ func (f Feeds) Create(ctx context.Context, tenantID string, feed application.Fee
 		if err != nil {
 			return result{}, err
 		}
-		if _, err := q.Exec(ctx, startCursor); err != nil {
+		if err := f.StartCursor.run(ctx, q); err != nil {
 			return result{}, err
 		}
 		if saved == nil {
@@ -383,7 +396,11 @@ const (
 )
 
 // Settings is sql-source-settings.ts.
-type Settings struct{ DB Pool }
+// Settings stores the official source settings; StartCursor is required.
+type Settings struct {
+	DB          Pool
+	StartCursor CursorStarter
+}
 
 var _ application.SettingsStore = Settings{}
 
@@ -417,7 +434,7 @@ func (s Settings) Save(ctx context.Context, tenantID string, in domain.SourceCon
 			return st, err
 		}
 		if in.Enabled {
-			_, err = q.Exec(ctx, startCursor)
+			err = s.StartCursor.run(ctx, q)
 		}
 		return st, err
 	})

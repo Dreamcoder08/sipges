@@ -9,6 +9,7 @@ import (
 	ontology "github.com/Dreamcoder08/sipges/apps/api-go/internal/ontology/application"
 	ontologyhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/ontology/http"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/config"
+	recordssql "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/infrastructure"
 )
 
 func init() {
@@ -18,7 +19,7 @@ func init() {
 			return nil, err
 		}
 		return func(mux *http.ServeMux) {
-			ontologyhttp.Register(mux, ontologyhttp.Deps{DB: d.Pool, Logger: d.Logger, Now: d.Now, Semantic: semantic})
+			ontologyhttp.Register(mux, ontologyhttp.Deps{DB: d.Pool, Logger: d.Logger, Now: d.Now, Semantic: semantic, Records: recordssql.InTx{}})
 		}, nil
 	})
 }

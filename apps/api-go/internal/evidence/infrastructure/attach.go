@@ -10,7 +10,9 @@ import (
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/evidence/application"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/evidence/domain"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/audittrail"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
+	records "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/application"
 )
 
 // The write of sql-attachment-store.ts (attach) and appendAudit of
@@ -28,15 +30,15 @@ const insertAttachment = `INSERT INTO attachments (tenant_id, id, storage_key, o
      $10, $11, $12, $13, $14, $15, $16)
    RETURNING ` + columns
 
-const updatePayload = `UPDATE module_records SET payload = $3::jsonb, updated_at = $4
-    WHERE module = $1 AND id = $2`
-
-const insertAudit = `INSERT INTO audit (tenant_id, ts, module, record_id, action, detail)
-     VALUES (current_setting('app.tenant_id', true), $1, $2, $3, $4, $5)`
+var errNoRecordsWriter = errors.New("evidence: no records writer wired")
 
 // Attach inserts the metadata, appends the link to the record payload and audits it; nil when
 // the linked record does not exist for this tenant and clearance (nothing is written).
-func Attach(ctx context.Context, q database.Querier, in application.AttachInput) (*domain.Attachment, error) {
+// The payload write goes through records, which owns module_records.
+func Attach(ctx context.Context, q database.Querier, recs records.InTxWriter, in application.AttachInput) (*domain.Attachment, error) {
+	if recs == nil {
+		return nil, errNoRecordsWriter
+	}
 	var raw []byte
 	err := q.QueryRow(ctx, lockRecord, in.RecordModule, in.LinkedRecordID).Scan(&raw)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -66,11 +68,13 @@ func Attach(ctx context.Context, q database.Querier, in application.AttachInput)
 	if err != nil {
 		return nil, err
 	}
-	if _, err := q.Exec(ctx, updatePayload, in.RecordModule, in.LinkedRecordID, string(next), in.CreatedAt); err != nil {
+	if err := recs.ReplacePayload(ctx, q, in.RecordModule, in.LinkedRecordID, string(next), in.CreatedAt); err != nil {
 		return nil, err
 	}
 	detail := "Evidencia adjunta: " + in.OriginalName + " (" + strconv.FormatInt(in.SizeBytes, 10) + " bytes)"
-	if _, err := q.Exec(ctx, insertAudit, in.CreatedAt, in.RecordModule, in.LinkedRecordID, "UPLOAD", detail); err != nil {
+	if err := audittrail.Append(ctx, q, audittrail.Entry{
+		At: in.CreatedAt, Module: in.RecordModule, RecordID: audittrail.ID(in.LinkedRecordID), Action: "UPLOAD", Detail: detail,
+	}); err != nil {
 		return nil, err
 	}
 	return &a, nil

@@ -18,6 +18,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	automationsql "github.com/Dreamcoder08/sipges/apps/api-go/internal/automation/infrastructure"
 	identityhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/http"
 	identitysql "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/integration/application"
@@ -441,8 +442,8 @@ func runtimeHandler(t *testing.T) (string, application.Runtime) {
 	store := recordssql.Records{DB: pool}
 	importer := application.Importer{Store: store, Clock: clock}
 	xml := `<rss><item><title>Agua en la Costa</title><link>https://rt.example/1</link><guid>rt-1</guid><pubDate>Mon, 02 Nov 2026 23:30:00 -0500</pubDate></item><item><title>Otra cosa</title><link>https://rt.example/2</link></item></rss>`
-	media := application.Media{Feeds: integrationsql.Feeds{DB: pool}, Gateway: stubFeeds{xml}, Importer: importer, Clock: clock}
-	sources := application.Sources{Gateway: stubOfficial{}, Settings: integrationsql.Settings{DB: pool}, Importer: importer, Clock: clock}
+	media := application.Media{Feeds: integrationsql.Feeds{DB: pool, StartCursor: automationsql.StartCursorIfMissing}, Gateway: stubFeeds{xml}, Importer: importer, Clock: clock}
+	sources := application.Sources{Gateway: stubOfficial{}, Settings: integrationsql.Settings{DB: pool, StartCursor: automationsql.StartCursorIfMissing}, Importer: importer, Clock: clock}
 	rt := integrationhttp.Runtime{
 		Keys: application.Keys{Store: integrationsql.Keys{DB: pool}, Clock: clock},
 		Ingest: application.Ingest{

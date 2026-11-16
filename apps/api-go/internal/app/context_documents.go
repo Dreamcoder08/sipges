@@ -36,7 +36,7 @@ func init() {
 		if now == nil {
 			now = time.Now
 		}
-		service := documents.Service{Store: documentssql.Reviews{DB: d.Pool}}
+		service := documents.Service{Store: documentssql.Reviews{DB: d.Pool}, Records: recordssql.Records{DB: d.Pool}}
 		lab := documents.Lab{
 			Reader:         documentssql.Reader{OCR: doctext.NewOCR(ocr.Enabled, ocr.Languages)},
 			Renderer:       documentssql.DocxRenderer{},

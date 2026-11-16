@@ -25,6 +25,7 @@ import (
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/evidence/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/httpx"
+	records "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/application"
 	tenancyhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/http"
 )
 
@@ -32,6 +33,8 @@ import (
 type Deps struct {
 	DB     database.Beginner
 	Logger *slog.Logger
+	// Records writes the record payload when a file is attached; required for uploads.
+	Records records.InTxWriter
 	// Storage holds the file bytes (R2 through its S3 API, a local directory, or a fake).
 	Storage application.ObjectStorage
 	// MaxUploadBytes is SIPGES_MAX_UPLOAD_BYTES.

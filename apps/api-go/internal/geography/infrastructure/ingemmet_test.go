@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -241,7 +242,15 @@ func TestQueryNormalizesRingsAndBoundsTheAnswer(t *testing.T) {
 		`{"geometry":null},7,{"attributes":null}],"exceededTransferLimit":true}`)
 	_, g, _ := newFake(t, func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasSuffix(r.URL.Path, "/query") {
-			queried.Store(r.URL)
+			if r.URL.Query().Get("returnIdsOnly") == "true" {
+				// The area step: answer one id per prepared feature (at least one, so the
+				// malformed answers below still reach the feature step).
+				queried.Store(r.URL)
+				var shape struct{ Features []json.RawMessage }
+				_ = json.Unmarshal([]byte(features.Load().(string)), &shape)
+				writeJSON(w, `{"objectIdFieldName":"OBJECTID","objectIds":[`+idList(max(1, len(shape.Features)))+`]}`)
+				return
+			}
 			writeJSON(w, features.Load().(string))
 			return
 		}
@@ -266,8 +275,8 @@ func TestQueryNormalizesRingsAndBoundsTheAnswer(t *testing.T) {
 		t.Fatal(err)
 	}
 	u := queried.Load()
-	wantQuery := "f=json&where=1%3D1&outFields=*&returnGeometry=true&outSR=4326&inSR=4326&spatialRel=esriSpatialRelIntersects" +
-		"&resultRecordCount=200&geometryType=esriGeometryPolygon&geometry=" +
+	wantQuery := "f=json&where=1%3D1&returnIdsOnly=true&inSR=4326&spatialRel=esriSpatialRelIntersects" +
+		"&geometryType=esriGeometryPolygon&geometry=" +
 		"%7B%22rings%22%3A%5B%5B%5B0%2C0%5D%2C%5B0%2C4%5D%2C%5B4%2C4%5D%2C%5B4%2C0%5D%2C%5B0%2C0%5D%5D%2C" +
 		"%5B%5B1%2C1%5D%2C%5B2%2C1%5D%2C%5B2%2C2%5D%2C%5B1%2C2%5D%2C%5B1%2C1%5D%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D"
 	if u.Path != servicesPath+"SERV_CATASTRO_MINERO/MapServer/0/query" || u.RawQuery != wantQuery {
@@ -327,4 +336,85 @@ func TestTheProductionGatewayUsesTheFixedOrigin(t *testing.T) {
 		g.timeout != 8*time.Second || g.maxBytes != 2_000_000 || g.client.CheckRedirect == nil {
 		t.Fatalf("gateway %+v", g)
 	}
+}
+
+// GEOCATMIN's cadastre (ArcGIS 10.91) rejects resultRecordCount: "Pagination is not supported"
+// (live check 2026-11-15). The gateway asks for the ids first and then the first 200 by id.
+func TestQueryWorksOnAServerWithoutPagination(t *testing.T) {
+	var ids atomic.Value
+	ids.Store(`{"objectIdFieldName":"OBJECTID","objectIds":[` + idList(250) + `]}`)
+	var byIDRequests, idRequests atomic.Int32
+	var lastIDs atomic.Value
+	_, g, _ := newFake(t, func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasSuffix(r.URL.Path, "/query") {
+			writeJSON(w, `{"layers":[{"id":0,"type":"Feature Layer","name":"Derechos","capabilities":"Query"}],"capabilities":"Map,Query"}`)
+			return
+		}
+		q := r.URL.Query()
+		switch {
+		case q.Has("resultRecordCount") || q.Has("resultOffset"):
+			writeJSON(w, `{"error":{"code":400,"message":"Pagination is not supported.","details":[]}}`)
+		case q.Get("returnIdsOnly") == "true":
+			idRequests.Add(1)
+			writeJSON(w, ids.Load().(string))
+		case q.Has("objectIds"):
+			byIDRequests.Add(1)
+			lastIDs.Store(q.Get("objectIds"))
+			parts := strings.Split(q.Get("objectIds"), ",")
+			features := make([]string, len(parts))
+			for i, id := range parts {
+				features[i] = `{"attributes":{"OBJECTID":` + id + `}}`
+			}
+			writeJSON(w, `{"features":[`+strings.Join(features, ",")+`]}`)
+		default:
+			writeJSON(w, `{"error":{"code":400,"message":"unexpected query"}}`)
+		}
+	})
+	q := domain.Query{ServiceID: "SERV_CATASTRO_MINERO", LayerID: 0, BBox: &[4]float64{-80.85, -5.85, -80.75, -5.75}}
+
+	res, err := g.Query(t.Context(), q)
+	if err != nil {
+		t.Fatalf("query: %v", err)
+	}
+	if len(res.Features) != 200 || !res.Truncated {
+		t.Fatalf("%d features, truncated %v; want the first 200 of 250, truncated", len(res.Features), res.Truncated)
+	}
+	if got := lastIDs.Load().(string); got != idList(200) {
+		t.Fatalf("asked for ids %q, want the first 200 in the server's order", got)
+	}
+
+	ids.Store(`{"objectIdFieldName":"OBJECTID","objectIds":[` + idList(3) + `]}`)
+	if res, err = g.Query(t.Context(), q); err != nil || len(res.Features) != 3 || res.Truncated {
+		t.Fatalf("3 ids: %d features, truncated %v, %v", len(res.Features), res.Truncated, err)
+	}
+
+	before := byIDRequests.Load()
+	ids.Store(`{"objectIdFieldName":"OBJECTID","objectIds":null}`) // ArcGIS's answer when nothing intersects
+	if res, err = g.Query(t.Context(), q); err != nil || len(res.Features) != 0 || res.Truncated {
+		t.Fatalf("no ids: %d features, truncated %v, %v", len(res.Features), res.Truncated, err)
+	}
+	if byIDRequests.Load() != before {
+		t.Fatal("asked for features although no id intersects")
+	}
+
+	for name, body := range map[string]string{
+		"error":         `{"error":{"code":500}}`,
+		"ids not array": `{"objectIds":{}}`,
+		"fractional id": `{"objectIds":[1.5]}`,
+		"negative id":   `{"objectIds":[-1]}`,
+	} {
+		ids.Store(body)
+		if _, err := g.Query(t.Context(), q); err == nil {
+			t.Errorf("%s: no error", name)
+		}
+	}
+}
+
+// idList is "1,2,…,n".
+func idList(n int) string {
+	parts := make([]string, 0, n)
+	for i := 1; i <= n; i++ {
+		parts = append(parts, strconv.Itoa(i))
+	}
+	return strings.Join(parts, ",")
 }
