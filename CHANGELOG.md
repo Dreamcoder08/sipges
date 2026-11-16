@@ -27,6 +27,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ### Corregido
 
+- Recorrido completo (T16 de `odd/tasks/functional-10.md`): CLI, MCP, API, paridad y la suite Go pasan sin defectos sobre una instalación limpia; el recorrido de cada pantalla arregla once detalles: fechas e instantes crudos ahora en hora de Lima, la ficha de registro nombra sus campos y vuelve a su lista, «1 actores» concuerda y Administración tiene título.
 - Limpieza (T12 de `odd/tasks/repo-cleanup.md`): se borran capturas de diseño sin referencias, se archivan los bocetos de la barra lateral compacta (ya construida), se quita la dependencia sin uso `@sipges/kernel` de `packages/contracts`, `readiness.md` nombra los jobs de CI reales y el README enlaza la instalación local y el contenedor Go.
 - Pruebas Go: borrar el rol de una base de pruebas espera a las migraciones en curso de otros paquetes. Sin esto, la migración 0030 podía leer un rol recién borrado como un número (`GRANT sipges_tenant TO 44888`) y fallar al azar en CI.
 - Restos técnicos (T15 de `odd/tasks/functional-10.md`): los motores dicen «prueba retrospectiva» y «referencia de fuente» desde el origen, en Rust, TypeScript y wasm, idénticos byte a byte; un job de CI corre las e2e contra la API Go; el empaquetador del escritorio comprueba la versión contra `package.json`; el nombre de la base de pruebas se valida antes de crearla; y `go build` y `migrate` se cortan a su límite aunque ignoren SIGTERM.
