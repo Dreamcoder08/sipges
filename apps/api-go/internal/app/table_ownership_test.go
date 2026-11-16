@@ -20,12 +20,8 @@ var tableOwners = map[string]string{
 }
 
 // pendingWriters are files still allowed to write a table they do not own, each with the task
-// that removes it. Identity writes its audit rows itself: pending T2 of
-// odd/tasks/go-context-ports.md (identity is high risk, so it moves on its own).
-var pendingWriters = map[string]string{
-	"identity/infrastructure/own_sessions.go": "audit",
-	"identity/infrastructure/accounts.go":     "audit",
-}
+// that removes it. Empty: every write goes through its owner (odd/tasks/go-context-ports.md).
+var pendingWriters = map[string]string{}
 
 // writeStatement finds SQL that changes a table: INSERT INTO t, UPDATE t, DELETE FROM t.
 var writeStatement = regexp.MustCompile(`(?i)\b(?:INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+([a-z_][a-z0-9_]*)\b`)

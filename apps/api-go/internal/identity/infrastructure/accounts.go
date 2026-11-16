@@ -10,6 +10,7 @@ import (
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/application"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/domain"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/audittrail"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 )
 
@@ -112,8 +113,9 @@ func (s Store) ResetTOTPInTenant(ctx context.Context, username, tenantID, detail
 		if err := database.EnterTenant(ctx, tx, tenantID); err != nil {
 			return "", fmt.Errorf("enter tenant: %w", err)
 		}
-		_, err = tx.Exec(ctx, `INSERT INTO audit (tenant_id, ts, module, record_id, action, detail)
-		  VALUES (current_setting('app.tenant_id', true), $1, 'Cuentas', $2, 'MFA_RESET', $3)`, at, username, detail)
+		err = audittrail.Append(ctx, tx, audittrail.Entry{
+			At: at, Module: "Cuentas", RecordID: audittrail.ID(username), Action: "MFA_RESET", Detail: detail,
+		})
 		if err != nil {
 			return "", fmt.Errorf("append audit: %w", err)
 		}
