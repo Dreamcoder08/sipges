@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">SIPGES — Faceted Terrain — monochrome</title>
+  <desc id="desc">Two nested irregular terrain contours with one detached early-warning segment on the inner contour.</desc>
+  <g fill="none" stroke-width="32" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke="currentColor" d="M222 88L311 102 388 175 414 258 370 328 288 412 205 392 110 314 97 225 147 142Z"/>
+    <path stroke="currentColor" d="M239 174L199 198 177 245 191 280 242 319 280 327 315 291 324 281"/>
+    <path stroke="currentColor" d="M304 184L327 211"/>
+  </g>
+</svg>

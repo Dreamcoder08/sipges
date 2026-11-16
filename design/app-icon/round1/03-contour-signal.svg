@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">SIPGES — Contour Signal</title>
+  <desc id="desc">An open territorial contour with a beacon at its leading edge: early warning.</desc>
+  <rect width="512" height="512" fill="#203831"/>
+  <path d="M256 112 128 240q-16 16 0 32l112 112q16 16 32 0l112-112q8-8 8-16" fill="none" stroke="#F5F2E8" stroke-width="56" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="352" cy="144" r="32" fill="#F0C478"/>
+</svg>

@@ -28,6 +28,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ### Corregido
 
+- Las pruebas Go pasan igual en una máquina de desarrollo que en CI: `scripts/agents/test-pg.sh` arranca PostgreSQL en UTC, como la imagen de CI (antes heredaba la zona de la máquina y dos pruebas de `indicators/http` que comparan `timestamptz` como texto fallaban en hora de Perú). `TestNarrateStopsWithItsContext` deja de fallar con la suite completa en paralelo: cancela el contexto cuando el pedido llega y no tras 20 ms (200 repeticiones con `-race` en verde). `seroval` sube a 1.8.1 en el lockfile (dependencia del router), lo que cierra dos avisos moderados de inyección; `pnpm audit --prod` queda sin vulnerabilidades.
 - En la instalación local (API Go), las casillas «Mostrar» de las capas GEOCATMIN en Ubicación miden 24 px y ya no 13 px (WCAG 2.2, objetivo mínimo). El defecto solo se veía con Go, que sí carga el catálogo real; lo encontró la suite e2e completa corrida contra Go (211 pruebas en verde además de esta).
 - Al iniciar sesión con MFA, el formulario pide el código con una indicación y le da el foco, en vez de mostrar «Código de autenticación inválido» antes de escribirlo; el error queda para un código enviado y equivocado.
 - Los histogramas por mes (Territorio y Cronología) nombran cada mes bajo su barra cuando hay seis meses o menos; con un solo mes ya no repiten la etiqueta.

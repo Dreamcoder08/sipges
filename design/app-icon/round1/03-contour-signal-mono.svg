@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">SIPGES — Contour Signal, monochrome</title>
+  <desc id="desc">An open territorial contour and detached beacon, in one colour on transparency.</desc>
+  <path d="M256 112 128 240q-16 16 0 32l112 112q16 16 32 0l112-112q8-8 8-16" fill="none" stroke="currentColor" stroke-width="56" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="352" cy="144" r="32" fill="currentColor"/>
+</svg>

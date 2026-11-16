@@ -42,8 +42,10 @@ case "${1:-}" in
       touch "$marker"
       [ -d "$dir/data" ] || initdb -D "$dir/data" -U sipges_test --auth=trust -E UTF8 >/dev/null
       free_port >"$dir/port"
+      # UTC like CI's postgres image: initdb otherwise takes the machine's zone, and tests that
+      # compare timestamptz text then pass in CI but fail on a developer's machine.
       pg_ctl -D "$dir/data" -w -l "$dir/log" \
-        -o "-p $(cat "$dir/port") -c listen_addresses=127.0.0.1 -c unix_socket_directories=''" \
+        -o "-p $(cat "$dir/port") -c listen_addresses=127.0.0.1 -c unix_socket_directories='' -c timezone=UTC" \
         start >/dev/null
       createdb -h 127.0.0.1 -p "$(cat "$dir/port")" -U sipges_test sipges_test 2>/dev/null || true
     fi

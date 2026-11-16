@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">SIPGES — Sheltered Terrain — monochrome</title>
+  <desc id="desc">Two nested irregular terrain contours with one detached early-warning segment on the inner contour.</desc>
+  <g fill="none" stroke-width="32" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke="currentColor" d="M232 91C280 101 313 117 354 120L395 166C405 244 371 330 269 409C253 420 240 415 225 402C137 337 104 257 113 180L151 135C182 132 203 119 232 91Z"/>
+    <path stroke="currentColor" d="M237 179C211 198 196 201 181 208C178 252 206 297 252 331C270 316 286 300 296 285"/>
+    <path stroke="currentColor" d="M299 181Q316 186 322 204"/>
+  </g>
+</svg>
