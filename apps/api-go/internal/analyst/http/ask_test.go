@@ -70,8 +70,8 @@ func TestAskAnswersWithItsCitedSources(t *testing.T) {
 	if res.Code != http.StatusOK {
 		t.Fatalf("status = %d, body = %s", res.Code, res.Body)
 	}
-	if res.Body.String() != `{"answer":"El bloqueo sigue [1].","sources":[{"n":1,"module":"conflictos","id":"C-1","title":"Bloqueo de vía"}]}`+"\n" &&
-		res.Body.String() != `{"answer":"El bloqueo sigue [1].","sources":[{"n":1,"module":"conflictos","id":"C-1","title":"Bloqueo de vía"}]}` {
+	// answer and sources keep their T1 shape; blocks is always a list, empty without blocks.
+	if strings.TrimSpace(res.Body.String()) != `{"answer":"El bloqueo sigue [1].","sources":[{"n":1,"module":"conflictos","id":"C-1","title":"Bloqueo de vía"}],"blocks":[]}` {
 		t.Fatalf("body = %s", res.Body)
 	}
 	if tenant != "ACME/NORTE" {
@@ -126,5 +126,31 @@ func TestAskTreatsADisconnectedClientAsNoServerFault(t *testing.T) {
 	gone := analysthttp.Options{Ask: func(context.Context, string) (*application.Ask, error) { return nil, context.Canceled }}
 	if res := ask(t, gone, `{"question":"¿Algo?"}`); res.Code != analysthttp.StatusClientClosed {
 		t.Fatalf("status = %d, want %d", res.Code, analysthttp.StatusClientClosed)
+	}
+}
+
+func TestAskSendsTheTypedBlocksNextToTheAnswer(t *testing.T) {
+	t.Parallel()
+	refs := []domain.RecordRef{{Slug: "conflictos", ID: "C-1", Title: "Bloqueo de vía"}}
+	model := &stepModel{steps: []application.Step{
+		{Calls: []application.ToolCall{{ID: "1", Name: "search_records"}}},
+		{Text: "El bloqueo sigue [1].\n```bloques\n[" +
+			`{"tipo":"registro","fuente":1},{"tipo":"alerta","fuente":1,"texto":"<b>Paro</b> anunciado"},` +
+			`{"tipo":"mapa","fuente":1},{"tipo":"cronologia","fuente":1,"eventos":[{"fecha":"2026-03-02","texto":"Inicio"}]},` +
+			`{"tipo":"desconocido","fuente":1}]` + "\n```"},
+	}}
+	res := ask(t, analysthttp.Options{Ask: analystFor(model, oneTool{refs}, nil)}, `{"question":"¿Qué pasa?"}`)
+	if res.Code != http.StatusOK {
+		t.Fatalf("status = %d, body = %s", res.Code, res.Body)
+	}
+	source := `"n":1,"module":"conflictos","id":"C-1","title":"Bloqueo de vía"`
+	// The alert text is data: JSON escapes it, and the screen shows it as text.
+	want := `{"answer":"El bloqueo sigue [1].","sources":[{` + source + `}],"blocks":[` +
+		`{"type":"record",` + source + `},` +
+		`{"type":"alert",` + source + `,"text":"\u003cb\u003eParo\u003c/b\u003e anunciado"},` +
+		`{"type":"map",` + source + `},` +
+		`{"type":"timeline",` + source + `,"entries":[{"date":"2026-03-02","text":"Inicio"}]}]}`
+	if got := strings.TrimSpace(res.Body.String()); got != want {
+		t.Fatalf("body = %s\nwant   %s", got, want)
 	}
 }

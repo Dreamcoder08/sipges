@@ -43,9 +43,24 @@ type askSourceJSON struct {
 	Title  string `json:"title"`
 }
 
+type askEntryJSON struct {
+	Date string `json:"date"`
+	Text string `json:"text"`
+}
+
+// askBlockJSON is a typed block (S3): its kind, its record, and by kind a plain text or events.
+type askBlockJSON struct {
+	Type string `json:"type"`
+	askSourceJSON
+	Text    string         `json:"text,omitempty"`
+	Entries []askEntryJSON `json:"entries,omitempty"`
+}
+
+// askJSON keeps T1's answer and sources unchanged; blocks came later and is always a list.
 type askJSON struct {
 	Answer  string          `json:"answer"`
 	Sources []askSourceJSON `json:"sources"`
+	Blocks  []askBlockJSON  `json:"blocks"`
 }
 
 func askRoute(opts Options) http.HandlerFunc {
@@ -117,10 +132,25 @@ func askFailure(err error) (int, string) {
 	return http.StatusInternalServerError, "Internal Server Error"
 }
 
+func toSourceJSON(s domain.Cited) askSourceJSON {
+	return askSourceJSON{N: s.N, Module: s.Slug, ID: s.ID, Title: s.Title}
+}
+
 func toAskJSON(answer domain.CitedAnswer) askJSON {
-	out := askJSON{Answer: answer.Text, Sources: make([]askSourceJSON, 0, len(answer.Sources))}
+	out := askJSON{
+		Answer:  answer.Text,
+		Sources: make([]askSourceJSON, 0, len(answer.Sources)),
+		Blocks:  make([]askBlockJSON, 0, len(answer.Blocks)),
+	}
 	for _, s := range answer.Sources {
-		out.Sources = append(out.Sources, askSourceJSON{N: s.N, Module: s.Slug, ID: s.ID, Title: s.Title})
+		out.Sources = append(out.Sources, toSourceJSON(s))
+	}
+	for _, b := range answer.Blocks {
+		block := askBlockJSON{Type: string(b.Kind), askSourceJSON: toSourceJSON(b.Source), Text: b.Text}
+		for _, e := range b.Entries {
+			block.Entries = append(block.Entries, askEntryJSON{Date: e.Date, Text: e.Text})
+		}
+		out.Blocks = append(out.Blocks, block)
 	}
 	return out
 }

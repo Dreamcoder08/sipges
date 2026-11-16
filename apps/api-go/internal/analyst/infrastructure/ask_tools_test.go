@@ -164,3 +164,24 @@ func TestToolResultContentCarriesARefusalOnly(t *testing.T) {
 		t.Fatalf("content = %s", got)
 	}
 }
+
+// The prompt shows the model the blocks format by example; the example must be exactly what the
+// domain parses, every kind included, or the model would learn blocks that are always dropped.
+func TestAskPromptTeachesTheBlocksTheDomainReads(t *testing.T) {
+	t.Parallel()
+	if !strings.Contains(askPrompt, askBlocksExample) {
+		t.Fatal("the prompt does not show the blocks example")
+	}
+	text, raw := domain.SplitBlocks("Texto [1].\n" + askBlocksExample)
+	var s domain.Sources
+	s.Add(domain.RecordRef{Slug: "conflictos", ID: "C-1"})
+	s.Add(domain.RecordRef{Slug: "actores", ID: "A-7"})
+	blocks := domain.ResolveBlocks(raw, &s)
+	kinds := map[domain.BlockKind]bool{}
+	for _, b := range blocks {
+		kinds[b.Kind] = true
+	}
+	if text != "Texto [1]." || len(kinds) != 4 {
+		t.Fatalf("text = %q, blocks = %+v; want the four kinds", text, blocks)
+	}
+}

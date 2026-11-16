@@ -184,3 +184,41 @@ func TestAnalystIsOpenToReadOnlyRolesInTheirProjectsOnly(t *testing.T) {
 		t.Fatalf("an ungranted project answered %d", got.status)
 	}
 }
+
+// S3: blocks reach the screen only for records the session's tools returned in this question.
+// The reader asks for a restricted record and another project's: neither is a source, so the
+// blocks naming sources 2 and 3 are dropped with the unknown kind, and the answer still arrives.
+func TestAnalystBlocksShowOnlyRecordsTheSessionRead(t *testing.T) {
+	model := analystSetup(t, true)
+	t.Setenv("SIPGES_DATA_KEY", dataKey)
+	final, _ := json.Marshal("Hay un evento [1].\n```bloques\n" +
+		`[{"tipo":"registro","fuente":1},{"tipo":"mapa","fuente":2},{"tipo":"registro","fuente":3},{"tipo":"html","fuente":1}]` +
+		"\n```")
+	model.steps = []string{
+		toolCall("c1", "get_record", `{"module":"eventos","id":"north"}`),
+		toolCall("c2", "get_record", `{"module":"eventos","id":"north-secret"}`),
+		toolCall("c3", "get_record", `{"module":"eventos","id":"south"}`),
+		`{"choices":[{"message":{"content":` + string(final) + `}}]}`,
+	}
+	got := askAs(t, start(t, false), "reader", "ACME/NORTE", "¿Qué pasó en el norte?")
+	if got.status != http.StatusOK {
+		t.Fatalf("status %d, body %s", got.status, got.body)
+	}
+	var answer struct {
+		Answer string `json:"answer"`
+		Blocks []struct {
+			Type string `json:"type"`
+			N    int    `json:"n"`
+			ID   string `json:"id"`
+		} `json:"blocks"`
+	}
+	if err := json.Unmarshal([]byte(got.body), &answer); err != nil {
+		t.Fatal(err)
+	}
+	if answer.Answer != "Hay un evento [1]." {
+		t.Fatalf("answer = %q", answer.Answer)
+	}
+	if len(answer.Blocks) != 1 || answer.Blocks[0].Type != "record" || answer.Blocks[0].ID != "north" {
+		t.Fatalf("blocks = %+v, want the card of north alone", answer.Blocks)
+	}
+}
