@@ -10,6 +10,7 @@ import (
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/integration/application"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/integration/domain"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/audittrail"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 	records "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/domain"
 )
@@ -26,10 +27,6 @@ type Pool interface {
 	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
 	Begin(ctx context.Context) (pgx.Tx, error)
 }
-
-// appendAudit is appendAudit of apps/api/src/platform/database/audit-trail.ts.
-const appendAudit = `INSERT INTO audit (tenant_id, ts, module, record_id, action, detail)
-     VALUES (current_setting('app.tenant_id', true), $1, $2, $3, $4, $5)`
 
 // ---- API keys ----
 
@@ -94,8 +91,10 @@ func (k Keys) Revoke(ctx context.Context, tenantID string, id int, at time.Time)
 		return false, err
 	}
 	recordID := "clave-" + itoa(id)
-	if _, err = tx.Exec(ctx, appendAudit, at, "Integraciones", recordID, "DELETE",
-		records.WellFormed("Clave de API «"+name+"» revocada")); err != nil {
+	if err = audittrail.Append(ctx, tx, audittrail.Entry{
+		At: at, Module: "Integraciones", RecordID: &recordID, Action: "DELETE",
+		Detail: records.WellFormed("Clave de API «" + name + "» revocada"),
+	}); err != nil {
 		return false, err
 	}
 	if err = tx.Commit(ctx); err != nil {
@@ -249,8 +248,9 @@ func scanFeed(row pgx.CollectableRow) (domain.MediaFeed, error) {
 }
 
 func feedAudit(ctx context.Context, q database.Querier, detail string, at time.Time) error {
-	_, err := q.Exec(ctx, appendAudit, at, mediaAuditModule, nil, "CONFIG_UPDATE", records.WellFormed(detail))
-	return err
+	return audittrail.Append(ctx, q, audittrail.Entry{
+		At: at, Module: mediaAuditModule, Action: "CONFIG_UPDATE", Detail: records.WellFormed(detail),
+	})
 }
 
 func isUniqueViolation(err error) bool {

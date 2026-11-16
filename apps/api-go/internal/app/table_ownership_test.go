@@ -14,8 +14,17 @@ import (
 // through exported application APIs, never through each other's tables). Other contexts reach
 // these writes through ports wired in this composition root (odd/tasks/go-context-ports.md).
 var tableOwners = map[string]string{
+	"audit":              "platform",
 	"automation_cursors": "automation",
 	"module_records":     "records",
+}
+
+// pendingWriters are files still allowed to write a table they do not own, each with the task
+// that removes it. Identity writes its audit rows itself: pending T2 of
+// odd/tasks/go-context-ports.md (identity is high risk, so it moves on its own).
+var pendingWriters = map[string]string{
+	"identity/infrastructure/own_sessions.go": "audit",
+	"identity/infrastructure/accounts.go":     "audit",
 }
 
 // writeStatement finds SQL that changes a table: INSERT INTO t, UPDATE t, DELETE FROM t.
@@ -40,8 +49,12 @@ func TestNoContextWritesAnotherContextsTable(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		for _, m := range writeStatement.FindAllStringSubmatch(string(src), -1) {
-			if owner, ok := tableOwners[strings.ToLower(m[1])]; ok && owner != context {
+		for _, m := range writeStatement.FindAllStringSubmatch(code(string(src)), -1) {
+			table := strings.ToLower(m[1])
+			if pendingWriters[filepath.ToSlash(rel)] == table {
+				continue
+			}
+			if owner, ok := tableOwners[table]; ok && owner != context {
 				violations = append(violations, filepath.ToSlash(rel)+" writes "+m[1]+" (owned by "+owner+")")
 			}
 		}
@@ -56,6 +69,18 @@ func TestNoContextWritesAnotherContextsTable(t *testing.T) {
 	}
 }
 
+// code drops whole-line comments, so prose such as "the UPDATE audit row" is not a write.
+func code(src string) string {
+	lines := strings.Split(src, "\n")
+	kept := lines[:0]
+	for _, line := range lines {
+		if !strings.HasPrefix(strings.TrimSpace(line), "//") {
+			kept = append(kept, line)
+		}
+	}
+	return strings.Join(kept, "\n")
+}
+
 func TestTheOwnershipScanSeesWrites(t *testing.T) {
 	for _, sql := range []string{
 		"INSERT INTO automation_cursors (tenant_id) VALUES ($1)",
@@ -66,6 +91,9 @@ func TestTheOwnershipScanSeesWrites(t *testing.T) {
 		if m == nil || strings.ToLower(m[1]) != "automation_cursors" {
 			t.Fatalf("the scan missed %q", sql)
 		}
+	}
+	if m := writeStatement.FindStringSubmatch(code("\t// Update applies the change with its UPDATE audit row.")); m != nil {
+		t.Fatalf("a comment was taken for a write: %q", m[0])
 	}
 	if m := writeStatement.FindStringSubmatch("SELECT tenant_id FROM automation_cursors"); m != nil {
 		t.Fatalf("a read was taken for a write: %q", m[0])

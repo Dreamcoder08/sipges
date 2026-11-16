@@ -10,6 +10,7 @@ import (
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/evidence/application"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/evidence/domain"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/audittrail"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 	records "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/application"
 )
@@ -28,9 +29,6 @@ const insertAttachment = `INSERT INTO attachments (tenant_id, id, storage_key, o
    VALUES (current_setting('app.tenant_id', true), $1, $2, $3, $4, $5, $6, $7, $8, $9,
      $10, $11, $12, $13, $14, $15, $16)
    RETURNING ` + columns
-
-const insertAudit = `INSERT INTO audit (tenant_id, ts, module, record_id, action, detail)
-     VALUES (current_setting('app.tenant_id', true), $1, $2, $3, $4, $5)`
 
 var errNoRecordsWriter = errors.New("evidence: no records writer wired")
 
@@ -74,7 +72,9 @@ func Attach(ctx context.Context, q database.Querier, recs records.InTxWriter, in
 		return nil, err
 	}
 	detail := "Evidencia adjunta: " + in.OriginalName + " (" + strconv.FormatInt(in.SizeBytes, 10) + " bytes)"
-	if _, err := q.Exec(ctx, insertAudit, in.CreatedAt, in.RecordModule, in.LinkedRecordID, "UPLOAD", detail); err != nil {
+	if err := audittrail.Append(ctx, q, audittrail.Entry{
+		At: in.CreatedAt, Module: in.RecordModule, RecordID: audittrail.ID(in.LinkedRecordID), Action: "UPLOAD", Detail: detail,
+	}); err != nil {
 		return nil, err
 	}
 	return &a, nil
