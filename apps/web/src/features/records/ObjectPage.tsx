@@ -29,6 +29,29 @@ const isRecordModule = (value: string): value is RecordModule => Object.hasOwn(M
 /** Where a missing record or type sends the person back to. */
 const backHome = <InternalLink href="/inicio">Volver al inicio</InternalLink>;
 
+/**
+ * The screen that lists each record type (its old route opens the hub tab). A sheet goes back to
+ * its own list, not to one fixed screen (functional-10 T16); a type without a list goes home.
+ */
+const LIST: Partial<Record<RecordModule, readonly [href: string, label: string]>> = {
+  eventos: ['/eventos', 'Eventos'],
+  actores: ['/actores', 'Actores'],
+  directorio: ['/directorio', 'Directorio territorial'],
+  demandas: ['/demandas', 'Demandas'],
+  compromisos: ['/demandas', 'Demandas y compromisos'],
+  narrativas: ['/narrativas', 'Narrativas'],
+  fuentes: ['/fuentes', 'Fuentes'],
+  alertas: ['/alertas', 'Alertas'],
+  buzon: ['/buzon', 'Buzón'],
+  lecciones: ['/lecciones', 'Lecciones'],
+};
+const backTo = (module: RecordModule, from: 'calidad' | undefined) => {
+  if (from === 'calidad')
+    return <InternalLink href="/calidad">Volver a calidad de datos</InternalLink>;
+  const list = LIST[module];
+  return list ? <InternalLink href={list[0]}>Volver a {list[1]}</InternalLink> : backHome;
+};
+
 const ObjectView = ({
   module,
   id,
@@ -36,6 +59,7 @@ const ObjectView = ({
   role,
   projectId,
   projectLabel,
+  from,
 }: {
   module: RecordModule;
   id: string;
@@ -43,6 +67,7 @@ const ObjectView = ({
   role: Role;
   projectId: string;
   projectLabel: string;
+  from: 'calidad' | undefined;
 }) => {
   const client = useQueryClient();
   const [editing, setEditing] = useState(false);
@@ -82,7 +107,7 @@ const ObjectView = ({
     );
   return (
     <div className={styles.page}>
-      <InternalLink href="/calidad">Volver a calidad de datos</InternalLink>
+      {backTo(module, from)}
       {notice ? <Alert tone="success">{notice}</Alert> : null}
       <Card
         eyebrow={`${MODULES[module].label} · ${id}`}
@@ -161,6 +186,7 @@ export const ObjectPage = ({
   role,
   projectId,
   projectLabel,
+  from,
 }: {
   module: string;
   id: string;
@@ -168,6 +194,8 @@ export const ObjectPage = ({
   role: Role;
   projectId: string;
   projectLabel: string;
+  /** The screen that opened the sheet, when it is not the record's own list. */
+  from?: 'calidad' | undefined;
 }) => {
   // Module keys are lower case; an address written «/objeto/Eventos/…» means the same type.
   const key = module.toLowerCase();
@@ -180,6 +208,7 @@ export const ObjectPage = ({
       role={role}
       projectId={projectId}
       projectLabel={projectLabel}
+      from={from}
     />
   ) : (
     <NotFoundNotice title="Tipo de registro no válido" action={backHome}>
