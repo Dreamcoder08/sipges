@@ -5,9 +5,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import process from 'node:process';
-import { mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { INTERRUPTED, interruptDrill, parseOptions } from './tables-interrupt.mjs';
 
 const withWork = async (run) => {
@@ -26,13 +26,28 @@ test('options: a fresh work folder under the temp folder by default; logs inside
     work: join('/tmp', 'sipges-tables-interrupt-20261115T090807Z'),
     logs: join('/tmp', 'sipges-tables-interrupt-20261115T090807Z', 'logs'),
   });
+  // Resolved like the options are, so the expectation holds on win32 (a drive letter) too.
   assert.deepEqual(parseOptions(['--work', '/w', '--logs', '/l'], { now }), {
-    work: '/w',
-    logs: '/l',
+    work: resolve('/w'),
+    logs: resolve('/l'),
   });
   for (const args of [['--work'], ['--other', 'x'], ['--work', 'a', '--work', 'b']])
     assert.throws(() => parseOptions(args, { now }), /^Error: invalid option /);
 });
+
+// functional-10 T15: a reused work folder would mix an old run's copies into this one's checks.
+test('a work folder that already holds a tables-interrupt folder with files is refused untouched', () =>
+  withWork(async (work) => {
+    const dir = join(work, 'tables-interrupt');
+    await mkdir(join(dir, 'scratch', 'sipges-tables-old'), { recursive: true });
+    await writeFile(join(dir, 'left.txt'), 'synthetic, from an earlier run');
+    await assert.rejects(interruptDrill({ work, ...quiet }), {
+      message: `${dir} is not empty: tables-interrupt.mjs needs a fresh work folder (pass another --work, or remove ${dir})`,
+    });
+    assert.deepEqual((await readdir(dir)).sort(), ['left.txt', 'scratch']);
+    assert.deepEqual(await readdir(join(dir, 'scratch')), ['sipges-tables-old']);
+    assert.equal(await readFile(join(dir, 'left.txt'), 'utf8'), 'synthetic, from an earlier run');
+  }));
 
 test('tables.mjs interrupted mid-copy: exit 2, not compared (interrupted), nothing left', () =>
   withWork(async (work) => {
@@ -77,7 +92,7 @@ test('a run that ends before it copies anything fails loudly: no interrupt was s
           error.message,
           /^Check failed: the run began copying before the interrupt \(never\)\n/,
         );
-        assert.match(error.message, /\nexit code 0\n--- stdout\nRESULT: no difference\n/);
+        assert.match(error.message, /\nexit code 0\r?\n--- stdout\r?\nRESULT: no difference\r?\n/);
         return true;
       },
     );
@@ -103,7 +118,7 @@ test('a run that ignores the interrupt fails loudly with its exit code and outpu
       interruptDrill({ work, script: fake, ...quiet, timeoutMs: 20_000 }),
       (error) => {
         assert.match(error.message, /^Check failed: interrupted run: exit 2 \(got 0\)\n/);
-        assert.match(error.message, /\nRESULT: no difference\n--- stderr\n--- end\nhelper: /);
+        assert.match(error.message, /\nRESULT: no difference\r?\n--- stderr\r?\n--- end\r?\nhelper: /);
         return true;
       },
     );

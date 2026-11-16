@@ -54,7 +54,7 @@ const MAX_UNITS: usize = 50;
 const METHOD: &str = "Puntaje transparente de factores con pesos fijos, calibrado con el historial del propio proyecto (ADR 0031). Se calcula dentro de SIPGES, sin IA externa.";
 
 const LIMITATIONS: [&str; 4] = [
-    "Es una ayuda para priorizar, no un pronóstico de hechos: la probabilidad tiene el error que muestra el back-test.",
+    "Es una ayuda para priorizar, no un pronóstico de hechos: la probabilidad tiene el error que muestra la prueba retrospectiva.",
     "Solo cuenta lo que el proyecto registró; la falta de registros no demuestra ausencia de riesgo.",
     "El IRSA se mide por proyecto, así que sube o baja el riesgo de todas las localidades y actores por igual.",
     "Validar con el equipo territorial antes de decidir o comunicar.",
@@ -318,7 +318,8 @@ fn confidence_of(calibration: &Calibration, signals: usize) -> (&'static str, St
     if calibration.platt.is_none() {
         return (
             "baja",
-            "Historial insuficiente para calibrar; el detalle está en el back-test.".to_owned(),
+            "Historial insuficiente para calibrar; el detalle está en la prueba retrospectiva."
+                .to_owned(),
         );
     }
     if signals < 2 {
@@ -330,7 +331,7 @@ fn confidence_of(calibration: &Calibration, signals: usize) -> (&'static str, St
     if calibration.skill.unwrap_or(0.0) <= 0.0 {
         return (
             "baja",
-            "En el back-test el modelo no supera la tasa base del proyecto.".to_owned(),
+            "En la prueba retrospectiva el modelo no supera la tasa base del proyecto.".to_owned(),
         );
     }
     let events = calibration.train_events;
@@ -338,13 +339,15 @@ fn confidence_of(calibration: &Calibration, signals: usize) -> (&'static str, St
         (
             "alta",
             format!(
-                "Supera la tasa base en el back-test ({events} escalamientos de entrenamiento)."
+                "Supera la tasa base en la prueba retrospectiva ({events} escalamientos de entrenamiento)."
             ),
         )
     } else {
         (
             "media",
-            format!("Supera la tasa base en el back-test, con pocos escalamientos ({events})."),
+            format!(
+                "Supera la tasa base en la prueba retrospectiva, con pocos escalamientos ({events})."
+            ),
         )
     }
 }
@@ -507,6 +510,40 @@ mod tests {
             .try_fold(fixtures, |v, key| v.get(key))
             .and_then(Value::as_array)
             .map_or(&[], Vec::as_slice)
+    }
+
+    /// functional-10 T15: every reason and limitation says «prueba retrospectiva», as TypeScript does.
+    #[test]
+    fn reasons_say_prueba_retrospectiva() {
+        let calibration =
+            |platt: Option<Platt>, skill: Option<f64>, train_events: usize| Calibration {
+                backtest: Value::Null,
+                platt,
+                train_events,
+                skill,
+            };
+        let platt = Some(Platt { a: 0.0, b: 1.0 });
+        let reasons = [
+            confidence_of(&calibration(None, None, 0), 3),
+            confidence_of(&calibration(platt, Some(0.0), 30), 3),
+            confidence_of(&calibration(platt, Some(0.2), 30), 3),
+            confidence_of(&calibration(platt, Some(0.2), 7), 3),
+        ];
+        let texts: Vec<&str> = reasons.iter().map(|(_, text)| text.as_str()).collect();
+        assert_eq!(
+            texts,
+            [
+                "Historial insuficiente para calibrar; el detalle está en la prueba retrospectiva.",
+                "En la prueba retrospectiva el modelo no supera la tasa base del proyecto.",
+                "Supera la tasa base en la prueba retrospectiva (30 escalamientos de entrenamiento).",
+                "Supera la tasa base en la prueba retrospectiva, con pocos escalamientos (7).",
+            ]
+        );
+        assert_eq!(
+            LIMITATIONS[0],
+            "Es una ayuda para priorizar, no un pronóstico de hechos: la probabilidad tiene el error que muestra la prueba retrospectiva."
+        );
+        assert!(LIMITATIONS.iter().all(|text| !text.contains("back-test")));
     }
 
     #[test]

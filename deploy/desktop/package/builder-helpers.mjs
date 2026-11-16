@@ -53,6 +53,8 @@ export async function fakeCheckout(root) {
   for (const name of UPDATER) await copyFile(join(repo, 'deploy/desktop/updater', name), join(root, 'deploy/desktop/updater', name));
   // A junction on Windows (no privilege needed); the type is ignored elsewhere.
   await symlink(join(repo, 'node_modules'), join(root, 'node_modules'), 'junction');
+  // The version builder.mjs defaults to and a release version must equal (functional-10 T15).
+  await writeFile(join(root, 'package.json'), JSON.stringify({ name: 'sipges-synthetic', private: true, version: '1.0.0' }));
   const bin = `${root}-bin`;
   await mkdir(bin);
   await writeFile(join(bin, 'pnpm'), FAKE_PNPM, { mode: 0o755 });

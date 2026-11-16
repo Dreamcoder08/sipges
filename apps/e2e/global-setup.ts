@@ -7,7 +7,7 @@ import {
   e2eRuntime,
   goApiEnv,
   goMigrateEnv,
-  scratchDatabaseUrl,
+  scratchDatabase,
 } from './support/runtime.ts';
 import {
   assertWebBuilt,
@@ -54,14 +54,15 @@ export default async function globalSetup() {
     const goBinary = runtime === 'go' ? await buildGoApi(scratch.dir) : undefined;
     if (serverUrl) {
       const prefix = runtime === 'go' ? GO_DATABASE_PREFIX : 'sipges_e2e_';
-      const name = `${prefix}${randomBytes(6).toString('hex')}`;
+      // Checked here, before any connection or DDL: an invalid name throws and nothing is created.
+      const scratchDb = scratchDatabase(serverUrl, prefix, randomBytes(6).toString('hex'));
       const admin = postgres(serverUrl, { max: 1, onnotice: () => undefined });
       register(() => admin.end());
-      await admin.unsafe(`CREATE DATABASE ${name}`);
+      await admin.unsafe(scratchDb.create);
       register(async () => {
-        await admin.unsafe(`DROP DATABASE IF EXISTS ${name} WITH (FORCE)`);
+        await admin.unsafe(scratchDb.drop);
       });
-      database = { SIPGES_DATABASE_URL: scratchDatabaseUrl(serverUrl, name) };
+      database = { SIPGES_DATABASE_URL: scratchDb.url };
     }
 
     const shared = {

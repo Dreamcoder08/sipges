@@ -11,7 +11,8 @@
 //
 // Synthetic state folders only, built like tables-drill.mjs builds them (every migration of this
 // checkout, rows holding a marker), with a 96 MiB filler in the second database folder so the copy
-// is still in flight when the interrupt lands. Everything lives under <work>\tables-interrupt.
+// is still in flight when the interrupt lands. Everything lives under <work>\tables-interrupt,
+// which must be new or empty: a folder left by an earlier run is refused untouched.
 //
 //   node deploy/desktop/windows/tables-interrupt.mjs [--work <folder>] [--logs <folder>]
 import { spawn } from 'node:child_process';
@@ -138,6 +139,12 @@ export async function interruptDrill({
 }) {
   const dir = join(work, 'tables-interrupt');
   const scratch = join(dir, 'scratch');
+  // An earlier run's folders would mix into this run's checks (a copy left in scratch): refuse
+  // before writing anything, and leave them as they are.
+  if ((await readdir(dir).catch(() => [])).length > 0)
+    throw new Error(
+      `${dir} is not empty: tables-interrupt.mjs needs a fresh work folder (pass another --work, or remove ${dir})`,
+    );
   await mkdir(scratch, { recursive: true });
   if (platform === 'win32') {
     const format = fileSystem(dir);

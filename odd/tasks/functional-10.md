@@ -182,12 +182,12 @@ docs or help that describe it. Strings the API produces change in TypeScript and
   abiertas» count; tablet Eventos names the dimension; Auditoría at 1440 px has a visible title and shows the project
   label, not `SIPGES/PRJ-SECHURA`; the dark active segment in Configuración has enough contrast (measure it).
   Route: worker (web). Commit: see L11
-- [ ] T15 — S4, L6: technical leftovers. «back-test» and `Fuente_ID` reworded at the source (Rust engines, their
+- [x] T15 — S4, L6: technical leftovers. «back-test» and `Fuente_ID` reworded at the source (Rust engines, their
   TypeScript twins and the wasm, byte-identical); a CI job running the e2e suite on the Go API
   (`SIPGES_E2E_RUNTIME=go`, fixed spec list); the desktop kit version (`builder.mjs --version`) checked against
   package.json; the review advisories (database name validated before CREATE, timeouts on `go build` and
   `migrate`, the POSIX-path test in tables-interrupt.test.mjs, its failure paths run on Windows). Route: worker.
-  Risk: item 5 (CI). Commit: —
+  Risk: item 5 (CI). Commit: see L12
 - [ ] T16 — S4: prove it works through every surface on the release candidate: `sipgesctl verify
   --synthetic-target` (CLI), the MCP server (list tools, call a read and a write tool, refusals without a key),
   the HTTP API (parity, `/health`, a write and a read), the Go API, and an ego-browser walk of every screen on a
@@ -274,3 +274,16 @@ marker with a count (F28), and the default project name of T6 if «Proyecto 1» 
   15.3:1 and 19.44:1, from computed styles in Chromium. The heat map and the actor map shadow their scroll edges on
   phones. e2e zz-gallery-rc14 (desktop 4, mobile 5) red on base then green, web unit tests 754/754, hubs.mobile and
   spec 38 (axe at 360/930/1440 px) green; typecheck, eslint, prettier and build ok. Risk: none.
+- L12 — T15 closed (f24d460c..7ffeee58 plus a SIGKILL fix, resumed by a delegated writer from the uncommitted work of
+  the earlier tab, which had died). «prueba retrospectiva» and «referencia de fuente» at the source: Rust
+  conflict-risk and indicators, their TypeScript twins, fixtures current (41 and 96 cases), Go writes golden, wasm
+  rebuilt by build-wasm.sh with wasi-sdk 27 to the same sha256; the screen's rewording shim removed (labels.ts keeps
+  «Fuente_ID» → «referencia de fuente» for method texts saved before). CI job `e2e-go` (not required):
+  SIPGES_E2E_RUNTIME=go, specs 06 07 34 35 37 01 03 14, 26 passed locally on synthetic PostgreSQL. builder.mjs checks
+  --version against package.json and refuses another release version before writing; pre-releases are rehearsals.
+  Beyond the letter of T15, kept and disclosed: builder.mjs defaults --version to package.json, and
+  tables-interrupt.mjs refuses a non-empty work folder. Scratch database name validated before CREATE; go build 10 min
+  and migrate 2 min limits now kill with SIGKILL (a tool ignoring SIGTERM outlived them: RED then GREEN);
+  tables-interrupt tests hold on win32 and run on Windows CI (checked by reading and on Linux; not run on Windows).
+  Independent verifier (item 5): every rule met, wasm rebuilt byte-identical, e2e-go 26/26, malicious database names
+  refused, no stored value changes. Risk: item 5 (CI).

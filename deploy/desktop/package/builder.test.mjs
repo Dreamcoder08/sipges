@@ -39,7 +39,7 @@ test('public CLI validates options, versions, platform and paths without writes'
       assert.equal(result.stderr, `Error: ${message}\n`);
     };
     const out = '.data/desktop-packages/sipges-1.2.3';
-    for (const args of [[], ['--version'], ['--bad', 'x'], ['--version', '1.2.3', '--version', '1.2.3']]) reject(args, args.length === 0 ? 'Invalid semantic version' : 'Invalid options; use --help');
+    for (const args of [[], ['--version'], ['--bad', 'x'], ['--version', '1.2.3', '--version', '1.2.3']]) reject(args, args.length === 0 ? 'Cannot read the version in package.json; pass --version' : 'Invalid options; use --help');
     reject(['--version', '1.2.3'], 'Missing --out');
     for (const version of ['1.2', '01.2.3', '1.2.3-01', '1.2.3+', 'v1.2.3']) reject(['--version', version, '--out', out], 'Invalid semantic version');
     for (const version of ['0.0.0', '1.2.3-alpha.1+build.01']) reject(['--version', version, '--out', '/outside'], 'Output must be .data/desktop-packages/sipges-<version>');
@@ -57,7 +57,57 @@ test('public CLI validates options, versions, platform and paths without writes'
     const help = invoke('--help');
     assert.equal(help.status, 0);
     assert.equal(help.stderr, '');
-    assert.equal(help.stdout, 'Usage: node deploy/desktop/package/builder.mjs --version <semver> --out .data/desktop-packages/sipges-<version> [--platform <host>] [--arch <host>]\n');
+    assert.equal(help.stdout, 'Usage: node deploy/desktop/package/builder.mjs [--version <semver>] --out .data/desktop-packages/sipges-<version> [--platform <host>] [--arch <host>]\nThe version defaults to the root package.json version; a release version must equal it, a pre-release (1.2.3-rc.1) marks a rehearsal.\n');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// functional-10 T15: the kit's version is the one /health reports (root package.json): the
+// default, a release that equals it, or a rehearsal tagged as a pre-release; never another release.
+test('the version comes from package.json: default, equal release or pre-release; another release is refused without writes', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'sipges-package-version-'));
+  try {
+    const root = join(dir, 'repo');
+    const script = join(root, 'deploy/desktop/package/builder.mjs');
+    await mkdir(join(root, 'deploy/desktop/package'), { recursive: true });
+    await copyFile(cli, script);
+    await symlink(resolve('node_modules'), join(root, 'node_modules'), 'dir');
+    await writeFile(join(root, 'package.json'), JSON.stringify({ name: 'synthetic', version: '1.2.3' }));
+    const invoke = (...args) => spawnSync(process.execPath, [script, ...args], { cwd: root, encoding: 'utf8' });
+    const reject = (args, message) => {
+      const result = invoke(...args);
+      assert.equal(result.status, 1);
+      assert.equal(result.stdout, '');
+      assert.equal(result.stderr, `Error: ${message}\n`);
+    };
+    for (const version of ['1.2.4', '1.0.0', '2.0.0+build.1'])
+      reject(['--version', version, '--out', `.data/desktop-packages/sipges-${version}`], `Version ${version} is not package.json's 1.2.3 (the version /health reports): build 1.2.3, or mark a rehearsal as a pre-release (1.2.3-rc.1)`);
+    assert.deepEqual((await readdir(root)).sort(), ['deploy', 'node_modules', 'package.json']);
+    // Without --version the package is 1.2.3: another folder name is refused, that one is checked.
+    reject(['--out', '.data/desktop-packages/sipges-1.2.4'], 'Output must be .data/desktop-packages/sipges-<version>');
+    await mkdir(join(root, '.data/desktop-packages/sipges-1.2.3'), { recursive: true });
+    reject(['--out', '.data/desktop-packages/sipges-1.2.3'], 'Output already exists');
+    // A release equal to package.json, with build metadata, and pre-releases pass the version check
+    // (they stop at the existing folder, so nothing is built here).
+    for (const version of ['1.2.3', '1.2.3+visit.2', '0.0.8-kit.7', '1.2.3-rc.1']) {
+      await mkdir(join(root, `.data/desktop-packages/sipges-${version}`), { recursive: true });
+      reject(['--version', version, '--out', `.data/desktop-packages/sipges-${version}`], 'Output already exists');
+    }
+    await writeFile(join(root, 'package.json'), '{"name":"synthetic"}');
+    reject(['--out', '.data/desktop-packages/sipges-1.2.3'], 'Cannot read the version in package.json; pass --version');
+    reject(['--version', '1.2.5', '--out', '.data/desktop-packages/sipges-1.2.5'], 'Cannot read the version in package.json, which a release version must equal');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('without --version the kit builds the package.json version', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'sipges-package-default-'));
+  try {
+    const { fakeCheckout } = await import('./builder-helpers.mjs');
+    const root = join(dir, 'repo');
+    const { env } = await fakeCheckout(root);
+    const out = join(root, '.data/desktop-packages/sipges-1.0.0');
+    const built = spawnSync(process.execPath, [join(root, 'deploy/desktop/package/builder.mjs'), '--out', out], { cwd: root, encoding: 'utf8', env: env() });
+    assert.equal(built.status, 0, built.stderr);
+    assert.equal(JSON.parse(await readFile(join(out, 'metadata.json'), 'utf8')).version, '1.0.0');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
@@ -219,13 +269,13 @@ test('a finished build ends with its completion file; a failed one has the marke
     assert.equal(await readFile(join(half, PACKAGE_MARKER), 'utf8'), PACKAGE_MARKER_TEXT);
     assert.deepEqual((await readdir(half)).sort(), [PACKAGE_MARKER, '.sipges-package-building', 'api']);
     // The first clean build of another version (preserved): exit 0, the completion file last.
-    const done = build('1.0.1');
+    const done = build('1.0.0-rc.1');
     assert.equal(done.status, 0, done.stderr);
-    const full = join(root, '.data/desktop-packages/sipges-1.0.1');
+    const full = join(root, '.data/desktop-packages/sipges-1.0.0-rc.1');
     assert.match(done.stdout, new RegExp(`Package created: ${full.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\n$`));
     assert.equal(await readFile(join(full, PACKAGE_COMPLETE), 'utf8'), 'Build finished.\n');
     const metadata = JSON.parse(await readFile(join(full, 'metadata.json'), 'utf8'));
-    assert.equal(metadata.version, '1.0.1');
+    assert.equal(metadata.version, '1.0.0-rc.1');
     const completed = (await stat(join(full, PACKAGE_COMPLETE))).mtimeMs;
     for (const later of ['metadata.json', 'web/index.html', 'updater/updater.mjs'])
       assert.ok((await stat(join(full, later))).mtimeMs <= completed, `${later} written after the completion file`);

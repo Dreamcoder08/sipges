@@ -595,7 +595,7 @@ test('F2: after a failed build the kit removes only that package, and the retry 
     const root = join(dir, 'repo');
     const { build } = await fakeCheckout(root);
     // A finished package of another version, which must stay.
-    assert.equal(build('0.9.0').status, 0);
+    assert.equal(build('0.9.0-rc.1').status, 0);
     const failed = build('1.0.0', { failWebBuild: true });
     assert.equal(failed.status, 1);
     const half = join(root, PACKAGES, 'sipges-1.0.0');

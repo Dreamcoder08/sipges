@@ -94,8 +94,9 @@ describe('GET /system/conflict-risk', () => {
     });
     expect(body.localities[0]?.confidence).toBe('baja');
     expect(body.localities[0]?.confidenceReason).toBe(
-      'Historial insuficiente para calibrar; el detalle está en el back-test.',
+      'Historial insuficiente para calibrar; el detalle está en la prueba retrospectiva.',
     );
+    expect(JSON.stringify(body)).not.toMatch(/back-test/i);
     expect(body.backtest['30'].calibrated).toBe(false);
     expect(asked).toEqual([
       'records:SIPGES/PRJ-SECHURA:Alertas,Compromisos,Demandas,Eventos,Narrativas',

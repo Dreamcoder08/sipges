@@ -279,14 +279,15 @@ describe('ConflictRiskPage', () => {
     expect(screen.queryByText(/mejora/)).toBeNull();
   });
 
-  // functional-10 T5 (F13): no «back-test» on screen, even inside the engine's sentences, and
-  // the Brier score says what it measures.
+  // functional-10 T5 (F13), T15: the engine's own sentences say «prueba retrospectiva» and the
+  // screen prints them as they come; the Brier score says what it measures.
   it('says «prueba retrospectiva» and explains the Brier score', async () => {
     respond({
       ...thinReport,
       localities: thinReport.localities.map((item) => ({
         ...item,
-        confidenceReason: 'Historial insuficiente para calibrar; el detalle está en el back-test.',
+        confidenceReason:
+          'Historial insuficiente para calibrar; el detalle está en la prueba retrospectiva.',
       })),
       backtest: {
         '30': thin(30),
@@ -303,7 +304,7 @@ describe('ConflictRiskPage', () => {
         },
       },
       limitations: [
-        'Es una ayuda para priorizar, no un pronóstico de hechos: la probabilidad tiene el error que muestra el back-test.',
+        'Es una ayuda para priorizar, no un pronóstico de hechos: la probabilidad tiene el error que muestra la prueba retrospectiva.',
       ],
     });
     mount();

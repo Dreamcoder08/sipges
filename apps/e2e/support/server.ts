@@ -130,12 +130,51 @@ const goToolEnv = () => ({
   ),
 });
 
+/** A cold `go build` of the API on a CI runner takes minutes; a hung one must not stall setup. */
+export const GO_BUILD_TIMEOUT_MS = 10 * 60_000;
+/** Every migration on an empty synthetic database. */
+export const GO_MIGRATE_TIMEOUT_MS = 2 * 60_000;
+
+/**
+ * Runs a tool to completion within `timeoutMs` (stopped with SIGTERM when it overruns). A failure
+ * rejects with why (the exit code or the time limit) and everything the tool printed.
+ */
+export const runBounded = async (
+  label: string,
+  file: string,
+  args: readonly string[],
+  options: { cwd: string; env: NodeJS.ProcessEnv; timeoutMs: number },
+) => {
+  try {
+    return await promisify(execFile)(file, [...args], {
+      cwd: options.cwd,
+      env: options.env,
+      timeout: options.timeoutMs,
+      // SIGKILL, not the default SIGTERM: a tool that ignores SIGTERM must not outlive its limit.
+      killSignal: 'SIGKILL',
+      maxBuffer: 64 * 1024 * 1024,
+      encoding: 'utf8',
+    });
+  } catch (error) {
+    const failure = error as { stdout?: string; stderr?: string; killed?: boolean; code?: unknown };
+    const why = failure.killed
+      ? `timed out after ${options.timeoutMs} ms`
+      : typeof failure.code === 'number'
+        ? `failed with exit code ${failure.code}`
+        : `failed (${String(failure.code ?? (error as Error).message)})`;
+    throw new Error(`${label} ${why}:\n${failure.stdout ?? ''}${failure.stderr ?? ''}`, {
+      cause: error,
+    });
+  }
+};
+
 /** Builds apps/api-go/cmd/api once into `dir` (a scratch directory) and returns the binary. */
 export const buildGoApi = async (dir: string) => {
   const binary = path.join(dir, 'sipges-api-go');
-  await promisify(execFile)('go', ['build', '-o', binary, './cmd/api'], {
+  await runBounded('go build ./cmd/api', 'go', ['build', '-o', binary, './cmd/api'], {
     cwd: goApiDir,
     env: goToolEnv(),
+    timeoutMs: GO_BUILD_TIMEOUT_MS,
   });
   return binary;
 };
@@ -145,12 +184,11 @@ export const migrateGoApi = async (
   binary: string,
   env: Readonly<Record<string, string | undefined>>,
 ) => {
-  try {
-    await promisify(execFile)(binary, ['migrate'], { cwd: repoRoot, env: mergeEnv(env) });
-  } catch (error) {
-    const { stdout = '', stderr = '' } = error as { stdout?: string; stderr?: string };
-    throw new Error(`sipges-api-go migrate failed:\n${stdout}${stderr}`, { cause: error });
-  }
+  await runBounded('sipges-api-go migrate', binary, ['migrate'], {
+    cwd: repoRoot,
+    env: mergeEnv(env),
+    timeoutMs: GO_MIGRATE_TIMEOUT_MS,
+  });
 };
 
 /**

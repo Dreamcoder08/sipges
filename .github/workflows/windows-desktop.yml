@@ -105,6 +105,12 @@ jobs:
       - name: tables.mjs unit tests on Windows
         if: ${{ !cancelled() && matrix.label == 'main' && steps.install.outcome == 'success' }}
         run: node --test deploy/desktop/migration/tables.test.mjs
+      # The interrupt drill's own tests through the Windows helper (functional-10 T15): the run that
+      # never begins copying, the one that ignores Ctrl+C, a reused work folder and the options.
+      - name: tables-interrupt.mjs unit tests on Windows (the helper's failure paths)
+        if: ${{ !cancelled() && matrix.label == 'main' && steps.install.outcome == 'success' }}
+        timeout-minutes: 10
+        run: node --test deploy/desktop/windows/tables-interrupt.test.mjs
       # Logs and command outputs only: never a state folder, a snapshot or the key.
       - name: Upload the drill logs
         if: always()
