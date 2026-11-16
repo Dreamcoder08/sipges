@@ -36,7 +36,7 @@ test('automation rule, API key, inbound webhook, notification and MCP', async ({
   // An outside system sends the alert through the inbound webhook.
   const ingested = await page.request.post('/hooks/ingest/alertas', {
     headers: { authorization: `Bearer ${token}`, 'idempotency-key': `e2e-${stamp}` },
-    data: { ID_Alerta: alertId, Causa: cause, Nivel_Preliminar: 'Alto' },
+    data: { ID_Alerta: alertId, Causa: cause, Nivel_Preliminar: 'Naranja' },
   });
   expect(ingested.status(), await ingested.text()).toBe(201);
   expect(await ingested.json()).toMatchObject({ ids: [alertId] });
