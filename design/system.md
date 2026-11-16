@@ -1,4 +1,4 @@
-# SIPGES design system (synced for `design/compact-sidebar`)
+# SIPGES design system (synced for the compact sidebar drafts, now in `docs/history/compact-sidebar`)
 
 Read-only sync of the web app's design tokens and components. Every value below was parsed from the sources named in its section; nothing is invented. The retired Python UI (`static/style.css`) was **not** used.
 
@@ -411,7 +411,7 @@ Icon observations: `message` is shared by Narrativas and Buzón; `layers` by Sit
 
 ## Derived layout values used by the sidebar explorations
 
-These are **compositions of existing tokens**, not new tokens; they exist only inside `design/compact-sidebar/`:
+These are **compositions of existing tokens**, not new tokens; they exist only inside `docs/history/compact-sidebar/`:
 
 | Name in artboards | Expression | Result |
 | --- | --- | --- |
