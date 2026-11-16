@@ -164,11 +164,14 @@ func TestMFAResetRollsBackWhenTheAuditRowFails(t *testing.T) {
 		return s
 	}
 	before := state()
+	if before != "true/7 sessions=1" { // the fixture gives ana one session to revoke
+		t.Fatalf("fixture state = %q, want an enabled factor and one session", before)
+	}
 	_, err := store.ResetTOTPInTenant(ctx, "ana", "SES/UNO", "synthetic reset", sessionsAt)
 	if err == nil || !strings.Contains(err.Error(), "append audit: ") || !strings.Contains(err.Error(), "synthetic audit failure") {
 		t.Fatalf("ResetTOTPInTenant error = %v, want the wrapped audit failure", err)
 	}
-	if after := state(); after != before || !strings.HasPrefix(before, "true/7") {
+	if after := state(); after != before {
 		t.Fatalf("state after a failed audit = %q, want it unchanged from %q", after, before)
 	}
 }
