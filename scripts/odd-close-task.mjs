@@ -11,7 +11,10 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 
+// pnpm 12 forwards the `--` of `pnpm odd:close -- --task …` to the script; drop it.
+const argv = process.argv.slice(2);
 const { values } = parseArgs({
+  args: argv[0] === '--' ? argv.slice(1) : argv,
   options: {
     task: { type: 'string' },
     label: { type: 'string' },
