@@ -22,6 +22,10 @@ configured. Every finding below was observed; where a heuristic could be wrong i
   Windows. Console errors were not captured. Each task below starts by reproducing its findings with a
   failing test.
 
+- S4 — «yes haslo , te autorizo todo , ve que funcione tambien por cli , mcp , api , ego-browser y mas»
+  (answering the proposal to open T14 for the rc14 gallery dudas that need no owner decision and the technical
+  leftovers of L6/L9).
+
 ## Findings
 
 Dates and numbers
@@ -173,6 +177,25 @@ docs or help that describe it. Strings the API produces change in TypeScript and
   capture helper regex. Each with a failing test first; then regenerate the gallery and review it again.
   Route: worker. Commit: #470 b51f2e7d
 
+- [ ] T14 — S4, L9: the rc14 gallery dudas that need no owner decision. Alerts that share a title are told
+  apart on Panel and the phone home; the Territorio list shows its fifth row whole and the page shows one «Alertas
+  abiertas» count; tablet Eventos names the dimension; Auditoría at 1440 px has a visible title and shows the project
+  label, not `SIPGES/PRJ-SECHURA`; the dark active segment in Configuración has enough contrast (measure it).
+  Route: worker (web). Commit: —
+- [ ] T15 — S4, L6: technical leftovers. «back-test» and `Fuente_ID` reworded at the source (Rust engines, their
+  TypeScript twins and the wasm, byte-identical); a CI job running the e2e suite on the Go API
+  (`SIPGES_E2E_RUNTIME=go`, fixed spec list); the desktop kit version (`builder.mjs --version`) checked against
+  package.json; the review advisories (database name validated before CREATE, timeouts on `go build` and
+  `migrate`, the POSIX-path test in tables-interrupt.test.mjs, its failure paths run on Windows). Route: worker.
+  Risk: item 5 (CI). Commit: —
+- [ ] T16 — S4: prove it works through every surface on the release candidate: `sipgesctl verify
+  --synthetic-target` (CLI), the MCP server (list tools, call a read and a write tool, refusals without a key),
+  the HTTP API (parity, `/health`, a write and a read), the Go API, and an ego-browser walk of every screen on a
+  fresh synthetic instance; each defect found becomes a fix with a test. Route: worker + parent (ego-browser).
+  Commit: —
+- [ ] T17 — S4: release `visit-rc15` on the commit holding T14–T16 with CI and the Windows drill green, roadmap
+  entry, gallery regenerated and every image reviewed. Route: inline. Commit: —
+
 Owner decisions these tasks do not take: the cloud database plan (F28), grouping map circles into one
 marker with a count (F28), and the default project name of T6 if «Proyecto 1» is not wanted.
 
@@ -237,3 +260,6 @@ marker with a count (F28), and the default project name of T6 if «Proyecto 1» 
   counts (5), tablet Eventos with dimension letters (2), artefact captures (4: actor-map labels, heat-map scroll
   hint, a painted top bar in two full-page captures), Configuración dark active segment and a gap (2),
   Auditoría at 1440 px without a visible title showing «SIPGES/PRJ-SECHURA».
+- L10 — «yes haslo , te autorizo todo , ve que funcione tambien por cli , mcp , api , ego-browser y mas». S4,
+  T14–T17 added. Still owner decisions: stacked map circles, the cloud database plan, the real laptop's version
+  and backup.
