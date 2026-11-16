@@ -7,7 +7,9 @@ Qué tecnología usa SIPGES, qué módulos están implementados y cómo se arran
 | Área                     | Tecnología                                                                                                 |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------- |
 | Frontend                 | React 19, Vite, TanStack Router y Query, CSS Modules y tokens                                              |
-| Backend                  | Node.js y Hono; arquitectura hexagonal por contextos                                                       |
+| Backend local            | Go (`apps/api-go`, pgx, `net/http`): el servidor de la instalación local; arquitectura hexagonal por contextos |
+| Backend en la nube       | Node.js y Hono (`apps/api`), detrás de Cloudflare Workers; se retira ruta por ruta (ADR 0032 §6)           |
+| Motores de cálculo       | Rust compilado a WebAssembly y ejecutado desde Go con wazero (`engines/`), idéntico byte a byte a TypeScript |
 | Contratos                | Zod y tipos TypeScript compartidos en `@sipges/contracts`                                                  |
 | Persistencia             | PostgreSQL con postgres.js, SQL explícito y migraciones; RLS por tenant                                    |
 | Desarrollo y pruebas SQL | PGlite; PostgreSQL real para integración opcional                                                          |
@@ -16,7 +18,7 @@ Qué tecnología usa SIPGES, qué módulos están implementados y cómo se arran
 | Semántica                | Embeddings de Ollama cuando se solicita el modo semántico                                                  |
 | Calidad                  | pnpm, TypeScript 7 por paquete, TS 6 para herramientas, ESLint, Prettier, dependency-cruiser, Vitest y MSW |
 
-Las enmiendas de los ADRs sustituyeron Drizzle por SQL explícito y descartaron Turborepo/Biome. El [ADR 0032](adr/0032-go-backend-rust-engines.md) adoptó un backend Go y motores Rust compilados a WebAssembly; la tabla describe el runtime TypeScript vigente hasta su retiro.
+Las enmiendas de los ADRs sustituyeron Drizzle por SQL explícito y descartaron Turborepo/Biome. El [ADR 0032](adr/0032-go-backend-rust-engines.md) adoptó un backend Go y motores Rust compilados a WebAssembly, y el [ADR 0034](adr/0034-rust-placement-criterion.md) fija cuándo se usa Rust. Las filas de persistencia, documentos y semántica describen la API TypeScript; la API Go cumple los mismos contratos, comprobados por la [paridad](../apps/parity/README.md).
 
 ## Estado
 
