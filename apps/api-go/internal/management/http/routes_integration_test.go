@@ -23,6 +23,7 @@ import (
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/app"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database/dbtest"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/leakcheck"
 )
 
 // Integration tests of the management routes through the composed handler, against a migrated
@@ -32,7 +33,7 @@ import (
 
 var scratch *dbtest.Scratch
 
-func TestMain(m *testing.M) { os.Exit(run(m)) }
+func TestMain(m *testing.M) { os.Exit(leakcheck.After(run(m))) }
 
 func run(m *testing.M) int {
 	adminURL := os.Getenv(dbtest.EnvAdminURL)
