@@ -142,6 +142,37 @@ func TestEndSessionAuditsOnlyInTheChosenProject(t *testing.T) {
 	}
 }
 
+// The MFA reset clears the factor and the sessions before it audits; a failing audit row must
+// undo both (odd/tasks/go-context-ports.md T2, found by its independent verifier).
+func TestMFAResetRollsBackWhenTheAuditRowFails(t *testing.T) {
+	pool, store := sessionsDatabase(t)
+	ctx := t.Context()
+	if _, err := pool.Exec(ctx, `INSERT INTO grants (username, tenant_id) VALUES ('ana', 'SES/UNO');
+		UPDATE users SET totp_enabled = true, totp_last_step = 7 WHERE username = 'ana';
+		CREATE FUNCTION refuse_audit() RETURNS trigger LANGUAGE plpgsql AS $$
+		  BEGIN RAISE EXCEPTION 'synthetic audit failure'; END $$;
+		CREATE TRIGGER refuse_audit BEFORE INSERT ON audit FOR EACH ROW EXECUTE FUNCTION refuse_audit();`); err != nil {
+		t.Fatal(err)
+	}
+	state := func() string {
+		var s string
+		if err := pool.QueryRow(ctx, `SELECT totp_enabled::text || '/' || coalesce(totp_last_step::text, '-') ||
+		    ' sessions=' || (SELECT count(*) FROM sessions WHERE username = 'ana')
+		  FROM users WHERE username = 'ana'`).Scan(&s); err != nil {
+			t.Fatal(err)
+		}
+		return s
+	}
+	before := state()
+	_, err := store.ResetTOTPInTenant(ctx, "ana", "SES/UNO", "synthetic reset", sessionsAt)
+	if err == nil || !strings.Contains(err.Error(), "append audit: ") || !strings.Contains(err.Error(), "synthetic audit failure") {
+		t.Fatalf("ResetTOTPInTenant error = %v, want the wrapped audit failure", err)
+	}
+	if after := state(); after != before || !strings.HasPrefix(before, "true/7") {
+		t.Fatalf("state after a failed audit = %q, want it unchanged from %q", after, before)
+	}
+}
+
 func TestSessionWritesRollBackWhenTheAuditRowFails(t *testing.T) {
 	pool, store := sessionsDatabase(t)
 	if _, err := pool.Exec(t.Context(), `
