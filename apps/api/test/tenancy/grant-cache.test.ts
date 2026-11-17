@@ -28,6 +28,7 @@ const setup = () => {
     },
     tenantExists: async () => true,
     tenantLabel: async () => 'Norte',
+    renameTenant: async () => true,
     grant: async (username, scope) => {
       grants.set(username, [...(grants.get(username) ?? []), { ...scope, label: 'Nuevo' }]);
     },

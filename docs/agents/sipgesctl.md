@@ -88,6 +88,16 @@ what reaches each route.
 Request bodies come from a file or stdin, never from the command line. An option a command would
 ignore is refused with exit 2.
 
+An administrator renames a project they use with `project rename` (`PATCH /system/auth/scopes`).
+The name is trimmed and cut to 120 characters; a blank name is refused with exit 6, and a project
+the account has no access to answers as a missing one (exit 5). The project's audit trail records
+the old and new names.
+
+```sh
+printf '%s' '{"company_id":"ACME","project_id":"NORTE","label":"Proyecto Norte"}' \
+  | ./sipgesctl project rename --body -
+```
+
 Machine routes (`/mcp`, `/hooks/*`, the cron route) take `SIPGES_MACHINE_TOKEN` and never the
 session:
 

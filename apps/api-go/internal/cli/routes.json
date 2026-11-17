@@ -195,6 +195,13 @@
     "summary": "Create a project"
   },
   {
+    "method": "PATCH",
+    "path": "/system/auth/scopes",
+    "access": "session",
+    "command": "project rename",
+    "summary": "Rename a project you use"
+  },
+  {
     "method": "GET",
     "path": "/system/auth/sessions",
     "access": "session",

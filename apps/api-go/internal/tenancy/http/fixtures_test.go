@@ -113,6 +113,15 @@ func (m memoryStore) Revoke(_ context.Context, username string, s domain.Scope) 
 	return true, nil
 }
 
+func (m memoryStore) RenameTenant(_ context.Context, s domain.Scope, label, _ string, _ time.Time) (bool, error) {
+	t := m.find(s)
+	if t == nil {
+		return false, nil
+	}
+	t.Label = label
+	return true, nil
+}
+
 func (m memoryStore) ListGrants(_ context.Context, username string) ([]domain.Grant, error) {
 	var out []domain.Grant
 	for _, g := range m.state.Grants {

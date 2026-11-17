@@ -117,6 +117,93 @@ describe('POST /system/auth/scopes', () => {
   });
 });
 
+describe('PATCH /system/auth/scopes', () => {
+  const rename = (t: Awaited<ReturnType<typeof createTestApp>>, cookie: string, body: unknown) =>
+    t.request('/system/auth/scopes', {
+      method: 'PATCH',
+      headers: { cookie, 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  const auditRows = (t: Awaited<ReturnType<typeof createTestApp>>) =>
+    t.sql.query(
+      "SELECT tenant_id, record_id, action, detail FROM audit WHERE module = 'Proyectos'",
+    );
+
+  it('renames a project the admin uses, trims the name, audits it and lists the new name', async () => {
+    const { t, admin } = await setup();
+    const res = await rename(t, admin.cookie, {
+      company_id: 'SIPGES',
+      project_id: 'PRJ-SECHURA',
+      label: '  Proyecto Sechura ',
+    });
+    expect(res.status).toBe(200);
+    expect(await json(res)).toEqual({
+      ok: true,
+      scope: 'SIPGES/PRJ-SECHURA',
+      label: 'Proyecto Sechura',
+    });
+    expect(
+      await json(await t.request('/system/auth/scopes', { headers: { cookie: admin.cookie } })),
+    ).toEqual([{ ...SECHURA, label: 'Proyecto Sechura' }]);
+    expect(await auditRows(t)).toEqual([
+      {
+        tenant_id: 'SIPGES/PRJ-SECHURA',
+        record_id: 'SIPGES/PRJ-SECHURA',
+        action: 'RENAME',
+        detail: 'Proyecto renombrado de «Proyecto principal» a «Proyecto Sechura» por admin',
+      },
+    ]);
+  });
+
+  it.each([
+    ['a blank name', { ...SECHURA, label: ' \t ' }, 422, 'Nombre de proyecto requerido'],
+    [
+      'an unknown project',
+      { company_id: 'NO', project_id: 'PE', label: 'X' },
+      404,
+      'Proyecto inexistente',
+    ],
+  ])('refuses %s and stores nothing', async (_name, body, status, detail) => {
+    const { t, admin } = await setup();
+    const before = await tenantRows(t);
+    const res = await rename(t, admin.cookie, body);
+    expect(res.status).toBe(status);
+    expect(await json(res)).toEqual({ detail });
+    expect(await tenantRows(t)).toBe(before);
+    expect(await auditRows(t)).toEqual([]);
+  });
+
+  it('answers a project the admin has no grant on as a missing one', async () => {
+    const { t, admin } = await setup();
+    await t.createScope(admin.cookie, NORTE); // granted to ana.perez only
+    const before = await tenantRows(t);
+    const res = await rename(t, admin.cookie, { ...NORTE, label: 'Otro' });
+    expect(res.status).toBe(404);
+    expect(await json(res)).toEqual({ detail: 'Proyecto inexistente' });
+    expect(await tenantRows(t)).toBe(before);
+  });
+
+  it('is restricted to admins', async () => {
+    const { t, admin } = await setup();
+    await t.grant(admin.cookie, ANA.username);
+    const ana = await t.login(ANA.username, ANA.password);
+    const before = await tenantRows(t);
+    const res = await rename(t, ana.cookie, { ...SECHURA, label: 'Otro' });
+    expect(res.status).toBe(403);
+    expect(await json(res)).toEqual({ detail: 'Administrador requerido' });
+    expect(await tenantRows(t)).toBe(before);
+  });
+
+  it('leaves creation and the project list as they were', async () => {
+    const { t, admin } = await setup();
+    const created = await t.createScope(admin.cookie, { ...NORTE, username: 'admin' });
+    expect(await json(created)).toEqual({ ok: true, scope: 'ACME/NORTE' });
+    expect(
+      await json(await t.request('/system/auth/scopes', { headers: { cookie: admin.cookie } })),
+    ).toEqual([{ company_id: 'ACME', project_id: 'NORTE', label: 'Proyecto Norte' }, SECHURA]);
+  });
+});
+
 describe('tenant label', () => {
   it('names the situational analysis of a project without a Proyectos record', async () => {
     const { t, admin } = await setup();

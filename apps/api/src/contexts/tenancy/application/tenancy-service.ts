@@ -6,6 +6,8 @@ import {
   type Scope,
   formatScope,
   resolveScope,
+  sameScope,
+  validateLabel,
   validateNewTenant,
 } from '../domain/scope.ts';
 import type {
@@ -25,6 +27,7 @@ export type ScopeResolution =
 
 export type CreateTenantError =
   'forbidden' | 'invalid_ids' | 'reserved' | 'user_missing' | 'exists';
+export type RenameTenantError = 'forbidden' | 'invalid_label' | 'tenant_missing';
 export type GrantError = 'forbidden' | 'user_missing' | 'tenant_missing';
 
 export const createTenancyService = (deps: {
@@ -100,6 +103,24 @@ export const createTenancyService = (deps: {
       } finally {
         requestGrants.forget(valid.value.username);
       }
+    },
+
+    /**
+     * An administrator changes the display name of a project they may use. A project without
+     * their grant answers as a missing one, so a rename never reveals which projects exist.
+     */
+    async renameTenant(
+      actor: Actor,
+      input: Scope & { label: string },
+    ): Promise<Result<string, RenameTenantError>> {
+      if (actor.role !== 'admin') return err('forbidden');
+      const label = validateLabel(input.label);
+      if (!label.ok) return err(label.error);
+      const scope = { companyId: input.companyId, projectId: input.projectId };
+      if (!(await store.listGrants(actor.username)).some((g) => sameScope(g, scope)))
+        return err('tenant_missing');
+      const renamed = await store.renameTenant(scope, label.value, actor.username, clock.now());
+      return renamed ? ok(label.value) : err('tenant_missing');
     },
 
     async revoke(

@@ -1,6 +1,8 @@
+import { appendAudit } from '../../../platform/database/audit-trail.ts';
 import type { SqlClient } from '../../../platform/database/sql-client.ts';
+import { enterTenant } from '../../../platform/database/tenant-transaction.ts';
 import type { TenancyStore, TenantSummary } from '../application/ports.ts';
-import { formatScope } from '../domain/scope.ts';
+import { RENAME_AUDIT, formatScope, renameDetail } from '../domain/scope.ts';
 
 export const createSqlTenancyStore = (sql: SqlClient): TenancyStore => ({
   async ensureTenant(scope, label, at) {
@@ -57,6 +59,29 @@ export const createSqlTenancyStore = (sql: SqlClient): TenancyStore => ({
       [username, formatScope(scope)],
     );
     return rows.length === 1;
+  },
+
+  /**
+   * The tenant row is locked and updated first, as the owner; entering the project then drops
+   * to the role that can append only to that project's audit trail.
+   */
+  async renameTenant(scope, label, by, at) {
+    return sql.transaction(async (tx) => {
+      const [row] = await tx.query<{ tenant_id: string; label: string }>(
+        'SELECT tenant_id, label FROM tenants WHERE company_id = $1 AND project_id = $2 FOR UPDATE',
+        [scope.companyId, scope.projectId],
+      );
+      if (!row) return false;
+      await tx.query('UPDATE tenants SET label = $1 WHERE tenant_id = $2', [label, row.tenant_id]);
+      await enterTenant(tx, row.tenant_id);
+      await appendAudit(tx, {
+        ...RENAME_AUDIT,
+        recordId: row.tenant_id,
+        detail: renameDetail(row.label, label, by),
+        at,
+      });
+      return true;
+    });
   },
 
   async listGrants(username) {

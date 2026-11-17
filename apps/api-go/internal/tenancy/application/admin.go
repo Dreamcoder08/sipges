@@ -28,6 +28,10 @@ type Store interface {
 	// Revoke deletes exactly one grant; false when it was already absent.
 	Revoke(ctx context.Context, username string, s domain.Scope) (bool, error)
 	ListGrants(ctx context.Context, username string) ([]domain.Grant, error)
+	// RenameTenant stores the project's new label and appends the audit row, by the named
+	// administrator, to that project's own trail in one transaction; false when the project
+	// does not exist.
+	RenameTenant(ctx context.Context, s domain.Scope, label, by string, at time.Time) (bool, error)
 }
 
 // UserExists is UserDirectory.exists: whether the account row exists, active or not.
@@ -143,4 +147,33 @@ func (a Admin) references(ctx context.Context, actor Actor, username string, s d
 		return ErrTenantMissing, nil
 	}
 	return "", nil
+}
+
+// RenameTenant is renameTenant: an administrator changes the display name of a project they
+// may use. It returns the stored label, or an error code: ErrForbidden, domain.ErrInvalidLabel,
+// ErrTenantMissing. A project the administrator has no grant on answers as a missing one, so a
+// rename never reveals which other projects exist.
+func (a Admin) RenameTenant(ctx context.Context, actor Actor, s domain.Scope, label string) (string, string, error) {
+	if actor.Role != "admin" {
+		return "", ErrForbidden, nil
+	}
+	valid, code := domain.ValidateLabel(label)
+	if code != "" {
+		return "", code, nil
+	}
+	grants, err := a.Store.ListGrants(ctx, actor.Username)
+	if err != nil {
+		return "", "", err
+	}
+	if !slices.ContainsFunc(grants, func(g domain.Grant) bool { return g.Scope == s }) {
+		return "", ErrTenantMissing, nil
+	}
+	renamed, err := a.Store.RenameTenant(ctx, s, valid, actor.Username, a.now())
+	if err != nil {
+		return "", "", err
+	}
+	if !renamed {
+		return "", ErrTenantMissing, nil
+	}
+	return valid, "", nil
 }

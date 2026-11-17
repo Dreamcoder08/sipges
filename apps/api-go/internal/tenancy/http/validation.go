@@ -45,6 +45,8 @@ func withoutNul(values []string) bool {
 var (
 	// scopeCreate is ScopeCreate (POST /system/auth/scopes).
 	scopeCreate = schema{fields: []string{"company_id", "project_id", "label", "username"}, refine: withoutNul, message: nulMessage}
+	// scopeRename is ScopeRename (PATCH /system/auth/scopes).
+	scopeRename = schema{fields: []string{"company_id", "project_id", "label"}, refine: withoutNul, message: nulMessage}
 	// grantCreate is GrantCreate (POST /system/auth/grants).
 	grantCreate = schema{fields: []string{"username", "company_id", "project_id"}, refine: withoutNul, message: nulMessage}
 	// grantRevoke is GrantRevoke (DELETE /system/auth/grants): bounded lookup text, no NUL.

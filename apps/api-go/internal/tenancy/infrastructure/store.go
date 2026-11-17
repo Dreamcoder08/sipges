@@ -3,10 +3,12 @@ package infrastructure
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/audittrail"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/domain"
 )
@@ -59,6 +61,44 @@ func (s Store) CreateTenantWithGrant(ctx context.Context, t domain.NewTenant, at
 		return false, err
 	}
 	return created, nil
+}
+
+// RenameTenant is renameTenant: the new label and its audit row commit together. The tenant
+// row is locked and updated first, as the owner; entering the project then drops to the role
+// that can append only to that project's audit trail. False, with nothing written, when the
+// project does not exist.
+func (s Store) RenameTenant(ctx context.Context, sc domain.Scope, label, by string, at time.Time) (bool, error) {
+	renamed := false
+	err := pgx.BeginFunc(ctx, s.DB, func(tx pgx.Tx) error {
+		var tenantID, previous string
+		err := tx.QueryRow(ctx,
+			`SELECT tenant_id, label FROM tenants WHERE company_id = $1 AND project_id = $2 FOR UPDATE`,
+			sc.CompanyID, sc.ProjectID).Scan(&tenantID, &previous)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf("lock tenant: %w", err)
+		}
+		if _, err := tx.Exec(ctx, `UPDATE tenants SET label = $1 WHERE tenant_id = $2`, label, tenantID); err != nil {
+			return fmt.Errorf("rename tenant: %w", err)
+		}
+		if err := database.EnterTenant(ctx, tx, tenantID); err != nil {
+			return fmt.Errorf("enter tenant: %w", err)
+		}
+		if err := audittrail.Append(ctx, tx, audittrail.Entry{
+			At: at, Module: domain.RenameAuditModule, RecordID: audittrail.ID(tenantID),
+			Action: domain.RenameAuditAction, Detail: domain.RenameDetail(previous, label, by),
+		}); err != nil {
+			return fmt.Errorf("append audit: %w", err)
+		}
+		renamed = true
+		return nil
+	})
+	if err != nil {
+		return false, err
+	}
+	return renamed, nil
 }
 
 // EnsureTenant is ensureTenant: an existing project keeps its label.

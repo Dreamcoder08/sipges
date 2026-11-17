@@ -68,6 +68,12 @@ const memoryStore = (state) => {
       state.grants.splice(index, 1);
       return true;
     },
+    async renameTenant(scope, label) {
+      const tenant = find(scope);
+      if (!tenant) return false;
+      tenant.label = label;
+      return true;
+    },
     async listGrants(username) {
       return state.grants
         .filter((g) => g.username === username)
@@ -115,6 +121,7 @@ const scope = {
   label: 'Proyecto Norte',
   username: 'ana.perez',
 };
+const rename = { company_id: 'SIPGES', project_id: 'PRJ-SECHURA', label: 'Proyecto Sechura' };
 const deepArray = enc(`${'['.repeat(20_000)}${']'.repeat(20_000)}`);
 const deepField = enc(
   `{"username":${'['.repeat(20_000)}${']'.repeat(20_000)},"company_id":"SIPGES","project_id":"PRJ-SECHURA"}`,
@@ -201,6 +208,7 @@ for (const [method, path, valid] of [
   ['POST', '/system/auth/grants', grant],
   ['DELETE', '/system/auth/grants', { ...grant, project_id: 'EXISTE', company_id: 'ACME' }],
   ['POST', '/system/auth/scopes', scope],
+  ['PATCH', '/system/auth/scopes', rename],
 ]) {
   for (const [label, body] of jsonBodies(valid)) {
     add(`${method} ${path} admin ${label}`, { method, path, actor: 'admin-token', body });
@@ -285,6 +293,41 @@ for (const [label, body] of scopeCases) {
     body: json(body),
   });
 }
+
+const renameCases = [
+  ['trimmed label', { ...rename, label: '  Proyecto Alfarrobo \n' }],
+  ['blank label', { ...rename, label: ' \t\r\n ' }],
+  ['label of only no-break and byte-order-mark spaces', { ...rename, label: '\u00a0\u3000\ufeff' }],
+  ['label with a next-line character', { ...rename, label: '\u0085' }],
+  ['label of 130 characters', { ...rename, label: 'L'.repeat(130) }],
+  ['label cut inside an astral character', { ...rename, label: `${'L'.repeat(119)}\u{1F600}tail` }],
+  ['label with markup', { ...rename, label: '<script>alert(1)</script>' }],
+  ['second project', { company_id: 'ACME', project_id: 'EXISTE', label: 'Alfarrobo' }],
+  ['unknown project', { ...rename, company_id: 'NO', project_id: 'PE' }],
+  ['case differs', { ...rename, company_id: 'sipges' }],
+  ['slash moved between the ids', { ...rename, company_id: 'SIPGES/PRJ', project_id: 'SECHURA' }],
+  ['unknown project and blank label', { company_id: 'NO', project_id: 'PE', label: ' ' }],
+];
+for (const [label, body] of renameCases) {
+  add(`PATCH scopes ${label}`, {
+    method: 'PATCH',
+    path: '/system/auth/scopes',
+    actor: 'admin-token',
+    body: json(body),
+  });
+}
+add('PATCH scopes analyst blank label', {
+  method: 'PATCH',
+  path: '/system/auth/scopes',
+  actor: 'ana-token',
+  body: json({ ...rename, label: ' ' }),
+});
+add('PATCH scopes analyst granted project', {
+  method: 'PATCH',
+  path: '/system/auth/scopes',
+  actor: 'ana-token',
+  body: json({ company_id: 'ACME', project_id: 'EXISTE', label: 'Otro' }),
+});
 
 add('GET scopes admin', { method: 'GET', path: '/system/auth/scopes', actor: 'admin-token' });
 add('GET scopes analyst', { method: 'GET', path: '/system/auth/scopes', actor: 'ana-token' });

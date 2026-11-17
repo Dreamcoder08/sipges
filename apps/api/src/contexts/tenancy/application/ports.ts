@@ -15,6 +15,11 @@ export type TenancyStore = {
   /** Deletes exactly one grant; false when it was already absent. */
   revoke(username: string, scope: Scope): Promise<boolean>;
   listGrants(username: string): Promise<TenantSummary[]>;
+  /**
+   * Stores the project's new label and appends the audit row, by the named administrator, to
+   * that project's own trail in one transaction; false when the project does not exist.
+   */
+  renameTenant(scope: Scope, label: string, by: string, at: Date): Promise<boolean>;
 };
 
 /** What Tenancy needs to know about accounts, provided by Identity's public API. */

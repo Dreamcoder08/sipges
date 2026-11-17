@@ -41,6 +41,16 @@ var grantErrors = map[string]struct {
 	application.ErrGrantMissing:  {http.StatusNotFound, "Acceso inexistente"},
 }
 
+// renameErrors is RENAME_ERRORS of tenancy-routes.ts.
+var renameErrors = map[string]struct {
+	status int
+	detail string
+}{
+	application.ErrForbidden:     {http.StatusForbidden, "Administrador requerido"},
+	domain.ErrInvalidLabel:       {http.StatusUnprocessableEntity, "Nombre de proyecto requerido"},
+	application.ErrTenantMissing: {http.StatusNotFound, "Proyecto inexistente"},
+}
+
 // AdminDeps is what the administration routes need.
 type AdminDeps struct {
 	Admin    application.Admin
@@ -60,6 +70,12 @@ type okBody struct {
 	OK bool `json:"ok"`
 }
 
+type scopeRenamed struct {
+	OK    bool   `json:"ok"`
+	Scope string `json:"scope"`
+	Label string `json:"label"`
+}
+
 type scopeCreated struct {
 	OK    bool   `json:"ok"`
 	Scope string `json:"scope"`
@@ -67,7 +83,7 @@ type scopeCreated struct {
 
 // RegisterAdmin adds the rest of tenancy-routes.ts to mux: the project choice
 // (GET/POST /select-project), the user's projects (GET /system/auth/scopes), project creation
-// (POST /system/auth/scopes), grants (POST/DELETE /system/auth/grants) and the project's export
+// (POST /system/auth/scopes), its new name (PATCH /system/auth/scopes), grants (POST/DELETE /system/auth/grants) and the project's export
 // (GET /system/export). The session, Origin and role gates already ran; the export is the one
 // path here with a resolved project.
 func RegisterAdmin(mux *http.ServeMux, deps AdminDeps) {
@@ -76,6 +92,7 @@ func RegisterAdmin(mux *http.ServeMux, deps AdminDeps) {
 	mux.HandleFunc("POST /select-project", h.selectProject)
 	mux.HandleFunc("GET /system/auth/scopes", h.scopes)
 	mux.HandleFunc("POST /system/auth/scopes", h.createScope)
+	mux.HandleFunc("PATCH /system/auth/scopes", h.renameScope)
 	mux.HandleFunc("POST /system/auth/grants", h.grant)
 	mux.HandleFunc("DELETE /system/auth/grants", h.revoke)
 	mux.HandleFunc("GET /system/export", h.export)
@@ -185,6 +202,29 @@ func (h adminHandlers) createScope(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteError(w, e.status, e.detail)
 	default:
 		httpx.WriteJSON(w, http.StatusOK, scopeCreated{OK: true, Scope: scope})
+	}
+}
+
+func (h adminHandlers) renameScope(w http.ResponseWriter, r *http.Request) {
+	values, ok := readJSON(w, r, scopeRename)
+	if !ok {
+		return
+	}
+	a, ok := actor(r)
+	if !ok {
+		h.fail(w, r, errNoActor)
+		return
+	}
+	s := domain.Scope{CompanyID: values[0], ProjectID: values[1]}
+	label, code, err := h.Admin.RenameTenant(r.Context(), a, s, values[2])
+	switch {
+	case err != nil:
+		h.fail(w, r, err)
+	case code != "":
+		e := renameErrors[code]
+		httpx.WriteError(w, e.status, e.detail)
+	default:
+		httpx.WriteJSON(w, http.StatusOK, scopeRenamed{OK: true, Scope: s.TenantID(), Label: label})
 	}
 }
 

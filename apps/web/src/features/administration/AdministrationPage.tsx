@@ -11,6 +11,7 @@ import {
   TotpSetupResponse,
 } from '@sipges/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { z } from 'zod';
 import { useEffect, useRef, useState } from 'react';
 import { requestJson } from '../../shared/api/client.ts';
 import { downloadFile } from '../../shared/api/download.ts';
@@ -24,6 +25,9 @@ import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { useReveal } from '../../shared/lib/reveal.ts';
 import styles from './AdministrationPage.module.css';
 
+/** PATCH /system/auth/scopes answer: the project and the name the server stored. */
+const ScopeRenamed = z.object({ ok: z.literal(true), scope: z.string(), label: z.string() });
+
 type Access = { username: string; company_id: string; project_id: string };
 type Confirmation =
   | { kind: 'deactivate'; username: string }
@@ -35,6 +39,7 @@ type Operation =
       body: { username: string; full_name: string; password: string; role: string };
     }
   | { kind: 'scope'; body: Access & { label: string } }
+  | { kind: 'rename'; body: { company_id: string; project_id: string; label: string } }
   | { kind: 'grant'; body: Access }
   | { kind: 'google'; username: string; email: string }
   | Confirmation
@@ -42,8 +47,14 @@ type Operation =
   | { kind: 'enable'; code: string }
   | { kind: 'export' };
 const emptyAccount = { username: '', full_name: '', password: '', role: 'consulta' };
+/** A project id is «company/project»; neither id holds a slash (scope.ts ID_PATTERN). */
+const splitScope = (id: string) => {
+  const slash = id.indexOf('/');
+  return slash < 0 ? [id, ''] : [id.slice(0, slash), id.slice(slash + 1)];
+};
 const emptyAccess = { username: '', company_id: '', project_id: '' };
 const emptyGoogle = { username: '', email: '' };
+const emptyRename = { scope: '', label: '' };
 
 /** Identity administration uses account APIs; project grants remain explicitly tenant-bound. */
 export const AdministrationPage = ({ scope, projectLabel, role, username }: FeatureContext) => {
@@ -62,6 +73,7 @@ export const AdministrationPage = ({ scope, projectLabel, role, username }: Feat
   const [tenant, setTenant] = useState({ ...emptyAccess, label: '' });
   const [access, setAccess] = useState(emptyAccess);
   const [googleLink, setGoogleLink] = useState(emptyGoogle);
+  const [rename, setRename] = useState(emptyRename);
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const [totp, setTotp] = useState<{
     secret: string;
@@ -98,6 +110,14 @@ export const AdministrationPage = ({ scope, projectLabel, role, username }: Feat
             body: { json: operation.body },
           });
           return 'Proyecto creado con acceso inicial.';
+        case 'rename': {
+          const renamed = await requestJson('/system/auth/scopes', ScopeRenamed, {
+            scope,
+            method: 'PATCH',
+            body: { json: operation.body },
+          });
+          return `Proyecto renombrado a «${renamed.label}».`;
+        }
         case 'grant':
           await requestJson('/system/auth/grants', OkResponse, {
             ...options,
@@ -162,6 +182,7 @@ export const AdministrationPage = ({ scope, projectLabel, role, username }: Feat
       if (operation.kind === 'account') setAccount(emptyAccount);
       if (operation.kind === 'scope') setTenant({ ...emptyAccess, label: '' });
       if (operation.kind === 'google') setGoogleLink(emptyGoogle);
+      if (operation.kind === 'rename') setRename(emptyRename);
       if (operation.kind === 'enable') {
         setTotp(null);
         setCode('');
@@ -182,7 +203,7 @@ export const AdministrationPage = ({ scope, projectLabel, role, username }: Feat
         return;
       }
       await cache.invalidateQueries({ queryKey: ['administration', scope] });
-      if (operation.kind === 'scope' || operation.kind === 'grant' || operation.kind === 'revoke')
+      if (['scope', 'rename', 'grant', 'revoke'].includes(operation.kind))
         await cache.invalidateQueries({ predicate: (query) => query.queryKey.includes('scopes') });
     },
   });
@@ -422,6 +443,48 @@ export const AdministrationPage = ({ scope, projectLabel, role, username }: Feat
                   onChange={(event) => setTenant({ ...tenant, username: event.target.value })}
                 />
                 <Button type="submit">Crear proyecto</Button>
+              </fieldset>
+            </form>
+            <form
+              className={styles.form}
+              onSubmit={(event) => {
+                event.preventDefault();
+                const [company_id = '', project_id = ''] = splitScope(rename.scope);
+                run({ kind: 'rename', body: { company_id, project_id, label: rename.label } });
+              }}
+            >
+              <fieldset disabled={busy || !!confirmation}>
+                <legend>Renombrar proyecto</legend>
+                <label>
+                  Proyecto a renombrar
+                  <select
+                    required
+                    value={rename.scope}
+                    onChange={(event) => setRename({ ...rename, scope: event.target.value })}
+                  >
+                    <option value="" disabled>
+                      Elige un proyecto autorizado
+                    </option>
+                    {(scopes.data ?? []).map((row) => {
+                      const id = `${row.company_id}/${row.project_id}`;
+                      return (
+                        <option key={id} value={id}>
+                          {row.label} ({id})
+                        </option>
+                      );
+                    })}
+                  </select>
+                </label>
+                <Field
+                  label="Nombre nuevo"
+                  required
+                  maxLength={120}
+                  autoComplete="off"
+                  value={rename.label}
+                  onChange={(event) => setRename({ ...rename, label: event.target.value })}
+                  hint="Es el nombre que verán en el selector de proyecto quienes tengan acceso."
+                />
+                <Button type="submit">Renombrar proyecto</Button>
               </fieldset>
             </form>
           </Card>
