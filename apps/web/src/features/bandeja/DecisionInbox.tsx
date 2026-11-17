@@ -25,7 +25,6 @@ import {
   groupItems,
   KIND_INFO,
   KINDS,
-  mayDecideProposals,
   orderItems,
   proposalItems,
   qualityItems,
@@ -164,7 +163,9 @@ export const DecisionInbox = ({
       ? situationItems(report.data, new Set(raisedSituations(raised.data).keys()))
       : []),
     ...(quality.state === 'ready' ? qualityItems(quality.observations) : []),
-    ...(proposals.data ? proposalItems(proposals.data, mayDecideProposals(role)) : []),
+    // The server lists only what this person may decide (the role gate of each proposal's own
+    // write), so every listed proposal can be decided.
+    ...(proposals.data ? proposalItems(proposals.data, true) : []),
   ]);
   const visible = kind === 'todo' ? all : all.filter((item) => item.kind === kind);
   const optionId = (item: PendingItem) => `${ids}-${visible.indexOf(item)}`;

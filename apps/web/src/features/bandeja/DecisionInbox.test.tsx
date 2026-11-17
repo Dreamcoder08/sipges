@@ -696,18 +696,17 @@ describe('Pendientes: analyst proposals', () => {
     expect(decisions).toEqual([{ id: 'AP-2', decision: 'reject' }]);
   });
 
-  it('offers no decision to roles that may not write', async () => {
-    for (const role of ['consulta', 'coordinador'] as const) {
-      install({ proposals: [proposal('AP-3')] });
-      const view = mount({ role });
-      await userEvent.click(await within(await list()).findByRole('option', { name: /Visitar/ }));
-      expect(within(detail()).queryByRole('button', { name: /Aprobar|Descartar/ })).toBeNull();
-      expect(detail()).toHaveTextContent(
-        'Tu rol no puede aprobar ni descartar propuestas del analista.',
-      );
-      await userEvent.keyboard('a');
-      expect(decisions).toEqual([]);
-      view.unmount();
-    }
+  it('lets anyone decide what the server lists for them, and lists nothing to a read-only role', async () => {
+    // The server lists only the proposals the person may decide (the role gate of each one's
+    // own write); a coordinator who may write the target module gets it and may decide it.
+    install({ proposals: [proposal('AP-3')] });
+    const coordinator = mount({ role: 'coordinador' });
+    await userEvent.click(await within(await list()).findByRole('option', { name: /Visitar/ }));
+    expect(within(detail()).getByRole('button', { name: /Aprobar/ })).toBeTruthy();
+    coordinator.unmount();
+    install({ proposals: [] });
+    const reader = mount({ role: 'consulta' });
+    expect(within(await list()).queryByRole('option', { name: /Visitar/ })).toBeNull();
+    reader.unmount();
   });
 });

@@ -230,12 +230,6 @@ export const qualityItems = (observations: readonly QualityObservation[]): Pendi
 };
 
 /**
- * Who may decide an analyst proposal: the roles that may write records and links. The server
- * applies the role gate of the proposal's own write and answers 403 otherwise.
- */
-export const mayDecideProposals = (role: string) => role === 'admin' || role === 'analista';
-
-/**
  * Proposals the Inicio analyst made (odd/tasks/agentic-analyst.md S4). Nothing was written:
  * approving creates the record or link through the owning screen's write, discarding writes nothing.
  * Every text comes from a model and is shown as plain text.
