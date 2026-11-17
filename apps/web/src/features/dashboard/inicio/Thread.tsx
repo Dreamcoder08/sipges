@@ -1,6 +1,6 @@
 import { Fragment, Suspense, useId } from 'react';
 import { AnswerView } from './answer-view.tsx';
-import type { Turn } from './conversation.ts';
+import type { Turn } from './turn.ts';
 import styles from './Thread.module.css';
 
 /** What a turn can do besides showing itself (chat-first-ui T6). */
