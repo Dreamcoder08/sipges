@@ -70,36 +70,54 @@ type askJSON struct {
 
 func askRoute(opts Options) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		question, ok := readQuestion(r)
-		if !ok {
-			httpx.WriteError(w, http.StatusUnprocessableEntity, askInvalid)
-			return
-		}
-		scope, scoped := tenancyhttp.ScopeFrom(r.Context())
-		if opts.Ask == nil || !scoped {
-			httpx.WriteError(w, http.StatusServiceUnavailable, askUnavailable)
-			return
-		}
-		analyst, err := opts.Ask(r.Context(), scope.TenantID())
+		question, valid := readQuestion(r)
+		answer, err := answerQuestion(r.Context(), opts, question, valid, nil)
 		if err == nil {
-			var answer domain.CitedAnswer
-			if answer, err = analyst.Answer(r.Context(), question); err == nil {
-				httpx.WriteJSON(w, http.StatusOK, toAskJSON(answer))
-				return
-			}
+			httpx.WriteJSON(w, http.StatusOK, toAskJSON(answer))
+			return
 		}
 		status, detail := askFailure(err)
-		if status >= http.StatusInternalServerError && opts.Logger != nil {
-			attrs := []slog.Attr{slog.Int("status", status), slog.String("request_id", httpx.RequestIDFrom(r.Context()))}
-			// Model errors are the adapters' fixed texts; any other error may carry the driver's
-			// details, so only the event is logged.
-			if errors.Is(err, application.ErrModel) {
-				attrs = append(attrs, slog.String("cause", err.Error()))
-			}
-			opts.Logger.LogAttrs(r.Context(), slog.LevelWarn, "analyst_ask_failed", attrs...)
-		}
+		logAskFailure(r, opts, status, err)
 		httpx.WriteError(w, status, detail)
 	}
+}
+
+var (
+	// errInvalidQuestion is a body without a question of 1 to maxQuestion characters.
+	errInvalidQuestion = errors.New("analyst: invalid question")
+	// errNoAnalyst is an installation without an analyst, or a request without a project.
+	errNoAnalyst = errors.New("analyst: no analyst for this request")
+)
+
+// answerQuestion is the question of /ask and /ask/stream: the same checks in the same order, the
+// analyst of the request's project, and the loop, reporting to progress when it is not nil.
+func answerQuestion(ctx context.Context, opts Options, question string, valid bool, progress application.Progress) (domain.CitedAnswer, error) {
+	if !valid {
+		return domain.CitedAnswer{}, errInvalidQuestion
+	}
+	scope, scoped := tenancyhttp.ScopeFrom(ctx)
+	if opts.Ask == nil || !scoped {
+		return domain.CitedAnswer{}, errNoAnalyst
+	}
+	analyst, err := opts.Ask(ctx, scope.TenantID())
+	if err != nil {
+		return domain.CitedAnswer{}, err
+	}
+	return analyst.AnswerWithProgress(ctx, question, progress)
+}
+
+// logAskFailure logs a server-side failure of a question; the client's own failures are not logged.
+func logAskFailure(r *http.Request, opts Options, status int, err error) {
+	if status < http.StatusInternalServerError || opts.Logger == nil {
+		return
+	}
+	attrs := []slog.Attr{slog.Int("status", status), slog.String("request_id", httpx.RequestIDFrom(r.Context()))}
+	// Model errors are the adapters' fixed texts; any other error may carry the driver's
+	// details, so only the event is logged.
+	if errors.Is(err, application.ErrModel) {
+		attrs = append(attrs, slog.String("cause", err.Error()))
+	}
+	opts.Logger.LogAttrs(r.Context(), slog.LevelWarn, "analyst_ask_failed", attrs...)
 }
 
 // readQuestion reads {"question": "..."}: trimmed, 1 to maxQuestion characters.
@@ -121,6 +139,10 @@ func readQuestion(r *http.Request) (string, bool) {
 
 func askFailure(err error) (int, string) {
 	switch {
+	case errors.Is(err, errInvalidQuestion):
+		return http.StatusUnprocessableEntity, askInvalid
+	case errors.Is(err, errNoAnalyst):
+		return http.StatusServiceUnavailable, askUnavailable
 	case errors.Is(err, privacy.ErrDisabled):
 		return http.StatusConflict, privacy.ExternalAIDisabled
 	case errors.Is(err, domain.ErrUnresolvedCitation), errors.Is(err, domain.ErrUncited):
