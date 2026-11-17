@@ -199,7 +199,7 @@ func (g *Gateway) Catalogue(ctx context.Context) application.Catalogue {
 	if f == nil {
 		f = &flight{done: make(chan struct{})}
 		g.inflight = f
-		go g.refresh(f)
+		go g.refresh(context.WithoutCancel(ctx), f)
 	}
 	stale := g.cached
 	g.mu.Unlock()
@@ -219,15 +219,16 @@ type serviceAnswer struct {
 	err    error
 }
 
-// refresh runs the one lookup of f, stores it and releases its waiters.
-func (g *Gateway) refresh(f *flight) {
+// refresh runs the one lookup of f, stores it and releases its waiters. ctx carries the first
+// caller's values but not its cancellation, so its giving up never cuts the shared lookup.
+func (g *Gateway) refresh(ctx context.Context, f *flight) {
 	checkedAt := isoMillis(g.now())
 	answers := make([]serviceAnswer, len(domain.ServiceIDs))
 	for i := 0; i < len(domain.ServiceIDs); i += 2 { // two services at a time
 		var wg sync.WaitGroup
 		for j := i; j < min(i+2, len(domain.ServiceIDs)); j++ {
 			wg.Go(func() {
-				layers, err := g.serviceLayers(context.Background(), domain.ServiceIDs[j])
+				layers, err := g.serviceLayers(ctx, domain.ServiceIDs[j])
 				answers[j] = serviceAnswer{layers, err}
 			})
 		}
