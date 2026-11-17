@@ -49,7 +49,8 @@ var readOnlyPosts = map[string]bool{
 	"/system/intelligence/semantic-analyze": true,
 	"/system/geography/query":               true,
 	"/system/graph/neighbourhood":           true,
-	// The Inicio analyst answers a question and stores nothing (odd/tasks/agentic-analyst.md S2).
+	// The Inicio analyst answers a question and writes no record; it may file a proposal only for
+	// a person who may write that module (odd/tasks/agentic-analyst.md S2, S4).
 	"/system/analyst/ask": true,
 }
 

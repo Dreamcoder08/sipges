@@ -42,6 +42,7 @@ export const analystRoutes = (analyst: AnalystService) =>
   new Hono<AppEnv>()
     // The Inicio analyst and its stored proposals live in the Go API (odd/tasks/agentic-analyst.md
     // T3); this API stores none, so Bandeja's list is empty here instead of a 404.
+    .get('/system/analyst', (c) => c.json({ available: false }))
     .get('/system/analyst/proposals', (c) => c.json([]))
     .get('/system/briefing/proposals', async (c) => {
       const found = await analyst.proposals(
