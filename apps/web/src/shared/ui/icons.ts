@@ -45,6 +45,12 @@ export const ICON_PATHS = {
   plug: 'M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0zM12 17v5',
   briefcase: 'M3 7h18v13H3zM9 7V4h6v3M3 13h18',
   arrowUp: 'M12 19V5M5 12l7-7 7 7',
+  /** Chat (chat-first-ui T2): copy, retry and stop an answer, the sidebar, the thread's end. */
+  copy: 'M9 9h11v11H9zM5 15H4V4h11v1',
+  retry: 'M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7',
+  stop: 'M7 7h10v10H7z',
+  sidebar: 'M3 4h18v16H3zM9 4v16',
+  arrowDown: 'M12 5v14M19 12l-7 7-7-7',
   link: 'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71',
   mail: 'M3 5h18v14H3zM3 6l9 7 9-7',
   lightbulb: 'M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.74V16h8v-1.26A7 7 0 0 0 12 2',

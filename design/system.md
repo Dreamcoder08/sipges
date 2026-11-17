@@ -21,7 +21,7 @@ neutral paper; dark is OLED black with neutral greys; primary actions are monoch
 
 ## Token counts
 
-Light `:root`: **195 tokens in 12 groups**. Each dark block overrides **102**. Primitive scales
+Light `:root`: **200 tokens in 13 groups**. Each dark block overrides **102**. Primitive scales
 (spacing, type, shape, motion, controls) never change by theme. The previous sync (2026-11-06) counted 197; the
 source holds 195 (Controls and layers has 9 tokens, not 11).
 
@@ -39,7 +39,8 @@ source holds 195 (Controls and layers has 9 tokens, not 11).
 | Elevation | 6 | 6 |
 | Motion | 6 | 0 |
 | Controls and layers | 9 | 0 |
-| **Total** | **195** | **102** |
+| Chat | 5 | 0 |
+| **Total** | **200** | **102** |
 
 `--topbar-height` is read by `global.css` (`scroll-padding-top`) with a `0px` fallback; AppShell sets it at run time.
 It is not declared in `tokens.css`.
@@ -351,6 +352,22 @@ Source: `apps/web/src/app/styles/tokens.css`
 `ConfirmDialog.module.css` stacks its backdrop at `z-index: 100` and dialog at `101`, above `--z-modal` (60) and
 `--z-skip` (70); `Sheet.module.css` uses `--z-modal`.
 
+## Chat
+
+Source: `apps/web/src/app/styles/tokens.css` (`odd/tasks/chat-first-ui.md` T2, direction
+`design/chat-first/02-atencion-primero.html`). No dark override: `--color-bubble` is an alias of `--color-fill`,
+which each dark block redefines.
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `--measure-chat` | `46rem` | One reading width for Inicio's column, the thread and the composer (replaces Inicio's `48rem`) |
+| `--space-turn` | `var(--space-8)` | Space between one turn and the next |
+| `--text-answer` | `var(--text-body)` | Answer prose size (1rem) |
+| `--leading-answer` | `1.6` | Answer prose line height |
+| `--color-bubble` | `var(--color-fill)` | The person's question: `#f4f4f4` light, `#161618` dark; `--color-text` and `--color-muted` reach 4.5:1 on it, `--color-control-border` 3:1 |
+
+The composer keeps `--shadow-composer` and `--radius-xl`.
+
 ## Components (`apps/web/src/shared/ui`)
 
 Each rule names its file. Feature folders hold further one-off variants (see the T28 audit); only the shared
@@ -404,12 +421,12 @@ primitives are the system.
   `--color-fill` / `--color-muted`; checkbox, radio, range and progress use `--color-accent`; coarse pointers get
   `--touch-target` field height.
 
-## Icons (43)
+## Icons (49)
 
 Source: `apps/web/src/shared/ui/icons.ts`, `Icon.tsx`. Line icons on a 24-unit grid, stroke 1.75, round caps and
 joins, `currentColor`, `aria-hidden`; the control that holds one carries the accessible name.
 
-`home`, `pulse`, `bell`, `map`, `grid`, `users`, `book`, `clipboard`, `message`, `network`, `gauge`, `clock`, `pin`, `cube`, `compass`, `target`, `chart`, `check`, `file`, `sliders`, `zap`, `layers`, `bookOpen`, `shield`, `search`, `chevronRight`, `chevronDown`, `logout`, `close`, `menu`, `plus`, `minus`, `landmark`, `inbox`, `alert`, `trend`, `chevronLeft`, `plug`, `briefcase`, `arrowUp`, `link`, `mail`, `lightbulb`.
+`home`, `pulse`, `bell`, `map`, `grid`, `users`, `book`, `clipboard`, `message`, `network`, `gauge`, `clock`, `pin`, `cube`, `compass`, `target`, `chart`, `check`, `file`, `sliders`, `zap`, `layers`, `bookOpen`, `shield`, `search`, `chevronRight`, `chevronDown`, `logout`, `close`, `menu`, `plus`, `minus`, `landmark`, `inbox`, `alert`, `trend`, `chevronLeft`, `plug`, `briefcase`, `arrowUp`, `copy`, `retry`, `stop`, `sidebar`, `arrowDown`, `link`, `mail`, `lightbulb`, `settings`.
 
 ## Contrast notes (computed from the values above, WCAG 2.x relative luminance)
 
