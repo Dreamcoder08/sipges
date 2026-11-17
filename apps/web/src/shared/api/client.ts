@@ -40,6 +40,8 @@ export type RequestOptions = {
   readonly signal?: AbortSignal;
   /** `manual` treats a redirect as success (POST /select-project answers 303). */
   readonly redirect?: RequestRedirect;
+  /** What the caller reads back; JSON unless named (`text/event-stream` for a stream). */
+  readonly accept?: string;
 };
 
 const encode = (body: RequestBody | undefined): { body?: BodyInit; type?: string } => {
@@ -55,7 +57,7 @@ const encode = (body: RequestBody | undefined): { body?: BodyInit; type?: string
  */
 export const request = async (path: string, options: RequestOptions = {}) => {
   const { body, type } = encode(options.body);
-  const headers = new Headers({ accept: 'application/json' });
+  const headers = new Headers({ accept: options.accept ?? 'application/json' });
   if (type) headers.set('content-type', type);
   if (options.scope) headers.set('X-SIPGES-Scope', options.scope);
   const response = await fetch(path, {

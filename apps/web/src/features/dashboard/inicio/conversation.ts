@@ -1,9 +1,14 @@
 import { useRef, useState } from 'react';
-import { type AnalystAnswer, askAnalyst } from './ask.ts';
+import { loadConversationView } from './answer-view.tsx';
+import type { AnalystAnswer } from './ask.ts';
 
-/** One question and what became of it; the question is sent alone (no history yet, T9). */
+/**
+ * One question and what became of it; the question is sent alone (no history yet, T9). A pending
+ * turn's `step` is what the analyst is doing now, the stream's latest label (T21): shown, never
+ * announced.
+ */
 export type Turn = { readonly id: number; readonly question: string } & (
-  | { readonly state: 'pending' }
+  | { readonly state: 'pending'; readonly step?: string }
   | { readonly state: 'answered'; readonly answer: AnalystAnswer }
   | { readonly state: 'failed'; readonly error: unknown }
   // «Detener» (T7): the request was aborted and its question went back to the composer.
@@ -76,13 +81,20 @@ export const useThreadState = (scope: string) => {
       ],
     }));
     setAnnouncement(ANNOUNCE.pending);
+    // Each step replaces the pending turn's progress text while this turn is still the one asked.
+    const onStep = (step: string) => {
+      if (active.current?.id === id) settle(id, { id, question, state: 'pending', step });
+    };
     let next: Turn;
     try {
+      // The ask and the answer view load together on the first question (T20); the turn above
+      // already shows, and composer focus usually fetched the chunk ahead.
+      const { askAnalystStream } = await loadConversationView();
       next = {
         id,
         question,
         state: 'answered',
-        answer: await askAnalyst(scope, question, controller.signal),
+        answer: await askAnalystStream(scope, question, { signal: controller.signal, onStep }),
       };
     } catch (error) {
       next = { id, question, state: 'failed', error };

@@ -22,6 +22,7 @@ import { irsaConfigQuery, irsaQuery, moduleRecordsQuery } from '../api.ts';
 import { criticalAlerts, eventsThisWeek } from '../model.ts';
 import { AttentionCards, type AttentionQuery, WeekLine } from './Attention.tsx';
 import { AttentionPopover } from './AttentionPopover.tsx';
+import { preloadAnswerView } from './answer-view.tsx';
 import { analystStatusQuery } from './ask.ts';
 import { attentionItems } from './attention.ts';
 import { useAnalystThread, useSharedThread } from './thread-context.tsx';
@@ -324,7 +325,14 @@ export const InicioPage = ({
           </div>
         ) : null}
         <div className={styles.compose}>
-          <div ref={composer} className={styles.dock}>
+          <div
+            ref={composer}
+            className={styles.dock}
+            // Someone who starts to write a question will read an answer: its chunk is fetched
+            // now, so the first answer shows without waiting for code (T20).
+            onFocus={asks ? preloadAnswerView : undefined}
+            onKeyDown={asks ? preloadAnswerView : undefined}
+          >
             {conversation && !atEnd ? (
               <button type="button" className={styles.jump} onClick={toEnd}>
                 <Icon name="arrowDown" />

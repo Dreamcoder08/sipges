@@ -40,7 +40,7 @@ const knownBlocks = z
     }),
   );
 
-const AnalystAnswer = z.object({
+export const AnalystAnswer = z.object({
   answer: z.string(),
   sources: z.array(AnalystSource),
   blocks: knownBlocks,

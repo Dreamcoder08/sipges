@@ -1,6 +1,5 @@
-import { Fragment, useId } from 'react';
-import { AnalystAnswer } from './AnalystAnswer.tsx';
-import { AnswerActions } from './AnswerActions.tsx';
+import { Fragment, Suspense, useId } from 'react';
+import { AnswerView } from './answer-view.tsx';
 import type { Turn } from './conversation.ts';
 import styles from './Thread.module.css';
 
@@ -15,6 +14,16 @@ type TurnActions = {
   busy: boolean;
 };
 
+/** The pending turn's progress text until the analyst names a step. */
+const FIRST_STEP = 'Buscando registros…';
+
+const Progress = ({ label, hidden = false }: { label: string; hidden?: boolean }) => (
+  <p className={styles.step} aria-hidden={hidden || undefined}>
+    <span className={styles.pulse} aria-hidden="true" />
+    {label}
+  </p>
+);
+
 const AssistantTurn = ({
   turn,
   onSearch,
@@ -23,7 +32,6 @@ const AssistantTurn = ({
   busy,
 }: TurnActions & { turn: Turn }) => {
   const id = useId();
-  const retry = onRetry && !busy ? () => onRetry(turn.question) : undefined;
   return (
     <article className={styles.ai} aria-labelledby={id}>
       <p id={id} className={styles.who}>
@@ -31,11 +39,9 @@ const AssistantTurn = ({
         <span className="visually-hidden">, respuesta a «{turn.question}»</span>
       </p>
       {turn.state === 'pending' ? (
-        // Seen, not announced: the page's status region says when it starts and ends (L5).
-        <p className={styles.step}>
-          <span className={styles.pulse} aria-hidden="true" />
-          Buscando registros…
-        </p>
+        // Seen, not announced: the page's status region says when it starts and ends (L5). The
+        // label is the stream's latest step (T21), drawn as text.
+        <Progress label={turn.step ?? FIRST_STEP} />
       ) : turn.state === 'stopped' ? (
         // T7: the question went back to the composer; the page said «Respuesta detenida.».
         <p className={styles.stopped}>
@@ -43,24 +49,18 @@ const AssistantTurn = ({
           Detenido
         </p>
       ) : (
-        <>
-          <AnalystAnswer
-            question={turn.question}
-            data={turn.state === 'answered' ? turn.answer : undefined}
-            error={turn.state === 'failed' ? turn.error : undefined}
+        // The answer view is its own chunk (T20). The thread asks through it before settling a turn,
+        // so the fallback only shows when Inicio opens on earlier turns before it loaded; it keeps
+        // the progress line's place and is hidden from the log, which reads the answer instead.
+        <Suspense fallback={<Progress label={FIRST_STEP} hidden />}>
+          <AnswerView
+            turn={turn}
             onSearch={onSearch}
-            onRetry={turn.state === 'failed' ? retry : undefined}
+            onRetry={onRetry}
+            onAnnounce={onAnnounce}
+            busy={busy}
           />
-          {turn.state === 'answered' ? (
-            <AnswerActions
-              answer={turn.answer.answer}
-              sources={turn.answer.sources}
-              onRetry={onRetry ? () => onRetry(turn.question) : undefined}
-              onAnnounce={onAnnounce}
-              busy={busy}
-            />
-          ) : null}
-        </>
+        </Suspense>
       )}
     </article>
   );
