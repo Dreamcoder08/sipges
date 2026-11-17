@@ -154,6 +154,20 @@ Lo que debe sobrevivir a `./sipges start` y `./sipges update` va en `.env`, nunc
 
 Si ese archivo no existe, `./sipges` se detiene con `SIPGES_COMPOSE_OVERRIDE names <path>, which does not exist` en vez de seguir sin él. Corrige la ruta o quita la línea. Docker Compose leería solo un `compose.override.yaml` junto a `compose.yaml` únicamente cuando no se nombra ningún archivo, y `./sipges` siempre nombra uno, así que esta línea es la única entrada. Pertenece a ese `.env`, así que un simulacro con `SIPGES_ENV_FILE` nunca toma el tuyo.
 
+### Dos réplicas de la API
+
+En una sola computadora, una segunda copia de la API da disponibilidad, no velocidad: las dos comparten el mismo procesador, memoria y base de datos. Lo que da:
+
+- **Turnos.** Caddy reparte las solicitudes entre las dos API por turnos (round robin).
+- **Chequeos de salud.** Caddy le pregunta a cada API `/health/ready` cada 5 segundos y salta la que no responde; Docker también revisa cada una (`./sipges status` muestra `healthy`). Una solicitud que no llega a una API prueba con la otra.
+- **Actualizar sin corte.** `./sipges update` aplica los cambios de la base de datos, reinicia la primera API y espera a que esté sana, y luego hace lo mismo con la segunda. Si la versión nueva nunca queda sana, la segunda API sigue sirviendo la versión que tenía.
+
+Para activarlo, agrega `SIPGES_API_REPLICAS=2` a `.env` y ejecuta `./sipges start`. Para volver a una, ponlo en `1` (o quita la línea) y ejecuta `./sipges start`: la segunda API se elimina. Cualquier otro valor detiene `./sipges` con `SIPGES_API_REPLICAS must be 1 or 2`. Cada API puede usar hasta 1 GiB de memoria.
+
+- La automatización programada corre solo en la primera API, así que se pausa los segundos que esa API se reinicia.
+- Si usas `SIPGES_COMPOSE_OVERRIDE`, un cambio que hagas ahí a `api` no llega a la segunda API, `api-2`: dale a `api-2` el mismo cambio.
+- Los cambios de la base de datos corren mientras la versión anterior todavía sirve. Por eso, para quien escribe SIPGES: una migración puede agregar, pero no quitar ni renombrar nada que la versión anterior todavía lea; eso espera a una versión posterior ([ADR 0035](../adr/0035-local-install-two-api-replicas.md)).
+
 ## Traer los datos del cliente
 
 Los archivos del cliente van en una carpeta **fuera** de la carpeta de SIPGES, por ejemplo un USB en `/media/usb/cliente`. Nunca cambies los permisos del original: trabaja sobre una copia.

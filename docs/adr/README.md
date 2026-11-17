@@ -38,6 +38,7 @@ Format: [Michael Nygard ADR](https://cognitect.com/blog/2011/11/15/documenting-a
 | [0032](0032-go-backend-rust-engines.md) | Go backend, Rust engines and tools, TypeScript frontend | Accepted; Rust placement amended by 0034 |
 | [0033](0033-pdf-text-in-wasm.md) | PDF text through pdf.js on QuickJS in wasm | Accepted |
 | [0034](0034-rust-placement-criterion.md) | Rust placement criterion: measured need, not a fixed list | Accepted |
+| [0035](0035-local-install-two-api-replicas.md) | Local install: an optional second API behind Caddy, taken in turns with health checks | Accepted |
 
 Behavioral baseline: [`docs/migration/behavior-contract.md`](../migration/behavior-contract.md).
 

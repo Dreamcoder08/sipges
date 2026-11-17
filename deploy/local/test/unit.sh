@@ -13,6 +13,7 @@ cat >"$root/docker" <<'FAKE'
 # Answers like Docker from the files in $FAKE, and logs every call to $FAKE/calls.
 image_file() { printf '%s/images/%s' "$FAKE" "${1//[:\/]/_}"; }
 printf '%s\n' "$*" >>"$FAKE/calls"
+[[ $1 != compose ]] || printf '%s\n' "${SIPGES_API_UPSTREAMS-unset}" >>"$FAKE/upstreams"
 case $1 in
 compose)
   shift # compose, then --env-file <file> -p <project> -f compose.yaml [-f <override>] [--profile <name>]
@@ -27,6 +28,7 @@ compose)
     [[ $* != *caddy* ]] || echo '{"status":"ready"}'
     ;;
   run)
+    [[ $* != *migrate* || ! -f $FAKE/migrate-fails ]] || exit 1
     echo "gid=${SIPGES_HOST_GID:-unset}" >"$FAKE/run-env"
     stat -c '%a %g' "$SIPGES_IMPORT_REPORTS" >"$FAKE/reports-during-run"
     for arg in "$@"; do
@@ -37,6 +39,10 @@ compose)
   esac
   ;;
 info) ;;
+ps)
+  # Containers this project left behind, by service label.
+  cat "$FAKE/stale-api-2" 2>/dev/null
+  ;;
 inspect)
   # One health answer per call; the last one repeats.
   head -n 1 "$FAKE/health"
@@ -73,7 +79,8 @@ run)
   ;;
 esac
 FAKE
-printf '#!/usr/bin/env bash\n' >"$root/sleep"
+# shellcheck disable=SC2016 # the fake expands these when it runs
+printf '#!/usr/bin/env bash\necho "$*" >>"$FAKE/sleeps"\n' >"$root/sleep"
 # No repository for update to pull from: the tests never touch the checkout they run in.
 printf '#!/usr/bin/env bash\nexit 1\n' >"$root/git"
 chmod +x "$root/docker" "$root/sleep" "$root/git"
@@ -360,6 +367,13 @@ run install
 run install
 check 'once one starts, previous follows again' test "$(image_id previous)" != "$started"
 
+# Caddy skips an API whose health check failed while it booted until its next check (every 2 s), so
+# start waits one cycle after the API answers before calling SIPGES ready.
+: >"$FAKE/sleeps"
+run start
+check 'once the API answers, start waits for the next Caddy check' grep -qx 3 "$FAKE/sleeps"
+check 'and only then says SIPGES is ready' said 'SIPGES is ready.'
+
 fresh
 echo sha256:old >"$FAKE/images/sipges-local_current"
 run install
@@ -399,6 +413,118 @@ marked=$(image_id ready)
 echo sha256:drill >"$FAKE/images/sipges-local_current"
 SIPGES_PROJECT=sipges-drill SIPGES_SKIP_BUILD=1 run install
 check 'a drill leaves the marks of a real install alone' test "$(image_id ready)" = "$marked"
+
+# --- one API or two
+
+# The calls start and update made before replicas existed, with W for the work folder.
+one_api_start='compose --env-file W/env -p sipges -f compose.yaml config -q
+compose --env-file W/env -p sipges -f compose.yaml up -d db api caddy backup
+compose --env-file W/env -p sipges -f compose.yaml exec -T caddy wget -qO- --header Host: localhost http://api:8080/health/ready
+tag sipges-local:current sipges-local:ready'
+one_api_update="compose version
+info
+compose --env-file W/env -p sipges -f compose.yaml config -q
+compose --env-file W/env -p sipges -f compose.yaml exec -T backup bash /ops/backup.sh
+build -f ../../apps/api-go/Dockerfile -t sipges-api-go:local ../..
+build -f Dockerfile -t sipges-local:new ../..
+image inspect -f {{.Id}} sipges-local:current
+image inspect -f {{.Id}} sipges-local:ready
+image inspect -f {{.Id}} sipges-local:new
+tag sipges-local:current sipges-local:previous
+tag sipges-local:new sipges-local:current
+image inspect sipges-import:current
+$one_api_start"
+# The calls of a command, minus the read-only look for a second API left behind.
+calls_of() { grep -v '^ps ' "$FAKE/calls" | sed "s#$work#W#g"; }
+line_of() { grep -nF -- "$1" "$FAKE/calls" | head -n 1 | cut -d: -f1; }
+before() { [[ -n $(line_of "$1") && -n $(line_of "$2") ]] && (($(line_of "$1") < $(line_of "$2"))); }
+no_call() { test -z "$(grep -F -- "$1" "$FAKE/calls" 2>/dev/null || true)"; }
+two_apis() {
+  fresh
+  echo 'SIPGES_API_REPLICAS=2' >>"$SIPGES_ENV_FILE"
+  echo api-container >"$FAKE/api-container"
+}
+
+for setting in '' 'SIPGES_API_REPLICAS=1'; do
+  fresh
+  [[ -z $setting ]] || echo "$setting" >>"$SIPGES_ENV_FILE"
+  label=${setting:-no SIPGES_API_REPLICAS}
+  run install
+  : >"$FAKE/calls"
+  run start
+  check "with $label, start makes the same calls as before" test "$(calls_of)" = "$one_api_start"
+  check "with $label, start only looks for a second API, read-only" \
+    test "$(grep '^ps ' "$FAKE/calls")" = 'ps -aq --filter label=com.docker.compose.project=sipges --filter label=com.docker.compose.service=api-2'
+  : >"$FAKE/calls"
+  run update
+  check "with $label, update makes the same calls as before" test "$(calls_of)" = "$one_api_update"
+  check "with $label, Caddy keeps its one upstream" test -z "$(grep -v '^unset$' "$FAKE/upstreams" || true)"
+done
+
+fresh
+run install
+echo stale-api-2 >"$FAKE/stale-api-2"
+: >"$FAKE/calls"
+run start
+check 'back to one API, the second one left behind is removed' called 'rm -f stale-api-2'
+
+two_apis
+run install
+: >"$FAKE/calls"
+: >"$FAKE/upstreams"
+run start
+check 'with two APIs, start says it is ready' said 'SIPGES is ready'
+check 'every compose call enables the second API' \
+  test -z "$(grep '^compose ' "$FAKE/calls" | grep -vF -- '-f compose.yaml --profile replica ' || true)"
+check 'Caddy gets both upstreams' test "$(sort -u "$FAKE/upstreams")" = 'api:8080 api-2:8080'
+check 'the migrations run first, on their own' before 'run --rm migrate' 'up -d --no-deps api'
+check 'then the first API, alone' before 'up -d --no-deps api' 'ps -q api'
+check 'which must be healthy before the second one restarts' before '-f {{.State.Health.Status}}' 'up -d --no-deps api-2'
+check 'then the second API is waited for too' \
+  test "$(grep -n '^inspect' "$FAKE/calls" | tail -n 1 | cut -d: -f1)" -gt "$(line_of 'up -d --no-deps api-2')"
+check 'and only then Caddy and the backups' before 'up -d --no-deps api-2' 'up -d --no-deps caddy backup'
+check 'nothing restarts both APIs at once' no_call 'up -d db api caddy backup'
+check 'and the version that answered is marked' called 'tag sipges-local:current sipges-local:ready'
+
+two_apis
+run install
+: >"$FAKE/calls"
+run update
+check 'with two APIs, update backs up first' before 'backup.sh' 'build -f Dockerfile'
+check 'and rolls the APIs one at a time' before 'up -d --no-deps api' 'up -d --no-deps api-2'
+
+two_apis
+run install
+echo starting >"$FAKE/health"
+: >"$FAKE/calls"
+if run start; then fail 'a first API that never gets healthy stops the start'; else ok 'a first API that never gets healthy stops the start'; fi
+check 'and the second one keeps serving the version it had' no_call 'up -d --no-deps api-2'
+check 'and it says so' said 'the second API still serves'
+
+two_apis
+run install
+touch "$FAKE/migrate-fails"
+: >"$FAKE/calls"
+if run start; then fail 'failed migrations stop the start'; else ok 'failed migrations stop the start'; fi
+check 'before any API restarts' no_call 'up -d --no-deps'
+
+two_apis
+run install
+mkdir -p "$work/backups/20261106T000000Z"
+: >"$FAKE/calls"
+run restore 20261106T000000Z --yes
+check 'a restore stops both APIs' called 'stop api api-2 caddy backup'
+
+for value in 3 0 two; do
+  fresh
+  echo "SIPGES_API_REPLICAS=$value" >>"$SIPGES_ENV_FILE"
+  if run start; then fail "SIPGES_API_REPLICAS=$value is refused"; else ok "SIPGES_API_REPLICAS=$value is refused"; fi
+  check 'with a message naming the allowed values' said 'SIPGES_API_REPLICAS must be 1 or 2'
+  check 'and nothing started' no_call ' up '
+  run update || true
+  check 'update refuses it before backing up or building' never_built
+  check 'or backing up' no_call backup.sh
+done
 
 command rm -rf "$root"
 if ((failures > 0)); then
