@@ -100,3 +100,15 @@ it('stays a search box and says why when the installation has no analyst', async
   expect(onAsk).toHaveBeenCalledWith('bloqueo');
   expect(asked).toBe(false);
 });
+
+it('says external AI is off for this project when the installation has an analyst', async () => {
+  server.use(http.get('/system/analyst', () => HttpResponse.json({ available: true })));
+  const onAsk = renderInicio(false);
+  expect(
+    await screen.findByText(
+      'La IA externa está desactivada en este proyecto: Enter busca. Se activa en Configuración → Privacidad y datos.',
+    ),
+  ).toBeVisible();
+  ask('bloqueo');
+  expect(onAsk).toHaveBeenCalledWith('bloqueo');
+});

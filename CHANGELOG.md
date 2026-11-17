@@ -4,6 +4,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
+### Corregido
+
+- Inicio: en un proyecto con el envío a IA externa apagado, la caja ya no queda como buscador sin explicación. Si la instalación tiene analista, la ayuda dice «La IA externa está desactivada en este proyecto: Enter busca. Se activa en Configuración → Privacidad y datos.»
+
 ### Agregado
 
 - Avisos en el dispositivo (push) funcionan en una instalación local sin pasos manuales: `./sipges install`, `start` y `update` agregan al `.env` un par de claves VAPID la primera vez (las genera la propia imagen con `api vapid-keys`, sin red) y lo conservan en los arranques siguientes, porque un par nuevo desconectaría a los dispositivos suscritos; las claves que ya puso el operador nunca se reemplazan. Si la imagen no sabe generarlas, el arranque sigue y los avisos quedan apagados.
