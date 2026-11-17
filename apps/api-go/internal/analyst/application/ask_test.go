@@ -209,3 +209,38 @@ func TestAskKeepsTheAdaptersFixedErrorText(t *testing.T) {
 		t.Fatalf("err = %v", err)
 	}
 }
+
+func TestAskSeparatesTheBlocksFromTheCitedText(t *testing.T) {
+	t.Parallel()
+	tools := &fakeTools{answers: map[string][]domain.RecordRef{
+		"search_records": {{Slug: "conflictos", ID: "C-1", Title: "Bloqueo de vía"}},
+	}}
+	// The fence names source 1 twice and 9 once; only the text's markers are citations.
+	model := &scriptedModel{steps: []application.Step{
+		call("search_records"),
+		{Text: "El bloqueo sigue [1].\n```bloques\n[{\"tipo\":\"registro\",\"fuente\":1},{\"tipo\":\"mapa\",\"fuente\":9},{\"tipo\":\"tabla\",\"fuente\":1}]\n```"},
+	}}
+	answer, err := application.Ask{Model: model, Tools: tools, Seal: sealed}.Answer(t.Context(), "¿Y el bloqueo?")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if answer.Text != "El bloqueo sigue [1]." || len(answer.Sources) != 1 {
+		t.Fatalf("answer = %+v", answer)
+	}
+	if len(answer.Blocks) != 1 || answer.Blocks[0].Kind != domain.BlockRecord || answer.Blocks[0].Source.ID != "C-1" {
+		t.Fatalf("blocks = %+v, want the record card of source 1 alone", answer.Blocks)
+	}
+}
+
+func TestAskRefusesAnAnswerThatIsOnlyBlocks(t *testing.T) {
+	t.Parallel()
+	tools := &fakeTools{answers: map[string][]domain.RecordRef{"search_records": {{Slug: "conflictos", ID: "C-1"}}}}
+	model := &scriptedModel{steps: []application.Step{
+		call("search_records"),
+		{Text: "```bloques\n[{\"tipo\":\"registro\",\"fuente\":1}]\n```"},
+	}}
+	_, err := application.Ask{Model: model, Tools: tools, Seal: sealed}.Answer(t.Context(), "¿Y?")
+	if !errors.Is(err, application.ErrModel) {
+		t.Fatalf("err = %v, want ErrModel", err)
+	}
+}

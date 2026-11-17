@@ -41,10 +41,12 @@ func (s *Sources) Add(ref RecordRef) int {
 // All lists the numbered records; record n is at index n-1.
 func (s *Sources) All() []RecordRef { return slices.Clone(s.refs) }
 
-// CitedAnswer is an answer whose markers all resolve, with the records it cites by number.
+// CitedAnswer is an answer whose markers all resolve, with the records it cites by number and the
+// blocks (blocks.go) the screen draws next to it.
 type CitedAnswer struct {
 	Text    string
 	Sources []Cited
+	Blocks  []Block
 }
 
 var (

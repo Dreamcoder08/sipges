@@ -59,3 +59,19 @@ it('shows the analyst failure as an alert with the server text', () => {
   render(<AnalystAnswer pending={false} question="x" error={failed} onSearch={() => undefined} />);
   expect(screen.getByRole('alert').textContent).toContain('no citó bien sus fuentes');
 });
+
+it('draws the typed blocks after the answer and its sources', () => {
+  render(
+    <AnalystAnswer
+      pending={false}
+      question="¿Qué pasa?"
+      data={{
+        ...answer,
+        blocks: [{ type: 'record', n: 1, module: 'eventos', id: 'EV-1', title: 'Bloqueo de vía' }],
+      }}
+      onSearch={() => undefined}
+    />,
+  );
+  const blocks = screen.getByRole('list', { name: 'Detalles de la respuesta' });
+  expect(within(blocks).getByRole('article', { name: 'Bloqueo de vía' })).toBeTruthy();
+});

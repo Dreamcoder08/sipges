@@ -14,7 +14,37 @@ const AnalystSource = z.object({
 });
 export type AnalystSource = z.infer<typeof AnalystSource>;
 
-const AnalystAnswer = z.object({ answer: z.string(), sources: z.array(AnalystSource) });
+/**
+ * Typed blocks (S3): a kind the screen draws with its own components, on a record the analyst's
+ * tools returned. The server already dropped unknown or malformed blocks; the screen drops any it
+ * does not know too, so a newer server never breaks an older screen.
+ */
+const AnalystBlock = z.discriminatedUnion('type', [
+  AnalystSource.extend({ type: z.literal('record') }),
+  AnalystSource.extend({ type: z.literal('alert'), text: z.string().min(1) }),
+  AnalystSource.extend({ type: z.literal('map') }),
+  AnalystSource.extend({
+    type: z.literal('timeline'),
+    entries: z.array(z.object({ date: z.string(), text: z.string() })).min(1),
+  }),
+]);
+export type AnalystBlock = z.infer<typeof AnalystBlock>;
+
+const knownBlocks = z
+  .array(z.unknown())
+  .optional()
+  .transform((items) =>
+    (items ?? []).flatMap((item) => {
+      const block = AnalystBlock.safeParse(item);
+      return block.success ? [block.data] : [];
+    }),
+  );
+
+const AnalystAnswer = z.object({
+  answer: z.string(),
+  sources: z.array(AnalystSource),
+  blocks: knownBlocks,
+});
 export type AnalystAnswer = z.infer<typeof AnalystAnswer>;
 
 export const askAnalyst = (scope: string, question: string) =>
