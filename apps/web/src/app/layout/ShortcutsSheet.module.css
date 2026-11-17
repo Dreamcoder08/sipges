@@ -1,0 +1,42 @@
+/* Shortcuts sheet (chat-first-ui T14): one group per screen, the action left and its keys right. */
+
+.group + .group {
+  margin-top: var(--space-4);
+}
+
+.group h3 {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--color-muted);
+}
+
+.group dl {
+  margin: 0;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-1) 0;
+  border-top: 1px solid var(--color-hairline);
+  font-size: var(--text-sm);
+}
+
+.row dd {
+  flex: none;
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}
+
+.row kbd {
+  font-size: var(--text-xs);
+  padding: 0.1rem 0.4rem;
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+}

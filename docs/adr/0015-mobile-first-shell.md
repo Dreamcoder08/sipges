@@ -29,7 +29,7 @@ visible choices, no frequency-based priority and a heavy navy panel.
   account row. There are no collapsible groups. The account menu is short, like Claude's or
   ChatGPT's: a header with the full name and username, Configuración (hint «Ctrl+,»; the shortcut
   Ctrl+, / Cmd+, opens it from anywhere except while typing), Administración, Auditoría, Ayuda y
-  metodología and sign-out (menu button pattern: Enter, Space or arrows open it, arrows, Home and
+  metodología, «Atajos de teclado» (hint «Ctrl+/», chat-first-ui T14) and sign-out (menu button pattern: Enter, Space or arrows open it, arrows, Home and
   End move, Escape closes and returns focus). Automatizaciones is reached from «Integraciones»;
   the theme choice lives in Configuración → Apariencia, on phones too (the account sheet links to
   the same four screens and has no theme control). The tools are the same components as on

@@ -388,6 +388,7 @@ describe('account menu in the sidebar', () => {
       'Administración',
       'Auditoría',
       'Ayuda y metodología',
+      'Atajos de tecladoCtrl+/',
       'Cerrar sesión',
     ]);
     expect(within(menu).queryByRole('menuitem', { name: 'Automatizaciones' })).toBeNull();

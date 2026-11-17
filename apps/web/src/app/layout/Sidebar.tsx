@@ -17,6 +17,9 @@ import styles from './Sidebar.module.css';
  * tablets show the same sidebar inside the menu drawer (`inDrawer`), whose header names it.
  */
 export const Sidebar = ({
+  id,
+  hidden = false,
+  toggle,
   pathname,
   projectLabel,
   projectKey,
@@ -24,7 +27,13 @@ export const Sidebar = ({
   search,
   unread = 0,
   inDrawer = false,
+  onShortcuts,
 }: {
+  id?: string;
+  /** Wide screens only: the person hid it (chat-first-ui T12); it leaves no rail behind. */
+  hidden?: boolean;
+  /** The button that hides it, at the end of the brand row. */
+  toggle?: ReactNode;
   pathname: string;
   projectLabel: string;
   /** Scope of the active project: «Recientes» are kept per project. */
@@ -34,21 +43,24 @@ export const Sidebar = ({
   /** Unread avisos, counted on the bell that opens Bandeja › Avisos. */
   unread?: number;
   inDrawer?: boolean;
+  /** Opens the shortcuts sheet from the account menu. */
+  onShortcuts?: () => void;
 }) => {
   const ids = useId();
   const recents = useRecents(projectKey);
 
   return (
-    <aside className={styles.sidebar} data-drawer={inDrawer}>
+    <aside id={id} hidden={hidden} className={styles.sidebar} data-drawer={inDrawer}>
       {inDrawer ? null : (
         <div className={styles.brand} title="Sistema Inteligente de Predicción y GEStión Social">
           <span className={shell.mark} aria-hidden="true">
             S
           </span>
-          <span>
+          <span className={styles.name}>
             <b>SIPGES</b>
             <small>Gestión socioambiental</small>
           </span>
+          {toggle}
         </div>
       )}
       <div className={styles.project}>{projectSwitcher}</div>
@@ -110,7 +122,7 @@ export const Sidebar = ({
           </section>
         ) : null}
       </nav>
-      <SidebarAccount pathname={pathname} projectLabel={projectLabel} />
+      <SidebarAccount pathname={pathname} projectLabel={projectLabel} onShortcuts={onShortcuts} />
     </aside>
   );
 };
