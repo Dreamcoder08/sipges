@@ -319,3 +319,55 @@ it('titles the page «Administración del sistema»', async () => {
   ).toBeInTheDocument();
   await screen.findByText('Cuentas de identidad');
 });
+it('renames a granted project and refreshes every project list', async () => {
+  const user = userEvent.setup();
+  let label = 'Proyecto principal';
+  let sent: unknown;
+  server.use(
+    http.get('*/system/auth/scopes', () =>
+      HttpResponse.json([
+        { company_id: 'ACME', project_id: 'P1', label: 'Proyecto Uno' },
+        { company_id: 'SIPGES', project_id: 'PRJ-SECHURA', label },
+      ]),
+    ),
+    http.patch('*/system/auth/scopes', async ({ request }) => {
+      expect(request.headers.get('X-SIPGES-Scope')).toBe('ACME/P1');
+      sent = await request.json();
+      label = 'Proyecto Sechura';
+      return HttpResponse.json({ ok: true, scope: 'SIPGES/PRJ-SECHURA', label });
+    }),
+  );
+  renderPage();
+  await screen.findByRole('option', { name: 'Proyecto principal (SIPGES/PRJ-SECHURA)' });
+  await user.selectOptions(
+    screen.getByLabelText('Proyecto a renombrar'),
+    'Proyecto principal (SIPGES/PRJ-SECHURA)',
+  );
+  await user.type(screen.getByLabelText('Nombre nuevo'), 'Proyecto Sechura');
+  await user.click(screen.getByRole('button', { name: 'Renombrar proyecto' }));
+  expect(await screen.findByText('Proyecto renombrado a «Proyecto Sechura».')).toBeInTheDocument();
+  expect(sent).toEqual({
+    company_id: 'SIPGES',
+    project_id: 'PRJ-SECHURA',
+    label: 'Proyecto Sechura',
+  });
+  // The catalog and the rename choices both show the stored name.
+  await screen.findByRole('option', { name: 'Proyecto Sechura (SIPGES/PRJ-SECHURA)' });
+  expect(screen.getAllByText('Proyecto Sechura (SIPGES/PRJ-SECHURA)')).toHaveLength(2);
+  expect(screen.getByLabelText('Nombre nuevo')).toHaveValue('');
+});
+it('shows a refused rename in the outcome panel and keeps the name typed', async () => {
+  const user = userEvent.setup();
+  server.use(
+    http.patch('*/system/auth/scopes', () =>
+      HttpResponse.json({ detail: 'Proyecto inexistente' }, { status: 404 }),
+    ),
+  );
+  renderPage();
+  await screen.findByRole('option', { name: 'Proyecto Uno (ACME/P1)' });
+  await user.selectOptions(screen.getByLabelText('Proyecto a renombrar'), 'Proyecto Uno (ACME/P1)');
+  await user.type(screen.getByLabelText('Nombre nuevo'), 'Otro nombre');
+  await user.click(screen.getByRole('button', { name: 'Renombrar proyecto' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('Proyecto inexistente');
+  expect(screen.getByLabelText('Nombre nuevo')).toHaveValue('Otro nombre');
+});

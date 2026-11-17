@@ -36,6 +36,21 @@ export const resolveScope = (input: {
   return input.grants.find((g) => formatScope(g) === requested) ?? null;
 };
 
+/** The audit row of a rename, in the renamed project's own trail. */
+export const RENAME_AUDIT = { module: 'Proyectos', action: 'RENAME' } as const;
+
+/**
+ * A project's new display name: trimmed, refused when nothing is left, then cut to LABEL_MAX
+ * UTF-16 code units as creation cuts it.
+ */
+export const validateLabel = (label: string): Result<string, 'invalid_label'> => {
+  const trimmed = label.trim();
+  return trimmed ? ok(trimmed.slice(0, LABEL_MAX)) : err('invalid_label');
+};
+
+export const renameDetail = (previous: string, label: string, by: string) =>
+  `Proyecto renombrado de «${previous}» a «${label}» por ${by}`;
+
 export type NewTenant = Scope & { readonly label: string; readonly username: string };
 
 /** Rules of app.py:355-361 (create_scope). */

@@ -2,7 +2,7 @@ import type { ParityCase } from '../types.ts';
 
 /**
  * The tenancy administration routes (T33): the user's projects, the project choice, project
- * creation and grants. Both APIs share one database and receive each case at the same time, so
+ * creation, its new name and grants. Both APIs share one database and receive each case at the same time, so
  * a write that is not idempotent runs per API (`perApi`): each creates or revokes its own
  * `…-TSAPI` / `…-GOAPI` target and the answers compare with that name read back as `{api}`.
  * Every write is followed by a read that proves what it stored, and the grants added to
@@ -53,7 +53,7 @@ const build = (
 
 const write = (
   name: string,
-  method: 'POST' | 'DELETE',
+  method: 'POST' | 'PATCH' | 'DELETE',
   path: string,
   body: NonNullable<ParityCase['body']>,
   extra: Extra = {},
@@ -66,7 +66,11 @@ const json = (value: unknown) => ({ json: value });
 const form = (value: Record<string, string>) => ({ form: value });
 
 /** The 422s every JSON route answers before any rule. */
-const malformed = (path: string, method: 'POST' | 'DELETE', fields: Record<string, string>) => [
+const malformed = (
+  path: string,
+  method: 'POST' | 'PATCH' | 'DELETE',
+  fields: Record<string, string>,
+) => [
   write(`${method} ${path} invalid JSON`, method, path, { raw: '{' }),
   write(`${method} ${path} empty body`, method, path, { raw: '' }),
   write(`${method} ${path} array`, method, path, { raw: '[]' }),
@@ -151,12 +155,15 @@ export const cases: readonly ParityCase[] = [
       ['POST', GRANTS],
       ['DELETE', GRANTS],
       ['POST', SCOPES],
+      ['PATCH', SCOPES],
     ] as const
   ).flatMap(([m, path]) => {
     const body =
-      path === SCOPES
-        ? json({ ...OTHER, project_id: 'T33-NEVER', label: 'Nunca', username: MULTI })
-        : json({ username: MULTI, ...OTHER });
+      m === 'PATCH'
+        ? json({ ...DEFAULT, label: 'Nunca' })
+        : path === SCOPES
+          ? json({ ...OTHER, project_id: 'T33-NEVER', label: 'Nunca', username: MULTI })
+          : json({ username: MULTI, ...OTHER });
     return [
       write(`${m} ${path} without a session`, m, path, body, { auth: 'none' }),
       write(`${m} ${path} without Origin`, m, path, body, { crossOrigin: true }),
@@ -175,6 +182,7 @@ export const cases: readonly ParityCase[] = [
   ...malformed(GRANTS, 'POST', { username: MULTI, ...OTHER }),
   ...malformed(GRANTS, 'DELETE', { username: MULTI, ...OTHER }),
   ...malformed(SCOPES, 'POST', { ...OTHER, label: 'x', username: MULTI }),
+  ...malformed(SCOPES, 'PATCH', { ...DEFAULT, label: 'x' }),
   write('revoke with empty text', 'DELETE', GRANTS, json({ username: '', ...OTHER })),
   write(
     'revoke with 121 characters',
@@ -340,4 +348,37 @@ export const cases: readonly ParityCase[] = [
   }),
   read('the user keeps its seeded projects', SCOPES, { auth: 'multi' }),
   read('the session survives the revoke', '/system/auth/me', { auth: 'multi' }),
+
+  // PATCH /system/auth/scopes: an administrator renames a project they use. A blank name is 422;
+  // a project without their grant answers as a missing one. The rename is read back, then the
+  // default project gets its bootstrap name again so later contexts see the seeded state.
+  write('rename with a blank label', 'PATCH', SCOPES, json({ ...DEFAULT, label: ' \t ' })),
+  write(
+    'rename a missing project',
+    'PATCH',
+    SCOPES,
+    json({ company_id: 'NO', project_id: 'PE', label: 'x' }),
+  ),
+  write("rename another company's project", 'PATCH', SCOPES, json({ ...OTHER, label: 'Ajeno' })),
+  write(
+    'rename a project of another user',
+    'PATCH',
+    SCOPES,
+    json({ company_id: 'PARITY', project_id: 'PRJ-B', label: 'x' }),
+  ),
+  write(
+    'rename the default project',
+    'PATCH',
+    SCOPES,
+    json({ ...DEFAULT, label: '  Proyecto Sechura (paridad) ' }),
+  ),
+  read('the renamed project is listed', SCOPES),
+  read('the renamed project is listed for another user', SCOPES, { auth: 'multi' }),
+  write(
+    'rename the default project back',
+    'PATCH',
+    SCOPES,
+    json({ ...DEFAULT, label: 'Proyecto principal' }),
+  ),
+  read('the default project has its name again', SCOPES),
 ];

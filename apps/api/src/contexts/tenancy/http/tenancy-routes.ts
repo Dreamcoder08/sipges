@@ -8,6 +8,7 @@ import {
 } from '@sipges/contracts';
 import { Hono } from 'hono';
 import { getCookie } from 'hono/cookie';
+import { z } from 'zod';
 import { SCOPE_COOKIE, SESSION_COOKIE, setAuthCookie } from '../../../platform/http/cookies.ts';
 import type { AppEnv } from '../../../platform/http/env.ts';
 import { escapeHtml } from '../../../platform/http/html.ts';
@@ -22,6 +23,19 @@ const CREATE_ERRORS = {
   user_missing: [404, 'Usuario no existe'],
   exists: [409, 'Proyecto existente'],
 } as const;
+
+const RENAME_ERRORS = {
+  forbidden: [403, 'Administrador requerido'],
+  invalid_label: [422, 'Nombre de proyecto requerido'],
+  tenant_missing: [404, 'Proyecto inexistente'],
+} as const;
+
+/** PATCH /system/auth/scopes body: the project and its new name, without NUL. */
+const ScopeRename = z
+  .object({ company_id: z.string(), project_id: z.string(), label: z.string() })
+  .refine((value) => Object.values(value).every((text) => !text.includes('\u0000')), {
+    message: 'Text must not contain NUL characters',
+  });
 
 const GRANT_ERRORS = {
   forbidden: [403, 'Forbidden'],
@@ -118,6 +132,22 @@ export const tenancyRoutes = (deps: {
           return c.json({ detail }, status);
         }
         return c.json({ ok: true, scope: result.value });
+      })
+
+      .patch('/system/auth/scopes', async (c) => {
+        const body = await parseJson(c, ScopeRename);
+        if (!body.ok) return body.response;
+        const { company_id: companyId, project_id: projectId, label } = body.value;
+        const result = await tenancy.renameTenant(c.get('identity'), {
+          companyId,
+          projectId,
+          label,
+        });
+        if (!result.ok) {
+          const [status, detail] = RENAME_ERRORS[result.error];
+          return c.json({ detail }, status);
+        }
+        return c.json({ ok: true, scope: `${companyId}/${projectId}`, label: result.value });
       })
 
       .delete('/system/auth/grants', async (c) => {

@@ -72,6 +72,7 @@ export const WRITE_ROUTES: readonly WriteRoute[] = [
   { method: 'PATCH', path: '/system/document-lab/review/:id', rows: 'domain' },
   { method: 'PATCH', path: '/system/intelligence/territorial-alerts/:id', rows: 'domain' },
   { method: 'PATCH', path: '/system/prevention/actions/:id', rows: 'domain' },
+  { method: 'PATCH', path: '/system/auth/scopes', rows: 'domain' },
   { method: 'POST', path: '/hooks/ingest/:module', rows: ['module_records'] },
   { method: 'POST', path: '/hooks/signals', rows: 'domain' },
   { method: 'POST', path: '/login', rows: ['sessions'] },
