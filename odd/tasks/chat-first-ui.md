@@ -36,13 +36,13 @@ Phase A — design and foundations (web only):
   (503) and AI off. Open question for these artboards: closure-roadmap L11 put the attention list first and the
   composer below, while S2 puts the composer at the centre. Each direction must show where «Necesita tu atención»
   lives. Route: gentle-design, owner picks. Done: `design/chat-first/` (three directions), decision in L6.
-- T2 [ ] — S1, S3: chat tokens in `apps/web/src/shared/styles/tokens.css` and `design/system.md`:
+- T2 [x] — S1, S3: chat tokens in `apps/web/src/app/styles/tokens.css` and `design/system.md`:
   - `--measure-chat` (about 46rem) as one shared reading width, replacing Inicio's local `48rem`;
   - message rhythm (`--space-turn`), prose size and line height for answers (`--text-answer`, 1rem/1.6);
   - composer elevation (`--shadow-composer`) and radius (keep `--radius-xl`);
   - a user-bubble surface tone in both themes, contrast ≥ 4.5:1 for text and ≥ 3:1 for its border.
   Route: inline, axe in both themes. Commit: pending.
-- T3 [ ] — S1, S2: a `Composer` component in `apps/web/src/shared/ui`, used by Inicio:
+- T3 [x] — S1, S2: a `Composer` component in `apps/web/src/shared/ui`, used by Inicio:
   - the textarea grows to 8 lines, then scrolls;
   - a «Buscar | Preguntar» segmented switch inside the composer replaces the two labelled states (disabled
     «Preguntar» with its reason when AI is off or no analyst is configured);
@@ -198,3 +198,18 @@ T18(b) → T16 → T17. Phases A, B and D change no API and no stored data.
   `--measure-chat` 46rem, `--space-turn`, `--text-answer`, `--leading-answer` 1.6, `--color-bubble` mapped to
   `--color-fill`, and five icons (copy, retry, stop, sidebar, arrowDown). The error turn drops `role="alert"` so the
   log announces it once.
+- L7 — 2026-11-17, T2 and T3 done in the `feat/chat-composer` branch by a worker, checked and committed by the parent.
+  - T2, c2ca14fb: five chat tokens and five icons, with tokens.test.ts pinning their values and contrast. The
+    `.home` measure hunk went into the T3 commit, which touched the same file. The bubble has no border (artboard
+    02); its contrast with `--color-control-border` is pinned at 3:1 in case one is drawn later.
+  - T3, 798b09b5: the `Composer` in `shared/ui` holds all seven rules, each RED first (11 failures, then green).
+    The full web suite passes (816/816); typecheck, lint, build and the CSS budget pass (38.7/41 kB).
+  - Behaviour changes:
+    - after a successful answer the box empties, and ↑ brings the question back;
+    - the «Preguntar, con citas» / «Buscar en registros de …» pill became the field's visually hidden label, and the
+      switch shows the mode;
+    - «Detener» calls `analyst.reset()` until T7 adds the real abort;
+    - when «Preguntar» is disabled, the reason is in `aria-describedby` and the `title`.
+  - Not run locally: Playwright e2e and the phone check (CI runs the e2e).
+  - Slice note: 911 authored lines in two commits, past the ~400-line slice, because the composer moved out of
+    Inicio with its tests; T4 onwards return to ≤ 400.

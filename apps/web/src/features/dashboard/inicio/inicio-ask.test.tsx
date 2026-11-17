@@ -1,7 +1,7 @@
 import type { ProjectSettings } from '@sipges/contracts';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, within } from '@testing-library/react';
-import { HttpResponse, http } from 'msw';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { HttpResponse, delay, http } from 'msw';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { ProjectSettingsProvider } from '../../../shared/lib/project-settings.tsx';
 import { resetApi, server } from '../../../test/server.ts';
@@ -129,4 +129,82 @@ it('says the analyst did not answer when its AI service is down, and offers the 
     within(answer).getByRole('button', { name: 'Buscar «bloqueo norte» en registros' }),
   );
   expect(onAsk).toHaveBeenCalledWith('bloqueo norte');
+});
+
+it('clears the composer once answered and keeps the question after an error', async () => {
+  let calls = 0;
+  server.use(
+    http.get('/system/analyst', () => HttpResponse.json({ available: true })),
+    http.post('/system/analyst/ask', () =>
+      ++calls === 1
+        ? HttpResponse.json({ detail: 'El analista no respondió.' }, { status: 503 })
+        : HttpResponse.json({ answer: 'Sin bloqueos.', sources: [] }),
+    ),
+  );
+  renderInicio(true);
+  const field = await screen.findByRole('textbox', { name: 'Preguntar, con citas' });
+  ask('bloqueo norte');
+  const answer = await screen.findByRole('region', { name: 'Respuesta del analista' });
+  expect(await within(answer).findByRole('alert')).toHaveTextContent('El analista no respondió.');
+  expect(field).toHaveValue('bloqueo norte');
+  fireEvent.click(screen.getByRole('button', { name: 'Enviar pregunta' }));
+  expect(await screen.findByText('Sin bloqueos.')).toBeVisible();
+  expect(field).toHaveValue('');
+});
+
+it('searches the records from «Buscar» while external AI is on', async () => {
+  let asked = false;
+  server.use(
+    http.get('/system/analyst', () => HttpResponse.json({ available: true })),
+    http.post('/system/analyst/ask', () => {
+      asked = true;
+      return HttpResponse.json({ answer: '', sources: [] });
+    }),
+  );
+  const onAsk = renderInicio(true);
+  await screen.findByRole('textbox', { name: 'Preguntar, con citas' });
+  fireEvent.click(screen.getByRole('radio', { name: 'Buscar' }));
+  expect(
+    screen.getByRole('textbox', { name: 'Buscar en registros de Proyecto Demo' }),
+  ).toBeTruthy();
+  ask('bloqueo');
+  expect(onAsk).toHaveBeenCalledWith('bloqueo');
+  expect(asked).toBe(false);
+});
+
+it('disables «Preguntar» with its reason while external AI is off', async () => {
+  server.use(http.get('/system/analyst', () => HttpResponse.json({ available: true })));
+  renderInicio(false);
+  const preguntar = await screen.findByRole('radio', { name: 'Preguntar' });
+  expect(preguntar).toBeDisabled();
+  expect(preguntar).toHaveAccessibleDescription(
+    'Preguntar no está disponible: la IA externa está desactivada en este proyecto.',
+  );
+  expect(screen.getByRole('radio', { name: 'Buscar' })).toBeChecked();
+});
+
+it('disables «Preguntar» with its reason when the installation has no analyst', async () => {
+  renderInicio(true);
+  const preguntar = await screen.findByRole('radio', { name: 'Preguntar' });
+  expect(preguntar).toBeDisabled();
+  await waitFor(() =>
+    expect(preguntar).toHaveAccessibleDescription(
+      'Preguntar no está disponible: el analista no está configurado en esta instalación.',
+    ),
+  );
+});
+
+it('stops waiting for the answer from «Detener respuesta» and keeps the question', async () => {
+  server.use(
+    http.get('/system/analyst', () => HttpResponse.json({ available: true })),
+    http.post('/system/analyst/ask', () => delay('infinite')),
+  );
+  renderInicio(true);
+  const field = await screen.findByRole('textbox', { name: 'Preguntar, con citas' });
+  ask('bloqueo norte');
+  expect(await screen.findByRole('progressbar', { name: 'Preparando la respuesta' })).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Detener respuesta' }));
+  await waitFor(() => expect(screen.queryByRole('progressbar')).toBeNull());
+  expect(screen.getByRole('button', { name: 'Enviar pregunta' })).toBeTruthy();
+  expect(field).toHaveValue('bloqueo norte');
 });
