@@ -35,6 +35,8 @@ export const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [
     items: [
       { keys: [['Enter']], label: 'Enviar la pregunta' },
       { keys: [['Mayús', 'Enter']], label: 'Escribir una nueva línea' },
+      { keys: [['Esc']], label: 'Borrar la pregunta, o detener la respuesta en curso' },
+      { keys: [['↑']], label: 'Recuperar la última pregunta (con la caja vacía)' },
     ],
   },
   {
