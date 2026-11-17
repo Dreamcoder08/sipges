@@ -22,10 +22,10 @@ Set on 2026-11-12 from the build of `origin/main` at `ffae5863`, plus 5% headroo
 
 | Total | Measured | Budget |
 | --- | ---: | ---: |
-| Entry, raw | 688.8 kB (731.1 kB on 2026-11-17) | 768 kB |
-| Entry, gzip | 206.7 kB (218.7 kB on 2026-11-17) | 230 kB |
-| All JavaScript, gzip | 1,980.0 kB | 2,080 kB |
-| All CSS, gzip | 44.3 kB (38.5 kB on 2026-11-17) | 41 kB |
+| Entry, raw | 688.8 kB (728.1 kB on 2026-11-17, T20) | 765 kB |
+| Entry, gzip | 206.7 kB (217.7 kB on 2026-11-17, T20) | 229 kB |
+| All JavaScript, gzip | 1,980.0 kB (1,998.5 kB on 2026-11-17) | 2,080 kB |
+| All CSS, gzip | 44.3 kB (40.3 kB on 2026-11-17) | 41 kB |
 
 Raw totals then were 7,271.8 kB of JavaScript and 223.7 kB of CSS. Vite already warns that three chunks
 (`index`, `GeoCanvas`, `CesiumCanvas`) exceed 500 kB; the budget records that size and does not fix it.
@@ -34,6 +34,15 @@ Raw totals then were 7,271.8 kB of JavaScript and 223.7 kB of CSS. Vite already 
 On 2026-11-17 the entry budget went from 724/218 kB to 768/230 kB (raw/gzip, measured + 5%): the chat-first Inicio
 (composer, thread, attention popover, shortcuts sheet) lives in the entry chunk. Moving the thread into a lazy chunk
 is tracked as chat-first-ui T20.
+
+Later on 2026-11-17 chat-first-ui T20 lowered it to 765/229 kB (measured 728.1/217.7 kB plus 5%). The answer view
+loads in a lazy chunk, and `apps/web/vite.config.ts` puts every module `index.html` loads at start into the entry
+chunk (`codeSplitting` group with the `$initial` tag). Without that group rolldown split the modules the entry
+shares with lazy routes (zod, React, shared UI) into `format-*` and `jsx-runtime-*` chunks that the entry
+preloaded anyway: 219.2 kB gzip in three scripts and two stylesheets, against 217.7 kB in one of each. The same
+build has 1,998.5 kB of JavaScript (was 2,000.2), 40.3 kB of CSS (was 40.6) and 50 files (was 53).
+`strictExecutionOrder` (231.0 kB) and `experimental.chunkOptimization: false` (218.0 kB) were measured and
+rejected.
 
 On 2026-11-17 the CSS budget went from 47 kB to 41 kB: the build drops the rules of MapLibre controls the map
 never adds (logo, attribution, zoom, compass, geolocate, fullscreen, terrain, globe, scale), about 8.5 kB gzip of
