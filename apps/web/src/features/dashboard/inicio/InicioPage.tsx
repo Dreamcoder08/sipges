@@ -1,23 +1,15 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import {
-  type FormEvent,
-  type KeyboardEvent,
-  type ReactNode,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-} from 'react';
+import { type ReactNode, useEffect, useId, useRef, useState } from 'react';
 import { territorialAlertsQuery } from '../../../shared/api/territorial-alerts.ts';
 import { InternalLink } from '../../../shared/lib/navigation.tsx';
 import { formatIndex, formatLongDay } from '../../../shared/lib/format.ts';
+import { Composer, type ComposerMode } from '../../../shared/ui/Composer.tsx';
 import { DateText } from '../../../shared/ui/DateText.tsx';
 import { useOnline } from '../../../shared/lib/online.ts';
 import { useProjectSettings } from '../../../shared/lib/project-settings.tsx';
 import { useScrollHints } from '../../../shared/lib/scroll-hints.ts';
 import { LevelPill } from '../../../shared/ui/Badges.tsx';
 import { EmptyState } from '../../../shared/ui/EmptyState.tsx';
-import { Icon } from '../../../shared/ui/Icon.tsx';
 import { IrsaPendingBadge } from '../../../shared/ui/IrsaPendingBadge.tsx';
 import { QueryState } from '../../../shared/ui/QueryState.tsx';
 import { irsaConfigQuery, irsaQuery, moduleRecordsQuery } from '../api.ts';
@@ -67,9 +59,10 @@ const Card = ({
 
 /**
  * Inicio (closure-roadmap T31, design/vanguard/01 as chosen in L11): what needs attention first,
- * then the composer, then the week. The composer names what it does: while external AI is off it
- * searches the project's records (`onAsk`); when on it asks the analyst, who answers with
- * citations to the records it read (odd/tasks/agentic-analyst.md T1d). A status line states what
+ * then the composer, then the week. The composer names what it does with its «Buscar | Preguntar»
+ * switch (chat-first-ui T3): «Buscar» searches the project's records (`onAsk`); «Preguntar», there
+ * only while external AI is on and the installation has an analyst, asks the analyst, who answers
+ * with citations to the records it read (odd/tasks/agentic-analyst.md T1d). A status line states what
  * the reader should know before trusting the page: offline, AI, IRSA caveat.
  */
 export const InicioPage = ({
@@ -86,6 +79,7 @@ export const InicioPage = ({
   onAsk: (text: string) => void;
 }) => {
   const [question, setQuestion] = useState('');
+  const [choice, setChoice] = useState<ComposerMode>('preguntar');
   const fieldId = useId();
   const suggestId = useId();
   const chips = useRef<HTMLUListElement>(null);
@@ -122,6 +116,17 @@ export const InicioPage = ({
   const asks = aiOn && status.data?.available === true;
   const noAnalyst = aiOn && status.data?.available === false;
   const aiOff = !aiOn && status.data?.available === true;
+  // «Preguntar» is the default wherever it works; «Buscar» stays one click away.
+  const asking = asks && choice === 'preguntar';
+  const askUnavailable = asks
+    ? undefined
+    : !aiOn
+      ? 'Preguntar no está disponible: la IA externa está desactivada en este proyecto.'
+      : noAnalyst
+        ? 'Preguntar no está disponible: el analista no está configurado en esta instalación.'
+        : status.isPending
+          ? 'Preguntar no está disponible todavía: comprobando el analista.'
+          : 'Preguntar no está disponible: no se pudo comprobar el analista.';
   const alerts = useQuery(moduleRecordsQuery('alertas', scope));
   const digital = useQuery(territorialAlertsQuery(scope));
   const events = useQuery(moduleRecordsQuery('eventos', scope));
@@ -131,20 +136,15 @@ export const InicioPage = ({
   const firstName = fullName.trim().split(/\s+/)[0] ?? '';
   const project = projectLabel || projectId;
   const analyst = useMutation({ mutationFn: (text: string) => askAnalyst(scope, text) });
-  const onSubmit = (event: FormEvent) => {
-    event.preventDefault();
-    const text = question.trim();
-    if (!text) return;
-    if (asks) analyst.mutate(text);
-    else onAsk(text);
-  };
-  const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key !== 'Enter' || event.shiftKey) return;
-    event.preventDefault();
-    // The Enter that confirms an IME candidate must not send: Safari reports it as keyCode 229
-    // with isComposing already false (modern-web-guidance ime-safe-enter-submit).
-    if (event.nativeEvent.isComposing || event.keyCode === 229) return;
-    event.currentTarget.form?.requestSubmit();
+  const onSubmit = (text: string) => {
+    if (!asking) {
+      onAsk(text);
+      return;
+    }
+    // Answered, the question leaves the box (↑ brings it back); after an error it stays.
+    analyst.mutate(text, {
+      onSuccess: () => setQuestion((current) => (current.trim() === text ? '' : current)),
+    });
   };
 
   // The list (and its «nothing needs attention») waits for every source behind it; a failed one
@@ -232,46 +232,38 @@ export const InicioPage = ({
 
       <div className={styles.compose}>
         <div ref={composer} className={styles.dock}>
-          <form className={styles.ask} data-ai={asks ? 'on' : 'off'} onSubmit={onSubmit}>
-            <textarea
-              id={fieldId}
-              rows={2}
-              value={question}
-              aria-describedby={`${fieldId}-hint`}
-              placeholder={
-                asks
-                  ? 'Pregunta por eventos, actores, demandas o compromisos…'
-                  : 'Palabras de eventos, actores, demandas o compromisos…'
-              }
-              onChange={(event) => setQuestion(event.target.value)}
-              onKeyDown={onKeyDown}
-            />
-            <div className={styles.bar}>
-              <label htmlFor={fieldId} className={styles.scope}>
-                <Icon name={asks ? 'message' : 'search'} />
-                {asks
-                  ? 'Preguntar, con citas'
-                  : `Buscar en registros de ${project || 'este proyecto'}`}
-              </label>
-              <span id={`${fieldId}-hint`} className={styles.hint}>
-                {asks
-                  ? 'Enter pregunta · Mayús+Enter, nueva línea'
-                  : noAnalyst
-                    ? 'El analista no está configurado en esta instalación: Enter busca.'
-                    : aiOff
-                      ? 'La IA externa está desactivada en este proyecto: Enter busca. Se activa en Configuración → Privacidad y datos.'
-                      : 'Enter busca · Mayús+Enter, nueva línea'}
-              </span>
-              <button
-                type="submit"
-                className={styles.send}
-                disabled={analyst.isPending}
-                aria-label={asks ? 'Enviar pregunta' : 'Buscar en registros'}
-              >
-                <Icon name="arrowUp" />
-              </button>
-            </div>
-          </form>
+          <Composer
+            mode={asking ? 'preguntar' : 'buscar'}
+            onModeChange={setChoice}
+            askUnavailable={askUnavailable}
+            value={question}
+            onValueChange={setQuestion}
+            onSubmit={onSubmit}
+            pending={analyst.isPending}
+            // Until T7 passes an AbortSignal, stopping lets go of the answer: the request ends on
+            // its own and its result is dropped, the question stays in the box.
+            onStop={() => analyst.reset()}
+            label={
+              asking
+                ? 'Preguntar, con citas'
+                : `Buscar en registros de ${project || 'este proyecto'}`
+            }
+            placeholder={
+              asking
+                ? 'Pregunta por eventos, actores, demandas o compromisos…'
+                : 'Palabras de eventos, actores, demandas o compromisos…'
+            }
+            hint={
+              asking
+                ? 'Enter pregunta · Mayús+Enter, nueva línea'
+                : noAnalyst
+                  ? 'El analista no está configurado en esta instalación: Enter busca.'
+                  : aiOff
+                    ? 'La IA externa está desactivada en este proyecto: Enter busca. Se activa en Configuración → Privacidad y datos.'
+                    : 'Enter busca · Mayús+Enter, nueva línea'
+            }
+            sendLabel={asking ? 'Enviar pregunta' : 'Buscar en registros'}
+          />
         </div>
         {asks && !analyst.isIdle ? (
           <AnalystAnswer

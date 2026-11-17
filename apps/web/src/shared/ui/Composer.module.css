@@ -1,0 +1,179 @@
+/* The chat composer (odd/tasks/chat-first-ui.md T3), after design/chat-first/02-atencion-primero.html. */
+
+/* The edge is a control border (3:1 on the page in both themes); the lift stays the composer's. */
+.composer {
+  display: grid;
+  /* One column that may shrink below the field's min-content, so a 360 px phone never widens. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-3) var(--space-3) var(--space-2) var(--space-4);
+  border: 1px solid var(--color-control-border);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface-raised);
+  box-shadow: var(--shadow-composer);
+  text-align: left;
+}
+
+/* The field itself stays flat: the ring goes round the whole composer, and only for the field,
+   since the switch and the button draw their own. */
+.composer:has(.field:focus-visible) {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Grows with the question where field-sizing exists (modern-web-guidance
+   form-fields-automatically-fit-contents) and stops at 8 lines, then scrolls; elsewhere the
+   component sets one row per line typed, up to the same 8. */
+.field {
+  field-sizing: content;
+  width: 100%;
+  height: auto;
+  min-block-size: 1lh;
+  max-block-size: 8lh;
+  overflow-y: auto;
+  resize: none;
+  border: 0;
+  border-radius: 0;
+  padding: var(--space-1) 0;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--text-body);
+  line-height: var(--leading-normal);
+}
+
+.field:focus-visible {
+  outline: none;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* «Buscar | Preguntar»: native radios in a fieldset, drawn as one segmented pill. */
+.modes {
+  display: inline-flex;
+  flex: none;
+  gap: var(--space-0);
+  margin: 0;
+  margin-inline-end: auto;
+  padding: var(--space-0);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-fill);
+}
+
+.mode {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-sm);
+  padding: 0 var(--space-3);
+  border-radius: calc(var(--radius-md) - var(--space-0));
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--motion-fast) var(--ease-out),
+    color var(--motion-fast) var(--ease-out);
+}
+
+/* The radio stays in the accessibility tree and keyboard order; only its dot is hidden. */
+.mode input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+
+/* The chosen segment's outline is what reaches 3:1 against the track (as in SegmentedControl). */
+.mode:has(input:checked) {
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+  box-shadow:
+    inset 0 0 0 1px var(--color-control-border),
+    var(--shadow-sm);
+}
+
+.mode:has(input:focus-visible) {
+  outline: var(--focus-ring);
+  outline-offset: 1px;
+}
+
+/* Unavailable says so without colour alone: struck through, and described by its reason. */
+.mode:has(input:disabled) {
+  color: var(--color-subtle);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  cursor: not-allowed;
+}
+
+.hint {
+  flex: 1 1 0;
+  min-width: 0;
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  text-align: end;
+}
+
+.counter {
+  flex: none;
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.counter[data-full] {
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+}
+
+/* Send, and Detener in the same place while an answer is pending. */
+.send {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: var(--control-md);
+  height: var(--control-md);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: var(--text-xl);
+  cursor: pointer;
+  transition: background var(--motion-fast) var(--ease-out);
+}
+
+.send:hover {
+  background: var(--color-primary-hover);
+}
+
+/* Phones: the hint shows only while the box asks, on its own line under the switch. */
+@media (max-width: 40rem) {
+  .composer {
+    padding: var(--space-3) var(--space-2) var(--space-2) var(--space-4);
+    border-radius: 1.75rem;
+  }
+
+  .composer:not([data-ai='on']) .hint {
+    display: none;
+  }
+
+  .composer[data-ai='on'] .bar {
+    flex-wrap: wrap;
+  }
+
+  .composer[data-ai='on'] .hint {
+    flex-basis: 100%;
+    order: 3;
+    text-align: start;
+  }
+}
