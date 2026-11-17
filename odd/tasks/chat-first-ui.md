@@ -143,7 +143,7 @@ Phase E — proof:
 - T20 [ ] — S1: move the thread, AnalystAnswer and the attention popover into a lazy chunk loaded on the first
   question, and bring the entry budget back towards 218 kB gzip (it was raised to 230 kB in L11). Route: inline.
   Commit: pending.
-- T21 [ ] — S2: Inicio asks through `/system/analyst/ask/stream` and shows each `step` label as the pending turn's
+- T21 [x] — S2: Inicio asks through `/system/analyst/ask/stream` and shows each `step` label as the pending turn's
   progress text (fallback to `/ask` when the stream is unavailable), with the same single status announcement.
   Route: worker. Commit: pending.
 - T16 [ ] — S1: Playwright specs (Chromium, mobile, WebKit) for the thread, stop, new conversation, AI off and the
@@ -315,3 +315,15 @@ T18(b) → T16 → T17. Phases A, B and D change no API and no stored data.
     - The verifier's two durable test files were lost: the parent deleted their scratch before confirming the copy.
       The panic test was rewritten.
   - The design handoff for 01 is implemented across #514 and this branch. Added T21 (web consumes the stream).
+- L13 — 2026-11-17, T21 done and T20 partly done, on `feat/chat-actions`. A worker built them; the parent committed.
+  - T21: Inicio asks through `/ask/stream`, read by a TextDecoderStream SSE reader (`shared/api/sse.ts`). The
+    pending turn shows the latest step label as text. There is one start and one end announcement, never one per
+    step. Error events reuse `ApiError`. It falls back to `/ask` once on 404, 405 or a response that is not SSE.
+    Abort stops reading. RED first: 16 rules.
+  - T20: the answer view (AnalystAnswer, actions, formatter, blocks, stream client) moved to a lazy chunk, preloaded
+    on composer focus or the first keypress. Entry: 736.4 → 728.1 kB raw and 220.4 → 219.2 kB gzip. It missed the
+    ≤ 218 kB goal: rolldown 1.2.15 emits a shared `format-*` chunk (28.7 kB gzip) for any new dynamic import under
+    Inicio, and a popover split made the entry bigger (221.2), so it was reverted. T20 stays open for a
+    `vite.config.ts` chunking experiment.
+  - Checks: web 893/893; Playwright mobile-chromium Inicio specs 15 passed (fallback path); chromium 25-inicio and
+    performance 3 passed, 1 skipped (median 765 ms). CSS is 40.6/41 kB, close to the limit.
