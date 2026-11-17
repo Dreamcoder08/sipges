@@ -130,6 +130,15 @@ It takes a backup, gets the new version, rebuilds and restarts. Database changes
 
 The restore matters: database changes only go forward, so the old version needs the old database. Remove the line from `.env` when the fixed version is out.
 
+### Local overrides
+
+Settings that must survive `./sipges start` and `./sipges update` go in `.env`, never in the shell: a variable exported in the terminal lasts one session, and it beats the `.env` while it is set.
+
+- **Only this computer may connect.** Add `SIPGES_BIND_ADDRESS=127.0.0.1` to `.env` and run `./sipges start`. Without the line, SIPGES listens on every network this computer is on (`0.0.0.0`), which is what other computers in the office need.
+- **Your own Compose changes.** Write them in a Compose file of your own and name it in `.env` with an absolute path, without quotes: `SIPGES_COMPOSE_OVERRIDE=/home/you/sipges-local/compose.override.yaml`. Every `./sipges` command lays it over `compose.yaml`, so start, update, stop, logs and backups all see the same services. Relative paths inside that file count from `deploy/local`. Keep it outside the repository and copy it along with `.env`: an update never touches it.
+
+If that file is missing, `./sipges` stops with `SIPGES_COMPOSE_OVERRIDE names <path>, which does not exist` instead of running without it. Fix the path or remove the line. Docker Compose would read a `compose.override.yaml` next to `compose.yaml` by itself only when no file is named, and `./sipges` always names one, so the setting is the only way in. It belongs to that `.env`, so a drill run with `SIPGES_ENV_FILE` never picks up yours.
+
 ## Bringing in the client's data
 
 The client's files stay in a folder **outside** the SIPGES folder, for example a USB disk at `/media/usb/client`. SIPGES reads that folder and never writes to it. Every import only tries unless you add `--apply`, and `--apply` takes a backup first.

@@ -9,10 +9,23 @@ ENV_FILE=${SIPGES_ENV_FILE:-.env}
 PROJECT=${SIPGES_PROJECT:-sipges}
 REPO_ROOT=../..
 
-compose() { docker compose --env-file "$ENV_FILE" -p "$PROJECT" -f compose.yaml "$@"; }
 say() { printf '%s\n' "$*"; }
 die() { printf 'sipges: %s\n' "$*" >&2; exit 1; }
 env_value() { sed -n "s/^$1=//p" "$ENV_FILE" | tail -n 1; }
+# SIPGES_COMPOSE_OVERRIDE in the .env names a compose file of this installation's own choices, laid
+# over compose.yaml on every call so start and update keep them. It belongs to the .env, not to this
+# folder, so a drill's installation never picks up the owner's. A path that is gone stops the call
+# instead of running without it.
+compose() {
+  local files=(-f compose.yaml) override=
+  [[ ! -f $ENV_FILE ]] || override=$(env_value SIPGES_COMPOSE_OVERRIDE)
+  if [[ -n $override ]]; then
+    [[ -f $override ]] ||
+      die "SIPGES_COMPOSE_OVERRIDE names $override, which does not exist. Fix the path in $ENV_FILE, or remove that line"
+    files+=(-f "$override")
+  fi
+  docker compose --env-file "$ENV_FILE" -p "$PROJECT" "${files[@]}" "$@"
+}
 random_hex() { head -c "$1" /dev/urandom | od -An -tx1 | tr -d ' \n'; }
 
 need_env() { [[ -f $ENV_FILE ]] || die "no $ENV_FILE here: run ./sipges install first"; }
