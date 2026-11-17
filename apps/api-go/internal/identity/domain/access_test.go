@@ -67,7 +67,7 @@ func TestCheckRoleAccess(t *testing.T) {
 	}
 	for _, path := range []string{
 		"/system/analyze", "/system/document-lab/analyze", "/system/document-lab/compare",
-		"/system/document-lab/report.docx", "/system/intelligence/semantic-analyze", "/system/analyst/ask",
+		"/system/document-lab/report.docx", "/system/intelligence/semantic-analyze", "/system/analyst/ask", "/system/analyst/ask/stream",
 	} {
 		for _, role := range []domain.Role{"consulta", "coordinador"} {
 			cases = append(cases, struct {

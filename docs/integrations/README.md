@@ -246,8 +246,8 @@ Ley 29733, no una decisión legal.
 - **Interruptor por proyecto.** *Configuración → IA externa → Envío a IA externa*, solo
   administradores y **apagado por defecto**. Apagado, las herramientas de lectura de MCP
   responden «El envío a IA externa está desactivado para este proyecto», el resumen asistido no
-  se genera (queda el informe extractivo), el analista de Inicio (`POST /system/analyst/ask`,
-  `sipgesctl analyst ask`) responde 409 sin enviar la pregunta y los embeddings a una URL no local
+  se genera (queda el informe extractivo), el analista de Inicio (`POST /system/analyst/ask` y su
+  variante `POST /system/analyst/ask/stream`, `sipgesctl analyst ask [--steps]`) responde 409 sin enviar la pregunta y los embeddings a una URL no local
   se rechazan. Siguen
   funcionando `list_object_types`, `create_record`, `link_records` y los embeddings de un Ollama
   en `localhost`/`127.0.0.1`/`[::1]`.
@@ -259,7 +259,11 @@ Ley 29733, no una decisión legal.
 - **Analista de Inicio.** Encendido, responde una pregunta llamando solo a las herramientas de
   lectura del MCP (como mucho 6 llamadas y 30 s) con el proyecto y el nivel de acceso de quien
   pregunta, y cita cada afirmación con `[n]`; una respuesta que cita un registro que ninguna
-  herramienta devolvió se rechaza. No escribe nada y no guarda la pregunta. Lo que lee sale con
+  herramienta devolvió se rechaza. No escribe nada y no guarda la pregunta. La variante
+  `/ask/stream` responde la misma pregunta como eventos (SSE): un paso por llamada a herramienta
+  con una etiqueta fija («Buscando registros…»), sin los argumentos ni los resultados, y después la
+  misma respuesta ya validada; el texto de la respuesta no se transmite mientras el modelo lo
+  escribe. Lo que lee sale con
   los mismos seudónimos y campos permitidos, así que su respuesta también usa seudónimos.
 - **Registros restringidos.** Un registro marcado `restringido` nunca sale hacia una IA externa, sea cual sea la autorización de la clave o del usuario: se omite de las listas y en Auditoría aparece su id como «retenidos», sin contenido.
 - **Solo campos permitidos.** Cada módulo declara qué campos pueden salir

@@ -45,6 +45,8 @@ type request struct {
 	origin string
 	// bearer is the credential of a machine route.
 	bearer string
+	// accept replaces the Accept header, for a route that answers server-sent events.
+	accept string
 }
 
 type response struct {
@@ -114,6 +116,16 @@ func newClient(address, caFile string, timeout time.Duration, s *session, projec
 // do sends one request. Only a failure to reach the API is an error; every answer, a 500
 // included, is a response for the caller to read.
 func (c *client) do(ctx context.Context, r request) (*response, error) {
+	answer, err := c.open(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = answer.Body.Close() }()
+	return readAnswer(answer, r.output)
+}
+
+// open sends one request and keeps the session's cookies; the caller reads and closes the body.
+func (c *client) open(ctx context.Context, r request) (*http.Response, error) {
 	target, err := url.Parse(c.base.String() + r.path)
 	if err != nil {
 		return nil, usageError("bad path: %v", err)
@@ -130,6 +142,9 @@ func (c *client) do(ctx context.Context, r request) (*response, error) {
 		return nil, usageError("bad request: %v", err)
 	}
 	outgoing.Header.Set("Accept", "application/json")
+	if r.accept != "" {
+		outgoing.Header.Set("Accept", r.accept)
+	}
 	outgoing.Header.Set("Origin", c.base.Scheme+"://"+c.base.Host)
 	if r.origin != "" {
 		outgoing.Header.Set("Origin", r.origin)
@@ -152,11 +167,10 @@ func (c *client) do(ctx context.Context, r request) (*response, error) {
 	if err != nil {
 		return nil, networkError(scrubURL(err))
 	}
-	defer func() { _ = answer.Body.Close() }()
 	if !r.anonymous {
 		c.keepCookies(answer)
 	}
-	return readAnswer(answer, r.output)
+	return answer, nil
 }
 
 // cookieHeader is one line, as a browser sends it: the API reads a single Cookie header.

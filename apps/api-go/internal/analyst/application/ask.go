@@ -116,8 +116,21 @@ func finalAnswer(text string, sources *domain.Sources) (domain.CitedAnswer, erro
 	return answer, nil
 }
 
+// Progress hears the loop as it works (odd/tasks/chat-first-ui.md T10): ToolStep runs once per
+// tool call, before the tool, with the call's fixed label (domain.ToolStepLabel). It never gets the
+// call's input or the tool's result, which may name people.
+type Progress interface {
+	ToolStep(label string)
+}
+
 // Answer runs the loop for question and checks the citations of the final answer.
 func (a Ask) Answer(ctx context.Context, question string) (domain.CitedAnswer, error) {
+	return a.AnswerWithProgress(ctx, question, nil)
+}
+
+// AnswerWithProgress is Answer that reports each tool call to progress; nil reports nothing. The
+// loop stops as soon as ctx ends: no model or tool call starts after a cancel.
+func (a Ask) AnswerWithProgress(ctx context.Context, question string, progress Progress) (domain.CitedAnswer, error) {
 	timeout := a.Timeout
 	if timeout <= 0 {
 		timeout = AskTimeout
@@ -136,6 +149,9 @@ func (a Ask) Answer(ctx context.Context, question string) (domain.CitedAnswer, e
 	var sources domain.Sources
 	calls := 0
 	for {
+		if err := ctx.Err(); err != nil {
+			return domain.CitedAnswer{}, err
+		}
 		step, err := a.Model.Next(ctx, specs, turns)
 		if err != nil {
 			if ctx.Err() != nil {
@@ -152,7 +168,13 @@ func (a Ask) Answer(ctx context.Context, question string) (domain.CitedAnswer, e
 			if calls == MaxToolCalls {
 				return domain.CitedAnswer{}, ErrTooManyToolCalls
 			}
+			if err := ctx.Err(); err != nil {
+				return domain.CitedAnswer{}, err
+			}
 			calls++
+			if progress != nil {
+				progress.ToolStep(domain.ToolStepLabel(c.Name))
+			}
 			out, err := a.Tools.Run(ctx, c.Name, c.Input)
 			if err != nil {
 				// A driver may answer a cancelled read with its own error: the budget explains it.

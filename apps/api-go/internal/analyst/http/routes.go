@@ -42,6 +42,9 @@ type Options struct {
 	// MayWrite answers whether the request's person passes the role gate of method and path; it
 	// decides who may approve or discard the analyst's stored proposals.
 	MayWrite func(ctx context.Context, method, path string) bool
+	// Heartbeat is the quiet time after which the ask stream sends a comment line, so a proxy
+	// keeps it open; zero means 15 s.
+	Heartbeat time.Duration
 }
 
 const notFound = "Registro no encontrado"
@@ -205,6 +208,7 @@ func Routes(mux *http.ServeMux, opts Options) {
 		}{opts.Ask != nil})
 	})
 	mux.HandleFunc("POST /system/analyst/ask", askRoute(opts))
+	mux.HandleFunc("POST /system/analyst/ask/stream", askStreamRoute(opts))
 	storedProposalRoutes(mux, opts, fail)
 	mux.HandleFunc("POST /system/briefing/proposals", func(w http.ResponseWriter, r *http.Request) {
 		decide(w, r, opts, now, fail)
