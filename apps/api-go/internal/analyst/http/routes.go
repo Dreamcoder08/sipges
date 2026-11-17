@@ -197,6 +197,13 @@ func Routes(mux *http.ServeMux, opts Options) {
 		httpx.WriteError(w, http.StatusInternalServerError, "Internal Server Error")
 	}
 
+	// Whether this installation has an Inicio analyst: the box asks only when it has one and the
+	// project switched external AI on; otherwise it stays a search box (agentic-analyst S2).
+	mux.HandleFunc("GET /system/analyst", func(w http.ResponseWriter, _ *http.Request) {
+		httpx.WriteJSON(w, http.StatusOK, struct {
+			Available bool `json:"available"`
+		}{opts.Ask != nil})
+	})
 	mux.HandleFunc("POST /system/analyst/ask", askRoute(opts))
 	storedProposalRoutes(mux, opts, fail)
 	mux.HandleFunc("POST /system/briefing/proposals", func(w http.ResponseWriter, r *http.Request) {

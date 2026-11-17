@@ -87,6 +87,13 @@
     "summary": "Choose the project"
   },
   {
+    "method": "GET",
+    "path": "/system/analyst",
+    "access": "session",
+    "command": "analyst status",
+    "summary": "Whether this installation has an Inicio analyst"
+  },
+  {
     "method": "POST",
     "path": "/system/analyst/ask",
     "access": "session",

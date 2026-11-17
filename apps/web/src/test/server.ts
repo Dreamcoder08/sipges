@@ -161,6 +161,8 @@ export const handlers = [
       }),
     ),
   ),
+  // The Inicio analyst lives in the Go API only; tests that ask say it is there.
+  http.get('/system/analyst', () => signedIn(() => HttpResponse.json({ available: false }))),
   http.get('/system/v4/settings', () =>
     signedIn(() =>
       HttpResponse.json({

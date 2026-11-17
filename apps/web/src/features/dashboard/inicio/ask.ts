@@ -72,3 +72,13 @@ export const answerParts = (answer: string, sources: readonly AnalystSource[]): 
   if (at < answer.length) parts.push({ text: answer.slice(at) });
   return parts;
 };
+
+const AnalystStatus = z.object({ available: z.boolean() });
+
+/** Whether this installation has an Inicio analyst (a provider configured on the server). */
+export const analystStatusQuery = (scope: string) => ({
+  queryKey: ['analyst-status', scope] as const,
+  queryFn: ({ signal }: { signal: AbortSignal }) =>
+    requestJson('/system/analyst', AnalystStatus, { scope, signal }),
+  staleTime: 5 * 60_000,
+});

@@ -24,7 +24,7 @@ import { irsaConfigQuery, irsaQuery, moduleRecordsQuery } from '../api.ts';
 import { IrsaStatus, hasNoEvidence } from '../IrsaStatus.tsx';
 import { criticalAlerts, eventsThisWeek } from '../model.ts';
 import { AnalystAnswer } from './AnalystAnswer.tsx';
-import { askAnalyst } from './ask.ts';
+import { analystStatusQuery, askAnalyst } from './ask.ts';
 import { attentionItems } from './attention.ts';
 import styles from './InicioPage.module.css';
 
@@ -116,6 +116,11 @@ export const InicioPage = ({
   }, []);
   const online = useOnline();
   const aiOn = useProjectSettings()?.external_ai?.enabled ?? false;
+  // The box asks only when the project switched external AI on and this installation has an
+  // analyst; otherwise it stays a search box and says why (agentic-analyst S2).
+  const status = useQuery({ ...analystStatusQuery(scope), enabled: aiOn });
+  const asks = aiOn && status.data?.available === true;
+  const noAnalyst = aiOn && status.data?.available === false;
   const alerts = useQuery(moduleRecordsQuery('alertas', scope));
   const digital = useQuery(territorialAlertsQuery(scope));
   const events = useQuery(moduleRecordsQuery('eventos', scope));
@@ -129,7 +134,7 @@ export const InicioPage = ({
     event.preventDefault();
     const text = question.trim();
     if (!text) return;
-    if (aiOn) analyst.mutate(text);
+    if (asks) analyst.mutate(text);
     else onAsk(text);
   };
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -226,14 +231,14 @@ export const InicioPage = ({
 
       <div className={styles.compose}>
         <div ref={composer} className={styles.dock}>
-          <form className={styles.ask} data-ai={aiOn ? 'on' : 'off'} onSubmit={onSubmit}>
+          <form className={styles.ask} data-ai={asks ? 'on' : 'off'} onSubmit={onSubmit}>
             <textarea
               id={fieldId}
               rows={2}
               value={question}
               aria-describedby={`${fieldId}-hint`}
               placeholder={
-                aiOn
+                asks
                   ? 'Pregunta por eventos, actores, demandas o compromisos…'
                   : 'Palabras de eventos, actores, demandas o compromisos…'
               }
@@ -242,28 +247,30 @@ export const InicioPage = ({
             />
             <div className={styles.bar}>
               <label htmlFor={fieldId} className={styles.scope}>
-                <Icon name={aiOn ? 'message' : 'search'} />
-                {aiOn
+                <Icon name={asks ? 'message' : 'search'} />
+                {asks
                   ? 'Preguntar, con citas'
                   : `Buscar en registros de ${project || 'este proyecto'}`}
               </label>
               <span id={`${fieldId}-hint`} className={styles.hint}>
-                {aiOn
+                {asks
                   ? 'Enter pregunta · Mayús+Enter, nueva línea'
-                  : 'Enter busca · Mayús+Enter, nueva línea'}
+                  : noAnalyst
+                    ? 'El analista no está configurado en esta instalación: Enter busca.'
+                    : 'Enter busca · Mayús+Enter, nueva línea'}
               </span>
               <button
                 type="submit"
                 className={styles.send}
                 disabled={analyst.isPending}
-                aria-label={aiOn ? 'Enviar pregunta' : 'Buscar en registros'}
+                aria-label={asks ? 'Enviar pregunta' : 'Buscar en registros'}
               >
                 <Icon name="arrowUp" />
               </button>
             </div>
           </form>
         </div>
-        {aiOn && !analyst.isIdle ? (
+        {asks && !analyst.isIdle ? (
           <AnalystAnswer
             pending={analyst.isPending}
             question={analyst.variables ?? ''}

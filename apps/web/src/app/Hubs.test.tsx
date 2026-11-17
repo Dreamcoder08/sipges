@@ -533,6 +533,7 @@ describe('Inicio hub', () => {
   it('labels the composer «Preguntar, con citas» when external AI is on and asks the analyst', async () => {
     withExternalAi(true);
     server.use(
+      http.get('/system/analyst', () => HttpResponse.json({ available: true })),
       http.post('/system/analyst/ask', () =>
         HttpResponse.json({
           answer: 'Hay una demanda por agua [1].',
