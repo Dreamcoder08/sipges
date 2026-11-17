@@ -98,6 +98,23 @@ printf '%s' '{"company_id":"ACME","project_id":"NORTE","label":"Proyecto Norte"}
   | ./sipgesctl project rename --body -
 ```
 
+`analyst ask` puts one question to the Inicio analyst (`POST /system/analyst/ask`). With `--steps`
+it asks `POST /system/analyst/ask/stream` instead and prints each step on stderr as it happens
+(«Buscando registros…», «Leyendo la línea de tiempo…»: a fixed label per tool call, never its input
+or result); the answer then reaches stdout exactly as without `--steps`, and an error has the same
+exit code and text as the JSON route's status. `--steps` refuses `--output`, `--form`, `--field`
+and `--attach`.
+
+```sh
+printf '%s' '{"question":"¿Qué alertas rojas siguen abiertas?"}' | ./sipgesctl analyst ask --body - --steps
+```
+
+The stream sends `event: step` `{"label": …}` per tool call, then one `event: answer` with the body
+`/ask` answers or one `event: error` `{"status": …, "detail": …}` (409, 422, 502, 503 or 504), then
+`event: done`, with a `: ping` comment after 15 s of quiet. The answer text is never streamed as
+the model writes it: its citations are checked on the whole answer first. A client that leaves
+stops the loop, and the API logs it as 499.
+
 Machine routes (`/mcp`, `/hooks/*`, the cron route) take `SIPGES_MACHINE_TOKEN` and never the
 session:
 

@@ -63,41 +63,9 @@ func expand(route Route, path string, params keyValues) (string, error) {
 
 // send runs one route with the shared flags and prints the answer.
 func (o *options) send(ctx context.Context, route Route, path string, f *requestFlags) (int, error) {
-	path, err := expand(route, path, f.params)
+	out, err := o.prepare(route, path, f)
 	if err != nil {
 		return 0, err
-	}
-	out := request{method: route.Method, path: path, query: url.Values(f.query), output: f.output}
-	if route.Access == AccessMachine {
-		if err := o.refuse("project"); err != nil { // a key belongs to one project
-			return 0, err
-		}
-		if out.bearer = o.app.env("SIPGES_MACHINE_TOKEN"); out.bearer == "" {
-			return 0, usageError("%s needs its own credential: set SIPGES_MACHINE_TOKEN", route.Key())
-		}
-		out.anonymous = true // a machine route never sees the session
-	}
-	switch {
-	case f.form && f.body == "":
-		return 0, usageError("--form needs --body")
-	case f.body != "" && (len(f.attach) > 0 || len(f.fields) > 0):
-		return 0, usageError("--body cannot be mixed with --field or --attach")
-	case len(f.attach) > 0 || len(f.fields) > 0:
-		files, err := readAttachments(f.attach)
-		if err != nil {
-			return 0, err
-		}
-		if out.body, out.contentType, err = multipartBody(f.fields, files); err != nil {
-			return 0, err
-		}
-	case f.body != "":
-		if out.body, err = o.app.readBody(f.body); err != nil {
-			return 0, err
-		}
-		out.contentType = "application/json"
-		if f.form {
-			out.contentType = "application/x-www-form-urlencoded"
-		}
 	}
 	c, sessionFile, err := o.connect()
 	if err != nil {
@@ -117,6 +85,47 @@ func (o *options) send(ctx context.Context, route Route, path string, f *request
 		return 0, &exitError{exit: ExitFailed, code: "no_file", detail: fmt.Sprintf("status %d left nothing to write to %s", answer.status, f.output)}
 	}
 	return o.answer(route.Key(), answer), nil
+}
+
+// prepare builds the request of one route from the shared flags.
+func (o *options) prepare(route Route, path string, f *requestFlags) (request, error) {
+	path, err := expand(route, path, f.params)
+	if err != nil {
+		return request{}, err
+	}
+	out := request{method: route.Method, path: path, query: url.Values(f.query), output: f.output}
+	if route.Access == AccessMachine {
+		if err := o.refuse("project"); err != nil { // a key belongs to one project
+			return request{}, err
+		}
+		if out.bearer = o.app.env("SIPGES_MACHINE_TOKEN"); out.bearer == "" {
+			return request{}, usageError("%s needs its own credential: set SIPGES_MACHINE_TOKEN", route.Key())
+		}
+		out.anonymous = true // a machine route never sees the session
+	}
+	switch {
+	case f.form && f.body == "":
+		return request{}, usageError("--form needs --body")
+	case f.body != "" && (len(f.attach) > 0 || len(f.fields) > 0):
+		return request{}, usageError("--body cannot be mixed with --field or --attach")
+	case len(f.attach) > 0 || len(f.fields) > 0:
+		files, err := readAttachments(f.attach)
+		if err != nil {
+			return request{}, err
+		}
+		if out.body, out.contentType, err = multipartBody(f.fields, files); err != nil {
+			return request{}, err
+		}
+	case f.body != "":
+		if out.body, err = o.app.readBody(f.body); err != nil {
+			return request{}, err
+		}
+		out.contentType = "application/json"
+		if f.form {
+			out.contentType = "application/x-www-form-urlencoded"
+		}
+	}
+	return out, nil
 }
 
 // persist saves what the API changed in the session. A session the API ended leaves no file.

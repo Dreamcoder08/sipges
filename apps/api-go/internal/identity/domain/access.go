@@ -51,7 +51,8 @@ var readOnlyPosts = map[string]bool{
 	"/system/graph/neighbourhood":           true,
 	// The Inicio analyst answers a question and writes no record; it may file a proposal only for
 	// a person who may write that module (odd/tasks/agentic-analyst.md S2, S4).
-	"/system/analyst/ask": true,
+	"/system/analyst/ask":        true,
+	"/system/analyst/ask/stream": true,
 }
 
 // selfServicePosts are personal account actions every role may take (ADR 0009, ADR 0014).

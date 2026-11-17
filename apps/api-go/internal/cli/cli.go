@@ -112,13 +112,16 @@ func (a *app) help() string {
 		if route.Command == "" {
 			continue
 		}
-		if _, builtin := builtins[route.Command]; builtin && route.Command != "evidence upload" {
+		if _, builtin := builtins[route.Command]; builtin && !typedBuiltins[route.Command] {
 			continue
 		}
 		fmt.Fprintf(&lines, "  %-26s %s\n", route.Command, route.Summary)
 	}
 	return fmt.Sprintf(usage, lines.String())
 }
+
+// typedBuiltins are typed commands with flags of their own: help lists them with the routes.
+var typedBuiltins = map[string]bool{"evidence upload": true, "analyst ask": true}
 
 // wantsJSON answers before flags are parsed, so even a usage error can honour --json.
 func wantsJSON(args []string) bool {
@@ -146,6 +149,7 @@ func (a *app) builtins() map[string]command {
 		"routes":          a.listRoutes,
 		"call":            a.call,
 		"evidence upload": a.evidenceUpload,
+		"analyst ask":     a.analystAsk,
 		"verify":          a.verifyCommand,
 	}
 }
