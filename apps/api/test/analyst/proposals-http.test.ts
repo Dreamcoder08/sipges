@@ -36,6 +36,14 @@ const proposals = (t: Awaited<ReturnType<typeof setup>>, module: string, id: str
   t.call('GET', `/system/briefing/proposals?module=${module}&id=${id}`);
 
 describe('analyst proposals', () => {
+  it('reports no Inicio analyst: only the Go API has one', async () => {
+    const t = await setup();
+    expect(await t.call('GET', '/system/analyst')).toEqual({
+      status: 200,
+      body: { available: false },
+    });
+  });
+
   it('lists no stored analyst proposals: only the Go API has the Inicio analyst', async () => {
     const t = await setup();
     expect(await t.call('GET', '/system/analyst/proposals')).toEqual({ status: 200, body: [] });

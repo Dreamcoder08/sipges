@@ -63,6 +63,10 @@ for (const width of [360, 412]) {
         const settings = (await response.json()) as Record<string, unknown>;
         await route.fulfill({ response, json: { ...settings, external_ai: { enabled: true } } });
       });
+      // This e2e API has no analyst; the browser says the installation has one.
+      await page.route('**/system/analyst', (route) =>
+        route.fulfill({ json: { available: true } }),
+      );
       await page.route('**/system/analyst/ask', (route) => route.fulfill({ json: reply }));
       await signInToProject(page, admin, DEFAULT_SCOPE);
       await page.goto('/inicio');
