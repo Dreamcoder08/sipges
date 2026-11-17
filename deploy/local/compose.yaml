@@ -132,7 +132,9 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
       - caddy-config:/config
-    depends_on: [api]
+    # Started once the API answers, so Caddy's first health check passes (ADR 0035).
+    depends_on:
+      api: { condition: service_healthy }
     networks: [frontend]
 
   backup:

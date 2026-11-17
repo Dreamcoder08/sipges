@@ -25,7 +25,6 @@ compose)
     ;;
   exec)
     [[ $* != *caddy* || ! -f $FAKE/not-ready ]] || exit 1
-    [[ $* != *https://127.0.0.1/* || ! -f $FAKE/proxy-down ]] || exit 1
     [[ $* != *caddy* ]] || echo '{"status":"ready"}'
     ;;
   run)
@@ -80,7 +79,8 @@ run)
   ;;
 esac
 FAKE
-printf '#!/usr/bin/env bash\n' >"$root/sleep"
+# shellcheck disable=SC2016 # the fake expands these when it runs
+printf '#!/usr/bin/env bash\necho "$*" >>"$FAKE/sleeps"\n' >"$root/sleep"
 # No repository for update to pull from: the tests never touch the checkout they run in.
 printf '#!/usr/bin/env bash\nexit 1\n' >"$root/git"
 chmod +x "$root/docker" "$root/sleep" "$root/git"
@@ -114,7 +114,6 @@ check() {
   if "$@"; then ok "$name"; else fail "$name"; fi
 }
 said() { grep -qF -- "$1" "$work/out"; }
-not_said() { ! said "$1"; }
 called() { grep -qF -- "$1" "$FAKE/calls"; }
 never_built() { ! called ' build ' && ! grep -q '^build' "$FAKE/calls"; }
 
@@ -368,14 +367,12 @@ run install
 run install
 check 'once one starts, previous follows again' test "$(image_id previous)" != "$started"
 
-# Ready means the path people use: an API that answers while Caddy still counts it down is not.
-touch "$FAKE/proxy-down"
-run start || true
-check 'an API that Caddy cannot reach yet is not reported ready' not_said 'SIPGES is ready.'
-check 'and the readiness check goes through Caddy' called 'https://127.0.0.1/health/ready'
-command rm "$FAKE/proxy-down"
+# Caddy skips an API whose health check failed while it booted until its next check (every 2 s), so
+# start waits one cycle after the API answers before calling SIPGES ready.
+: >"$FAKE/sleeps"
 run start
-check 'once Caddy reaches it, SIPGES is ready' said 'SIPGES is ready.'
+check 'once the API answers, start waits for the next Caddy check' grep -qx 3 "$FAKE/sleeps"
+check 'and only then says SIPGES is ready' said 'SIPGES is ready.'
 
 fresh
 echo sha256:old >"$FAKE/images/sipges-local_current"
@@ -419,12 +416,10 @@ check 'a drill leaves the marks of a real install alone' test "$(image_id ready)
 
 # --- one API or two
 
-# The calls start and update make with one API, with W for the work folder; the second readiness
-# check (through Caddy) is the only change since replicas exist.
+# The calls start and update made before replicas existed, with W for the work folder.
 one_api_start='compose --env-file W/env -p sipges -f compose.yaml config -q
 compose --env-file W/env -p sipges -f compose.yaml up -d db api caddy backup
 compose --env-file W/env -p sipges -f compose.yaml exec -T caddy wget -qO- --header Host: localhost http://api:8080/health/ready
-compose --env-file W/env -p sipges -f compose.yaml exec -T caddy wget -qO- --no-check-certificate --header Host: localhost https://127.0.0.1/health/ready
 tag sipges-local:current sipges-local:ready'
 one_api_update="compose version
 info

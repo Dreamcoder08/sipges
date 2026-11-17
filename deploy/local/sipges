@@ -122,21 +122,20 @@ build() {
   fi
 }
 
-# Ready means both the API and the path people use: Caddy marks an API down when a health check
-# fails while it boots and skips it for a few seconds, so the API answering directly is not enough.
 answers() {
-  local host
-  host=$(env_value SIPGES_SITE_HOST)
-  compose exec -T caddy wget -qO- --header "Host: $host" \
-    http://api:8080/health/ready 2>/dev/null | grep -q '"ready"' &&
-    compose exec -T caddy wget -qO- --no-check-certificate --header "Host: $host" \
-      https://127.0.0.1/health/ready 2>/dev/null | grep -q '"ready"'
+  compose exec -T caddy wget -qO- --header "Host: $(env_value SIPGES_SITE_HOST)" \
+    http://api:8080/health/ready 2>/dev/null | grep -q '"ready"'
 }
+
+# Caddy checks each API every 2 s (Caddyfile) and skips one whose check failed while it booted, so
+# once the API answers, one more check cycle passes before people are sent to it.
+CADDY_CHECK_WAIT=3
 
 wait_ready() {
   say 'Waiting for SIPGES to answer...'
   for _ in $(seq 1 90); do
     if answers; then
+      sleep "$CADDY_CHECK_WAIT"
       say 'SIPGES is ready.'
       return 0
     fi

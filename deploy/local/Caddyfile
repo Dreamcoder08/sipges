@@ -19,7 +19,7 @@
 			header Content-Type image/svg+xml*
 		}
 	}
-	# One API, or two when SIPGES_API_REPLICAS=2 (ADR 0035): taken in turns, each checked every 5 s
+	# One API, or two when SIPGES_API_REPLICAS=2 (ADR 0035): taken in turns, each checked every 2 s
 	# and skipped while it fails. A request that cannot reach one tries the other.
 	reverse_proxy {$SIPGES_API_UPSTREAMS} {
 		lb_policy round_robin
@@ -30,7 +30,7 @@
 		health_headers {
 			Host {$SIPGES_SITE_HOST}
 		}
-		health_interval 5s
+		health_interval 2s
 		health_timeout 2s
 		health_status 2xx
 		# Short, so an API that was restarting is not still counted down when the other one restarts.
