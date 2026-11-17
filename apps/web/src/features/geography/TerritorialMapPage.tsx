@@ -1,6 +1,6 @@
 import { GeographyCatalogue, GeographyResult } from '@sipges/contracts';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { lazy, Suspense, useId, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { requestJson } from '../../shared/api/client.ts';
 import { saveBlob } from '../../shared/api/download.ts';
 import { moduleRecordsQuery } from '../../shared/api/module-records.ts';
@@ -154,6 +154,13 @@ const spread = <T extends { point: MapPoint }>(points: readonly T[], unit: numbe
 
 type Selection = { kind: 'point'; id: string } | { kind: 'concession'; concession: Concession };
 
+/** The record `?registro=<module>:<id>` asks the map to show, read once when the map opens. */
+const askedRecord = (): { module: string; id: string } | null => {
+  const raw = new URLSearchParams(window.location.search).get('registro') ?? '';
+  const at = raw.indexOf(':');
+  return at > 0 && at < raw.length - 1 ? { module: raw.slice(0, at), id: raw.slice(at + 1) } : null;
+};
+
 const TerritorialWorkspace = ({
   layers,
   openAlerts,
@@ -199,6 +206,20 @@ const TerritorialWorkspace = ({
     () => mapPoints(layers, area.sechura),
     [layers, area.sechura],
   );
+  // `?registro=<module>:<id>` (the Inicio analyst's map block): select and frame that record once
+  // the layers are in, or say it has no place on the map.
+  const [asked] = useState(askedRecord);
+  const [askedNotice, setAskedNotice] = useState('');
+  const applied = useRef(false);
+  useEffect(() => {
+    if (!asked || applied.current) return;
+    applied.current = true;
+    const point = points.find((p) => LAYER_SLUGS[p.layer] === asked.module && p.id === asked.id);
+    if (point) {
+      setSelection({ kind: 'point', id: point.id });
+      setFocus({ at: point.at, zoom: 13 });
+    } else setAskedNotice(`El registro ${asked.id} no tiene ubicación en el mapa.`);
+  }, [asked, points]);
   const selectedConcession = selection?.kind === 'concession' ? selection.concession : null;
 
   const polygon = selectedConcession ? relationPolygon(selectedConcession) : null;
@@ -613,6 +634,7 @@ const TerritorialWorkspace = ({
 
   return (
     <div className={styles.page}>
+      {askedNotice ? <p role="status">{askedNotice}</p> : null}
       <details className={styles.filters} key={String(compact)} open={!compact || undefined}>
         <summary>
           Capas y filtros

@@ -17,6 +17,10 @@ export const useInternalNavigate = () => {
 export const objectHref = (module: string, id: string) =>
   `/objeto/${encodeURIComponent(module)}/${encodeURIComponent(id)}`;
 
+/** The Territorio map focused on one record, which it selects and frames when it opens. */
+export const mapHref = (module: string, id: string) =>
+  `/territorio?vista=mapa&registro=${encodeURIComponent(`${module}:${id}`)}`;
+
 export const InternalLink = ({
   href,
   className,

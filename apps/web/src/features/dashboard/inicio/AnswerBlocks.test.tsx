@@ -33,8 +33,8 @@ it('draws a map focus as links to the map and to the record', () => {
   const list = one({ type: 'map', ...record });
   const card = within(list).getByRole('article', { name: 'Bloqueo de vía en el mapa' });
   expect(
-    within(card).getByRole('link', { name: 'Abrir el mapa territorial' }).getAttribute('href'),
-  ).toBe('/mapa');
+    within(card).getByRole('link', { name: 'Ver en el mapa territorial' }).getAttribute('href'),
+  ).toBe('/territorio?vista=mapa&registro=eventos%3AEV-1');
   expect(within(card).getByRole('link', { name: 'Bloqueo de vía' }).getAttribute('href')).toBe(
     '/objeto/eventos/EV-1',
   );

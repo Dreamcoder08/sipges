@@ -577,3 +577,34 @@ it('groups records without a place under «Sin ubicación» with a way to comple
   const list = screen.getByRole('list', { name: 'Registros en el mapa' });
   expect(within(list).queryByText('Reunión sin lugar')).toBeNull();
 });
+
+it('selects the record named in ?registro= when the map opens (agentic-analyst T2 map block)', async () => {
+  window.history.replaceState(null, '', '/territorio?vista=mapa&registro=eventos:EV-1');
+  try {
+    serve();
+    renderPage();
+    const marker = await screen.findByRole('button', {
+      name: '2. Eventos: Asamblea comunal sintética (Vice)',
+    });
+    expect(marker).toHaveAttribute('aria-pressed', 'true');
+    const rows = within(screen.getByRole('list', { name: 'Registros en el mapa' })).getAllByRole(
+      'button',
+    );
+    expect(rows[1]).toHaveAttribute('aria-pressed', 'true');
+  } finally {
+    window.history.replaceState(null, '', '/');
+  }
+});
+
+it('says so when the record named in ?registro= has no place on the map', async () => {
+  window.history.replaceState(null, '', '/territorio?vista=mapa&registro=actores:A-404');
+  try {
+    serve();
+    renderPage();
+    expect(
+      await screen.findByText('El registro A-404 no tiene ubicación en el mapa.'),
+    ).toBeTruthy();
+  } finally {
+    window.history.replaceState(null, '', '/');
+  }
+});
