@@ -80,7 +80,7 @@ func input(raw json.RawMessage) json.RawMessage {
 // so far as alternating assistant and user turns.
 func (c *Claude) Next(ctx context.Context, tools []application.ToolSpec, turns []application.Turn) (application.Step, error) {
 	if c.credential == "" {
-		return application.Step{}, errors.New("narrator: no credential")
+		return application.Step{}, unavailable("narrator: no credential")
 	}
 	type block struct {
 		Type      string          `json:"type"`

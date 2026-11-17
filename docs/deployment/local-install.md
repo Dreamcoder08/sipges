@@ -281,6 +281,23 @@ SIPGES works in full with none of these. Each one turns on an optional feature, 
 
 See [integrations](../integrations/README.md).
 
+## Analyst on your Claude subscription (local only)
+
+On this computer the Inicio analyst can answer through your claude.ai account by way of a personal bridge. The bridge is not part of the repository or of `./sipges`:
+
+- It lives in `~/.local/share/sipges-claude-bridge`. That folder holds a secret: do not share it or copy it to another machine.
+- It runs as the Docker container `sipges-claude-bridge`, on the network `sipges_frontend`, with no published ports.
+- It uses your claude.ai login stored in `~/.claude`.
+
+| To | Run |
+| --- | --- |
+| Check that it is running | `docker ps --filter name=sipges-claude-bridge` |
+| Start it | `docker start sipges-claude-bridge` |
+| Stop it | `docker stop sipges-claude-bridge` |
+| Sign in again after the login expired | Run `claude` on the computer (not in the container), sign in again, then `docker restart sipges-claude-bridge` |
+
+When the bridge is stopped, your login expired or your subscription quota ran out, Inicio shows «El analista no respondió: el servicio de IA no está disponible. Prueba de nuevo en unos minutos o avisa a quien administra SIPGES.» and offers to search the records for the question. Search keeps working.
+
 ## If something goes wrong
 
 | What you see | What to do |

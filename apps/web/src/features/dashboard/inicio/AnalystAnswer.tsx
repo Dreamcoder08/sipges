@@ -29,7 +29,8 @@ export const AnalystAnswer = ({
   error?: unknown;
   onSearch: (text: string) => void;
 }) => {
-  // 409: external AI off; 503: no analyst on this installation. The search still works.
+  // 409: external AI off; 503: no analyst on this installation, or its AI service is out of
+  // reach (stopped, login expired, quota spent). The search still works.
   const searchInstead = isApiError(error, 409) || isApiError(error, 503);
   return (
     <section className={styles.panel} aria-label="Respuesta del analista">
