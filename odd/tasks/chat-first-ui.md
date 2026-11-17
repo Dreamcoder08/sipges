@@ -51,13 +51,13 @@ Phase A — design and foundations (web only):
   - a counter appears from 450 of the 500-character limit;
   - IME-safe Enter is kept.
   Route: inline, test-first (one test per key rule). Commit: pending.
-- T4 [ ] — S2: empty state from T1's chosen direction: greeting with the project name, the centred composer, and
+- T4 [x] — S2: empty state from T1's chosen direction: greeting with the project name, the centred composer, and
   starter chips that send in one click (today they only fill the textarea). Chips come from the project's real
   state, for example «¿Qué alertas rojas siguen abiertas?» only when there are some. Route: inline. Commit: pending.
 
 Phase B — the thread, client side (no backend change):
 
-- T5 [ ] — S1, S2: a conversation thread in memory for the session:
+- T5 [x] — S1, S2: a conversation thread in memory for the session:
   - each question is appended as a user turn and each answer as an assistant turn, instead of replacing the last
     answer;
   - answers keep their citations, sources and typed blocks;
@@ -213,3 +213,27 @@ T18(b) → T16 → T17. Phases A, B and D change no API and no stored data.
   - Not run locally: Playwright e2e and the phone check (CI runs the e2e).
   - Slice note: 911 authored lines in two commits, past the ~400-line slice, because the composer moved out of
     Inicio with its tests; T4 onwards return to ≤ 400.
+- L9 — 2026-11-17, T4 and T5 done on `feat/chat-thread` (e7f3ec5b). A worker built them; the parent approved the test
+  changes outside the worker's edit surfaces and committed.
+  - T4: chips send in one click (ask in «Preguntar», search in «Buscar») from `inicio/starters.ts`. «¿Qué alertas
+    rojas siguen abiertas?» comes first only while a red alert is open. The order is pinned.
+  - T5:
+    - the thread is `role="log"` with `aria-busy`, and one hidden `role="status"` announces start, end, error and
+      stop once each;
+    - user bubble, «IA Analista» answers with citation anchors unique per answer (`useId`), and error turns without
+      `role="alert"` (`Alert` gained `announce`, whose default is unchanged);
+    - the view follows the bottom only at the bottom (sentinel and IntersectionObserver), and «Ir al final» appears
+      otherwise;
+    - attention and week fold into one expandable line;
+    - «Nueva conversación» and Ctrl/⌘+Shift+O;
+    - memory only, per project, with no storage writes.
+  - Tests: RED first (T4 3 rules, T5 10 rules). The web suite passes 833/833, and typecheck, lint, build and CSS
+    39.3/41 kB pass.
+  - Changed by the spec: Hubs.test and e2e `25-inicio` (a chip now searches instead of filling the box),
+    AnalystAnswer/inicio-ask expectations (no alert role, «Buscando registros…»).
+  - Not run locally: Playwright and the phone check (CI runs the e2e).
+  - Left for later:
+    - the Ctrl+Shift+O entry in `shortcuts.ts`, which arrives with #512;
+    - the thread is lost when leaving Inicio (T11 decides persistence);
+    - «Detener» drops the pending turn until T7.
+  - Slice: 1,394 lines with tests, past the slice; T6–T8 return to small units.
