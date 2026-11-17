@@ -1,10 +1,29 @@
 import { Fragment, useId } from 'react';
 import { AnalystAnswer } from './AnalystAnswer.tsx';
+import { AnswerActions } from './AnswerActions.tsx';
 import type { Turn } from './conversation.ts';
 import styles from './Thread.module.css';
 
-const AssistantTurn = ({ turn, onSearch }: { turn: Turn; onSearch: (text: string) => void }) => {
+/** What a turn can do besides showing itself (chat-first-ui T6). */
+type TurnActions = {
+  onSearch: (text: string) => void;
+  /** «Volver a preguntar»: the same question as a new turn. */
+  onRetry?: ((question: string) => void) | undefined;
+  /** The page's one status region, for what an action did («Copiado»). */
+  onAnnounce?: ((message: string) => void) | undefined;
+  /** An answer is pending: asking again waits for it. */
+  busy: boolean;
+};
+
+const AssistantTurn = ({
+  turn,
+  onSearch,
+  onRetry,
+  onAnnounce,
+  busy,
+}: TurnActions & { turn: Turn }) => {
   const id = useId();
+  const retry = onRetry && !busy ? () => onRetry(turn.question) : undefined;
   return (
     <article className={styles.ai} aria-labelledby={id}>
       <p id={id} className={styles.who}>
@@ -17,13 +36,31 @@ const AssistantTurn = ({ turn, onSearch }: { turn: Turn; onSearch: (text: string
           <span className={styles.pulse} aria-hidden="true" />
           Buscando registros…
         </p>
+      ) : turn.state === 'stopped' ? (
+        // T7: the question went back to the composer; the page said «Respuesta detenida.».
+        <p className={styles.stopped}>
+          <span className={styles.halt} aria-hidden="true" />
+          Detenido
+        </p>
       ) : (
-        <AnalystAnswer
-          question={turn.question}
-          data={turn.state === 'answered' ? turn.answer : undefined}
-          error={turn.state === 'failed' ? turn.error : undefined}
-          onSearch={onSearch}
-        />
+        <>
+          <AnalystAnswer
+            question={turn.question}
+            data={turn.state === 'answered' ? turn.answer : undefined}
+            error={turn.state === 'failed' ? turn.error : undefined}
+            onSearch={onSearch}
+            onRetry={turn.state === 'failed' ? retry : undefined}
+          />
+          {turn.state === 'answered' ? (
+            <AnswerActions
+              answer={turn.answer.answer}
+              sources={turn.answer.sources}
+              onRetry={onRetry ? () => onRetry(turn.question) : undefined}
+              onAnnounce={onAnnounce}
+              busy={busy}
+            />
+          ) : null}
+        </>
       )}
     </article>
   );
@@ -38,11 +75,15 @@ export const Thread = ({
   turns,
   pending,
   onSearch,
+  onRetry,
+  onAnnounce,
   anchor,
 }: {
   turns: readonly Turn[];
   pending: boolean;
   onSearch: (text: string) => void;
+  onRetry?: TurnActions['onRetry'];
+  onAnnounce?: TurnActions['onAnnounce'];
   /** The id of each question, which the sidebar's «Conversaciones» brings into view (T19). */
   anchor?: (id: number) => string;
 }) => (
@@ -62,7 +103,13 @@ export const Thread = ({
         >
           <p className={styles.bubble}>{turn.question}</p>
         </article>
-        <AssistantTurn turn={turn} onSearch={onSearch} />
+        <AssistantTurn
+          turn={turn}
+          onSearch={onSearch}
+          onRetry={onRetry}
+          onAnnounce={onAnnounce}
+          busy={pending}
+        />
       </Fragment>
     ))}
   </div>

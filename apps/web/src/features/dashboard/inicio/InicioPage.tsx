@@ -155,17 +155,23 @@ export const InicioPage = ({
     if (thread.turns.length) follow();
   }, [thread.turns]);
 
-  const onSubmit = (text: string) => {
-    if (!asking) {
-      onAsk(text);
-      return;
-    }
+  const askAnalyst = (text: string) => {
     // Sending is the person's own move: the view goes to their question.
     following.current = true;
     // Answered, the question leaves the box (↑ brings it back); after an error it stays.
     void thread.ask(text).then((answered) => {
       if (answered) setQuestion((current) => (current.trim() === text ? '' : current));
     });
+  };
+  const onSubmit = (text: string) => {
+    if (asking) askAnalyst(text);
+    else onAsk(text);
+  };
+  // «Detener» and Esc abort the request (T7); the question goes back to the box for editing,
+  // unless the person has already started writing another one there.
+  const stop = () => {
+    const stopped = thread.stop();
+    if (stopped) setQuestion((current) => (current.trim() ? current : stopped));
   };
   const focusComposer = () => composer.current?.querySelector('textarea')?.focus();
   const newConversation = () => {
@@ -310,6 +316,9 @@ export const InicioPage = ({
               turns={thread.turns}
               pending={thread.pending}
               onSearch={onAsk}
+              // «Volver a preguntar» asks the analyst again, as a new turn (T6).
+              onRetry={askAnalyst}
+              onAnnounce={thread.announce}
               anchor={turnAnchor}
             />
           </div>
@@ -330,9 +339,7 @@ export const InicioPage = ({
               onValueChange={setQuestion}
               onSubmit={onSubmit}
               pending={thread.pending}
-              // Until T7 passes an AbortSignal, stopping lets go of the answer: the request ends on
-              // its own and its result is dropped, the question stays in the box.
-              onStop={thread.stop}
+              onStop={stop}
               label={
                 asking
                   ? 'Preguntar, con citas'
@@ -377,7 +384,8 @@ export const InicioPage = ({
         {conversation ? null : <div className={styles.week}>{weekLine}</div>}
         {/* The end of the page: in view means the person is at the bottom of the conversation. */}
         <span ref={end} className={styles.end} />
-        {/* The one place that announces an answer starting and ending, once each (L5). */}
+        {/* The one place that announces an answer starting and ending, once each (L5), a stop
+            and what an answer's action did («Copiado», T6). */}
         <span role="status" className="visually-hidden">
           {thread.announcement}
         </span>

@@ -1,0 +1,55 @@
+/* The answer's actions after design/chat-first/01-centro-conversacional.html (.acts, .act). */
+.acts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  /* The first button's text lines up with the answer's. */
+  margin: var(--space-3) 0 0 calc(-1 * var(--space-2));
+}
+
+.act {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  /* --control-sm grows on touch screens, so phones get a 44 px target. */
+  min-block-size: var(--control-sm);
+  min-inline-size: var(--control-sm);
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+
+.act[aria-disabled='true'] {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+@media (hover: hover) {
+  .act:not([aria-disabled='true']):hover {
+    background: var(--color-fill);
+    color: var(--color-text);
+  }
+}
+
+.act[data-copied] {
+  color: var(--color-text);
+}
+
+.note {
+  margin-inline-start: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+}
+
+.refused {
+  margin-inline-start: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-danger-strong);
+}

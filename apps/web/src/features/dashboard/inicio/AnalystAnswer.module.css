@@ -3,14 +3,36 @@
   gap: var(--space-3);
 }
 
+/* The formatted answer (chat-first-ui T8): paragraphs and lists in the answer's rhythm. */
 .answer {
-  margin: 0;
   font-size: var(--text-answer);
   line-height: var(--leading-answer);
   white-space: pre-line;
+  /* A very long word or run of markers wraps instead of widening the column. */
+  overflow-wrap: anywhere;
 }
 
-.cite {
+.answer :is(p, ul, ol) {
+  margin: 0;
+}
+
+.answer > * + * {
+  margin-block-start: var(--space-3);
+}
+
+.answer :is(ul, ol) {
+  padding-inline-start: var(--space-5);
+}
+
+.answer li + li {
+  margin-block-start: var(--space-1);
+}
+
+.answer strong {
+  font-weight: var(--weight-bold);
+}
+
+.answer [data-cite] {
   font-size: var(--text-xs);
   vertical-align: super;
   text-decoration: none;
@@ -31,4 +53,12 @@
 
 .module {
   color: var(--color-muted);
+}
+
+/* After a failure: the record search and «Volver a preguntar», below the message. */
+.recover {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-block-start: var(--space-2);
 }
