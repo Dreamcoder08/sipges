@@ -117,10 +117,11 @@ export const InicioPage = ({
   const online = useOnline();
   const aiOn = useProjectSettings()?.external_ai?.enabled ?? false;
   // The box asks only when the project switched external AI on and this installation has an
-  // analyst; otherwise it stays a search box and says why (agentic-analyst S2).
-  const status = useQuery({ ...analystStatusQuery(scope), enabled: aiOn });
+  // analyst; otherwise it stays a search box and says why (agentic-analyst S2, local QA T7).
+  const status = useQuery(analystStatusQuery(scope));
   const asks = aiOn && status.data?.available === true;
   const noAnalyst = aiOn && status.data?.available === false;
+  const aiOff = !aiOn && status.data?.available === true;
   const alerts = useQuery(moduleRecordsQuery('alertas', scope));
   const digital = useQuery(territorialAlertsQuery(scope));
   const events = useQuery(moduleRecordsQuery('eventos', scope));
@@ -257,7 +258,9 @@ export const InicioPage = ({
                   ? 'Enter pregunta · Mayús+Enter, nueva línea'
                   : noAnalyst
                     ? 'El analista no está configurado en esta instalación: Enter busca.'
-                    : 'Enter busca · Mayús+Enter, nueva línea'}
+                    : aiOff
+                      ? 'La IA externa está desactivada en este proyecto: Enter busca. Se activa en Configuración → Privacidad y datos.'
+                      : 'Enter busca · Mayús+Enter, nueva línea'}
               </span>
               <button
                 type="submit"

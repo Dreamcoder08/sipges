@@ -15,8 +15,8 @@ image_file() { printf '%s/images/%s' "$FAKE" "${1//[:\/]/_}"; }
 printf '%s\n' "$*" >>"$FAKE/calls"
 case $1 in
 compose)
-  shift 7 # compose --env-file <file> -p <project> -f compose.yaml
-  [[ ${1:-} != --profile ]] || shift 2
+  shift # compose, then --env-file <file> -p <project> -f compose.yaml [-f <override>] [--profile <name>]
+  while [[ ${1:-} == --env-file || ${1:-} == -p || ${1:-} == -f || ${1:-} == --profile ]]; do shift 2; done
   case $1 in
   version | config) exit 0 ;;
   ps)
@@ -74,7 +74,9 @@ run)
 esac
 FAKE
 printf '#!/usr/bin/env bash\n' >"$root/sleep"
-chmod +x "$root/docker" "$root/sleep"
+# No repository for update to pull from: the tests never touch the checkout they run in.
+printf '#!/usr/bin/env bash\nexit 1\n' >"$root/git"
+chmod +x "$root/docker" "$root/sleep" "$root/git"
 
 # A clean install for one test: an .env, a stand-in Docker and a client folder only its owner's
 # group may read.
@@ -239,6 +241,54 @@ echo 'SIPGES_BACKUP_HOUR=99' >>"$SIPGES_ENV_FILE"
 run update || true
 check 'update refuses before backing up or building' never_built
 check 'nor backed up' test -z "$(grep -F backup.sh "$FAKE/calls" || true)"
+
+# --- the operator's compose override
+
+base_compose() { printf 'compose --env-file %s -p sipges -f compose.yaml' "$SIPGES_ENV_FILE"; }
+# Every compose call carries the override, and nothing else changed.
+all_with() { ! grep '^compose --' "$FAKE/calls" | grep -vqF -- "$(base_compose) -f $1 "; }
+
+fresh
+run install
+: >"$FAKE/calls"
+run start
+check 'without an override, start runs compose as before' called "$(base_compose) up -d db api caddy backup"
+check 'and no call names a second file' test -z "$(grep -F -- '-f compose.yaml -f' "$FAKE/calls" || true)"
+
+fresh
+printf 'services: {}\n' >"$work/override.yaml"
+echo "SIPGES_COMPOSE_OVERRIDE=$work/override.yaml" >>"$SIPGES_ENV_FILE"
+run install
+check 'install passes the override named in .env' called "$(base_compose) -f $work/override.yaml up -d db api caddy backup"
+: >"$FAKE/calls"
+run start
+check 'start passes the override named in .env' called "$(base_compose) -f $work/override.yaml up -d db api caddy backup"
+check 'to every compose call' all_with "$work/override.yaml"
+: >"$FAKE/calls"
+run update
+check 'update passes it to the backup before updating' \
+  called "$(base_compose) -f $work/override.yaml exec -T backup bash /ops/backup.sh"
+check 'and to the start after it' called "$(base_compose) -f $work/override.yaml up -d db api caddy backup"
+check 'and to every other compose call' all_with "$work/override.yaml"
+: >"$FAKE/calls"
+run stop
+check 'stop passes it too' called "$(base_compose) -f $work/override.yaml stop"
+
+fresh
+run install
+echo "SIPGES_COMPOSE_OVERRIDE=$work/missing.yaml" >>"$SIPGES_ENV_FILE"
+: >"$FAKE/calls"
+run start && started=yes || started=no
+check 'an override that does not exist is refused' test "$started" = no
+check 'and the refusal names the setting and the file' said "SIPGES_COMPOSE_OVERRIDE names $work/missing.yaml"
+check 'and nothing started' test -z "$(grep -F ' up ' "$FAKE/calls" || true)"
+: >"$FAKE/calls"
+run stop || true
+check 'stop refuses it too, rather than run without it' test -z "$(grep -F ' stop' "$FAKE/calls" || true)"
+: >"$FAKE/calls"
+run update || true
+check 'update refuses it before backing up or building' never_built
+check 'nor backing up' test -z "$(grep -F backup.sh "$FAKE/calls" || true)"
 
 # --- device notifications get their keys once
 

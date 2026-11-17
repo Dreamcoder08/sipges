@@ -145,6 +145,15 @@ Hace un respaldo, obtiene la versión nueva, reconstruye y reinicia. Los cambios
 
 La restauración es necesaria: los cambios de base de datos solo van hacia adelante, y la versión anterior necesita la base anterior. Quita la línea de `.env` cuando salga la versión corregida.
 
+### Ajustes locales
+
+Lo que debe sobrevivir a `./sipges start` y `./sipges update` va en `.env`, nunca en la terminal: una variable exportada dura una sesión, y mientras existe pesa más que `.env`.
+
+- **Que solo esta computadora pueda entrar.** Agrega `SIPGES_BIND_ADDRESS=127.0.0.1` a `.env` y ejecuta `./sipges start`. Sin esa línea, SIPGES escucha en todas las redes de esta computadora (`0.0.0.0`), que es lo que necesitan las demás computadoras de la oficina.
+- **Tus propios cambios de Compose.** Escríbelos en un archivo Compose tuyo y nómbralo en `.env` con una ruta absoluta, sin comillas: `SIPGES_COMPOSE_OVERRIDE=/home/tu-usuario/sipges-local/compose.override.yaml`. Cada comando de `./sipges` lo pone encima de `compose.yaml`, así que start, update, stop, logs y los respaldos ven los mismos servicios. Las rutas relativas dentro de ese archivo cuentan desde `deploy/local`. Guárdalo fuera del repositorio y cópialo junto con `.env`: una actualización nunca lo toca.
+
+Si ese archivo no existe, `./sipges` se detiene con `SIPGES_COMPOSE_OVERRIDE names <path>, which does not exist` en vez de seguir sin él. Corrige la ruta o quita la línea. Docker Compose leería solo un `compose.override.yaml` junto a `compose.yaml` únicamente cuando no se nombra ningún archivo, y `./sipges` siempre nombra uno, así que esta línea es la única entrada. Pertenece a ese `.env`, así que un simulacro con `SIPGES_ENV_FILE` nunca toma el tuyo.
+
 ## Traer los datos del cliente
 
 Los archivos del cliente van en una carpeta **fuera** de la carpeta de SIPGES, por ejemplo un USB en `/media/usb/cliente`. Nunca cambies los permisos del original: trabaja sobre una copia.
