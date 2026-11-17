@@ -130,6 +130,16 @@ Phase D — shell:
 
 Phase E — proof:
 
+- T19 [ ] — S1, S2: build direction 01 «Centro conversacional» (`design/chat-first/01-centro-conversacional.html`),
+  the owner's pick on the canvas (L10), on top of T3, T5, T12 and T14:
+  - empty state: greeting and composer centred in the column, «Necesita tu atención» as at most three compact
+    cards just above the composer, chips below it, and «Esta semana» as one line of links;
+  - during a conversation: the thread owns the column with the composer docked at the bottom, and the urgent items
+    move to a «Necesita tu atención N» button with a popover in the top bar (a bell with the count on phones). The
+    count is never hidden, and the popover manages focus (Esc returns it);
+  - sidebar order per T13 («Nueva pregunta» first, which starts a new conversation on Inicio; «Buscar Ctrl K»;
+    destinations; «Conversaciones» with this session's questions), so T13 is done here.
+  Reopens T4's layout and replaces T5's fold. Route: worker + parent. Commit: pending.
 - T16 [ ] — S1: Playwright specs (Chromium, mobile, WebKit) for the thread, stop, new conversation, AI off and the
   503 fallback, waiting for state rather than time; axe with 0 violations in both themes; the CSS budget kept
   (41 kB) and the Inicio usable-time budget kept. Route: inline. Commit: pending.
@@ -146,7 +156,6 @@ Order: T1 → T2 → T3 → T4 → T5–T8 (each its own slice, about 400 lines 
 T18(b) → T16 → T17. Phases A, B and D change no API and no stored data.
 
 ## Log
-
 - L1 — 2026-11-17, owner (verbatim): «perfect estaba pensando en mejorar el diseño UI & Ux inspirado en chat gpt web and
   claude web usa ego-browser y mas , crea detalladamente las task que deseas implementar para mejorar mi proyecto»
 - L2 — 2026-11-17, evidence:
@@ -213,6 +222,20 @@ T18(b) → T16 → T17. Phases A, B and D change no API and no stored data.
   - Not run locally: Playwright e2e and the phone check (CI runs the e2e).
   - Slice note: 911 authored lines in two commits, past the ~400-line slice, because the composer moved out of
     Inicio with its tests; T4 onwards return to ≤ 400.
+- L8 — 2026-11-17, owner (verbatim): «implementa chat-first-ui». T12 and T14 done on `feat/chat-shell` (2236a939, and
+  a follow-up that keeps one `sidebar` icon after merging #511 and lists the composer's Esc and ↑). The worker left
+  them uncommitted; the parent committed them.
+  - T12: the sidebar hides completely (`<aside hidden>`) by button or Ctrl+B. The choice is kept in
+    `sipges.sidebar`, focus is moved only when it would be lost, and the compact drawer is unchanged.
+  - T14: Ctrl+/ opens «Atajos de teclado» from the single source `app/layout/shortcuts.ts`. The account menu has a
+    new item, so ADR 0015 lists it.
+  - Tests: RED first (SidebarToggle 4 of 5 failing, ShortcutsSheet 4 of 5 failing), then green. After the merge:
+    `src/app`, `src/shared` and `src/features/dashboard` pass 343/343, and typecheck passes. The worker's full run
+    on the branch: web 813/813, lint, build, CSS 38.8/41 kB.
+  - Known gap: with the sidebar hidden, closing the palette (Ctrl+K) returns focus to the body, because its trigger
+    is hidden.
+  - Not done: a palette command «Atajos de teclado» (the menu item and Ctrl+/ cover it). Slice: 690 lines, two
+    tasks sharing AppShell.
 - L9 — 2026-11-17, T4 and T5 done on `feat/chat-thread` (e7f3ec5b). A worker built them; the parent approved the test
   changes outside the worker's edit surfaces and committed.
   - T4: chips send in one click (ask in «Preguntar», search in «Buscar») from `inicio/starters.ts`. «¿Qué alertas
@@ -237,17 +260,9 @@ T18(b) → T16 → T17. Phases A, B and D change no API and no stored data.
     - the thread is lost when leaving Inicio (T11 decides persistence);
     - «Detener» drops the pending turn until T7.
   - Slice: 1,394 lines with tests, past the slice; T6–T8 return to small units.
-- L8 — 2026-11-17, owner (verbatim): «implementa chat-first-ui». T12 and T14 done on `feat/chat-shell` (2236a939, and
-  a follow-up that keeps one `sidebar` icon after merging #511 and lists the composer's Esc and ↑). The worker left
-  them uncommitted; the parent committed them.
-  - T12: the sidebar hides completely (`<aside hidden>`) by button or Ctrl+B. The choice is kept in
-    `sipges.sidebar`, focus is moved only when it would be lost, and the compact drawer is unchanged.
-  - T14: Ctrl+/ opens «Atajos de teclado» from the single source `app/layout/shortcuts.ts`. The account menu has a
-    new item, so ADR 0015 lists it.
-  - Tests: RED first (SidebarToggle 4 of 5 failing, ShortcutsSheet 4 of 5 failing), then green. After the merge:
-    `src/app`, `src/shared` and `src/features/dashboard` pass 343/343, and typecheck passes. The worker's full run
-    on the branch: web 813/813, lint, build, CSS 38.8/41 kB.
-  - Known gap: with the sidebar hidden, closing the palette (Ctrl+K) returns focus to the body, because its trigger
-    is hidden.
-  - Not done: a palette command «Atajos de teclado» (the menu item and Ctrl+/ cover it). Slice: 690 lines, two
-    tasks sharing AppShell.
+- L10 — 2026-11-17, owner on the canvas (verbatim): «Implement the design artboard
+  design/chat-first/01-centro-conversacional.html» (handoff, with the artboard's tradeoff «A cambio, durante una
+  conversación lo urgente baja a un botón con contador en la barra superior (se aparta de L11) y "Esta semana" queda
+  en una línea de enlaces»). This overrides the parent's L6 choice of 02; the urgent items stay reachable through a
+  counter that is always visible, which the owner accepts. Added T19, which absorbs T13. Built on
+  `feat/chat-center`, stacked on #512 and #513 while their CI runs.
