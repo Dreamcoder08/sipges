@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"encoding/json"
 	"strings"
 	"unicode"
 )
@@ -17,6 +18,9 @@ const (
 	MaxProposedID       = 200
 	MaxProposalReason   = 500
 	MaxPendingProposals = 200
+	// MaxProposalOctets keeps a stored proposal under the table's 65536-octet check, with room
+	// for jsonb's own spacing; a proposal over it is refused, not a failed insert.
+	MaxProposalOctets = 60000
 )
 
 // storedPrefix marks the fingerprint of a stored proposal in proposal_decisions.
@@ -48,6 +52,8 @@ func validText(s string, limit int) bool {
 
 // ProposalReason is the model's reason, collapsed and cut; "" when it gave none.
 func ProposalReason(reason string) string {
+	// PostgreSQL text refuses NUL; it carries nothing a person reads.
+	reason = strings.ReplaceAll(reason, "\x00", "")
 	if strings.TrimSpace(reason) == "" {
 		return ""
 	}
@@ -69,12 +75,21 @@ func RecordDraft(record ProposedRecord, reason string) (Proposal, string) {
 		return Proposal{}, RefusedFields
 	}
 	seen := map[string]bool{}
+	octets := 0
 	for _, f := range record.Payload {
 		value, isText := f.Value.(string)
-		if !isText || !validText(f.Key, MaxProposedKey) || seen[f.Key] || len(units(value)) > MaxProposedValue {
+		// NUL is refused as the real write refuses it; __proto__ is dropped by the real route.
+		if !isText || !validText(f.Key, MaxProposedKey) || seen[f.Key] || f.Key == "__proto__" ||
+			len(units(value)) > MaxProposedValue || strings.ContainsRune(value, 0) {
 			return Proposal{}, RefusedFields
 		}
 		seen[f.Key] = true
+		key, _ := json.Marshal(f.Key)
+		text, _ := json.Marshal(value)
+		octets += len(key) + len(text) + 4
+	}
+	if octets > MaxProposalOctets {
+		return Proposal{}, RefusedFields
 	}
 	payload := make([]Field, 0, len(record.Payload))
 	payload = append(payload, record.Payload...)

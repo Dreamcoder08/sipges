@@ -57,7 +57,7 @@ func parseStoredDecision(raw []byte) (storedDecisionIn, bool) {
 func storedProposalRoutes(mux *http.ServeMux, opts Options, fail func(http.ResponseWriter, *http.Request)) {
 	mux.HandleFunc("GET "+storedProposalsPath, func(w http.ResponseWriter, r *http.Request) {
 		scope, ok := tenancyhttp.ScopeFrom(r.Context())
-		if !ok || opts.Deciding.Proposals == nil {
+		if !ok || opts.Deciding.Proposals == nil || opts.MayWrite == nil {
 			fail(w, r)
 			return
 		}
@@ -68,6 +68,11 @@ func storedProposalRoutes(mux *http.ServeMux, opts Options, fail func(http.Respo
 		}
 		out := make([]storedProposalJSON, 0, len(pending))
 		for _, p := range pending {
+			// Only what this person may decide: a proposal may quote a restricted record the
+			// model read for someone else, and a read-only account never reads one (ADR 0012).
+			if !opts.MayWrite(r.Context(), http.MethodPost, application.ProposalWritePath(p.Proposal)) {
+				continue
+			}
 			out = append(out, storedProposalJSON{
 				ID: p.ID, proposalJSON: toProposalJSON(p.Proposal),
 				ProposedBy: p.ProposedBy, ProposedAt: p.ProposedAt.UTC().Format(time.RFC3339),

@@ -117,7 +117,7 @@ func TestAnAnalystProposalWritesNothingUntilAPersonApproves(t *testing.T) {
 	if n := count(t, conn, `SELECT count(*) FROM record_links`); n != 0 {
 		t.Fatalf("proposing wrote %d links", n)
 	}
-	pending := pendingAs(t, s, "reader", "ACME/NORTE")
+	pending := pendingAs(t, s, "multi", "ACME/NORTE")
 	record := byKind(t, pending, "record")
 	if len(pending) != 2 || record.Record.Module != "acciones" || record.Title != "Crear Acción: «Visitar la comunidad»" ||
 		record.ProposedBy != "multi" || byKind(t, pending, "link").Title != "Vincular: Evento north está relacionado con Evento north-secret" {
@@ -220,5 +220,33 @@ func TestRejectingWritesNothingAndAudits(t *testing.T) {
 	}
 	if got := decideAs(t, s, "multi", link.ID, "maybe"); got.status != http.StatusUnprocessableEntity {
 		t.Fatalf("bad decision: %d", got.status)
+	}
+}
+
+// ADR 0012: a read-only account never reads restricted content, and a proposal may quote it.
+// The list shows only what the viewer may decide, and consulta may decide nothing.
+func TestReadOnlyRolesNeverReadRestrictedContentThroughProposals(t *testing.T) {
+	model := analystSetup(t, true)
+	t.Setenv("SIPGES_DATA_KEY", dataKey)
+	conn := scratchConn(t)
+	t.Cleanup(func() { _, _ = conn.Exec(context.Background(), `DELETE FROM analyst_proposals`) })
+	model.steps = []string{
+		toolCall("p0", "get_record", `{"module":"eventos","id":"north-secret"}`),
+		toolCall("p1", "propose_record", `{"module":"acciones","fields":{"Accion":"SECRETO de north-secret","Estado":"Pendiente"},"reason":"north-secret dice SECRETO"}`),
+		`{"choices":[{"message":{"content":"Listo."}}]}`,
+	}
+	s := start(t, false)
+	if got := askAs(t, s, "multi", "ACME/NORTE", "registra"); got.status != http.StatusOK {
+		t.Fatalf("ask: %d %s", got.status, got.body)
+	}
+	got := s.do(t, req{path: storedProposals, user: "reader", headers: map[string]string{"X-SIPGES-Scope": "ACME/NORTE"}})
+	if got.status != http.StatusOK || strings.Contains(got.body, "SECRETO") || strings.Contains(got.body, "north-secret") {
+		t.Fatalf("consulta reads restricted content: %d %s", got.status, got.body)
+	}
+	if theirs := pendingAs(t, s, "reader", "ACME/NORTE"); len(theirs) != 0 {
+		t.Fatalf("consulta lists %d proposals, want 0", len(theirs))
+	}
+	if mine := pendingAs(t, s, "multi", "ACME/NORTE"); len(mine) != 1 {
+		t.Fatalf("the administrator sees %d proposals, want 1", len(mine))
 	}
 }

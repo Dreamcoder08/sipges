@@ -5,6 +5,15 @@ import (
 	"testing"
 )
 
+// wide is the most fields of the longest values, each character three bytes in UTF-8.
+func wide() []Field {
+	out := make([]Field, MaxProposedFields)
+	for i := range out {
+		out[i] = Field{Key: "Campo" + strings.Repeat("x", i), Value: strings.Repeat("€", MaxProposedValue)}
+	}
+	return out
+}
+
 func TestRecordDraftRefusesWhatTheModelMayNotPropose(t *testing.T) {
 	t.Parallel()
 	fields := func(n int) []Field {
@@ -32,6 +41,12 @@ func TestRecordDraftRefusesWhatTheModelMayNotPropose(t *testing.T) {
 		"blank key":          {ProposedRecord{"acciones", []Field{{" ", "v"}}}, "r", RefusedFields},
 		"valid is accepted":  {ProposedRecord{"acciones", ok}, "La alerta sigue abierta", ""},
 		"html stays as text": {ProposedRecord{"acciones", []Field{{"Accion", "<b>x</b>"}}}, "r", ""},
+		// PostgreSQL jsonb refuses NUL, and the real write refuses it too (records/domain/input.go).
+		"NUL in a value": {ProposedRecord{"acciones", []Field{{"Accion", "a\x00b"}}}, "r", RefusedFields},
+		// The real route drops __proto__ (RecordInput); a proposal never carries it.
+		"__proto__ key": {ProposedRecord{"acciones", []Field{{"__proto__", "v"}}}, "r", RefusedFields},
+		// Within every per-field bound, but over what one stored proposal may hold.
+		"too large in all": {ProposedRecord{"acciones", wide()}, "r", RefusedFields},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -88,5 +103,12 @@ func TestLinkDraftFollowsTheOntologyRules(t *testing.T) {
 	}
 	if _, refusal := LinkDraft(ProposedLink{"participa_en", actor, event}, ""); refusal != RefusedNoReason {
 		t.Fatalf("no reason: %q", refusal)
+	}
+}
+
+func TestProposalReasonDropsNUL(t *testing.T) {
+	t.Parallel()
+	if got := ProposalReason("a\x00b"); got != "ab" {
+		t.Fatalf("reason = %q", got)
 	}
 }
