@@ -152,7 +152,8 @@ preflight() {
 ensure_push_keys() {
   [[ -z $(env_value SIPGES_VAPID_PUBLIC_KEY) && -z $(env_value SIPGES_VAPID_PRIVATE_KEY) ]] || return 0
   local keys
-  if ! keys=$(docker run --rm --pull never --network none --entrypoint /api "sipges-local:$(image_tag)" vapid-keys); then
+  if ! keys=$(docker run --rm --pull never --network none --entrypoint /api "sipges-local:$(image_tag)" vapid-keys) ||
+    ! grep -qE '^SIPGES_VAPID_PUBLIC_KEY=.+$' <<<"$keys" || ! grep -qE '^SIPGES_VAPID_PRIVATE_KEY=.+$' <<<"$keys"; then
     say 'Device notifications stay off: this version cannot make their keys.'
     return 0
   fi
@@ -160,8 +161,10 @@ ensure_push_keys() {
   [[ ! -s $ENV_FILE || -z $(tail -c 1 "$ENV_FILE") ]] || printf '\n' >>"$ENV_FILE"
   {
     printf '# Device notifications (push), made once by ./sipges. A new pair cuts off subscribed devices.\n'
-    printf '%s\n' "$keys"
-    printf 'SIPGES_VAPID_SUBJECT=mailto:sipges@%s\n' "$(env_value SIPGES_SITE_HOST)"
+    grep -E '^SIPGES_VAPID_(PUBLIC|PRIVATE)_KEY=' <<<"$keys"
+    # A contact the operator set stays: the last line would win.
+    [[ -n $(env_value SIPGES_VAPID_SUBJECT) ]] ||
+      printf 'SIPGES_VAPID_SUBJECT=mailto:sipges@%s\n' "$(env_value SIPGES_SITE_HOST)"
   } >>"$ENV_FILE"
 }
 

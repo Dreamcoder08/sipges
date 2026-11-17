@@ -64,6 +64,8 @@ build)
 run)
   # The image's key generator: a new pair each call.
   if [[ $* == *vapid-keys* ]]; then
+    [[ ! -f $FAKE/vapid-fails ]] || exit 1
+    if [[ -f $FAKE/vapid-empty ]]; then exit 0; fi
     count=$(($(cat "$FAKE/vapid" 2>/dev/null || echo 0) + 1))
     echo "$count" >"$FAKE/vapid"
     printf 'SIPGES_VAPID_PUBLIC_KEY=public-%s\nSIPGES_VAPID_PRIVATE_KEY=private-%s\n' "$count" "$count"
@@ -263,6 +265,27 @@ printf 'SIPGES_ANALYST_MODEL=synthetic-model' >>"$SIPGES_ENV_FILE" # an operator
 run install
 check 'the line before the keys keeps its value' grep -qx 'SIPGES_ANALYST_MODEL=synthetic-model' "$SIPGES_ENV_FILE"
 check 'and the keys are still added' grep -qx 'SIPGES_VAPID_PUBLIC_KEY=public-1' "$SIPGES_ENV_FILE"
+
+fresh
+printf 'SIPGES_VAPID_SUBJECT=mailto:ops@example.org\n' >>"$SIPGES_ENV_FILE"
+run install
+check 'a contact the operator set stays the only one' \
+  test "$(grep -c '^SIPGES_VAPID_SUBJECT=' "$SIPGES_ENV_FILE")" = 1
+check 'and keeps its value' grep -qx 'SIPGES_VAPID_SUBJECT=mailto:ops@example.org' "$SIPGES_ENV_FILE"
+
+fresh
+touch "$FAKE/vapid-fails"
+before=$(cat "$SIPGES_ENV_FILE")
+run install
+check 'an image that cannot make keys still starts' said 'SIPGES is ready'
+check 'says device notifications stay off' said 'Device notifications stay off'
+check 'and leaves the .env as it was' test "$(cat "$SIPGES_ENV_FILE")" = "$before"
+
+fresh
+touch "$FAKE/vapid-empty"
+before=$(cat "$SIPGES_ENV_FILE")
+run install
+check 'an empty answer writes no keys' test "$(cat "$SIPGES_ENV_FILE")" = "$before"
 
 # --- previous points only at a build that started
 
