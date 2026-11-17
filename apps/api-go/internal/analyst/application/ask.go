@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/analyst/domain"
@@ -97,6 +96,21 @@ type Ask struct {
 	Timeout time.Duration
 }
 
+// finalAnswer splits the model's last text into the cited answer and its blocks (S3): the blocks
+// are checked against the same numbered records, and a bad block is dropped, not an error.
+func finalAnswer(text string, sources *domain.Sources) (domain.CitedAnswer, error) {
+	text, raw := domain.SplitBlocks(text)
+	if text == "" {
+		return domain.CitedAnswer{}, fmt.Errorf("%w: empty answer", ErrModel)
+	}
+	answer, err := domain.Cite(text, sources)
+	if err != nil {
+		return domain.CitedAnswer{}, err
+	}
+	answer.Blocks = domain.ResolveBlocks(raw, sources)
+	return answer, nil
+}
+
 // Answer runs the loop for question and checks the citations of the final answer.
 func (a Ask) Answer(ctx context.Context, question string) (domain.CitedAnswer, error) {
 	timeout := a.Timeout
@@ -126,10 +140,7 @@ func (a Ask) Answer(ctx context.Context, question string) (domain.CitedAnswer, e
 			return domain.CitedAnswer{}, fmt.Errorf("%w: %w", ErrModel, err)
 		}
 		if len(step.Calls) == 0 {
-			if strings.TrimSpace(step.Text) == "" {
-				return domain.CitedAnswer{}, fmt.Errorf("%w: empty answer", ErrModel)
-			}
-			return domain.Cite(step.Text, &sources)
+			return finalAnswer(step.Text, &sources)
 		}
 		turns = append(turns, Turn{Calls: step.Calls})
 		for _, c := range step.Calls {

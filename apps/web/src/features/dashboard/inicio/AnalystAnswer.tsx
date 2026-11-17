@@ -3,6 +3,7 @@ import { InternalLink, objectHref } from '../../../shared/lib/navigation.tsx';
 import { Alert } from '../../../shared/ui/Alert.tsx';
 import { Button } from '../../../shared/ui/Button.tsx';
 import { type AnalystAnswer as Answer, type AnalystSource, answerParts } from './ask.ts';
+import { AnswerBlocks } from './AnswerBlocks.tsx';
 import styles from './AnalystAnswer.module.css';
 
 const sourceName = (source: AnalystSource) => source.title || source.id;
@@ -23,7 +24,8 @@ export const AnalystAnswer = ({
 }: {
   pending: boolean;
   question: string;
-  data?: Answer | undefined;
+  /** Blocks may be missing in answers built before they existed (tests, cached data). */
+  data?: (Omit<Answer, 'blocks'> & Partial<Pick<Answer, 'blocks'>>) | undefined;
   error?: unknown;
   onSearch: (text: string) => void;
 }) => {
@@ -70,6 +72,7 @@ export const AnalystAnswer = ({
           </>
         ) : null}
       </div>
+      {data && !pending ? <AnswerBlocks blocks={data.blocks ?? []} /> : null}
       {error && !pending ? (
         <Alert tone="error">
           {isApiError(error) ? error.detail : 'No se pudo obtener la respuesta.'}
