@@ -210,6 +210,21 @@
   cursor: pointer;
 }
 
+/* On a phone, «Nueva conversación» as an icon beside the attention bell (T15). */
+.newChatIcon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  border: 1px solid var(--color-control-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-lg);
+  cursor: pointer;
+}
+
 /* The dock sticks only inside its parent: during a conversation the page column is that parent. */
 .home[data-thread] .compose {
   display: contents;
@@ -287,6 +302,17 @@
 
   .title {
     font-size: var(--text-xl);
+  }
+
+  /* During a conversation the thread owns the screen (T15): the greeting leaves the screen but
+     stays in the outline, above the answers' own headings; the status line stays. */
+  .home[data-thread] .title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   .suggest {
@@ -380,6 +406,12 @@
    * content area ends above it at rest and while scrolling, so nothing shows under or around the
    * composer. At the end of the page the strip is back in the flow, below the suggestions.
    */
+  /* The dock holds the bottom safe area itself; the content area's own bottom padding would lift
+     it off the bottom of the screen at the end of the page. */
+  :global(main):has(.dock) {
+    padding-bottom: 0;
+  }
+
   .dock {
     position: sticky;
     bottom: 0;

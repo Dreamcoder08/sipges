@@ -90,6 +90,7 @@
 .search button {
   width: 100%;
   min-width: 0;
+  height: max(2.5rem, var(--control-sm));
 }
 
 /* The bell opens Bandeja › Avisos; its badge counts the unread ones. */
@@ -98,8 +99,9 @@
   flex: none;
   display: inline-grid;
   place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  /* 44 px on a touch screen, as every control of the drawer (chat-first-ui T15). */
+  width: max(2.5rem, var(--control-sm));
+  height: max(2.5rem, var(--control-sm));
   border-radius: var(--radius-pill);
   color: var(--color-muted);
   font-size: var(--text-xl);
@@ -169,7 +171,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  min-height: 2.25rem;
+  min-height: max(2.25rem, var(--control-sm));
   padding: 0.375rem var(--space-3);
   border-radius: var(--radius-md);
   color: var(--color-muted);

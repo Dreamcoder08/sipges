@@ -1,5 +1,5 @@
 import type { IrsaSummary } from '@sipges/contracts';
-import { useId } from 'react';
+import { Fragment, useId } from 'react';
 import { formatIndex } from '../../../shared/lib/format.ts';
 import { InternalLink } from '../../../shared/lib/navigation.tsx';
 import { LevelPill } from '../../../shared/ui/Badges.tsx';
@@ -112,11 +112,13 @@ export const WeekLine = ({
     <section className={styles.week} aria-labelledby={id}>
       <p>
         <span id={id}>Esta semana</span>:{' '}
+        {/* Links straight in the sentence: a link wrapped alone would read as a standalone
+            control, which a phone must make 44 px tall (WCAG 2.5.5 exempts links in a line of text). */}
         {links.map(([href, text], index) => (
-          <span key={href}>
+          <Fragment key={href}>
             {index ? <span aria-hidden="true"> · </span> : null}
             <InternalLink href={href}>{text}</InternalLink>
-          </span>
+          </Fragment>
         ))}
       </p>
     </section>

@@ -22,14 +22,18 @@ Set on 2026-11-12 from the build of `origin/main` at `ffae5863`, plus 5% headroo
 
 | Total | Measured | Budget |
 | --- | ---: | ---: |
-| Entry, raw | 688.8 kB | 724 kB |
-| Entry, gzip | 206.7 kB | 218 kB |
+| Entry, raw | 688.8 kB (731.1 kB on 2026-11-17) | 768 kB |
+| Entry, gzip | 206.7 kB (218.7 kB on 2026-11-17) | 230 kB |
 | All JavaScript, gzip | 1,980.0 kB | 2,080 kB |
 | All CSS, gzip | 44.3 kB (38.5 kB on 2026-11-17) | 41 kB |
 
 Raw totals then were 7,271.8 kB of JavaScript and 223.7 kB of CSS. Vite already warns that three chunks
 (`index`, `GeoCanvas`, `CesiumCanvas`) exceed 500 kB; the budget records that size and does not fix it.
 `dist/cesium/` is copied static data and is not counted.
+
+On 2026-11-17 the entry budget went from 724/218 kB to 768/230 kB (raw/gzip, measured + 5%): the chat-first Inicio
+(composer, thread, attention popover, shortcuts sheet) lives in the entry chunk. Moving the thread into a lazy chunk
+is tracked as chat-first-ui T20.
 
 On 2026-11-17 the CSS budget went from 47 kB to 41 kB: the build drops the rules of MapLibre controls the map
 never adds (logo, attribution, zoom, compass, geolocate, fullscreen, terrain, globe, scale), about 8.5 kB gzip of

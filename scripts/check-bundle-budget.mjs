@@ -15,10 +15,12 @@ import { gzipSync } from 'node:zlib';
  * Measured then: entry 688,760 raw / 206,727 gzip; all JS 7,271,771 / 1,980,039 gzip; all CSS 223,746 / 44,334 gzip.
  * CSS lowered on 2026-11-17 after the unused MapLibre control rules were dropped (apps/web/scripts/trim-maplibre-css.ts):
  * all CSS measured 171.3 kB raw / 38.5 kB gzip, plus 5% headroom.
+ * Entry raised on 2026-11-17 for the chat-first Inicio (chat-first-ui T3-T5, T12, T14, T19): measured 731.1 kB raw /
+ * 218.7 kB gzip, plus 5% headroom. Lazy-loading the thread is chat-first-ui T20.
  */
 export const BUDGETS = {
-  'entry (index.html scripts and styles), raw': 724_000,
-  'entry (index.html scripts and styles), gzip': 218_000,
+  'entry (index.html scripts and styles), raw': 768_000,
+  'entry (index.html scripts and styles), gzip': 230_000,
   'all JavaScript, gzip': 2_080_000,
   'all CSS, gzip': 41_000,
 };

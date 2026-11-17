@@ -113,7 +113,7 @@ Phase D — shell:
 - T12 [x] — S2: on wide screens the sidebar can be hidden with a button and Ctrl+B; the choice is kept in
   `localStorage`. Hidden means gone, with the button left in the top bar, not an icon rail (S3). Route: inline.
   Commit: pending.
-- T13 [ ] — S2: sidebar order:
+- T13 [x] — S2: sidebar order (done in T19):
   - «Nueva pregunta» first, with its shortcut;
   - «Buscar», showing Ctrl K;
   - then the five destinations and Integraciones;
@@ -122,7 +122,7 @@ Phase D — shell:
   Route: inline. Commit: pending.
 - T14 [x] — S2: a shortcuts sheet (Ctrl+/) listing every shortcut, and the shortcut shown next to each command that
   has one. Route: inline. Commit: pending.
-- T15 [ ] — S1: phones:
+- T15 [x] — S1: phones:
   - the thread fills the screen and the composer stays docked above the keyboard and the safe area;
   - the drawer holds «Nueva pregunta» and the conversations;
   - checked at 360 and 412 px with `sipges-phone-check`, no horizontal overflow.
@@ -130,7 +130,7 @@ Phase D — shell:
 
 Phase E — proof:
 
-- T19 [ ] — S1, S2: build direction 01 «Centro conversacional» (`design/chat-first/01-centro-conversacional.html`),
+- T19 [x] — S1, S2: build direction 01 «Centro conversacional» (`design/chat-first/01-centro-conversacional.html`),
   the owner's pick on the canvas (L10), on top of T3, T5, T12 and T14:
   - empty state: greeting and composer centred in the column, «Necesita tu atención» as at most three compact
     cards just above the composer, chips below it, and «Esta semana» as one line of links;
@@ -140,6 +140,9 @@ Phase E — proof:
   - sidebar order per T13 («Nueva pregunta» first, which starts a new conversation on Inicio; «Buscar Ctrl K»;
     destinations; «Conversaciones» with this session's questions), so T13 is done here.
   Reopens T4's layout and replaces T5's fold. Route: worker + parent. Commit: pending.
+- T20 [ ] — S1: move the thread, AnalystAnswer and the attention popover into a lazy chunk loaded on the first
+  question, and bring the entry budget back towards 218 kB gzip (it was raised to 230 kB in L11). Route: inline.
+  Commit: pending.
 - T16 [ ] — S1: Playwright specs (Chromium, mobile, WebKit) for the thread, stop, new conversation, AI off and the
   503 fallback, waiting for state rather than time; axe with 0 violations in both themes; the CSS budget kept
   (41 kB) and the Inicio usable-time budget kept. Route: inline. Commit: pending.
@@ -266,3 +269,25 @@ T18(b) → T16 → T17. Phases A, B and D change no API and no stored data.
   en una línea de enlaces»). This overrides the parent's L6 choice of 02; the urgent items stay reachable through a
   counter that is always visible, which the owner accepts. Added T19, which absorbs T13. Built on
   `feat/chat-center`, stacked on #512 and #513 while their CI runs.
+- L11 — 2026-11-17, owner (verbatim): «avanza mucho demoras paraleliza el trabajo y mas». T19, T13 and T15 are done on
+  `feat/chat-center`, which also carries T4 and T5 (#513 is closed in its favour). Workers built them; the parent
+  committed.
+  - T19 (commit d30637e8): centred empty state, at most three attention cards, a one-line «Esta semana», the top-bar
+    «Necesita tu atención N» panel (a bell on phones, «Nada urgente» disabled at 0), the sidebar with «Nueva
+    pregunta» first and «Conversaciones», and the thread lifted into `AnalystThreadProvider` (memory only).
+  - Tests: RED first (13 rules). The web suite passes 856/856.
+  - The #513 CI failures had real causes:
+    - the T5 fold line was 584 px wide on phones; T19 removed it, and phone specs now pin the layout;
+    - the chip strip re-snapped when the red-alert chip was prepended; it is now reset before paint.
+  - T15 (phones, each rule RED first):
+    - greeting hidden visually during a thread, and «Nueva conversación» as a 44 px icon;
+    - the composer dock keeps the safe area, and drawer targets are 44 px;
+    - `interactive-widget=resizes-content` so Android keeps the composer above the keyboard.
+  - Playwright, run locally with the CI font: mobile-chromium 96 passed, 5 skipped; the chromium shell and Inicio
+    specs 31 passed, 2 skipped. axe reports 0 violations in both themes. WebKit could not launch on this host
+    (missing system libraries); CI runs it.
+  - Entry budget raised on purpose to 768/230 kB (measured 731.1/218.7 kB plus 5%); T20 brings it back with a
+    lazy chunk.
+  - Open, for the owner:
+    - the phone artboard stacks the chips while the product keeps a swipeable strip;
+    - the phone tab row is cut beside the bell and «+» during a thread.

@@ -162,7 +162,11 @@ for (const width of [360, 412] as const) {
     // Focus: from the top, Tab through the content and Shift+Tab back.
     await page.evaluate(() => window.scrollTo(0, 0));
     await composerReserved(page);
-    await page.getByRole('link', { name: 'Abrir Bandeja' }).focus();
+    // With more than three open items the head link reads «Ver todo en Bandeja» (T19).
+    await page
+      .getByRole('region', { name: 'Necesita tu atención' })
+      .getByRole('link', { name: /Bandeja$/ })
+      .focus();
     const forward = await walk(page, 'Tab', 30);
     const back = await walk(page, 'Shift+Tab', 30);
 

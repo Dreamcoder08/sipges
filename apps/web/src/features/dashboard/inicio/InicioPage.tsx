@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { territorialAlertsQuery } from '../../../shared/api/territorial-alerts.ts';
 import { formatLongDay } from '../../../shared/lib/format.ts';
+import { useMediaQuery } from '../../../shared/lib/media.ts';
 import { Composer, type ComposerMode } from '../../../shared/ui/Composer.tsx';
 import { Icon } from '../../../shared/ui/Icon.tsx';
 import { scrollBehavior } from '../../../shared/lib/motion.ts';
@@ -29,6 +30,9 @@ import { starterQuestions } from './starters.ts';
 import styles from './InicioPage.module.css';
 
 const today = () => formatLongDay();
+
+/** The stylesheet's phone layout, where «Nueva conversación» joins the top bar (T15). */
+const PHONE_QUERY = '(max-width: 40rem)';
 
 /**
  * Inicio, direction 01 «Centro conversacional» (odd/tasks/chat-first-ui.md T19, L10). Empty, it is
@@ -119,6 +123,9 @@ export const InicioPage = ({
   const thread = useAnalystThread(scope);
   const shared = useSharedThread();
   const conversation = thread.turns.length > 0;
+  // On a phone the thread owns the screen (chat-first-ui T15): the greeting steps aside and
+  // «Nueva conversación» waits as an icon beside the bell instead of on a row of its own.
+  const phone = useMediaQuery(PHONE_QUERY);
 
   // Whether the end of the page is in view, from a sentinel after the composer (modern-web-guidance
   // scroll-position-aware-elements); without an observer the view always follows.
@@ -231,12 +238,32 @@ export const InicioPage = ({
   const week = events.data ? eventsThisWeek(events.data, new Date()) : null;
   // A chip sends at once, in the mode the switch shows (T4); the box shows what was sent.
   const starters = starterQuestions({ openAlerts });
+  // A chip that the project's state adds goes first once the alerts load. The phone strip snaps,
+  // and a snapped scroller keeps its snapped chip in place when one is added before it, which
+  // would leave the new first chip out of view behind the start fade: the strip goes back to its
+  // start, before paint, whenever the list changes.
+  const starterKey = starters.join('\n');
+  useLayoutEffect(() => {
+    chips.current?.scrollTo?.({ left: 0, behavior: 'instant' });
+  }, [starterKey]);
   const sendStarter = (text: string) => {
     setQuestion(text);
     onSubmit(text);
   };
 
   const weekLine = <WeekLine events={week?.total} irsa={irsa.data} />;
+  const newChat = (
+    <button
+      type="button"
+      className={phone ? styles.newChatIcon : styles.newChat}
+      title="Nueva conversación · Ctrl+Mayús+O"
+      aria-keyshortcuts="Control+Shift+O Meta+Shift+O"
+      onClick={newConversation}
+    >
+      <Icon name="plus" />
+      {phone ? <span className="visually-hidden">Nueva conversación</span> : 'Nueva conversación'}
+    </button>
+  );
 
   return (
     <div className={styles.page}>
@@ -246,6 +273,7 @@ export const InicioPage = ({
           {conversation ? (
             <AttentionPopover query={attentionQuery}>{weekLine}</AttentionPopover>
           ) : null}
+          {conversation && phone ? newChat : null}
         </div>
       ) : null}
       <div
@@ -277,18 +305,7 @@ export const InicioPage = ({
         )}
         {conversation ? (
           <div className={styles.conversation}>
-            <div className={styles.threadBar}>
-              <button
-                type="button"
-                className={styles.newChat}
-                title="Nueva conversación · Ctrl+Mayús+O"
-                aria-keyshortcuts="Control+Shift+O Meta+Shift+O"
-                onClick={newConversation}
-              >
-                <Icon name="plus" />
-                Nueva conversación
-              </button>
-            </div>
+            {phone ? null : <div className={styles.threadBar}>{newChat}</div>}
             <Thread
               turns={thread.turns}
               pending={thread.pending}
