@@ -4,6 +4,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
+### Rendimiento
+
+- Catálogo GEOCATMIN (INGEMMET) en el backend Go: una sola consulta llena la caché aunque lleguen muchas personas a la vez (agrupación de peticiones; antes 20 personas con la caché vencida hacían 280 consultas, ahora 14), y al vencer los 5 minutos se sigue respondiendo con el catálogo anterior mientras una sola actualización corre en segundo plano, así nadie vuelve a esperar al servicio externo. Un catálogo vacío se sigue guardando 30 s (caché negativa). Quien cancela su pedido recibe «no disponible» al instante sin cortar la consulta de los demás.
+
 ### Corregido
 
 - Inicio: en un proyecto con el envío a IA externa apagado, la caja ya no queda como buscador sin explicación. Si la instalación tiene analista, la ayuda dice «La IA externa está desactivada en este proyecto: Enter busca. Se activa en Configuración → Privacidad y datos.»

@@ -44,15 +44,20 @@ type Gateway struct {
 	timeout  time.Duration
 	maxBytes int64
 
-	mu      sync.Mutex
-	cached  *cachedCatalogue
-	lookups int
+	mu       sync.Mutex
+	cached   *cachedCatalogue
+	inflight *flight
 }
 
 type cachedCatalogue struct {
-	lookup  int
 	expires time.Time
 	data    application.Catalogue
+}
+
+// flight is the one catalogue lookup in progress; every caller that needs it waits on done.
+type flight struct {
+	done chan struct{}
+	data application.Catalogue
 }
 
 // NewGateway returns the INGEMMET gateway; now is the clock (nil means time.Now).
@@ -177,41 +182,78 @@ func scale(v any) *domain.Number {
 	return &n
 }
 
-// Catalogue implements application.Gateway. Only a settled catalogue is shared: concurrent cold
-// callers repeat the lookup rather than wait on one another, and a slower lookup that started
-// earlier never replaces a newer answer.
+// Catalogue implements application.Gateway. One lookup fills the cache however many callers
+// arrive at once (request coalescing): the first starts it and the rest wait on the same one. Once
+// a catalogue exists it keeps answering past its TTL while that single refresh runs (stale while
+// revalidate), so callers never wait on INGEMMET again. An answer without layers is cached too,
+// for 30 s instead of 5 min (negative cache), so a failing service is not asked on every request.
+// A caller that gives up gets an unavailable answer at once and leaves the lookup running for
+// the others; each request to INGEMMET is bounded by its own timeout.
 func (g *Gateway) Catalogue(ctx context.Context) application.Catalogue {
 	g.mu.Lock()
-	if g.cached != nil && g.cached.expires.After(g.now()) {
-		data := g.cached.data
+	if c := g.cached; c != nil && c.expires.After(g.now()) {
 		g.mu.Unlock()
-		return data
+		return c.data
 	}
-	g.lookups++
-	lookup := g.lookups
+	f := g.inflight
+	if f == nil {
+		f = &flight{done: make(chan struct{})}
+		g.inflight = f
+		go g.refresh(f)
+	}
+	stale := g.cached
 	g.mu.Unlock()
-
-	checkedAt := isoMillis(g.now())
-	type answer struct {
-		layers []application.Layer
-		err    error
+	if stale != nil {
+		return stale.data
 	}
-	answers := make([]answer, len(domain.ServiceIDs))
+	select {
+	case <-f.done:
+		return f.data
+	case <-ctx.Done():
+		return g.catalogueFrom(isoMillis(g.now()), make([]serviceAnswer, len(domain.ServiceIDs)), ctx.Err())
+	}
+}
+
+type serviceAnswer struct {
+	layers []application.Layer
+	err    error
+}
+
+// refresh runs the one lookup of f, stores it and releases its waiters.
+func (g *Gateway) refresh(f *flight) {
+	checkedAt := isoMillis(g.now())
+	answers := make([]serviceAnswer, len(domain.ServiceIDs))
 	for i := 0; i < len(domain.ServiceIDs); i += 2 { // two services at a time
 		var wg sync.WaitGroup
 		for j := i; j < min(i+2, len(domain.ServiceIDs)); j++ {
 			wg.Go(func() {
-				layers, err := g.serviceLayers(ctx, domain.ServiceIDs[j])
-				answers[j] = answer{layers, err}
+				layers, err := g.serviceLayers(context.Background(), domain.ServiceIDs[j])
+				answers[j] = serviceAnswer{layers, err}
 			})
 		}
 		wg.Wait()
 	}
+	data := g.catalogueFrom(checkedAt, answers, nil)
+	ttl := catalogueTTL
+	if len(data.Layers) == 0 {
+		ttl = emptyTTL
+	}
+	g.mu.Lock()
+	g.cached = &cachedCatalogue{expires: g.now().Add(ttl), data: data}
+	g.inflight = nil
+	f.data = data
+	g.mu.Unlock()
+	close(f.done)
+}
+
+// catalogueFrom builds the catalogue of one lookup; failed, when set, marks every service
+// unavailable (a caller that gave up before the lookup ended).
+func (g *Gateway) catalogueFrom(checkedAt string, answers []serviceAnswer, failed error) application.Catalogue {
 	data := application.Catalogue{Status: "unavailable", CheckedAt: checkedAt, ServiceURL: g.origin,
 		Attribution: "INGEMMET – GEOCATMIN", Services: []application.ServiceStatus{}, Layers: []application.Layer{}}
 	for i, a := range answers {
 		id := domain.ServiceIDs[i]
-		if a.err != nil {
+		if failed != nil || a.err != nil {
 			data.Services = append(data.Services, application.ServiceStatus{ID: id, Status: "unavailable",
 				CheckedAt: checkedAt, Error: unavailableService})
 			continue
@@ -220,16 +262,9 @@ func (g *Gateway) Catalogue(ctx context.Context) application.Catalogue {
 		data.Services = append(data.Services, application.ServiceStatus{ID: id, Status: "verified", CheckedAt: checkedAt})
 		data.Status = "verified"
 	}
-	ttl := catalogueTTL
 	if len(data.Layers) == 0 {
 		data.Error = "No fue posible verificar el catálogo oficial."
-		ttl = emptyTTL
 	}
-	g.mu.Lock()
-	if g.cached == nil || g.cached.lookup < lookup {
-		g.cached = &cachedCatalogue{lookup: lookup, expires: g.now().Add(ttl), data: data}
-	}
-	g.mu.Unlock()
 	return data
 }
 

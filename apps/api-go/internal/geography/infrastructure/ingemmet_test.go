@@ -134,6 +134,10 @@ func TestCatalogueIsCachedFiveMinutesOrThirtySecondsWhenEmpty(t *testing.T) {
 	}
 	down.Store(true)
 	*now = now.Add(time.Millisecond)
+	if stale := g.Catalogue(t.Context()); stale.Status != "verified" {
+		t.Fatalf("the expired catalogue should answer while it refreshes: %+v", stale)
+	}
+	settled(t, g)
 	cat := g.Catalogue(t.Context())
 	if f.calls.Load() == first || cat.Status != "unavailable" || cat.Error != "No fue posible verificar el catálogo oficial." || len(cat.Layers) != 0 {
 		t.Fatalf("expired catalogue not refreshed: %+v", cat)
@@ -145,50 +149,131 @@ func TestCatalogueIsCachedFiveMinutesOrThirtySecondsWhenEmpty(t *testing.T) {
 	second := f.calls.Load()
 	*now = now.Add(30*time.Second - time.Millisecond)
 	g.Catalogue(t.Context())
+	settled(t, g)
 	if f.calls.Load() != second {
 		t.Fatal("an empty catalogue was not cached for 30 s")
 	}
 	*now = now.Add(time.Millisecond)
 	g.Catalogue(t.Context())
+	settled(t, g)
 	if f.calls.Load() == second {
 		t.Fatal("an empty catalogue was cached beyond 30 s")
 	}
 }
 
-func TestAnOlderLookupNeverReplacesANewerCatalogue(t *testing.T) {
+// settled waits until no catalogue lookup is running.
+func settled(t *testing.T, g *Gateway) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		g.mu.Lock()
+		busy := g.inflight != nil
+		g.mu.Unlock()
+		if !busy {
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("a catalogue lookup never ended")
+		}
+		time.Sleep(time.Millisecond)
+	}
+}
+
+func TestConcurrentColdCallersShareOneLookup(t *testing.T) {
 	release := make(chan struct{})
-	var first atomic.Bool
+	var started atomic.Bool
+	f, g, _ := newFake(t, func(w http.ResponseWriter, _ *http.Request) {
+		started.Store(true)
+		<-release
+		writeJSON(w, `{"layers":[{"id":7,"name":"Sintética","type":"Feature Layer"}],"capabilities":"Map"}`)
+	})
+	const callers = 20
+	answers := make(chan application.Catalogue, callers)
+	for range callers {
+		go func() { answers <- g.Catalogue(t.Context()) }()
+	}
+	for !started.Load() {
+		time.Sleep(time.Millisecond)
+	}
+	time.Sleep(50 * time.Millisecond) // every caller is waiting by now
+	close(release)
+	for range callers {
+		if a := <-answers; a.Status != "verified" || len(a.Layers) == 0 {
+			t.Fatalf("answer %+v", a)
+		}
+	}
+	// Two requests per service (its layers and its root), once.
+	if got, want := int(f.calls.Load()), 2*len(domain.ServiceIDs); got != want {
+		t.Fatalf("INGEMMET was asked %d times, want %d", got, want)
+	}
+}
+
+// A caller that gives up does not cancel the lookup the others are waiting on.
+func TestACallerThatGivesUpLeavesTheSharedLookupRunning(t *testing.T) {
+	release := make(chan struct{})
+	var started atomic.Bool
 	_, g, _ := newFake(t, func(w http.ResponseWriter, _ *http.Request) {
-		if first.CompareAndSwap(false, true) {
-			<-release // the earlier caller's lookup hangs
-			http.Error(w, "offline", http.StatusBadGateway)
+		started.Store(true)
+		<-release
+		writeJSON(w, `{"layers":[{"id":7,"name":"Sintética","type":"Feature Layer"}],"capabilities":"Map"}`)
+	})
+	ctx, cancel := context.WithCancel(t.Context())
+	gaveUp := make(chan application.Catalogue)
+	go func() { gaveUp <- g.Catalogue(ctx) }()
+	for !started.Load() {
+		time.Sleep(time.Millisecond)
+	}
+	waiter := make(chan application.Catalogue)
+	go func() { waiter <- g.Catalogue(t.Context()) }()
+	cancel()
+	if a := <-gaveUp; a.Status != "unavailable" {
+		t.Fatalf("the caller that gave up got %+v", a)
+	}
+	close(release)
+	if a := <-waiter; a.Status != "verified" {
+		t.Fatalf("the waiting caller got %+v", a)
+	}
+}
+
+// After the TTL the last catalogue keeps answering while one refresh runs (stale while
+// revalidate), so no caller waits on INGEMMET once the cache has been filled.
+func TestAnExpiredCatalogueAnswersWhileOneRefreshRuns(t *testing.T) {
+	var round atomic.Int32
+	release := make(chan struct{})
+	f, g, now := newFake(t, func(w http.ResponseWriter, _ *http.Request) {
+		if round.Load() == 1 {
+			<-release
+			writeJSON(w, `{"layers":[{"id":9,"name":"Nueva","type":"Feature Layer"}],"capabilities":"Map"}`)
 			return
 		}
 		writeJSON(w, `{"layers":[{"id":7,"name":"Sintética","type":"Feature Layer"}],"capabilities":"Map"}`)
 	})
-	older := make(chan application.Catalogue)
-	go func() { older <- g.Catalogue(context.Background()) }()
-	for !first.Load() {
-		time.Sleep(time.Millisecond)
-	}
-	newer := g.Catalogue(t.Context()) // must not wait on the hung lookup
-	if newer.Status != "verified" || len(newer.Services) != len(domain.ServiceIDs) {
-		t.Fatalf("newer %+v", newer)
+	first := g.Catalogue(t.Context())
+	before := f.calls.Load()
+	round.Store(1)
+	*now = now.Add(catalogueTTL + time.Second)
+	for range 5 {
+		done := make(chan application.Catalogue)
+		go func() { done <- g.Catalogue(t.Context()) }()
+		select {
+		case a := <-done:
+			if a.Layers[0].Name != first.Layers[0].Name {
+				t.Fatalf("expected the previous catalogue while refreshing, got %+v", a.Layers)
+			}
+		case <-time.After(2 * time.Second):
+			t.Fatal("a caller waited on the refresh")
+		}
 	}
 	close(release)
-	old := <-older
-	unavailable := false
-	for _, s := range old.Services {
-		unavailable = unavailable || s.Status == "unavailable"
+	deadline := time.Now().Add(5 * time.Second)
+	for g.Catalogue(t.Context()).Layers[0].Name != "Nueva" {
+		if time.Now().After(deadline) {
+			t.Fatal("the refresh never replaced the catalogue")
+		}
+		time.Sleep(5 * time.Millisecond)
 	}
-	if !unavailable {
-		t.Fatalf("older lookup %+v", old.Services)
-	}
-	again := g.Catalogue(t.Context())
-	a, _ := json.Marshal(again)
-	n, _ := json.Marshal(newer)
-	if string(a) != string(n) {
-		t.Fatalf("cache replaced by the older lookup:\n%s\n%s", a, n)
+	if got, want := int(f.calls.Load()-before), 2*len(domain.ServiceIDs); got != want {
+		t.Fatalf("the refresh asked INGEMMET %d times, want %d", got, want)
 	}
 }
 
