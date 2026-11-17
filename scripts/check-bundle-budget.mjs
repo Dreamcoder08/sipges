@@ -13,12 +13,14 @@ import { gzipSync } from 'node:zlib';
 /**
  * Bytes. Set on 2026-11-12 from the build of origin/main ffae5863 plus 5% headroom, rounded up to 1 kB.
  * Measured then: entry 688,760 raw / 206,727 gzip; all JS 7,271,771 / 1,980,039 gzip; all CSS 223,746 / 44,334 gzip.
+ * CSS lowered on 2026-11-17 after the unused MapLibre control rules were dropped (apps/web/scripts/trim-maplibre-css.ts):
+ * all CSS measured 171.3 kB raw / 38.5 kB gzip, plus 5% headroom.
  */
 export const BUDGETS = {
   'entry (index.html scripts and styles), raw': 724_000,
   'entry (index.html scripts and styles), gzip': 218_000,
   'all JavaScript, gzip': 2_080_000,
-  'all CSS, gzip': 47_000,
+  'all CSS, gzip': 41_000,
 };
 
 const kB = (bytes) => `${(bytes / 1000).toFixed(1)} kB`;

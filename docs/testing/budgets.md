@@ -25,11 +25,15 @@ Set on 2026-11-12 from the build of `origin/main` at `ffae5863`, plus 5% headroo
 | Entry, raw | 688.8 kB | 724 kB |
 | Entry, gzip | 206.7 kB | 218 kB |
 | All JavaScript, gzip | 1,980.0 kB | 2,080 kB |
-| All CSS, gzip | 44.3 kB | 47 kB |
+| All CSS, gzip | 44.3 kB (38.5 kB on 2026-11-17) | 41 kB |
 
 Raw totals then were 7,271.8 kB of JavaScript and 223.7 kB of CSS. Vite already warns that three chunks
 (`index`, `GeoCanvas`, `CesiumCanvas`) exceed 500 kB; the budget records that size and does not fix it.
 `dist/cesium/` is copied static data and is not counted.
+
+On 2026-11-17 the CSS budget went from 47 kB to 41 kB: the build drops the rules of MapLibre controls the map
+never adds (logo, attribution, zoom, compass, geolocate, fullscreen, terrain, globe, scale), about 8.5 kB gzip of
+SVG icons (`apps/web/scripts/trim-maplibre-css.ts`). An upgrade that leaves nothing to drop fails the build.
 
 To change a budget, edit `BUDGETS` in the script on purpose, in the pull request that grows or shrinks the
 bundle, with the new measurement in the comment above it. Lower it when a change makes the bundle smaller.

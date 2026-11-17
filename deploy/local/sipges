@@ -43,8 +43,15 @@ compose() {
     docker compose --env-file "$ENV_FILE" -p "$PROJECT" "${files[@]}" "$@"
   fi
 }
+# die inside $(…) ends only that subshell, after printing its message: every caller that captures
+# compose, api_replicas or api_services adds `|| exit 1`, so the script stops too and says it once
+# (except healthy's polling, which runs after preflight and must survive a passing Docker error).
 # The API services this installation runs, for the commands that stop them.
-api_services() { [[ $(api_replicas) == 2 ]] && printf 'api api-2' || printf 'api'; }
+api_services() {
+  local replicas
+  replicas=$(api_replicas) || exit 1
+  [[ $replicas == 2 ]] && printf 'api api-2' || printf 'api'
+}
 random_hex() { head -c "$1" /dev/urandom | od -An -tx1 | tr -d ' \n'; }
 
 need_env() { [[ -f $ENV_FILE ]] || die "no $ENV_FILE here: run ./sipges install first"; }
@@ -163,7 +170,9 @@ mark_ready() {
 healthy() {
   local id
   for _ in $(seq 1 "$2"); do
-    id=$(compose ps -q "$1")
+    # preflight already refused a bad override or replica count, so a failure here is Docker's and
+    # passing: keep polling, and let the caller's message say which API serves what.
+    id=$(compose ps -q "$1") || id=
     if [[ -n $id && $(docker inspect -f '{{.State.Health.Status}}' "$id" 2>/dev/null) == healthy ]]; then
       return 0
     fi
@@ -215,7 +224,9 @@ start() {
   mkdir -p "$(env_value SIPGES_BACKUP_DIR)"
   preflight
   ensure_push_keys
-  if [[ $(api_replicas) == 2 ]]; then
+  local replicas
+  replicas=$(api_replicas) || exit 1
+  if [[ $replicas == 2 ]]; then
     roll_apis
   else
     remove_second_api
@@ -232,8 +243,8 @@ roll_apis() {
   compose up -d --no-deps api
   healthy api 90 ||
     die 'the new version of the first API did not become healthy; the second API still serves the version it had. See ./sipges logs api'
-  # Caddy checks every 5 s and remembers a failure for 5 s more: it must count the first API back
-  # in before the second one goes down.
+  # Caddy's active check runs every 2 s (health_interval) and a failed request keeps an API out for
+  # 5 s (fail_duration): 10 s lets it count the first API back in before the second one goes down.
   sleep 10
   compose up -d --no-deps api-2
   healthy api-2 90 || die 'the second API did not become healthy; the first one serves alone. See ./sipges logs api-2'
@@ -269,7 +280,9 @@ cmd_prepare() {
   need_docker
   use_host "${1:-}"
   preflight
-  [[ -z $(compose ps -aq api) ]] ||
+  local ran
+  ran=$(compose ps -aq api) || exit 1
+  [[ -z $ran ]] ||
     die 'the app has already run here, so a legacy import would refuse. To start over: ./sipges wipe, then ./sipges prepare'
   build
   mkdir -p "$(env_value SIPGES_BACKUP_DIR)"
@@ -461,8 +474,10 @@ cmd_restore() {
     read -r answer
     [[ $answer == RESTORE ]] || die 'nothing was changed'
   fi
-  # shellcheck disable=SC2046 # one word per service
-  compose stop $(api_services) caddy backup
+  local services
+  services=$(api_services) || exit 1
+  # shellcheck disable=SC2086 # one word per service
+  compose stop $services caddy backup
   wait_db
   # Written first and removed only on a known outcome: a power cut leaves it, and SIPGES stays off.
   # A run that fails while an earlier one is unfinished clears nothing, whatever it reports.

@@ -88,6 +88,12 @@ func Load(lookup Lookup) (Config, error) {
 
 var digits = regexp.MustCompile(`^\d+$`)
 
+// Port reads SIPGES_PORT as Load does, for callers that need only the port (the image's healthcheck).
+func Port(lookup Lookup) (int, error) { return parsePort(lookup) }
+
+// AllowedHosts reads SIPGES_ALLOWED_HOSTS as Load does: blank entries skipped, lower case, validated.
+func AllowedHosts(lookup Lookup) ([]string, error) { return parseAllowedHosts(lookup) }
+
 func parsePort(lookup Lookup) (int, error) {
 	v, ok := lookup("SIPGES_PORT")
 	if !ok {
