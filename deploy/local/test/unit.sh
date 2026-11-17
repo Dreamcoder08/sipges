@@ -526,6 +526,16 @@ for value in 3 0 two; do
   check 'or backing up' no_call backup.sh
 done
 
+# A refusal inside $(…) only ends the subshell: the caller must stop too, and say it once.
+fresh
+run install
+echo 'SIPGES_API_REPLICAS=3' >>"$SIPGES_ENV_FILE"
+mkdir -p "$work/backups/20261106T000000Z"
+: >"$FAKE/calls"
+if run restore 20261106T000000Z --yes; then fail 'a restore refuses SIPGES_API_REPLICAS=3'; else ok 'a restore refuses SIPGES_API_REPLICAS=3'; fi
+check 'and says it once' test "$(grep -cF 'SIPGES_API_REPLICAS must be 1 or 2' "$work/out")" = 1
+check 'and stops nothing' no_call ' stop'
+
 command rm -rf "$root"
 if ((failures > 0)); then
   printf '%d failed\n' "$failures"
