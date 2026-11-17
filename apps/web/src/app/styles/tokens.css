@@ -269,6 +269,17 @@
   --z-dialog: 80;
 
   --sidebar-width: 15.5rem;
+
+  /* ---------- Chat (odd/tasks/chat-first-ui.md T2, design/chat-first/02) ---------- */
+  /* One reading width for Inicio's column, the thread and the composer. */
+  --measure-chat: 46rem;
+  /* Space between one turn of the conversation and the next. */
+  --space-turn: var(--space-8);
+  /* Answer prose: body size with a looser leading for long paragraphs. */
+  --text-answer: var(--text-body);
+  --leading-answer: 1.6;
+  /* The person's own question: the fill tone. An alias, so each theme's fill applies. */
+  --color-bubble: var(--color-fill);
 }
 
 /*

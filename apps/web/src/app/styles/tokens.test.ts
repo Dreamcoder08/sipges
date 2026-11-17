@@ -180,6 +180,9 @@ const TEXT_PAIRS: [string, string][] = [
   ['--ink-soft', '--canvas'],
   // The ground the artboards measured for faint diagram ink (#161618 in dark).
   ['--ink-faint', '--color-surface-raised'],
+  // The person's own question in a chat thread (chat-first-ui T2).
+  ['--color-text', '--color-bubble'],
+  ['--color-muted', '--color-bubble'],
 ];
 
 /** Interface marks (focus ring, accent, selected tab): 3:1 against the surface. */
@@ -196,6 +199,8 @@ const UI_PAIRS: [string, string][] = [
   ['--color-warning', '--color-surface'],
   ['--level-yellow', '--color-surface'],
   ['--viz-6', '--color-surface'],
+  // A control edge drawn on the question bubble, such as the composer's (chat-first-ui T2).
+  ['--color-control-border', '--color-bubble'],
 ];
 
 /** Literals that have a token: the pill radius, the touch target, stacking and spinner timing. */
@@ -301,6 +306,29 @@ describe('design tokens', () => {
     expect(light['--color-warning']).toBe('var(--tone-warning-solid)');
     expect(light['--color-warning-soft']).toBe('var(--tone-warning-bg)');
     expect(resolve(dark, '--color-warning')).toBe('#c99a3a');
+  });
+
+  it('defines the chat tokens and gives Inicio the shared reading width (chat-first-ui T2)', () => {
+    expect({
+      measure: light['--measure-chat'],
+      turn: light['--space-turn'],
+      answer: light['--text-answer'],
+      leading: light['--leading-answer'],
+      bubble: light['--color-bubble'],
+    }).toEqual({
+      measure: '46rem',
+      turn: 'var(--space-8)',
+      answer: 'var(--text-body)',
+      leading: '1.6',
+      bubble: 'var(--color-fill)',
+    });
+    // The bubble follows the fill of each theme through its alias.
+    expect([resolve(light, '--color-bubble'), resolve(dark, '--color-bubble')]).toEqual([
+      '#f4f4f4',
+      '#161618',
+    ]);
+    const inicio = sheets['/features/dashboard/inicio/InicioPage.module.css'] ?? '';
+    expect(declared(inicio, '.home', 'max-width')).toBe('var(--measure-chat)');
   });
 
   it('keeps the corrected mark colours: darker in light, unchanged in dark', () => {
