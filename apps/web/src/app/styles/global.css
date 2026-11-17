@@ -25,6 +25,17 @@ body {
   background: var(--color-bg);
 }
 
+/*
+ * With a touchpad or a mouse the page does not bounce past its top or bottom: Firefox-based
+ * browsers on a laptop stretched and snapped the whole screen back at each edge. Touch screens
+ * keep the browser's own edge gestures, such as pull to refresh.
+ */
+@media (pointer: fine) {
+  html {
+    overscroll-behavior-y: none;
+  }
+}
+
 /* Scrollbars: thin, rounded and quiet on an invisible track. scrollbar-color is inherited;
    scrollbar-width is not, so every scroller gets it. */
 html {
