@@ -59,7 +59,10 @@ it('asks the analyst and shows its cited answer while external AI is on', async 
       });
     }),
   );
+  server.use(http.get('/system/analyst', () => HttpResponse.json({ available: true })));
   const onAsk = renderInicio(true);
+  // The box turns into a question box once the installation says it has an analyst.
+  await screen.findByRole('textbox', { name: 'Preguntar, con citas' });
   ask('  ¿Qué pasó en la vía?  ');
   expect(await screen.findByRole('link', { name: 'Fuente 1: Bloqueo de vía' })).toBeTruthy();
   expect(asked).toEqual({ question: '¿Qué pasó en la vía?' });
@@ -75,6 +78,24 @@ it('keeps searching the records while external AI is off', () => {
     }),
   );
   const onAsk = renderInicio(false);
+  ask('bloqueo');
+  expect(onAsk).toHaveBeenCalledWith('bloqueo');
+  expect(asked).toBe(false);
+});
+
+it('stays a search box and says why when the installation has no analyst', async () => {
+  let asked = false;
+  server.use(
+    http.get('/system/analyst', () => HttpResponse.json({ available: false })),
+    http.post('/system/analyst/ask', () => {
+      asked = true;
+      return HttpResponse.json({ answer: '', sources: [] });
+    }),
+  );
+  const onAsk = renderInicio(true);
+  expect(
+    await screen.findByText('El analista no está configurado en esta instalación: Enter busca.'),
+  ).toBeTruthy();
   ask('bloqueo');
   expect(onAsk).toHaveBeenCalledWith('bloqueo');
   expect(asked).toBe(false);

@@ -154,3 +154,22 @@ func TestAskSendsTheTypedBlocksNextToTheAnswer(t *testing.T) {
 		t.Fatalf("body = %s\nwant   %s", got, want)
 	}
 }
+
+func TestAnalystStatusSaysWhetherTheInstallationHasAnAnalyst(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		opts analysthttp.Options
+		want string
+	}{
+		{analysthttp.Options{}, `{"available":false}`},
+		{analysthttp.Options{Ask: analystFor(&stepModel{}, oneTool{}, nil)}, `{"available":true}`},
+	} {
+		mux := http.NewServeMux()
+		analysthttp.Routes(mux, tc.opts)
+		res := httptest.NewRecorder()
+		mux.ServeHTTP(res, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/system/analyst", nil))
+		if res.Code != http.StatusOK || strings.TrimSpace(res.Body.String()) != tc.want {
+			t.Fatalf("status %d, body %s, want %s", res.Code, res.Body, tc.want)
+		}
+	}
+}
