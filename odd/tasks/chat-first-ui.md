@@ -140,7 +140,7 @@ Phase E — proof:
   - sidebar order per T13 («Nueva pregunta» first, which starts a new conversation on Inicio; «Buscar Ctrl K»;
     destinations; «Conversaciones» with this session's questions), so T13 is done here.
   Reopens T4's layout and replaces T5's fold. Route: worker + parent. Commit: pending.
-- T20 [ ] — S1: move the thread, AnalystAnswer and the attention popover into a lazy chunk loaded on the first
+- T20 [x] — S1: move the thread, AnalystAnswer and the attention popover into a lazy chunk loaded on the first
   question, and bring the entry budget back towards 218 kB gzip (it was raised to 230 kB in L11). Route: inline.
   Commit: pending.
 - T21 [x] — S2: Inicio asks through `/system/analyst/ask/stream` and shows each `step` label as the pending turn's
@@ -327,3 +327,15 @@ T18(b) → T16 → T17. Phases A, B and D change no API and no stored data.
     `vite.config.ts` chunking experiment.
   - Checks: web 893/893; Playwright mobile-chromium Inicio specs 15 passed (fallback path); chromium 25-inicio and
     performance 3 passed, 1 skipped (median 765 ms). CSS is 40.6/41 kB, close to the limit.
+- L14 — 2026-11-17, T20 finished on `perf/entry-chunks`, stacked on #516.
+  - One rolldown `codeSplitting` group tagged `$initial` keeps the modules index.html loads at start in the entry, so
+    the shared `format-*` and `jsx-runtime-*` chunks are gone. The entry is 219.2 → 217.7 kB gzip (728.1 kB raw); all
+    JS is 1,998.5 kB and CSS 40.3 kB. There are 50 files, and index.html loads one script and one stylesheet.
+  - Budgets lowered to measured + 5% (765/229 kB).
+  - Rejected attempts:
+    - strictExecutionOrder: entry 231 kB;
+    - chunkOptimization off: 218.0 kB;
+    - a path-based group: 227 kB;
+    - modulePreload polyfill off: only 0.2 kB, and it changes Safari < 17.
+  - Checks: web 893/893; chromium 25-inicio, performance and console specs 4 passed, 1 skipped; mobile Inicio and
+    analyst specs 15/15. WebKit runs in CI.
