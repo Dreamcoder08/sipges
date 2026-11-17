@@ -17,6 +17,7 @@ import { StatusBadge, type StatusTone } from '../../shared/ui/Badges.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
 import { EmptyState } from '../../shared/ui/EmptyState.tsx';
 import { Icon } from '../../shared/ui/Icon.tsx';
+import { analystProposalsQuery, decideAnalystProposal } from './analyst-proposals.ts';
 import styles from './DecisionInbox.module.css';
 import {
   ageLabel,
@@ -25,6 +26,7 @@ import {
   KIND_INFO,
   KINDS,
   orderItems,
+  proposalItems,
   qualityItems,
   situationItems,
   type Kind,
@@ -42,6 +44,7 @@ const asKind = (value: string | undefined): Kind | 'todo' =>
 
 type Selection = { key: string; index: number };
 type Decision = { id: string; status: string; note: string; verb: 'aprobada' | 'rechazada' };
+type ProposalDecision = { id: string; approve: boolean };
 
 const isTyping = (target: EventTarget | null) =>
   target instanceof HTMLElement &&
@@ -76,6 +79,7 @@ export const DecisionInbox = ({
   const alerts = useQuery(territorialAlertsQuery(scope));
   const report = useQuery(situationsReportQuery(scope));
   const raised = useQuery(situationAlertsQuery(scope));
+  const proposals = useQuery(analystProposalsQuery(scope));
   const quality: QualityReview = useQuality(scope);
   const [now] = useState(() => Date.now());
   const [ownKind, setOwnKind] = useState<Kind | 'todo'>('todo');
@@ -113,6 +117,19 @@ export const DecisionInbox = ({
     },
   });
 
+  const decideProposal = useMutation({
+    mutationFn: ({ id, approve }: ProposalDecision) => decideAnalystProposal(scope, id, approve),
+    onSuccess: async ({ result }, { id, approve }) => {
+      setNotice(
+        approve
+          ? `Propuesta ${id} aprobada${result ? `: se creó ${result}` : ''}.`
+          : `Propuesta ${id} descartada: no se escribió nada.`,
+      );
+      await client.invalidateQueries({ queryKey: ['operations', scope] });
+    },
+  });
+  const busy = decide.isPending || decideProposal.isPending;
+
   const sources = [
     {
       label: 'las alertas',
@@ -132,6 +149,12 @@ export const DecisionInbox = ({
       failed: quality.state === 'error',
       retry: () => (quality.state === 'error' ? quality.retry() : undefined),
     },
+    {
+      label: 'las propuestas del analista',
+      pending: proposals.isPending,
+      failed: proposals.isError,
+      retry: () => void proposals.refetch(),
+    },
   ];
 
   const all = orderItems([
@@ -140,13 +163,18 @@ export const DecisionInbox = ({
       ? situationItems(report.data, new Set(raisedSituations(raised.data).keys()))
       : []),
     ...(quality.state === 'ready' ? qualityItems(quality.observations) : []),
+    // The server lists only what this person may decide (the role gate of each proposal's own
+    // write), so every listed proposal can be decided.
+    ...(proposals.data ? proposalItems(proposals.data, true) : []),
   ]);
   const visible = kind === 'todo' ? all : all.filter((item) => item.kind === kind);
   const optionId = (item: PendingItem) => `${ids}-${visible.indexOf(item)}`;
   const current =
     visible.find((item) => item.key === selection.key) ??
     visible[Math.min(selection.index, visible.length - 1)];
-  const canDecide = current?.kind === 'alerta' && current.fourEyes.canDecide;
+  const canDecide =
+    (current?.kind === 'alerta' && current.fourEyes.canDecide) ||
+    (current?.kind === 'propuesta' && current.canDecide);
   const loading = sources.some((source) => source.pending);
   const failed = sources.filter((source) => source.failed);
 
@@ -164,7 +192,12 @@ export const DecisionInbox = ({
     document.getElementById(optionId(next))?.scrollIntoView?.({ block: 'nearest' });
   };
   const approve = () => {
-    if (current?.kind !== 'alerta' || !current.fourEyes.canDecide || decide.isPending) return;
+    if (current?.kind === 'propuesta' && current.canDecide && !busy) {
+      setNotice(null);
+      decideProposal.mutate({ id: current.ref, approve: true });
+      return;
+    }
+    if (current?.kind !== 'alerta' || !current.fourEyes.canDecide || busy) return;
     setNotice(null);
     decide.mutate({
       id: current.ref,
@@ -174,7 +207,13 @@ export const DecisionInbox = ({
     });
   };
   const startReject = () => {
-    if (current?.kind !== 'alerta' || !current.fourEyes.canDecide || decide.isPending) return;
+    // Discarding a proposal writes nothing but its decision, so it needs no reason.
+    if (current?.kind === 'propuesta' && current.canDecide && !busy) {
+      setNotice(null);
+      decideProposal.mutate({ id: current.ref, approve: false });
+      return;
+    }
+    if (current?.kind !== 'alerta' || !current.fourEyes.canDecide || busy) return;
     setNotice(null);
     decide.reset();
     setReason('');
@@ -301,6 +340,9 @@ export const DecisionInbox = ({
         ))}
         {notice ? <Alert tone="success">{notice}</Alert> : null}
         {decide.error ? <Alert tone="error">{errorDetail(decide.error)}</Alert> : null}
+        {decideProposal.error ? (
+          <Alert tone="error">{errorDetail(decideProposal.error)}</Alert>
+        ) : null}
       </div>
       <div className={styles.inbox} data-open={open}>
         <section className={styles.list} aria-label="Pendientes">
@@ -361,7 +403,7 @@ export const DecisionInbox = ({
             <Detail
               item={current}
               headingRef={headingRef}
-              busy={decide.isPending}
+              busy={busy}
               rejecting={rejecting === current.key}
               reason={reason}
               reasonMissing={reasonMissing}
@@ -527,6 +569,34 @@ const Detail = ({
             </dl>
           ) : null}
           <p>{item.fourEyes.text}</p>
+        </section>
+      ) : null}
+      {item.kind === 'propuesta' ? (
+        <section aria-labelledby={`${item.key}-rule`}>
+          <h3 id={`${item.key}-rule`}>Regla aplicable</h3>
+          <p>
+            {item.canDecide
+              ? 'Nada se escribió todavía: aprobarla crea el cambio y queda en la auditoría; descartarla no escribe nada.'
+              : 'Tu rol no puede aprobar ni descartar propuestas del analista.'}
+          </p>
+          {item.canDecide ? (
+            <div className={styles.actions}>
+              <Button disabled={busy} onClick={onApprove} aria-keyshortcuts="a">
+                <Icon name="check" />
+                Aprobar
+                <kbd>A</kbd>
+              </Button>
+              <Button
+                variant="danger"
+                disabled={busy}
+                onClick={onStartReject}
+                aria-keyshortcuts="r"
+              >
+                Descartar
+                <kbd>R</kbd>
+              </Button>
+            </div>
+          ) : null}
         </section>
       ) : null}
       {item.kind === 'alerta' && item.fourEyes.canDecide ? (

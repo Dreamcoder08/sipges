@@ -61,6 +61,8 @@ type DecisionInput struct {
 type Deciding struct {
 	Actions ProposalActions
 	Store   DecisionStore
+	// Proposals holds the analyst's stored proposals (DecideStored).
+	Proposals ProposalStore
 	// Now stamps the decision; nil is time.Now.
 	Now func() time.Time
 }

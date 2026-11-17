@@ -11,6 +11,8 @@ import (
 	analystdomain "github.com/Dreamcoder08/sipges/apps/api-go/internal/analyst/domain"
 	analysthttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/analyst/http"
 	analystsql "github.com/Dreamcoder08/sipges/apps/api-go/internal/analyst/infrastructure"
+	identitydomain "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/domain"
+	identityhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/http"
 	ontology "github.com/Dreamcoder08/sipges/apps/api-go/internal/ontology/application"
 	ontologydomain "github.com/Dreamcoder08/sipges/apps/api-go/internal/ontology/domain"
 	ontologysql "github.com/Dreamcoder08/sipges/apps/api-go/internal/ontology/infrastructure"
@@ -33,7 +35,11 @@ func init() {
 		}
 		options := analysthttp.Options{
 			DB: d.Pool, Now: d.Now, Logger: d.Logger, Assisted: assisted, Ask: ask,
-			Deciding: analyst.Deciding{Actions: proposalActions{d}, Store: analystsql.Decisions{DB: d.Pool}, Now: d.Now},
+			Deciding: analyst.Deciding{
+				Actions: proposalActions{d}, Store: analystsql.Decisions{DB: d.Pool},
+				Proposals: analystsql.Proposals{DB: d.Pool}, Now: d.Now,
+			},
+			MayWrite: mayWrite,
 		}
 		return func(mux *http.ServeMux) { analysthttp.Routes(mux, options) }, nil
 	})
@@ -121,4 +127,43 @@ func (a proposalActions) Create(ctx context.Context, tenantID string, record ana
 		return "", err
 	}
 	return id, nil
+}
+
+// mayWrite is the identity role gate of method and path for the request's person: who may make a
+// write may propose it through the analyst, and approve or discard it in Bandeja.
+func mayWrite(ctx context.Context, method, path string) bool {
+	principal, ok := identityhttp.PrincipalFrom(ctx)
+	return ok && identitydomain.CheckRoleAccess(principal.Role, method, path).Allowed
+}
+
+// proposalRules are the write rules of records and the ontology, checked when the analyst
+// proposes (analyst.ProposalRules); approving runs them again through the real write.
+type proposalRules struct{}
+
+// Record implements analyst.ProposalRules.
+func (proposalRules) Record(tenantID string, record analystdomain.ProposedRecord) string {
+	module, ok := recordsdomain.ModuleForSlug(record.Slug)
+	if !ok {
+		return analystdomain.RefusedModule
+	}
+	payload := recordsdomain.NewObject()
+	for _, field := range record.Payload {
+		payload.Set(field.Key, field.Value)
+	}
+	if problem := recordsdomain.ValidatePayload(module, payload); problem != nil {
+		return problem.Message
+	}
+	if project := recordsdomain.TenantProject(tenantID); project != "" {
+		if _, problem := recordsdomain.WithTenantProject(module, payload, project); problem != nil {
+			return problem.Message
+		}
+	}
+	return ""
+}
+
+// Link implements analyst.ProposalRules.
+func (proposalRules) Link(link analystdomain.ProposedLink) string {
+	return string(ontologydomain.CheckLink(link.LinkType,
+		ontologydomain.Ref{Module: link.Source.Slug, ID: link.Source.ID},
+		ontologydomain.Ref{Module: link.Target.Slug, ID: link.Target.ID}))
 }

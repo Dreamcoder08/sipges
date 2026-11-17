@@ -71,3 +71,30 @@ ends in `/v1`), which OpenAI, DeepSeek, Ollama, OpenRouter, Groq and vLLM share.
 - **Data.** Pointing this at a real provider sends non-restricted briefing text outside the
   platform; that stays the data owner's decision
   (`odd/tasks/functional-closure.md` T5), exactly as with Anthropic.
+
+## Addendum — proposals from the Inicio analyst (agentic analyst S4)
+
+Task: `odd/tasks/agentic-analyst.md` T3. The Inicio analyst may now propose writes, never make
+them. Decision 8 kept open proposals computed, not stored; a proposal a model made cannot be
+recomputed, so these are the one exception.
+
+- **Two tools, no writes.** The tool loop offers `propose_record` and `propose_link` beside the
+  read tools; their descriptions are all the model learns about them. Calling one checks the
+  proposal with the rules of the real write (record id and project rules of records, link rules
+  of the ontology) and the role gate of that write for the person asking, then stores it as
+  pending and answers only its id. The tools hold no path to the record or link stores.
+- **Storage.** `analyst_proposals` (migration 0033) is insert-only, per tenant, under forced
+  row-level security. A proposal is pending while `proposal_decisions` has no row with the
+  fingerprint `stored:<id>`; deciding it is the existing decision flow: the same actions, the
+  same decision row and the same `REVIEW` audit entry, so a proposal is decided at most once.
+- **Who decides.** `GET /system/analyst/proposals` lists the project's pending proposals (Bandeja,
+  `sipgesctl analyst proposals`); `POST /system/analyst/proposals` approves or discards one
+  (`sipgesctl analyst decide`). Only a role that passes the role gate of the proposal's own write
+  (`POST /api/<module>` or `POST /system/links`) may decide; others get 403 and nothing is written.
+- **Untrusted text.** Everything in a proposal came from a model: keys, values, ids and the reason
+  are bounded in the domain and again by column checks, values are text only, and the screens
+  render them as plain text.
+- **Concurrent decisions.** Within one API process the decisions of one stored proposal run one at
+  a time and each re-reads the proposal first, so two simultaneous approvals write once. Across
+  several API processes the limit of computed proposals remains: both may run the action before
+  one decision row wins, and the second is told the proposal was already decided.
