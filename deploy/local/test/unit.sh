@@ -21,6 +21,11 @@ compose)
   case $1 in
   version | config) exit 0 ;;
   ps)
+    # One failing call, as when the Docker daemon hiccups mid-update.
+    if [[ -f $FAKE/ps-fails-once ]]; then
+      command rm -f "$FAKE/ps-fails-once"
+      exit 1
+    fi
     if [[ $* == *api* ]]; then cat "$FAKE/api-container" 2>/dev/null; else echo db-container; fi
     ;;
   exec)
@@ -535,6 +540,12 @@ mkdir -p "$work/backups/20261106T000000Z"
 if run restore 20261106T000000Z --yes; then fail 'a restore refuses SIPGES_API_REPLICAS=3'; else ok 'a restore refuses SIPGES_API_REPLICAS=3'; fi
 check 'and says it once' test "$(grep -cF 'SIPGES_API_REPLICAS must be 1 or 2' "$work/out")" = 1
 check 'and stops nothing' no_call ' stop'
+
+# A passing Docker error while waiting for a healthy service is polled through, not fatal.
+two_apis
+run install
+touch "$FAKE/ps-fails-once"
+if run start; then ok 'a rolling start survives one failing compose ps while it waits'; else fail 'a rolling start survives one failing compose ps while it waits'; fi
 
 command rm -rf "$root"
 if ((failures > 0)); then

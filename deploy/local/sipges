@@ -44,7 +44,8 @@ compose() {
   fi
 }
 # die inside $(…) ends only that subshell, after printing its message: every caller that captures
-# compose, api_replicas or api_services adds `|| exit 1`, so the script stops too and says it once.
+# compose, api_replicas or api_services adds `|| exit 1`, so the script stops too and says it once
+# (except healthy's polling, which runs after preflight and must survive a passing Docker error).
 # The API services this installation runs, for the commands that stop them.
 api_services() {
   local replicas
@@ -169,7 +170,9 @@ mark_ready() {
 healthy() {
   local id
   for _ in $(seq 1 "$2"); do
-    id=$(compose ps -q "$1") || exit 1
+    # preflight already refused a bad override or replica count, so a failure here is Docker's and
+    # passing: keep polling, and let the caller's message say which API serves what.
+    id=$(compose ps -q "$1") || id=
     if [[ -n $id && $(docker inspect -f '{{.State.Health.Status}}' "$id" 2>/dev/null) == healthy ]]; then
       return 0
     fi

@@ -3,6 +3,9 @@ import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 import { trimMaplibreCss } from './trim-maplibre-css.ts';
 
+/** Enough dead control rules to pass the upgrade guard, so a case can focus on what it adds. */
+const padding = '.maplibregl-ctrl-logo{x:0}'.repeat(40);
+
 const real = readFileSync(
   createRequire(import.meta.url).resolve('maplibre-gl/dist/maplibre-gl.css'),
   'utf8',
@@ -15,7 +18,7 @@ describe('trimMaplibreCss', () => {
       '.maplibregl-ctrl-logo{background-image:url("data:image/svg+xml;x")}' +
       '.maplibregl-ctrl button.maplibregl-ctrl-zoom-in .maplibregl-ctrl-icon,.maplibregl-ctrl-compass-arrow{x:1}' +
       '@media(forced-colors:active){.maplibregl-ctrl-geolocate .maplibregl-ctrl-icon{y:2}.maplibregl-ctrl-group{z:3}}';
-    expect(trimMaplibreCss(css)).toBe(
+    expect(trimMaplibreCss(css + padding)).toBe(
       '.maplibregl-canvas{position:absolute}@media(forced-colors:active){.maplibregl-ctrl-group{z:3}}',
     );
   });
@@ -23,7 +26,7 @@ describe('trimMaplibreCss', () => {
   it('keeps a rule when one of its selectors is still used', () => {
     const kept =
       '.maplibregl-ctrl-group button.maplibregl-ctrl-compass,.maplibregl-canvas-container{cursor:grab}';
-    expect(trimMaplibreCss(`${kept}.maplibregl-ctrl-logo{x:1}`)).toBe(kept);
+    expect(trimMaplibreCss(kept + padding)).toBe(kept);
   });
 
   it('keeps what the map uses: the map, canvas, popups, markers, control corners and keyframes', () => {
@@ -43,9 +46,10 @@ describe('trimMaplibreCss', () => {
     expect(trimmed.length).toBeLessThan(real.length / 4);
   });
 
-  it('fails when an upgrade leaves nothing to drop, so the build notices', () => {
+  it('fails when an upgrade leaves too little to drop, so the build notices', () => {
     expect(() => trimMaplibreCss('.maplibregl-canvas{position:absolute}')).toThrow(
       /maplibre-gl\.css/,
     );
+    expect(() => trimMaplibreCss('.maplibregl-ctrl-logo{x:0}'.repeat(39))).toThrow(/only 39/);
   });
 });

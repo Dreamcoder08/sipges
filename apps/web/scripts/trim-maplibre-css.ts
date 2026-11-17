@@ -8,6 +8,12 @@
 const UNUSED =
   /\.maplibregl-(?:ctrl-(?:logo|attrib|geolocate|fullscreen|shrink|zoom-in|zoom-out|compass|terrain|globe|scale)|compact|user-location)[\w-]*/;
 
+/**
+ * maplibre-gl 6.16 has 66 such rules. Far fewer means an upgrade renamed the controls and the trim
+ * stopped doing its job, so the build stops instead of silently shipping the icons again.
+ */
+const MIN_DROPPED = 40;
+
 /** Drops each innermost rule whose every selector names an unused control; keeps the rest as is. */
 export const trimMaplibreCss = (css: string): string => {
   let dropped = 0;
@@ -17,9 +23,9 @@ export const trimMaplibreCss = (css: string): string => {
     dropped += 1;
     return '';
   });
-  if (dropped === 0) {
+  if (dropped < MIN_DROPPED) {
     throw new Error(
-      'maplibre-gl.css: no unused control rule found; check trim-maplibre-css.ts after an upgrade',
+      `maplibre-gl.css: only ${dropped} unused control rules found (expected at least ${MIN_DROPPED}); check trim-maplibre-css.ts after an upgrade`,
     );
   }
   return trimmed;
