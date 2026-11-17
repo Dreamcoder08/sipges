@@ -4,8 +4,23 @@
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
 }
 
-.shell[data-compact='true'] {
+.shell[data-compact='true'],
+.shell[data-sidebar='hidden'] {
   grid-template-columns: minmax(0, 1fr);
+}
+
+/* The sidebar slides back in only after the person shows it, never on page load. */
+@media (prefers-reduced-motion: no-preference) {
+  .shell[data-sidebar='revealed'] > aside {
+    animation: sidebar-in var(--motion-medium) var(--ease-out);
+  }
+}
+
+@keyframes sidebar-in {
+  from {
+    opacity: 0;
+    transform: translateX(-0.75rem);
+  }
 }
 
 .skip {
@@ -44,6 +59,31 @@
   color: var(--color-on-primary);
   font-weight: 800;
   font-size: var(--text-sm);
+}
+
+/* ---------- Sidebar toggle (wide screens, chat-first-ui T12) ---------- */
+
+.toggle {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: var(--control-sm);
+  height: var(--control-sm);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-muted);
+  font-size: var(--text-lg);
+  cursor: pointer;
+}
+
+/* With the sidebar hidden, its show button waits at the top left of the content. */
+.reveal {
+  padding: var(--space-3) var(--space-6) 0 calc(var(--space-6) - var(--space-1));
+}
+
+.shell[data-sidebar='hidden'] .main {
+  padding-top: var(--space-2);
 }
 
 /* ---------- Content column ---------- */
@@ -155,7 +195,12 @@
 }
 
 @media (hover: hover) {
-  .menu:hover {
+  .menu:hover,
+  .toggle:hover {
     background: var(--color-fill);
+  }
+
+  .toggle:hover {
+    color: var(--color-text);
   }
 }

@@ -123,6 +123,7 @@ test('Ctrl+, opens Configuración, where Apariencia pins the theme and the menu 
     'Administración',
     'Auditoría',
     'Ayuda y metodología',
+    'Atajos de tecladoCtrl+/',
     'Cerrar sesión',
   ]);
   await expect(menu.getByRole('menuitemradio')).toHaveCount(0);

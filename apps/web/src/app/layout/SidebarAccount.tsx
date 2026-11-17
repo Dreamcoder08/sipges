@@ -7,6 +7,7 @@ import { logout, meQuery } from '../../features/auth/index.ts';
 import { SETTINGS_PATH } from '../../features/situations/sections.ts';
 import { SYSTEM_PATHS, iconFor, labelFor } from '../navigation.ts';
 import { NavLink } from './NavLink.tsx';
+import { GLOBAL_SHORTCUTS, ariaShortcut, shortcutText } from './shortcuts.ts';
 import styles from './SidebarAccount.module.css';
 
 const ITEMS = '[role^="menuitem"]';
@@ -19,14 +20,18 @@ const typing = (target: EventTarget | null) =>
 /**
  * Account row at the foot of the wide sidebar (docs/adr/0015). Its menu is short, like the
  * account menus of Claude or ChatGPT: who is signed in, Configuración (which also holds the
- * appearance choice, docs/adr/0018), Administración, Auditoría, help and sign-out. It follows
+ * appearance choice, docs/adr/0018), Administración, Auditoría, help, the keyboard shortcuts
+ * (chat-first-ui T14) and sign-out. It follows
  * the menu button pattern: Enter, Space or ArrowDown open it on the first item, ArrowUp on the
  * last; arrows, Home and End move; Escape closes and returns focus to the row.
  */
 export const SidebarAccount = ({
   pathname,
+  onShortcuts,
 }: {
   pathname: string;
+  /** Opens the shortcuts sheet; the menu closes first, so the sheet gives focus back to the row. */
+  onShortcuts?: (() => void) | undefined;
   /** Still passed by Sidebar; the menu header now shows the username instead. */
   projectLabel?: string;
 }) => {
@@ -159,7 +164,7 @@ export const SidebarAccount = ({
             className={styles.item}
             role="menuitem"
             tabIndex={-1}
-            aria-keyshortcuts="Control+, Meta+,"
+            aria-keyshortcuts={ariaShortcut(GLOBAL_SHORTCUTS.settings)}
             activeOptions={{ exact: true }}
             activeProps={{ 'aria-current': 'page' }}
             onClick={() => close(false)}
@@ -167,7 +172,7 @@ export const SidebarAccount = ({
             <Icon name={iconFor(SETTINGS_PATH)} className={styles.icon} />
             <span>{labelFor(SETTINGS_PATH)}</span>
             <kbd className={styles.hint} aria-hidden="true">
-              Ctrl+,
+              {shortcutText(GLOBAL_SHORTCUTS.settings)}
             </kbd>
           </Link>
           <NavLink
@@ -192,6 +197,25 @@ export const SidebarAccount = ({
             tabIndex={-1}
             onNavigate={() => close(false)}
           />
+          {onShortcuts ? (
+            <button
+              type="button"
+              role="menuitem"
+              tabIndex={-1}
+              className={styles.item}
+              aria-keyshortcuts={ariaShortcut(GLOBAL_SHORTCUTS.shortcuts)}
+              onClick={() => {
+                close(true);
+                onShortcuts();
+              }}
+            >
+              <Icon name="keyboard" className={styles.icon} />
+              <span>Atajos de teclado</span>
+              <kbd className={styles.hint} aria-hidden="true">
+                {shortcutText(GLOBAL_SHORTCUTS.shortcuts)}
+              </kbd>
+            </button>
+          ) : null}
           <hr className={styles.rule} />
           <button
             type="button"

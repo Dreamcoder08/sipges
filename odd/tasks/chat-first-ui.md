@@ -110,7 +110,7 @@ Phase C — backend (CLI first):
 
 Phase D — shell:
 
-- T12 [ ] — S2: on wide screens the sidebar can be hidden with a button and Ctrl+B; the choice is kept in
+- T12 [x] — S2: on wide screens the sidebar can be hidden with a button and Ctrl+B; the choice is kept in
   `localStorage`. Hidden means gone, with the button left in the top bar, not an icon rail (S3). Route: inline.
   Commit: pending.
 - T13 [ ] — S2: sidebar order:
@@ -120,7 +120,7 @@ Phase D — shell:
   - then «Conversaciones» (from T11; until then, the session's questions from T5) in place of «Recientes»;
   - the project switcher and account at the bottom, with the theme switch added to the account menu.
   Route: inline. Commit: pending.
-- T14 [ ] — S2: a shortcuts sheet (Ctrl+/) listing every shortcut, and the shortcut shown next to each command that
+- T14 [x] — S2: a shortcuts sheet (Ctrl+/) listing every shortcut, and the shortcut shown next to each command that
   has one. Route: inline. Commit: pending.
 - T15 [ ] — S1: phones:
   - the thread fills the screen and the composer stays docked above the keyboard and the safe area;
@@ -237,3 +237,17 @@ T18(b) → T16 → T17. Phases A, B and D change no API and no stored data.
     - the thread is lost when leaving Inicio (T11 decides persistence);
     - «Detener» drops the pending turn until T7.
   - Slice: 1,394 lines with tests, past the slice; T6–T8 return to small units.
+- L8 — 2026-11-17, owner (verbatim): «implementa chat-first-ui». T12 and T14 done on `feat/chat-shell` (2236a939, and
+  a follow-up that keeps one `sidebar` icon after merging #511 and lists the composer's Esc and ↑). The worker left
+  them uncommitted; the parent committed them.
+  - T12: the sidebar hides completely (`<aside hidden>`) by button or Ctrl+B. The choice is kept in
+    `sipges.sidebar`, focus is moved only when it would be lost, and the compact drawer is unchanged.
+  - T14: Ctrl+/ opens «Atajos de teclado» from the single source `app/layout/shortcuts.ts`. The account menu has a
+    new item, so ADR 0015 lists it.
+  - Tests: RED first (SidebarToggle 4 of 5 failing, ShortcutsSheet 4 of 5 failing), then green. After the merge:
+    `src/app`, `src/shared` and `src/features/dashboard` pass 343/343, and typecheck passes. The worker's full run
+    on the branch: web 813/813, lint, build, CSS 38.8/41 kB.
+  - Known gap: with the sidebar hidden, closing the palette (Ctrl+K) returns focus to the body, because its trigger
+    is hidden.
+  - Not done: a palette command «Atajos de teclado» (the menu item and Ctrl+/ cover it). Slice: 690 lines, two
+    tasks sharing AppShell.
