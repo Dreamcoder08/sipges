@@ -4,6 +4,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
+### Corregido
+
+- Inicio: en un proyecto con el envío a IA externa apagado, la caja ya no queda como buscador sin explicación. Si la instalación tiene analista, la ayuda dice «La IA externa está desactivada en este proyecto: Enter busca. Se activa en Configuración → Privacidad y datos.»
+
 ### Agregado
 
 - Instalación local: `SIPGES_COMPOSE_OVERRIDE` en el `.env` nombra un archivo compose con los ajustes propios de esa instalación; `./sipges` lo aplica en cada llamada (`start`, `update`, `stop`…), así `update` ya no los pierde, y se niega a arrancar si el archivo no existe. La guía explica también cómo dejar SIPGES solo en `127.0.0.1` con `SIPGES_BIND_ADDRESS` en el `.env`.
