@@ -1,6 +1,6 @@
 import { AnalystAnswer } from './AnalystAnswer.tsx';
 import { AnswerActions } from './AnswerActions.tsx';
-import type { Turn } from './conversation.ts';
+import type { Turn } from './turn.ts';
 
 /** A turn that came back: its answer, or why there is none. */
 export type SettledTurn = Extract<Turn, { state: 'answered' | 'failed' }>;
