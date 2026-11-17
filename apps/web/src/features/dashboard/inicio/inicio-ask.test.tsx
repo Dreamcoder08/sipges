@@ -124,7 +124,9 @@ it('says the analyst did not answer when its AI service is down, and offers the 
   await screen.findByRole('textbox', { name: 'Preguntar, con citas' });
   ask('bloqueo norte');
   const answer = await screen.findByRole('region', { name: 'Respuesta del analista' });
-  expect((await within(answer).findByRole('alert')).textContent).toContain(down);
+  // A turn of the conversation log, which reads it once: no alert role repeats it (T5, L6).
+  expect(await within(answer).findByText(down)).toBeVisible();
+  expect(within(answer).queryByRole('alert')).toBeNull();
   fireEvent.click(
     within(answer).getByRole('button', { name: 'Buscar «bloqueo norte» en registros' }),
   );
@@ -145,7 +147,7 @@ it('clears the composer once answered and keeps the question after an error', as
   const field = await screen.findByRole('textbox', { name: 'Preguntar, con citas' });
   ask('bloqueo norte');
   const answer = await screen.findByRole('region', { name: 'Respuesta del analista' });
-  expect(await within(answer).findByRole('alert')).toHaveTextContent('El analista no respondió.');
+  expect(await within(answer).findByText('El analista no respondió.')).toBeVisible();
   expect(field).toHaveValue('bloqueo norte');
   fireEvent.click(screen.getByRole('button', { name: 'Enviar pregunta' }));
   expect(await screen.findByText('Sin bloqueos.')).toBeVisible();
@@ -202,9 +204,9 @@ it('stops waiting for the answer from «Detener respuesta» and keeps the questi
   renderInicio(true);
   const field = await screen.findByRole('textbox', { name: 'Preguntar, con citas' });
   ask('bloqueo norte');
-  expect(await screen.findByRole('progressbar', { name: 'Preparando la respuesta' })).toBeTruthy();
+  expect(await screen.findByText('Buscando registros…')).toBeVisible();
   fireEvent.click(screen.getByRole('button', { name: 'Detener respuesta' }));
-  await waitFor(() => expect(screen.queryByRole('progressbar')).toBeNull());
+  await waitFor(() => expect(screen.queryByText('Buscando registros…')).toBeNull());
   expect(screen.getByRole('button', { name: 'Enviar pregunta' })).toBeTruthy();
   expect(field).toHaveValue('bloqueo norte');
 });

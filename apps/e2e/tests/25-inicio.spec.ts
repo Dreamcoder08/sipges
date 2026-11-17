@@ -26,12 +26,18 @@ test('a question typed in the composer opens the global search with its text', a
   expect((await attention.boundingBox())?.y ?? 0).toBeLessThan(
     (await composer.boundingBox())?.y ?? 0,
   );
-  await page.getByRole('list', { name: 'Prueba con' }).getByRole('button').first().click();
-  await expect(composer).not.toHaveValue('');
   await composer.fill('demandas abiertas');
   await page.getByRole('button', { name: 'Buscar en registros' }).click();
   const palette = page.getByRole('dialog', { name: 'Búsqueda global' });
   await expect(palette.getByRole('combobox')).toHaveValue('demandas abiertas');
+  // A starter chip searches in one click while the composer searches (chat-first-ui T4).
+  await page.keyboard.press('Escape');
+  await expect(palette).toBeHidden();
+  const chip = page.getByRole('list', { name: 'Prueba con' }).getByRole('button').first();
+  const starter = (await chip.textContent()) ?? '';
+  expect(starter).not.toBe('');
+  await chip.click();
+  await expect(palette.getByRole('combobox')).toHaveValue(starter);
   expect(await page.evaluate(() => localStorage.length)).toBe(0);
 });
 

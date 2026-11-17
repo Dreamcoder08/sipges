@@ -622,16 +622,17 @@ describe('Inicio hub', () => {
     expect(await screen.findByRole('dialog', { name: 'Búsqueda global' })).toBeVisible();
   });
 
-  it('fills the composer with a suggested question without submitting it', async () => {
+  it('searches the records with a suggested question in one click', async () => {
     const user = await open();
     const chips = await screen.findByRole('list', { name: 'Prueba con' });
     const buttons = within(chips).getAllByRole('button');
-    expect(buttons.length).toBeGreaterThanOrEqual(3);
-    expect(buttons.length).toBeLessThanOrEqual(4);
+    expect(buttons).toHaveLength(4);
     const text = buttons[0]?.textContent ?? '';
+    expect(text).not.toBe('');
     await user.click(buttons[0] as HTMLElement);
-    expect(screen.getByRole('textbox', { name: SEARCH })).toHaveValue(text);
-    expect(screen.queryByRole('dialog')).toBeNull();
+    // External AI is off: the chip searches at once (chat-first-ui T4).
+    const palette = await screen.findByRole('dialog', { name: 'Búsqueda global' });
+    expect(within(palette).getByRole('combobox')).toHaveValue(text);
   });
 
   it('briefs the week from existing data and links to Registros and the IRSA tab of Análisis', async () => {
