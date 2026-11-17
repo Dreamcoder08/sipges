@@ -7,6 +7,7 @@ import react from '@vitejs/plugin-react';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 import { precompress } from './scripts/precompress.ts';
+import { trimMaplibreCss } from './scripts/trim-maplibre-css.ts';
 
 /**
  * CesiumJS loads its workers and assets at run time from CESIUM_BASE_URL (ADR 0026). They are
@@ -31,6 +32,16 @@ const CSP_PATCHES = [
     replace: '',
   },
 ];
+
+/** Drops the stylesheet rules of MapLibre controls GeoCanvas never adds (scripts/trim-maplibre-css.ts). */
+const maplibreCss = (): Plugin => ({
+  name: 'sipges-trim-maplibre-css',
+  enforce: 'pre',
+  transform(code, id) {
+    if (!(id.split('?')[0] ?? '').endsWith('/maplibre-gl/dist/maplibre-gl.css')) return null;
+    return { code: trimMaplibreCss(code), map: null };
+  },
+});
 
 const cesiumStatic = (): Plugin => {
   const engine = dirname(createRequire(import.meta.url).resolve('@cesium/engine'));
@@ -85,7 +96,7 @@ const cesiumStatic = (): Plugin => {
 
 export default defineConfig({
   // precompress writes brotli and gzip variants of the hashed assets for the servers (F26).
-  plugins: [react(), cesiumStatic(), precompress()],
+  plugins: [react(), maplibreCss(), cesiumStatic(), precompress()],
   // Pre-bundling would skip the CSP patches above in development.
   optimizeDeps: { exclude: ['@cesium/engine'] },
   resolve: {
