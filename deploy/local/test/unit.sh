@@ -61,7 +61,16 @@ build)
   if [[ -f $FAKE/same-build ]]; then count=same; fi
   echo "sha256:$count" >"$(image_file "$tag")"
   ;;
-run) ;;
+run)
+  # The image's key generator: a new pair each call.
+  if [[ $* == *vapid-keys* ]]; then
+    [[ ! -f $FAKE/vapid-fails ]] || exit 1
+    if [[ -f $FAKE/vapid-empty ]]; then exit 0; fi
+    count=$(($(cat "$FAKE/vapid" 2>/dev/null || echo 0) + 1))
+    echo "$count" >"$FAKE/vapid"
+    printf 'SIPGES_VAPID_PUBLIC_KEY=public-%s\nSIPGES_VAPID_PRIVATE_KEY=private-%s\n' "$count" "$count"
+  fi
+  ;;
 esac
 FAKE
 printf '#!/usr/bin/env bash\n' >"$root/sleep"
@@ -230,6 +239,53 @@ echo 'SIPGES_BACKUP_HOUR=99' >>"$SIPGES_ENV_FILE"
 run update || true
 check 'update refuses before backing up or building' never_built
 check 'nor backed up' test -z "$(grep -F backup.sh "$FAKE/calls" || true)"
+
+# --- device notifications get their keys once
+
+fresh
+chmod 600 "$SIPGES_ENV_FILE" # as ./sipges install writes it
+run install
+check 'an install adds a device-notification key pair' grep -qx 'SIPGES_VAPID_PUBLIC_KEY=public-1' "$SIPGES_ENV_FILE"
+check 'with its private key' grep -qx 'SIPGES_VAPID_PRIVATE_KEY=private-1' "$SIPGES_ENV_FILE"
+check 'and a contact the push services accept' grep -qx 'SIPGES_VAPID_SUBJECT=mailto:sipges@localhost' "$SIPGES_ENV_FILE"
+check 'the .env stays readable by its owner only' test "$(stat -c %a "$SIPGES_ENV_FILE")" = 600
+run start
+check 'a later start keeps the same pair, so subscribed devices keep working' \
+  test "$(grep -c '^SIPGES_VAPID_PUBLIC_KEY=' "$SIPGES_ENV_FILE")" = 1
+check 'and asks for no new pair' test "$(cat "$FAKE/vapid")" = 1
+
+fresh
+printf 'SIPGES_VAPID_PUBLIC_KEY=mine\nSIPGES_VAPID_PRIVATE_KEY=mine-private\nSIPGES_VAPID_SUBJECT=mailto:a@b.c\n' >>"$SIPGES_ENV_FILE"
+run install
+check 'keys the operator set are never replaced' grep -qx 'SIPGES_VAPID_PUBLIC_KEY=mine' "$SIPGES_ENV_FILE"
+check 'nor a new pair asked for' test ! -f "$FAKE/vapid"
+
+fresh
+printf 'SIPGES_ANALYST_MODEL=synthetic-model' >>"$SIPGES_ENV_FILE" # an operator's edit with no final newline
+run install
+check 'the line before the keys keeps its value' grep -qx 'SIPGES_ANALYST_MODEL=synthetic-model' "$SIPGES_ENV_FILE"
+check 'and the keys are still added' grep -qx 'SIPGES_VAPID_PUBLIC_KEY=public-1' "$SIPGES_ENV_FILE"
+
+fresh
+printf 'SIPGES_VAPID_SUBJECT=mailto:ops@example.org\n' >>"$SIPGES_ENV_FILE"
+run install
+check 'a contact the operator set stays the only one' \
+  test "$(grep -c '^SIPGES_VAPID_SUBJECT=' "$SIPGES_ENV_FILE")" = 1
+check 'and keeps its value' grep -qx 'SIPGES_VAPID_SUBJECT=mailto:ops@example.org' "$SIPGES_ENV_FILE"
+
+fresh
+touch "$FAKE/vapid-fails"
+before=$(cat "$SIPGES_ENV_FILE")
+run install
+check 'an image that cannot make keys still starts' said 'SIPGES is ready'
+check 'says device notifications stay off' said 'Device notifications stay off'
+check 'and leaves the .env as it was' test "$(cat "$SIPGES_ENV_FILE")" = "$before"
+
+fresh
+touch "$FAKE/vapid-empty"
+before=$(cat "$SIPGES_ENV_FILE")
+run install
+check 'an empty answer writes no keys' test "$(cat "$SIPGES_ENV_FILE")" = "$before"
 
 # --- previous points only at a build that started
 

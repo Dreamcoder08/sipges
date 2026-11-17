@@ -249,7 +249,7 @@ SIPGES works in full with none of these. Each one turns on an optional feature, 
 | Feature | What you need | Where it goes | Condition |
 | --- | --- | --- | --- |
 | Google sign-in | A Google OAuth client | `.env`: `SIPGES_GOOGLE_CLIENT_ID`, `SIPGES_GOOGLE_CLIENT_SECRET`, optional `SIPGES_GOOGLE_ADMIN_EMAIL` | Google requires HTTPS and refuses IP addresses, so this needs a public domain. Authorize `https://<your domain>/auth/google/callback`. |
-| Device notifications (push) | A VAPID key pair | `.env`: `SIPGES_VAPID_PUBLIC_KEY`, `SIPGES_VAPID_PRIVATE_KEY`, `SIPGES_VAPID_SUBJECT` | Generate once with `pnpm --filter @sipges/api vapid:keys` on any computer with the repository. Each device must trust the certificate, and the server needs internet. |
+| Device notifications (push) | Nothing: `./sipges install`, `start` and `update` add a VAPID key pair to `.env` the first time and keep it | `.env`: `SIPGES_VAPID_PUBLIC_KEY`, `SIPGES_VAPID_PRIVATE_KEY`, `SIPGES_VAPID_SUBJECT` (keys you set yourself are never replaced) | Each device turns them on in Avisos and must trust the certificate (`./sipges ca`); the server needs internet to reach the browser's push service. A new pair cuts off every subscribed device. |
 | Email | A [Resend](https://resend.com) key, a verified sender and up to 20 recipients | In the app, as an email channel | There is no SMTP option. The server needs internet. |
 | Slack, Teams, Discord, Google Chat, Telegram | A webhook URL, or a bot token and chat for Telegram | In the app, as a channel | The server needs internet. |
 | AI-assisted summary | An Anthropic key | `.env`: `SIPGES_ANALYST_PROVIDER=anthropic`, `ANTHROPIC_API_KEY`, optional `SIPGES_ANALYST_MODEL` | Information leaves for an outside service. Without it, the summary stays deterministic. |
@@ -322,6 +322,5 @@ All three use their own project and ports, only synthetic data, and clean up aft
 | ARM computers | The API image is `linux/amd64` only. | Medium |
 | Windows | `./sipges` is a Bash script. WSL 2 should work; nobody has tried it. | Small |
 | Excel or CSV bulk import | Not offered yet. `./sipges inventory` gives the real columns to design it from. | Medium |
-| `vapid:keys` | The generator of push keys is TypeScript. Generate them anywhere, then set the `SIPGES_VAPID_*` variables in `.env`. | Small |
 
 No API route is missing: every TypeScript route has a Go handler. `rotate-data-key` and `review-materialize` exist in Rust but are not in the import image.
