@@ -401,23 +401,24 @@ test('a rule whose table is in neither database leaves the run not fully compare
   );
 });
 
+// 0999 is a migration no install has: the rule must name it for the change to be expected.
 test('added column and added table: allowed only when the rule names a migration that ran', () => {
   const rules = {
     schema_migrations: RULES.schema_migrations,
-    t: { kind: 'superset', columns: { c: '0033' } },
-    fresh: { kind: 'superset', addedIn: '0033' },
+    t: { kind: 'superset', columns: { c: '0999' } },
+    fresh: { kind: 'superset', addedIn: '0999' },
   };
   const was = { schema_migrations: migrations('0032'), t: t(['id'], [['1']]) };
   const now = {
-    schema_migrations: migrations('0032', '0033'),
+    schema_migrations: migrations('0032', '0999'),
     t: t(['id', 'c'], [['1', 'x']]),
     fresh: t(['id'], [['1']]),
   };
-  const ran = compareDatabases(was, now, { rules, migrations: { '0033': 'synthetic' } });
+  const ran = compareDatabases(was, now, { rules, migrations: { '0999': 'synthetic' } });
   assert.ok(ran.lines.includes('t: 1 -> 1, identical, 1 column added: c'), lines(ran));
-  assert.ok(ran.lines.includes('fresh: - -> 1, new table (0033)'));
+  assert.ok(ran.lines.includes('fresh: - -> 1, new table (0999)'));
   assert.equal(verdict(ran).line, 'RESULT: no difference');
-  const not = compareDatabases({ ...was, schema_migrations: migrations('0032', '0033') }, now, {
+  const not = compareDatabases({ ...was, schema_migrations: migrations('0032', '0999') }, now, {
     rules,
   });
   assert.ok(not.lines.includes('t: 1 -> 1, column c new'), lines(not));
@@ -426,7 +427,7 @@ test('added column and added table: allowed only when the rule names a migration
   const unknown = compareDatabases(was, now, { rules });
   assert.match(
     verdict(unknown).line,
-    /migration 0033 ran between the two and declares no expected change here/,
+    /migration 0999 ran between the two and declares no expected change here/,
   );
 });
 

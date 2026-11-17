@@ -1,5 +1,5 @@
 import { type ReactNode, useId } from 'react';
-import { InternalLink, objectHref } from '../../../shared/lib/navigation.tsx';
+import { InternalLink, mapHref, objectHref } from '../../../shared/lib/navigation.tsx';
 import { Alert } from '../../../shared/ui/Alert.tsx';
 import { DateText } from '../../../shared/ui/DateText.tsx';
 import type { AnalystBlock, AnalystSource } from './ask.ts';
@@ -51,7 +51,9 @@ const Block = ({ block }: { block: AnalystBlock }) => {
         <BlockCard title={<>{recordName(block)} en el mapa</>}>
           <p className={styles.actions}>
             <RecordLink source={block} />
-            <InternalLink href="/mapa">Abrir el mapa territorial</InternalLink>
+            <InternalLink href={mapHref(block.module, block.id)}>
+              Ver en el mapa territorial
+            </InternalLink>
           </p>
         </BlockCard>
       );

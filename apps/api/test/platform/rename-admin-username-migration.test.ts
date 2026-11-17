@@ -122,7 +122,8 @@ const decide = (server: Server, id: string, status: string, cookie: string) =>
  */
 const database = async () => {
   const db = trackTestDatabase(new PGlite());
-  const all = await loadMigrations();
+  // Up to this migration: the tests prove what it does, not what later migrations add.
+  const all = (await loadMigrations()).filter((m) => m.version <= VERSION);
   await migrate(
     pgliteClient(db),
     all.filter((m) => m.version < VERSION),

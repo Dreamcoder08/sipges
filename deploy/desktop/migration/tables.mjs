@@ -52,6 +52,7 @@ const NEW_ADMIN = 'sipges-admin';
  */
 export const MIGRATIONS = {
   '0032': '0032_rename_admin_username.sql renames the login mascli-admin to sipges-admin',
+  '0033': '0033_analyst_stored_proposals.sql adds the analyst_proposals table and rewrites no row',
 };
 
 // 0032: the column of its reviewed list in each table (sessions and login_failures are
@@ -111,6 +112,12 @@ const [SAME, MORE, CHANGE, GONE] = ['identical', 'superset', 'expected-change', 
  * compared byte for byte like every other column. Structure is compared for every table.
  */
 export const RULES = {
+  analyst_proposals: {
+    kind: MORE,
+    rows: true,
+    addedIn: '0033',
+    why: 'pending analyst proposals; 0033 creates the table and the analyst adds rows',
+  },
   api_keys: { kind: CHANGE, mayChange: ['last_used_at'], why: 'key hashes; moved at each use' },
   attachments: { kind: CHANGE, why: 'upload metadata and content sha256' },
   audit: { kind: CHANGE, rows: true, why: 'append-only: sign-ins and work add entries' },

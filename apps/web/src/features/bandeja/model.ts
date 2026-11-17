@@ -6,18 +6,20 @@ import type { z } from 'zod';
 import { SITUATION_KINDS } from '../../shared/api/situations.ts';
 import { objectHref } from '../../shared/lib/navigation.tsx';
 import type { IconName } from '../../shared/ui/icons.ts';
+import type { AnalystProposal } from './analyst-proposals.ts';
 
 type TerritorialAlert = z.infer<typeof TerritorialAlertSchema>;
 
-export type Kind = 'alerta' | 'calidad' | 'situacion';
+export type Kind = 'alerta' | 'calidad' | 'situacion' | 'propuesta';
 export const KIND_INFO: Readonly<
   Record<Kind, { singular: string; plural: string; icon: IconName }>
 > = {
   alerta: { singular: 'Alerta', plural: 'Alertas', icon: 'bell' },
   calidad: { singular: 'Calidad', plural: 'Calidad de datos', icon: 'sliders' },
   situacion: { singular: 'Situación', plural: 'Situaciones', icon: 'layers' },
+  propuesta: { singular: 'Propuesta', plural: 'Propuestas del analista', icon: 'lightbulb' },
 };
-export const KINDS = (['alerta', 'calidad', 'situacion'] as const).map((value) => ({
+export const KINDS = (['alerta', 'calidad', 'situacion', 'propuesta'] as const).map((value) => ({
   value,
   ...KIND_INFO[value],
 }));
@@ -56,6 +58,7 @@ type Common = {
 export type PendingItem = Common &
   (
     | { kind: 'alerta'; alert: TerritorialAlert; fourEyes: FourEyes }
+    | { kind: 'propuesta'; proposal: AnalystProposal; canDecide: boolean }
     | { kind: 'calidad' | 'situacion' }
   );
 
@@ -225,6 +228,51 @@ export const qualityItems = (observations: readonly QualityObservation[]): Pendi
     };
   });
 };
+
+/**
+ * Proposals the Inicio analyst made (odd/tasks/agentic-analyst.md S4). Nothing was written:
+ * approving creates the record or link through the owning screen's write, discarding writes nothing.
+ * Every text comes from a model and is shown as plain text.
+ */
+export const proposalItems = (
+  proposals: readonly AnalystProposal[],
+  canDecide: boolean,
+): PendingItem[] =>
+  proposals.map((proposal) => {
+    const { link, record } = proposal;
+    const facts = record
+      ? Object.entries(record.payload).map(([key, value]) => `${key}: ${value}`)
+      : link
+        ? [
+            `${link.source.module} ${link.source.id} → ${link.target.module} ${link.target.id} (${link.link_type})`,
+          ]
+        : [];
+    return {
+      kind: 'propuesta' as const,
+      key: `propuesta:${proposal.id}`,
+      ref: proposal.id,
+      title: clip(proposal.title, 120),
+      urgency: 'routine' as const,
+      where: cap(record?.module ?? link?.source.module ?? ''),
+      since: proposal.proposed_at,
+      summary: proposal.reason,
+      facts: [...facts, `Propuesta por el analista, a pedido de ${proposal.proposed_by}.`],
+      owner: link
+        ? { href: objectHref(link.source.module, link.source.id), label: `Abrir ${link.source.id}` }
+        : {
+            href: `/registros?tipo=${encodeURIComponent(record?.module ?? '')}`,
+            label: 'Abrir el registro del módulo',
+          },
+      evidence: link
+        ? [link.source, link.target].map((end) => ({
+            href: objectHref(end.module, end.id),
+            label: `${end.module} · ${end.id}`,
+          }))
+        : [],
+      proposal,
+      canDecide,
+    };
+  });
 
 const URGENCY_RANK: Readonly<Record<Urgency, number>> = { urgent: 0, priority: 1, routine: 2 };
 

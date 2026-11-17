@@ -36,6 +36,11 @@ const proposals = (t: Awaited<ReturnType<typeof setup>>, module: string, id: str
   t.call('GET', `/system/briefing/proposals?module=${module}&id=${id}`);
 
 describe('analyst proposals', () => {
+  it('lists no stored analyst proposals: only the Go API has the Inicio analyst', async () => {
+    const t = await setup();
+    expect(await t.call('GET', '/system/analyst/proposals')).toEqual({ status: 200, body: [] });
+  });
+
   it('proposes a link from a text mention and creates it on approval', async () => {
     const t = await setup();
     const fromEvent = await proposals(t, 'eventos', 'EV-1');

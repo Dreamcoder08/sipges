@@ -93,6 +93,20 @@
     "command": "analyst ask",
     "summary": "Ask the Inicio analyst a question; JSON body {\"question\": …} with --body FILE, or --body - for stdin"
   },
+  {
+    "method": "GET",
+    "path": "/system/analyst/proposals",
+    "access": "session",
+    "command": "analyst proposals",
+    "summary": "Pending proposals the analyst made in the active project"
+  },
+  {
+    "method": "POST",
+    "path": "/system/analyst/proposals",
+    "access": "session",
+    "command": "analyst decide",
+    "summary": "Approve or discard an analyst proposal: {\"id\": …, \"decision\": \"approve\"|\"reject\"} with --body FILE"
+  },
   { "method": "POST", "path": "/system/analyze", "access": "session" },
   { "method": "GET", "path": "/system/audit", "access": "session" },
   {
