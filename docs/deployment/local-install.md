@@ -139,6 +139,20 @@ Settings that must survive `./sipges start` and `./sipges update` go in `.env`, 
 
 If that file is missing, `./sipges` stops with `SIPGES_COMPOSE_OVERRIDE names <path>, which does not exist` instead of running without it. Fix the path or remove the line. Docker Compose would read a `compose.override.yaml` next to `compose.yaml` by itself only when no file is named, and `./sipges` always names one, so the setting is the only way in. It belongs to that `.env`, so a drill run with `SIPGES_ENV_FILE` never picks up yours.
 
+### Two API replicas
+
+On one computer a second copy of the API buys availability, not speed: both share the same processor, memory and database. What it gives:
+
+- **Turns.** Caddy sends requests to the two APIs in turns (round robin).
+- **Health checks.** Caddy asks each API `/health/ready` every 5 seconds and skips one that does not answer; Docker checks each one too (`./sipges status` shows `healthy`). A request that cannot reach one API tries the other.
+- **Updates without a gap.** `./sipges update` applies the database changes, restarts the first API and waits until it is healthy, then does the same with the second. If the new version never becomes healthy, the second API keeps serving the version it had.
+
+To turn it on, add `SIPGES_API_REPLICAS=2` to `.env` and run `./sipges start`. To go back to one, set it to `1` (or remove the line) and run `./sipges start`: the second API is removed. Any other value stops `./sipges` with `SIPGES_API_REPLICAS must be 1 or 2`. Each API may use up to 1 GiB of memory.
+
+- The scheduled automation runs on the first API only, so it pauses for the few seconds that API restarts.
+- If you use `SIPGES_COMPOSE_OVERRIDE`, a change you make to `api` there does not reach the second API, `api-2`: give `api-2` the same change.
+- Database changes run while the previous version still serves. So, for whoever writes SIPGES: a migration may add, but must not remove or rename anything the previous version still reads; that waits for a later release ([ADR 0035](../adr/0035-local-install-two-api-replicas.md)).
+
 ## Bringing in the client's data
 
 The client's files stay in a folder **outside** the SIPGES folder, for example a USB disk at `/media/usb/client`. SIPGES reads that folder and never writes to it. Every import only tries unless you add `--apply`, and `--apply` takes a backup first.
@@ -290,12 +304,13 @@ To remove everything from this computer, run `./sipges wipe`. Backups and `.env`
 | --- | --- |
 | `caddy` | HTTPS from its own authority, compression, and the only published ports. |
 | `api` | `apps/api-go/Dockerfile` unchanged, plus the built web app and the migrations (`deploy/local/Dockerfile`). Read-only filesystem, no capabilities, 1 GiB limit. |
+| `api-2` | Only with `SIPGES_API_REPLICAS=2`: `api` again, without the automation cron. See [Two API replicas](#two-api-replicas). |
 | `migrate` | `api migrate`, once on every start, before `api` and `backup`. |
 | `db` | PostgreSQL 17, on a network with no route out and no published port. |
 | `backup` | Nightly `pg_dump` and evidence archive, encrypted with AES-256 by GnuPG. |
 | `restore`, `import`, `inventory` | Started only by their commands. `inventory` has no network and no settings. |
 
-Go serves the web app itself (`SIPGES_WEB_DIR`), so the Worker's headers live in one tested place: CSP, HSTS, `no-store`, frame and referrer rules, with the host allowlist in front. On 23 requests its status, body and headers matched `createWebApp`; the only header it lacks is the trace header `traceresponse`. Caddy adds TLS only, and `SIPGES_TRUST_PROXY=1` is safe because nothing else reaches the API.
+Go serves the web app itself (`SIPGES_WEB_DIR`), so the Worker's headers live in one tested place: CSP, HSTS, `no-store`, frame and referrer rules, with the host allowlist in front. On 23 requests its status, body and headers matched `createWebApp`; the only header it lacks is the trace header `traceresponse`. Caddy adds TLS and, with two APIs, takes them in turns; `SIPGES_TRUST_PROXY=1` stays safe because nothing else reaches the API.
 
 ### Database roles
 
