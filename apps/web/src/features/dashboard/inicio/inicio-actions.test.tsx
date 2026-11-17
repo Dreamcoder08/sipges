@@ -3,10 +3,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, delay, http } from 'msw';
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import { ProjectSettingsProvider } from '../../../shared/lib/project-settings.tsx';
 import { resetApi, server } from '../../../test/server.ts';
 import { InicioPage } from './InicioPage.tsx';
+import { loadConversationView } from './answer-view.tsx';
 import { AnalystThreadProvider } from './thread-context.tsx';
 
 /*
@@ -22,6 +23,12 @@ const SOURCES = [
 ];
 
 let asked: string[] = [];
+
+// The answer view is a lazy chunk (T20); load it once here so no single test pays for the import
+// under CI load (inicio-lazy.test.tsx covers the loading itself).
+beforeAll(async () => {
+  await loadConversationView();
+});
 
 beforeEach(() => {
   resetApi({ me: { username: 'demo', full_name: 'Persona Demo', role: 'consulta' } });
