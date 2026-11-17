@@ -1,0 +1,28 @@
+{
+  "title": "SIPGES chat-first: Inicio como conversación con el analista",
+  "brief": "T1 de odd/tasks/chat-first-ui.md (S1–S4, L2–L4): dos o tres direcciones para el Inicio chat-first a 1440 px y 390 px, en claro y oscuro, con el vacío, un hilo de tres turnos con citas [n] y una tarjeta de registro, un turno de error 503 con «Buscar en registros», la IA externa desactivada (solo Buscar, con el motivo) y el estado pendiente con «Detener» y «Buscando registros…». Cada dirección muestra dónde vive «Necesita tu atención». Solo tokens de SIPGES, letras del sistema y datos sintéticos; sin copiar nombres, logos, textos, colores ni ilustraciones de los productos de referencia (S4).",
+  "feature": "odd/tasks/chat-first-ui.md",
+  "artboards": [
+    {
+      "file": "01-centro-conversacional.html",
+      "title": "Centro conversacional",
+      "tradeoff": "La más cercana a S2: saludo y compositor centrados, barra lateral con «Nueva pregunta» primero y ocultable, el hilo ocupa toda la columna (≈ 11 cortes). A cambio, durante una conversación lo urgente baja a un botón con contador en la barra superior (se aparta de L11) y «Esta semana» queda en una línea de enlaces.",
+      "width": 1440,
+      "height": 8661
+    },
+    {
+      "file": "02-atencion-primero.html",
+      "title": "Atención primero",
+      "tradeoff": "Conserva el orden de L11 (lo urgente, el compositor, «Esta semana») y al empezar la conversación lo pliega en una línea siempre visible: el menor cambio y el menor riesgo (≈ 10 cortes). A cambio el vacío invita menos a preguntar y hay dos disposiciones, antes y después de la primera pregunta.",
+      "width": 1440,
+      "height": 8660
+    },
+    {
+      "file": "03-panel-lateral.html",
+      "title": "Panel lateral",
+      "tradeoff": "Inicio y lo urgente no cambian; el analista es un panel derecho (Ctrl+J) desde cualquier destino, con la pantalla al lado como fuente. A cambio la medida es estrecha (26rem), es la que menos se parece a S2 y añade una pieza de armazón nueva (≈ 12 cortes).",
+      "width": 1440,
+      "height": 8850
+    }
+  ]
+}

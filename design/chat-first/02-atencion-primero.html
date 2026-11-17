@@ -1,0 +1,1008 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1440" />
+<title>02 · Atención primero · SIPGES chat-first</title>
+<style>
+/* TOKENS:BEGIN — copia de apps/web/src/app/styles/tokens.css (main 0472b67b); solo cambian los selectores para que cada marco fije su tema */
+/*
+ * Design tokens (docs/adr/0018). Two layers:
+ * - Primitive scales (space, type, radius, motion, z-index, control sizes) never change by theme.
+ * - Semantic colours describe a role (surface, text, tone), never a hue, and are redefined for
+ *   the dark theme below. Modules use semantic tokens only; a unit test rejects raw colours.
+ * Light is neutral paper; dark is true OLED black with neutral greys (docs/adr/0019).
+ */
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+
+  /* ---------- Brand and text ---------- */
+  --color-brand: #17365d;
+  --color-brand-strong: #0f2541;
+  --color-brand-text: #17365d;
+  --color-on-brand: #ffffff;
+  /* Primary actions are monochrome (ChatGPT, Claude): ink on paper, inverted in the dark. */
+  --color-primary: #0d0d0d;
+  --color-primary-hover: #333333;
+  --color-on-primary: #ffffff;
+  --color-text: #0d0d0d;
+  --color-muted: #5d5d5d;
+  --color-subtle: #6b6b6b;
+
+  /* ---------- Surfaces ---------- */
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f9f9f9;
+  --color-surface-raised: #ffffff;
+  --color-sidebar: #f9f9f9;
+  --color-border: #e3e3e3;
+  --color-track: #ececec;
+  --color-focus: #0b62d6;
+
+  /* Shell system (docs/adr/0015): quiet neutrals, one accent tint, hairlines over fills. */
+  --color-accent: #0b62d6;
+  --color-accent-tint: #e8f0fd;
+  --color-accent-text: #0a4aa3;
+  --color-fill: #f4f4f4;
+  --color-fill-hover: #ececec;
+  --color-hairline: #ececec;
+  --color-hairline-strong: #d9d9d9;
+  /* Edges of inputs, selects, textareas and secondary buttons: 3:1 on the page and on fills. */
+  --color-control-border: #858585;
+  --color-scrim: rgb(0 0 0 / 0.35);
+  --color-chrome: rgb(255 255 255 / 0.85);
+  /* Scrollbar thumb on an invisible track: quiet at rest, firmer under the pointer. */
+  --color-scrollbar: rgb(0 0 0 / 0.18);
+  --color-scrollbar-hover: rgb(0 0 0 / 0.32);
+
+  /* ---------- Tones: soft background, readable text, solid mark ---------- */
+  --color-danger: #c53030;
+  --color-danger-strong: #8a1f1f;
+  --color-danger-soft: #fdecec;
+  --color-info: #2b6cb0;
+  --color-info-soft: #e8f1fb;
+  --color-success: #247b55;
+  --color-success-soft: #e6f5ec;
+
+  --tone-positive-bg: #d7ebdf;
+  --tone-positive-fg: #195238;
+  --tone-positive-solid: #247b55;
+  --tone-negative-bg: #f7dde0;
+  --tone-negative-fg: #832434;
+  --tone-negative-solid: #b03546;
+  --tone-info-bg: #dce7f6;
+  --tone-info-fg: #244e86;
+  --tone-info-solid: #3567aa;
+  --tone-warning-bg: #f8ebc6;
+  --tone-warning-fg: #6d4c0b;
+  --tone-warning-solid: #8a6115;
+  /* One «aviso»: the warning mark and its background, aliases of the warning tone. */
+  --color-warning: var(--tone-warning-solid);
+  --color-warning-soft: var(--tone-warning-bg);
+  --tone-neutral-bg: #e9edf3;
+  --tone-neutral-fg: #485265;
+  --tone-neutral-solid: #68758b;
+  --tone-on-solid: #ffffff;
+  /* White on strong fills that keep their hue in both themes (risk red, dimension badges). */
+  --color-on-strong: #ffffff;
+
+  /* ---------- Risk levels (semáforo) ---------- */
+  --level-green: #2f855a;
+  --level-yellow: #a87a12;
+  --level-orange: #dd6b20;
+  --level-red: #c53030;
+  --level-green-soft: #e6f5ec;
+  --level-yellow-soft: #fdf6e3;
+  --level-orange-soft: #fdeee2;
+  --level-red-soft: #fdecec;
+  --level-green-text: #1f5c3e;
+  --level-yellow-text: #7a5410;
+  --level-orange-text: #8a3f0d;
+  --level-red-text: #8a1f1f;
+  /* Heat-map cells: a strong fill with the text colour that passes AA on it. */
+  --heat-green: #6fc28f;
+  --heat-green-on: #0d3520;
+  --heat-yellow: #f6d55c;
+  --heat-yellow-on: #3d2e05;
+  --heat-orange: #f4a259;
+  --heat-orange-on: #3d1a05;
+  --heat-red: #c4343d;
+  --heat-red-on: #ffffff;
+
+  /* ---------- Data visualisation ---------- */
+  --dim-g: #2b6cb0;
+  --dim-a: #6b46c1;
+  --dim-d: #92600f;
+  --dim-n: #c05621;
+  --dim-e: #2f855a;
+  --dim-i: #4a5568;
+
+  /* Narrative trend lines: one clearly distinct hue per category. */
+  --trend-e: #2f9e44;
+  --trend-g: #6741d9;
+  --trend-d: #f08c00;
+  --trend-a: #1c7ed6;
+  --trend-n: #d6336c;
+  --trend-i: #495057;
+
+  /* Categorical series for graphs (entity kinds). */
+  --viz-1: #2b6cb0;
+  --viz-2: #2f855a;
+  --viz-3: #dd6b20;
+  --viz-4: #805ad5;
+  --viz-5: #c53030;
+  --viz-6: #a87a12;
+  --viz-7: #319795;
+  --viz-8: #5b6673;
+  /* Diagram ink: strokes, labels and node fills drawn on a light canvas. */
+  --ink-strong: #14243a;
+  --ink: #1d2b3f;
+  --ink-soft: #5b6b84;
+  --ink-faint: #68758b;
+  --canvas: #fcfcfc;
+  --canvas-node: #f4f4f4;
+  --canvas-halo: #ffffff;
+
+  /* ---------- Cartography: map paint for both renderers ---------- */
+  --map-bg: #e9eef3;
+  --map-sea: #d6e8f3;
+  --map-land: #f6f3ea;
+  --map-line: #9aa8b4;
+  --map-label-sea: #335a73;
+  --map-label-area: #8a7d5c;
+  --map-ink: #243b53;
+  --map-text: #17212b;
+  --map-halo: rgb(255 255 255 / 0.85);
+  --map-point: #ffffff;
+  --map-concession: #669bb5;
+  --map-selected: #e6b54a;
+  --map-alert: #c34040;
+  --map-heat-1: #fde7c4;
+  --map-heat-2: #f8c27a;
+  --map-heat-3: #ee8f44;
+  --map-heat-4: #cf5a2a;
+  /* Paint for the 3D and WebGL canvases (read by engine/paint.ts): selection and point outlines, district lines. */
+  --map-outline-selected: #0f2541;
+  --map-district-line: #17365d;
+  --map-point-halo: #ffffff;
+  /* Height ramp of the 3D globe when no basemap is shown, low ground to summit. */
+  --map-relief-1: #eef0e2;
+  --map-relief-2: #d6e2b8;
+  --map-relief-3: #e3d39c;
+  --map-relief-4: #c9a477;
+  --map-relief-5: #94714f;
+  /* Raster tiles: streets are inverted for the dark theme, imagery only dimmed. */
+  --map-filter-streets: none;
+  --map-filter-satellite: none;
+  /* Theme-invariant map paint, defined only here so both dark blocks inherit it unchanged. */
+  /* Cadastre legend mirrors the GEOCATMIN raster tiles, which do not follow the theme. */
+  --map-cadastre-1: #2f5fd0;
+  --map-cadastre-2: #3a9d3a;
+  --map-cadastre-3: #222222;
+  /* District outlines drawn over satellite imagery, which is always dark ground. */
+  --map-outline-imagery: #fffaf0;
+  /* Record markers: white ring and label on the marker fill, dark ring when active. */
+  --map-marker-on: #ffffff;
+  --map-marker-active: #17212b;
+  /* Concession polygons: resting, active and keyboard-focused fills. */
+  --map-concession-fill: rgb(23 54 93 / 0.08);
+  --map-concession-fill-active: rgb(23 54 93 / 0.28);
+  --map-concession-fill-focus: rgb(43 108 176 / 0.3);
+
+  /* ---------- Spacing: 4-pt scale ---------- */
+  --space-0: 0.125rem;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+
+  /* ---------- Type: system faces (SF Pro on Apple, Segoe on Windows, Roboto on Android) ---------- */
+  --font-sans:
+    system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Roboto Mono', Menlo, monospace;
+
+  --text-2xs: 0.625rem;
+  --text-xs: 0.6875rem;
+  /* Metadata under a row or a value. */
+  --text-caption: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.875rem;
+  --text-md: 0.9375rem;
+  --text-body: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  /* Display sizes scale with the viewport between phone and desktop. */
+  --text-2xl: clamp(1.5rem, 1.3rem + 0.8vw, 1.875rem);
+  --text-3xl: clamp(1.875rem, 1.5rem + 1.6vw, 2.625rem);
+
+  --leading-tight: 1.2;
+  --leading-snug: 1.35;
+  --leading-normal: 1.5;
+  --tracking-tight: -0.015em;
+  --tracking-caps: 0.06em;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-heavy: 800;
+
+  /* ---------- Shape ---------- */
+  --radius-xs: 0.1875rem;
+  --radius-sm: 0.35rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-pill: 999px;
+
+  /* ---------- Elevation ---------- */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.05);
+  --shadow-md: 0 8px 24px rgb(0 0 0 / 0.08);
+  --shadow-lg: 0 20px 48px rgb(0 0 0 / 0.18);
+  --shadow-raised: 0 -1px 0 rgb(0 0 0 / 0.03), 0 16px 48px rgb(0 0 0 / 0.16);
+  --shadow-chip: 0 1px 3px rgb(0 0 0 / 0.12);
+  /* The search field reads as a composer: a soft lift instead of a border. */
+  --shadow-composer: 0 0 0 1px rgb(0 0 0 / 0.06), 0 2px 12px rgb(0 0 0 / 0.06);
+
+  /* ---------- Motion: short, eased, and off under prefers-reduced-motion ---------- */
+  --motion-fast: 120ms;
+  --motion-medium: 220ms;
+  --motion-slow: 360ms;
+  /* Loading loops: one spinner turn and one skeleton sweep. */
+  --motion-spin: 800ms;
+  --motion-shimmer: 1400ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  /* The curve iOS uses for sheets: fast start, long soft landing, no overshoot. */
+  --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* ---------- Controls and layers ---------- */
+  --control-sm: 2rem;
+  --control-md: 2.5rem;
+  --touch-target: 2.75rem;
+  /* Table rows on desktop: Compacta and Cómoda (Registros › Todos, closure-roadmap T31). */
+  --row-height: 2.25rem;
+  --row-height-cozy: 2.75rem;
+  --focus-ring: 3px solid var(--color-focus);
+  --z-sticky: 20;
+  --z-popover: 40;
+  --z-modal: 60;
+  --z-skip: 70;
+  /* A confirmation can open over a sheet, so it stacks above every other layer. */
+  --z-dialog: 80;
+
+  --sidebar-width: 15.5rem;
+}
+
+/*
+ * Dark theme: OLED black. Pure #000 behind everything lets OLED screens switch pixels off;
+ * surfaces step up in neutral greys and separate by hairlines instead of shadows. It follows the
+ * device unless the person picks a theme in Cuenta (shared/lib/theme.ts sets data-theme on
+ * <html>). Both selectors carry the same values.
+ */
+/* (Bloque «oscuro por dispositivo» omitido: cada marco fija data-theme y el bloque siguiente lo pinta.) */
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-brand: #2f6bd6;
+  --color-brand-strong: #2559b8;
+  --color-brand-text: #9cc0ff;
+  --color-on-brand: #ffffff;
+  --color-primary: #f4f4f5;
+  --color-primary-hover: #d4d4d8;
+  --color-on-primary: #0d0d0d;
+  --color-text: #ececec;
+  --color-muted: #a3a3a3;
+  --color-subtle: #8f8f8f;
+
+  --color-bg: #000000;
+  --color-surface: #0c0c0d;
+  --color-surface-alt: #111113;
+  --color-surface-raised: #161618;
+  --color-sidebar: #000000;
+  --color-border: #2a2a2d;
+  --color-track: #232326;
+  --color-focus: #7cacf8;
+
+  --color-accent: #7cacf8;
+  --color-accent-tint: rgb(124 172 248 / 0.16);
+  --color-accent-text: #b5d0ff;
+  --color-fill: #161618;
+  --color-fill-hover: #1f1f22;
+  --color-hairline: #1c1c1f;
+  --color-hairline-strong: #323236;
+  --color-control-border: #707075;
+  --color-scrim: rgb(0 0 0 / 0.7);
+  --color-chrome: rgb(0 0 0 / 0.78);
+  --color-scrollbar: rgb(255 255 255 / 0.16);
+  --color-scrollbar-hover: rgb(255 255 255 / 0.3);
+
+  --color-danger: #f07178;
+  --color-danger-strong: #ffb4b8;
+  --color-danger-soft: rgb(240 113 120 / 0.14);
+  --color-info: #7cacf8;
+  --color-info-soft: rgb(124 172 248 / 0.14);
+  --color-success: #5fd39a;
+  --color-success-soft: rgb(95 211 154 / 0.14);
+
+  --tone-positive-bg: rgb(95 211 154 / 0.16);
+  --tone-positive-fg: #9ee6c0;
+  --tone-positive-solid: #3fae7a;
+  --tone-negative-bg: rgb(240 113 120 / 0.16);
+  --tone-negative-fg: #ffb4b8;
+  --tone-negative-solid: #e0606a;
+  --tone-info-bg: rgb(124 172 248 / 0.16);
+  --tone-info-fg: #b5d0ff;
+  --tone-info-solid: #5f93e6;
+  --tone-warning-bg: rgb(240 190 90 / 0.16);
+  --tone-warning-fg: #f3d58f;
+  --tone-warning-solid: #c99a3a;
+  --tone-neutral-bg: rgb(163 163 163 / 0.14);
+  --tone-neutral-fg: #d4d4d4;
+  --tone-neutral-solid: #8f8f8f;
+  --tone-on-solid: #000000;
+
+  --level-green-soft: rgb(95 211 154 / 0.16);
+  --level-yellow-soft: rgb(240 190 90 / 0.16);
+  --level-orange-soft: rgb(240 150 90 / 0.16);
+  --level-red-soft: rgb(240 113 120 / 0.16);
+  --level-green-text: #9ee6c0;
+  --level-yellow-text: #f3d58f;
+  --level-orange-text: #f8c29a;
+  --level-red-text: #ffb4b8;
+
+  --level-yellow: #d69e2e;
+  --viz-6: #d69e2e;
+  --viz-8: #8f8f8f;
+  --trend-i: #a3a3a3;
+
+  --ink-strong: #ececec;
+  --ink: #d4d4d4;
+  --ink-soft: #8f8f8f;
+  --ink-faint: #8f8f8f;
+  --canvas: #050505;
+  --canvas-node: #161618;
+  --canvas-halo: #000000;
+
+  --map-bg: #0b0d10;
+  --map-sea: #0d1822;
+  --map-land: #16181b;
+  --map-line: #3d4652;
+  --map-label-sea: #7fa3bd;
+  --map-label-area: #ab9f80;
+  --map-ink: #c9d4df;
+  --map-text: #ececec;
+  --map-halo: rgb(0 0 0 / 0.8);
+  --map-point: #16181b;
+  --map-concession: #4f8db0;
+  --map-selected: #e6b54a;
+  --map-alert: #f07178;
+  --map-heat-1: #3a2a14;
+  --map-heat-2: #6b4518;
+  --map-heat-3: #a35a22;
+  --map-heat-4: #d0612c;
+  /* Paint for the 3D and WebGL canvases (read by engine/paint.ts): selection and point outlines, district lines. */
+  --map-outline-selected: #ffffff;
+  --map-district-line: #c9d4df;
+  --map-point-halo: #000000;
+  /* Height ramp of the 3D globe when no basemap is shown, low ground to summit. */
+  --map-relief-1: #14211a;
+  --map-relief-2: #27402c;
+  --map-relief-3: #4a4a2c;
+  --map-relief-4: #5e4630;
+  --map-relief-5: #7a5c44;
+  --map-filter-streets: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.6);
+  --map-filter-satellite: brightness(0.8) saturate(0.9);
+
+  --shadow-sm: 0 0 0 1px rgb(255 255 255 / 0.02);
+  --shadow-md: 0 8px 24px rgb(0 0 0 / 0.6);
+  --shadow-lg: 0 20px 48px rgb(0 0 0 / 0.8);
+  --shadow-raised: 0 0 0 1px rgb(255 255 255 / 0.06), 0 -12px 40px rgb(0 0 0 / 0.8);
+  --shadow-chip: 0 0 0 1px rgb(255 255 255 / 0.08);
+  --shadow-composer: 0 0 0 1px rgb(255 255 255 / 0.08);
+}
+
+/*
+ * Touch screens: every control size reaches the 44px target (WCAG 2.5.5). Chips, toggles and
+ * icon buttons read --control-*, so they grow with it while a mouse keeps the denser sizes.
+ */
+@media (pointer: coarse) {
+  :root {
+    --control-sm: var(--touch-target);
+    --control-md: var(--touch-target);
+  }
+}
+
+/* TOKENS NUEVOS — propuesta para chat-first-ui T2; no están en tokens.css ni en design/system.md */
+:root,[data-theme]{
+  --measure-chat: 46rem;
+  --space-turn: var(--space-8);
+  --text-answer: var(--text-body);
+  --leading-answer: 1.6;
+  --color-bubble: var(--color-fill);
+}
+/* Re-resolución por marco: tokens que leen otro token se recalculan dentro de cada data-theme. */
+[data-theme]{--focus-ring:3px solid var(--color-focus);--color-warning:var(--tone-warning-solid);--color-warning-soft:var(--tone-warning-bg);color:var(--color-text)}
+/* TOKENS:END */
+
+*,*::before,*::after{box-sizing:border-box}
+html{font-family:var(--font-sans);color:var(--color-text);background:var(--color-surface-alt);line-height:var(--leading-normal);-webkit-font-smoothing:antialiased}
+body{margin:0;width:1440px}
+h1,h2,h3,h4{text-wrap:balance;margin:0}
+p{margin:0;text-wrap:pretty}
+ul,ol{list-style:none;margin:0;padding:0}
+time,data{font-variant-numeric:tabular-nums}
+code,kbd{font-family:var(--font-mono)}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+fieldset{min-width:0}
+a{color:var(--color-brand-text);text-underline-offset:0.18em}
+:focus-visible{outline:var(--focus-ring);outline-offset:2px}
+.ico{flex:none;display:inline-block;width:1.125em;height:1.125em;vertical-align:-0.18em}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+
+/* ---------- Artboard chrome (herramienta de diseño, no producto) ---------- */
+.anno{padding:var(--space-10) var(--space-12) var(--space-8);display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:var(--space-10);background:var(--color-surface);border-bottom:1px solid var(--color-hairline)}
+.kick{font-size:var(--text-xs);letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--color-muted);font-weight:var(--weight-semibold)}
+.anno h1{font-size:var(--text-3xl);letter-spacing:var(--tracking-tight);line-height:var(--leading-tight);margin-top:var(--space-1)}
+.anno .lead{margin-top:var(--space-3);font-size:var(--text-body);max-width:44rem}
+.anno h2{font-size:var(--text-md);margin:var(--space-6) 0 var(--space-2)}
+.anno h2:first-child{margin-top:0}
+.anno p,.anno li{font-size:var(--text-base)}
+.anno .bul li{position:relative;padding-left:var(--space-4);margin-top:var(--space-1)}
+.anno .bul li::before{content:"";position:absolute;left:0;top:0.6em;width:0.375rem;height:0.375rem;border-radius:var(--radius-pill);background:var(--color-muted)}
+.pc{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-6)}
+.pc h3{font-size:var(--text-sm);text-transform:uppercase;letter-spacing:var(--tracking-caps);color:var(--color-muted)}
+.atten{border-left:3px solid var(--color-primary);padding:var(--space-2) var(--space-4);background:var(--color-surface-alt);border-radius:0 var(--radius-md) var(--radius-md) 0}
+.tbl{width:100%;border-collapse:collapse;font-size:var(--text-sm)}
+.tbl th{text-align:left;font-weight:var(--weight-semibold);padding:var(--space-1) var(--space-2) var(--space-1) 0;border-bottom:1px solid var(--color-control-border)}
+.tbl td{padding:var(--space-1) var(--space-2) var(--space-1) 0;vertical-align:top;border-bottom:1px solid var(--color-hairline)}
+.tbl td.m{font-family:var(--font-mono);font-size:var(--text-xs);white-space:nowrap}
+.tbl td.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ok{color:var(--tone-positive-fg);font-weight:var(--weight-semibold)}
+.bad{color:var(--tone-negative-fg);font-weight:var(--weight-semibold)}
+.tok{border:1px solid var(--color-hairline);border-left:3px solid var(--tone-warning-solid);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);background:var(--color-surface-alt)}
+.sect-cap{padding:var(--space-10) var(--space-12) var(--space-2)}
+.sect-cap h2{font-size:var(--text-xl);letter-spacing:var(--tracking-tight)}
+.sect-cap p{color:var(--color-muted);font-size:var(--text-base);margin-top:var(--space-1);max-width:60rem}
+.cap{display:flex;gap:var(--space-3);align-items:baseline;padding:var(--space-6) var(--space-12) var(--space-3);font-size:var(--text-sm);color:var(--color-muted)}
+.cap b{color:var(--color-text);font-weight:var(--weight-semibold);font-size:var(--text-md)}
+.frame{position:relative;overflow:hidden;background:var(--color-bg);color:var(--color-text)}
+.frame.desk{width:1440px;height:900px;border-block:1px solid var(--color-hairline-strong)}
+.phones{display:flex;flex-wrap:wrap;gap:var(--space-8);padding:0 var(--space-12) var(--space-12)}
+.phone-w{width:390px}
+.phone-w .cap{padding:var(--space-6) 0 var(--space-3);display:block;min-height:6rem}
+.phone-w .cap b{display:block}
+.frame.phone{width:390px;height:844px;border:1px solid var(--color-hairline-strong);border-radius:var(--radius-xl);box-shadow:var(--shadow-md);--control-sm:var(--touch-target);--control-md:var(--touch-target)}
+
+/* ---------- Shell ---------- */
+.app{display:grid;grid-template-columns:var(--sidebar-width) minmax(0,1fr);height:100%;min-height:0}
+.app[data-side="hidden"]{grid-template-columns:minmax(0,1fr)}
+.app[data-side="hidden"] .side{display:none}
+.app:not([data-side="hidden"]) .show-side{display:none}
+.side{display:flex;flex-direction:column;gap:var(--space-0);min-height:0;overflow:auto;padding:var(--space-3) var(--space-2);background:var(--color-sidebar);border-right:1px solid var(--color-hairline)}
+.side-top{display:flex;align-items:center;justify-content:space-between;padding:0 var(--space-1) var(--space-2) var(--space-2)}
+.brand{font-weight:var(--weight-heavy);letter-spacing:var(--tracking-tight);font-size:var(--text-md)}
+.iconbtn{display:inline-grid;place-items:center;flex:none;width:var(--control-sm);height:var(--control-sm);border:0;border-radius:var(--radius-md);background:transparent;color:var(--color-muted);font-size:var(--text-body)}
+.iconbtn:hover{background:var(--color-fill);color:var(--color-text)}
+.nav-i{display:flex;align-items:center;gap:var(--space-3);width:100%;min-height:var(--control-sm);padding:var(--space-1) var(--space-2);border:0;border-radius:var(--radius-md);background:transparent;color:var(--color-text);text-decoration:none;font-size:var(--text-base);text-align:left}
+.nav-i:hover{background:var(--color-fill)}
+.nav-i .ico{color:var(--color-muted)}
+.nav-i[aria-current]{background:var(--color-fill-hover);font-weight:var(--weight-semibold);box-shadow:inset 3px 0 0 var(--color-primary)}
+.nav-i[aria-current] .ico{color:var(--color-text)}
+.nav-i.new{font-weight:var(--weight-semibold)}
+.nav-i.new .ico{color:var(--color-text)}
+.k{margin-left:auto;font-family:var(--font-sans);font-size:var(--text-xs);color:var(--color-muted);white-space:nowrap}
+.badge{margin-left:auto;display:inline-grid;place-items:center;min-width:1.25rem;height:1.25rem;padding:0 var(--space-1);border-radius:var(--radius-pill);background:var(--color-primary);color:var(--color-on-primary);font-size:var(--text-xs);font-weight:var(--weight-bold)}
+.nav{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--space-0);margin-top:var(--space-2)}
+.side-h{font-size:var(--text-xs);font-weight:var(--weight-semibold);color:var(--color-muted);padding:var(--space-4) var(--space-2) var(--space-1);display:flex;justify-content:space-between}
+.side-h span{font-weight:var(--weight-regular)}
+.convs ul{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--space-0)}
+.nav-i>span{min-width:0}
+.nav-i.new{gap:var(--space-2)}
+.nav-i.new>span{white-space:nowrap}
+.one{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.side-foot{margin-top:auto;padding-top:var(--space-2);border-top:1px solid var(--color-hairline);display:grid;gap:var(--space-0)}
+.side-foot .end{margin-left:auto}
+.av{display:inline-grid;place-items:center;width:1.5rem;height:1.5rem;border-radius:var(--radius-pill);background:var(--color-primary);color:var(--color-on-primary);font-size:var(--text-2xs);font-weight:var(--weight-bold)}
+.main{position:relative;display:flex;flex-direction:column;min-width:0;min-height:0;height:100%}
+.bar{display:flex;align-items:center;gap:var(--space-3);min-height:3.5rem;padding:var(--space-2) var(--space-6);flex:none}
+.bar .bt{font-size:var(--text-md);font-weight:var(--weight-semibold);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar .sp{margin-left:auto;display:flex;gap:var(--space-2);align-items:center}
+.tabs{display:flex;gap:var(--space-1)}
+.tabs a{display:inline-flex;align-items:center;min-height:var(--control-sm);padding:0 var(--space-3);border-radius:var(--radius-pill);font-size:var(--text-sm);color:var(--color-muted);text-decoration:none;font-weight:var(--weight-medium)}
+.tabs a[aria-current]{color:var(--color-text);background:var(--color-fill-hover);font-weight:var(--weight-semibold)}
+.pill{display:inline-flex;align-items:center;gap:var(--space-1);padding:var(--space-0) var(--space-3);border-radius:var(--radius-pill);font-size:var(--text-sm);font-weight:var(--weight-medium);white-space:nowrap}
+.pill.pos{background:var(--tone-positive-bg);color:var(--tone-positive-fg)}
+.pill.neu{background:var(--tone-neutral-bg);color:var(--tone-neutral-fg)}
+.pill.warn{background:var(--tone-warning-bg);color:var(--tone-warning-fg)}
+.lv{display:inline-flex;align-items:center;padding:0 var(--space-2);border-radius:var(--radius-pill);font-size:var(--text-xs);font-weight:var(--weight-bold);line-height:1.25rem;white-space:nowrap}
+.lv.r{background:var(--level-red-soft);color:var(--level-red-text)}
+.lv.o{background:var(--level-orange-soft);color:var(--level-orange-text)}
+.lv.n{background:var(--tone-neutral-bg);color:var(--tone-neutral-fg)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);min-height:var(--control-md);padding:var(--space-2) var(--space-4);border-radius:var(--radius-pill);border:1px solid transparent;font-size:var(--text-base);font-weight:var(--weight-semibold);line-height:var(--leading-tight);text-decoration:none;white-space:nowrap;transition:background var(--motion-fast) var(--ease-out)}
+.btn.s{min-height:var(--control-sm);padding:var(--space-1) var(--space-3);font-size:var(--text-sm)}
+.btn.pri{background:var(--color-primary);color:var(--color-on-primary)}
+.btn.sec{background:var(--color-surface);border-color:var(--color-control-border);color:var(--color-text)}
+.btn.sec:hover{background:var(--color-fill)}
+.btn.gh{background:transparent;color:var(--color-brand-text)}
+.btn.gh:hover{background:var(--color-fill)}
+.btn kbd{font-family:var(--font-sans);font-size:var(--text-xs);font-weight:var(--weight-regular);color:var(--color-muted)}
+
+/* ---------- Chat column ---------- */
+.measure{width:100%;max-width:calc(var(--measure-chat) + 2 * var(--space-6));margin-inline:auto;padding-inline:var(--space-6)}
+.scroll{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain}
+.thread:focus-visible{outline-offset:-3px}
+.turns{display:flex;flex-direction:column;gap:var(--space-turn);padding-block:var(--space-4) var(--space-8)}
+.turn.user{display:flex;justify-content:flex-end}
+.bubble{max-width:min(80%,34rem);padding:var(--space-3) var(--space-4);border-radius:var(--radius-xl);background:var(--color-bubble);font-size:var(--text-answer);overflow-wrap:anywhere}
+.who{display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-2);font-size:var(--text-sm);color:var(--color-muted);font-weight:var(--weight-medium)}
+.who time{margin-left:auto;font-weight:var(--weight-regular)}
+.ia{display:inline-grid;place-items:center;min-width:1.75rem;height:1.25rem;padding:0 var(--space-1);border-radius:var(--radius-sm);background:var(--tone-neutral-bg);color:var(--tone-neutral-fg);font-size:var(--text-xs);font-weight:var(--weight-bold);letter-spacing:var(--tracking-caps)}
+.prose{font-size:var(--text-answer);line-height:var(--leading-answer);overflow-wrap:break-word}
+.prose p+p,.prose ol+p,.prose p+ol{margin-top:var(--space-3)}
+.prose ol{list-style:decimal;padding-left:var(--space-6)}
+.prose li+li{margin-top:var(--space-1)}
+.prose strong{font-weight:var(--weight-semibold)}
+.cite{font-size:var(--text-sm);font-weight:var(--weight-semibold);text-decoration-thickness:1px;white-space:nowrap;border-radius:var(--radius-xs)}
+.src-h{margin-top:var(--space-4);font-size:var(--text-xs);font-weight:var(--weight-semibold);letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--color-muted)}
+.srcs{margin-top:var(--space-1);display:grid;gap:var(--space-0);font-size:var(--text-sm)}
+.srcs li{display:grid;grid-template-columns:1.5rem minmax(0,1fr);gap:var(--space-1);align-items:baseline;min-height:1.5rem;padding-block:var(--space-0)}
+.srcs li:target{background:var(--color-accent-tint);border-radius:var(--radius-sm)}
+.sn{color:var(--color-muted);font-weight:var(--weight-semibold);font-variant-numeric:tabular-nums;text-align:right;padding-right:var(--space-1)}
+.srcs small,.where{font-family:var(--font-mono);font-size:var(--text-xs);color:var(--color-muted);overflow-wrap:anywhere}
+.blocks{margin-top:var(--space-3);display:grid;gap:var(--space-3)}
+.rcard{display:grid;gap:var(--space-1);padding:var(--space-3) var(--space-4);border:1px solid var(--color-hairline-strong);border-radius:var(--radius-lg);background:var(--color-surface)}
+.rk{display:flex;align-items:center;gap:var(--space-2);font-size:var(--text-xs);font-weight:var(--weight-semibold);letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--color-muted)}
+.rcard h3{font-size:var(--text-md);font-weight:var(--weight-semibold)}
+.acts{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-1);margin:var(--space-3) 0 0 calc(-1 * var(--space-2))}
+.act{display:inline-flex;align-items:center;gap:var(--space-1);min-height:var(--control-sm);padding:0 var(--space-2);border:0;border-radius:var(--radius-md);background:transparent;color:var(--color-muted);font-size:var(--text-sm);font-weight:var(--weight-medium)}
+.act:hover{background:var(--color-fill);color:var(--color-text)}
+.act-note{font-size:var(--text-xs);color:var(--color-muted);margin-left:var(--space-2)}
+.step{display:flex;align-items:center;gap:var(--space-2);font-size:var(--text-answer);font-weight:var(--weight-medium)}
+.pulse{width:0.5rem;height:0.5rem;border-radius:var(--radius-pill);background:var(--color-accent);animation:pulse 1.4s var(--ease-in-out) infinite}
+@keyframes pulse{50%{opacity:0.35}}
+.step-sub{margin-top:var(--space-1);font-size:var(--text-sm);color:var(--color-muted)}
+.alert{display:flex;gap:var(--space-3);align-items:flex-start;padding:var(--space-3) var(--space-4);border-radius:var(--radius-md);border:1px solid;font-size:var(--text-base)}
+.alert>.ico{margin-top:0.15em;font-size:var(--text-body)}
+.alert.err{background:var(--tone-negative-bg);border-color:var(--tone-negative-solid);color:var(--tone-negative-fg)}
+.alert-sub{margin-top:var(--space-1);font-size:var(--text-sm)}
+.alert-acts{display:flex;flex-wrap:wrap;gap:var(--space-2);margin-top:var(--space-3)}
+.alert .btn.gh{color:var(--tone-negative-fg)}
+.tobottom{position:absolute;left:50%;white-space:nowrap;transform:translateX(-50%);display:inline-flex;align-items:center;gap:var(--space-1);min-height:var(--control-sm);padding:0 var(--space-3);border-radius:var(--radius-pill);border:1px solid var(--color-control-border);background:var(--color-surface-raised);color:var(--color-text);font-size:var(--text-sm);font-weight:var(--weight-semibold);box-shadow:var(--shadow-md);z-index:var(--z-sticky)}
+
+/* ---------- Composer ---------- */
+.dock{position:relative;flex:none;padding-block:var(--space-2) var(--space-4);background:var(--color-bg)}
+.dock>.tobottom{bottom:calc(100% + var(--space-2))}
+.composer{border:1px solid var(--color-control-border);border-radius:var(--radius-xl);background:var(--color-surface);box-shadow:var(--shadow-composer);padding:var(--space-3) var(--space-3) var(--space-2) var(--space-4)}
+.composer:focus-within{outline:var(--focus-ring);outline-offset:2px}
+.composer textarea{display:block;width:100%;min-height:1.5em;max-height:calc(8 * 1.5em);padding:var(--space-1) 0;border:0;background:transparent;resize:none;font-size:var(--text-body);line-height:var(--leading-normal);outline:none;field-sizing:content}
+.composer textarea::placeholder{color:var(--color-subtle);opacity:1}
+.c-row{display:flex;align-items:center;gap:var(--space-2);margin-top:var(--space-2)}
+.push{margin-left:auto}
+.seg{display:inline-flex;gap:var(--space-0);margin:0;padding:var(--space-0);border:0;border-radius:var(--radius-md);background:var(--color-fill)}
+.seg label{position:relative;display:inline-flex;align-items:center;min-height:var(--control-sm);padding:0 var(--space-3);border:1px solid transparent;border-radius:calc(var(--radius-md) - 2px);font-size:var(--text-sm);font-weight:var(--weight-medium);color:var(--color-muted);cursor:pointer;transition:background var(--motion-fast) var(--ease-out)}
+.seg input{position:absolute;inset:0;margin:0;opacity:0;cursor:inherit}
+.seg label:has(input:checked){background:var(--color-surface-raised);border-color:var(--color-control-border);color:var(--color-text);font-weight:var(--weight-semibold);box-shadow:var(--shadow-sm)}
+.seg label:has(input:focus-visible){outline:var(--focus-ring);outline-offset:1px}
+.seg label:has(input:disabled){color:var(--color-subtle);cursor:not-allowed;text-decoration:line-through;text-decoration-thickness:1px}
+.hint{min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:var(--text-xs);color:var(--color-muted);white-space:nowrap}
+.counter{font-size:var(--text-xs);font-variant-numeric:tabular-nums;color:var(--color-muted);white-space:nowrap}
+.counter.near{color:var(--tone-warning-fg);font-weight:var(--weight-semibold)}
+.send{display:inline-grid;place-items:center;flex:none;width:var(--control-sm);height:var(--control-sm);border:0;border-radius:var(--radius-pill);background:var(--color-primary);color:var(--color-on-primary);font-size:var(--text-body)}
+.send:hover{background:var(--color-primary-hover)}
+.send[aria-disabled="true"]{opacity:0.55;cursor:not-allowed}
+.send.stop .ico{width:0.875em;height:0.875em}
+.c-reason{display:flex;gap:var(--space-2);align-items:flex-start;margin-top:var(--space-2);padding-top:var(--space-2);border-top:1px solid var(--color-hairline);font-size:var(--text-sm);color:var(--color-muted)}
+.c-reason .ico{margin-top:0.15em;color:var(--tone-warning-fg)}
+.disc{margin-top:var(--space-2);font-size:var(--text-xs);color:var(--color-muted);text-align:center}
+.chips{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2);margin-top:var(--space-4)}
+.chips-l{font-size:var(--text-sm);color:var(--color-muted);margin-right:var(--space-1)}
+.chip{display:inline-flex;align-items:center;gap:var(--space-1);min-height:var(--control-sm);padding:var(--space-1) var(--space-3);border:1px solid var(--color-control-border);border-radius:var(--radius-pill);background:var(--color-surface);font-size:var(--text-sm);text-align:left}
+.chip:hover{background:var(--color-fill)}
+.chip .ico{color:var(--color-muted)}
+
+/* ---------- Attention ---------- */
+.sh{display:flex;align-items:baseline;gap:var(--space-2)}
+.sh h2{font-size:var(--text-md);font-weight:var(--weight-semibold)}
+.sh .n{font-size:var(--text-sm);color:var(--color-muted);font-variant-numeric:tabular-nums}
+.sh a{margin-left:auto;font-size:var(--text-sm);display:inline-flex;align-items:center;min-height:var(--control-sm)}
+.arows{margin-top:var(--space-2);border-top:1px solid var(--color-hairline)}
+.arow{display:grid;grid-template-columns:5rem minmax(0,1fr) auto;gap:var(--space-3);align-items:center;padding:var(--space-2) 0;border-bottom:1px solid var(--color-hairline)}
+.arow b{font-weight:var(--weight-semibold);font-size:var(--text-base);display:block}
+.arow .meta{font-size:var(--text-sm);color:var(--color-muted)}
+.arow.c{grid-template-columns:minmax(0,1fr) auto;color:var(--color-text);text-decoration:none;min-height:var(--touch-target)}
+.arow.c:hover{background:var(--color-fill)}
+.arow.c .meta{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-1) var(--space-2);margin-top:var(--space-0)}
+.arow.c>.ico{color:var(--color-muted)}
+.arow a{font-size:var(--text-sm);font-weight:var(--weight-semibold);white-space:nowrap;display:inline-flex;align-items:center;min-height:var(--control-sm)}
+
+/* ---------- Phone shell ---------- */
+.pa{position:relative;display:flex;flex-direction:column;height:100%;min-height:0}
+.pbar{display:flex;align-items:center;gap:var(--space-1);min-height:3.5rem;padding:var(--space-1) var(--space-2);flex:none}
+.pbar .t{flex:1;min-width:0;font-size:var(--text-md);font-weight:var(--weight-semibold);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:var(--space-1)}
+.phone .measure{padding-inline:var(--space-4)}
+.phone .dock{padding-bottom:calc(var(--space-3) + env(safe-area-inset-bottom))}
+.phone .composer{padding:var(--space-2) var(--space-2) var(--space-2) var(--space-4);border-radius:var(--radius-xl)}
+.phone .c-row{margin-top:var(--space-1)}
+.phone .chips{margin-top:var(--space-3)}
+.phone .chip{width:100%}
+.phone .chips-l{width:100%}
+.phone .bubble{max-width:88%}
+.phone .arow{grid-template-columns:minmax(0,1fr) auto}
+.phone .arow .lvc{grid-column:1 / -1}
+.drawer-scrim{position:absolute;inset:0;background:var(--color-scrim);z-index:var(--z-modal)}
+.drawer{position:absolute;inset:0 auto 0 0;width:min(20rem,86%);z-index:var(--z-modal);display:flex;flex-direction:column;background:var(--color-sidebar);box-shadow:var(--shadow-lg);border-radius:0 var(--radius-xl) var(--radius-xl) 0;overflow:hidden}
+.drawer .side{border-right:0;flex:1;padding-top:var(--space-2)}
+
+
+.lead-col{padding-block:var(--space-6) var(--space-12);display:grid;gap:var(--space-6)}
+.date{font-size:var(--text-sm);color:var(--color-muted)}
+.greet{font-size:var(--text-2xl);letter-spacing:var(--tracking-tight);line-height:var(--leading-tight);margin-top:var(--space-1)}
+.hello{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--space-4);flex-wrap:wrap}
+.hello .p-pills{display:flex;flex-wrap:wrap;gap:var(--space-2)}
+.ask-block .chips{margin-top:var(--space-3)}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--space-3);margin-top:var(--space-2)}
+.tile{display:grid;gap:var(--space-0);padding:var(--space-3) var(--space-4);border:1px solid var(--color-hairline-strong);border-radius:var(--radius-lg);background:var(--color-surface);color:var(--color-text);text-decoration:none;height:100%}
+.tile:hover{background:var(--color-fill)}
+.tile data{font-size:var(--text-xl);font-weight:var(--weight-bold);font-variant-numeric:tabular-nums}
+.tile span{font-size:var(--text-sm);font-weight:var(--weight-semibold)}
+.tile small{font-size:var(--text-xs);color:var(--color-muted)}
+.fold{flex:none;border-bottom:1px solid var(--color-hairline);background:var(--color-bg)}
+.fold-in{display:flex;align-items:center;gap:var(--space-2);padding-block:var(--space-1)}
+.fold-b{display:inline-flex;align-items:center;gap:var(--space-2);min-height:var(--control-sm);min-width:0;padding:0 var(--space-2);border:0;border-radius:var(--radius-md);background:transparent;font-size:var(--text-sm);text-align:left}
+.fold-b:hover{background:var(--color-fill)}
+.fold-b b{font-weight:var(--weight-semibold);white-space:nowrap}
+.fold-b .first{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--color-muted)}
+.fold-b[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.fold-b.main-f{flex:1 1 auto}
+.fold-b.week-f{margin-left:auto;color:var(--color-muted);white-space:nowrap}
+.fold-panel{padding-bottom:var(--space-3)}
+.fold-panel .arows{margin-top:0}
+.phone .greet{font-size:var(--text-xl)}
+.phone .lead-col{padding-block:var(--space-2) var(--space-6);gap:var(--space-5)}
+.phone .tiles{grid-template-columns:1fr}
+.phone .tile{grid-template-columns:auto minmax(0,1fr);column-gap:var(--space-3);align-items:baseline}
+.phone .tile data{grid-row:span 2}
+.phone .fold-b .first{display:none}
+.phone .fold-b.week-f{display:none}
+
+</style>
+</head>
+<body>
+<header class="anno">
+<div>
+<p class="kick">Chat-first · dirección 02 de 3 · odd/tasks/chat-first-ui.md T1</p>
+<h1>02 · Atención primero</h1>
+<p class="lead">Mantiene el orden de closure-roadmap L11: lo urgente primero, el compositor debajo y «Esta semana» al final. Al enviar la primera pregunta, lo urgente y «Esta semana» se pliegan en una sola línea sobre el hilo, que pasa a ocupar la columna con el compositor fijo abajo.</p>
+<h2>Dónde vive «Necesita tu atención»</h2>
+<p class="atten">Vacío: la lista completa arriba, antes del compositor, como hoy. En una conversación: una línea plegada «Necesita tu atención 3 · Bloqueo anunciado… y 2 más» encima del hilo que se despliega en el sitio (aria-expanded), siempre a la vista y a un toque.</p>
+<div class="pc"><div><h3>A favor</h3><ul class="bul"><li>Continuidad con L4/L11: es el Inicio actual con el hilo encima; el menor cambio para quien ya lo usa.</li><li>Lo urgente nunca desaparece: su número y su primer elemento se leen en cada pantalla de la conversación.</li><li>T5 ya describe el pliegue de «Esta semana»; esta dirección lo extiende a la atención sin piezas nuevas.</li></ul></div><div><h3>En contra</h3><ul class="bul"><li>El vacío invita menos a preguntar: con cinco elementos urgentes el compositor baja hasta media pantalla en portátiles de 768 px.</li><li>Dos disposiciones (antes y después de la primera pregunta): hay que mover el compositor y conservar el foco sin un salto brusco.</li><li>La línea plegada resta unos 44 px de hilo en teléfonos.</li></ul></div></div>
+<h2>Cortes estimados (≈ 400 líneas o menos cada uno): 10</h2>
+<table class="tbl"><thead><tr><th>Corte</th><th class="r">Cortes</th></tr></thead><tbody><tr><td>T2 tokens de chat</td><td class="r">1</td></tr><tr><td>T3 Composer con interruptor, Detener y contador</td><td class="r">1</td></tr><tr><td>T4 vacío en orden L11 y chips que envían</td><td class="r">1</td></tr><tr><td>T5–T8 hilo (incluye el pliegue), acciones, Detener, formato seguro</td><td class="r">4</td></tr><tr><td>T12–T13 barra lateral ocultable y nuevo orden</td><td class="r">2</td></tr><tr><td>T15 teléfono (compositor en flujo, luego fijo)</td><td class="r">1</td></tr></tbody></table>
+<h2>Reglas del hilo que muestran todos los marcos</h2>
+<ul class="bul">
+<li>El hilo es <code>role="log"</code> con <code>aria-busy="true"</code> mientras se prepara la respuesta; al terminar se anuncia una sola vez, también el error (sin un <code>role="alert"</code> que lo repita). El paso en curso («Buscando registros…») se ve pero no se anuncia en cada cambio.</li>
+<li>«Detener» ocupa el sitio de «Enviar» (mismo tamaño y lugar); Esc también detiene. La pregunta queda en el compositor tras un error o al detener.</li>
+<li>Sin desplazamiento forzado: si lees más arriba, la respuesta nueva no te mueve y aparece «Ir al final».</li>
+<li>Tu pregunta es una burbuja a la derecha; la respuesta es prosa a todo el ancho con la etiqueta «IA», sus fuentes numeradas y, si las hay, tarjetas de registro. «Copiar» y «Volver a preguntar» están siempre visibles, no al pasar el ratón.</li>
+<li>Los chips «Prueba con» envían con un clic. El interruptor «Buscar | Preguntar» vive dentro del compositor; el contador aparece desde 450 de 500 caracteres.</li>
+</ul>
+</div>
+<div>
+<h2>Self-check (design/system.md)</h2>
+<table class="tbl"><tbody>
+<tr><td>1. Colores fuera del bloque de tokens</td><td class="r ok">0</td></tr>
+<tr><td>2. Familias tipográficas</td><td class="r ok">var(--font-sans), var(--font-mono)</td></tr>
+<tr><td>3. Foco: <code>--focus-ring</code> en todo control (el compositor lo muestra con <code>:focus-within</code>); elegido ≠ foco; movimiento solo en el punto de progreso, apagado con <code>prefers-reduced-motion</code></td><td class="r ok">sí</td></tr>
+<tr><td>4. Contraste: 25 pares en claro y oscuro</td><td class="r ok">todos pasan</td></tr>
+<tr><td>Objetivos táctiles: escritorio ≥ 32 px (<code>--control-sm</code>); teléfono 44 px (<code>--touch-target</code>, como <code>pointer: coarse</code>)</td><td class="r ok">≥ 24 px</td></tr>
+<tr><td>Desborde horizontal a 390 px (Chrome sin interfaz, 6 marcos de teléfono)</td><td class="r ok">ninguno</td></tr>
+</tbody></table>
+<h2>Contraste calculado desde tokens.css (WCAG 2.x)</h2>
+<table class="tbl"><thead><tr><th>Par</th><th class="r">Claro</th><th class="r">Oscuro</th><th class="r">Mín.</th></tr></thead><tbody><tr><td>Texto en la página</td><td class="r">19,44</td><td class="r">17,78</td><td class="r">4,5</td></tr><tr><td>Texto secundario en la página</td><td class="r">6,58</td><td class="r">8,33</td><td class="r">4,5</td></tr><tr><td>Texto secundario en la barra lateral</td><td class="r">6,25</td><td class="r">8,33</td><td class="r">4,5</td></tr><tr><td>Texto del destino actual</td><td class="r">16,45</td><td class="r">13,92</td><td class="r">4,5</td></tr><tr><td>Texto en la burbuja del usuario</td><td class="r">17,67</td><td class="r">15,30</td><td class="r">4,5</td></tr><tr><td>Citas [n] y enlaces</td><td class="r">12,19</td><td class="r">11,40</td><td class="r">4,5</td></tr><tr><td>Enlace en la tarjeta de registro</td><td class="r">12,19</td><td class="r">10,61</td><td class="r">4,5</td></tr><tr><td>Marcador de posición del compositor</td><td class="r">5,33</td><td class="r">6,05</td><td class="r">4,5</td></tr><tr><td>Opción no elegida del interruptor</td><td class="r">5,99</td><td class="r">7,16</td><td class="r">4,5</td></tr><tr><td>Etiqueta «IA»</td><td class="r">6,69</td><td class="r">12,09</td><td class="r">4,5</td></tr><tr><td>«IA externa activada»</td><td class="r">7,30</td><td class="r">11,51</td><td class="r">4,5</td></tr><tr><td>«Metodología pendiente de validación»</td><td class="r">6,58</td><td class="r">11,55</td><td class="r">4,5</td></tr><tr><td>Turno de error 503</td><td class="r">7,22</td><td class="r">10,58</td><td class="r">4,5</td></tr><tr><td>Nivel Rojo</td><td class="r">8,01</td><td class="r">10,58</td><td class="r">4,5</td></tr><tr><td>Nivel Naranja</td><td class="r">6,61</td><td class="r">10,80</td><td class="r">4,5</td></tr><tr><td>Icono de Enviar / Detener</td><td class="r">19,44</td><td class="r">17,68</td><td class="r">4,5</td></tr><tr><td>Contador de 490 a 500</td><td class="r">7,81</td><td class="r">13,71</td><td class="r">4,5</td></tr><tr><td>Borde del compositor, chips y botón secundario</td><td class="r">3,69</td><td class="r">3,97</td><td class="r">3</td></tr><tr><td>Borde del compositor sobre la página</td><td class="r">3,69</td><td class="r">4,26</td><td class="r">3</td></tr><tr><td>Borde del segmento elegido sobre su pista</td><td class="r">3,35</td><td class="r">3,67</td><td class="r">3</td></tr><tr><td>Barra del destino actual</td><td class="r">16,45</td><td class="r">14,96</td><td class="r">3</td></tr><tr><td>Botón Enviar sobre el compositor</td><td class="r">19,44</td><td class="r">17,79</td><td class="r">3</td></tr><tr><td>Borde del aviso de error</td><td class="r">4,75</td><td class="r">5,13</td><td class="r">3</td></tr><tr><td>Anillo de foco sobre la página</td><td class="r">5,63</td><td class="r">9,11</td><td class="r">3</td></tr><tr><td>Anillo de foco sobre la burbuja</td><td class="r">5,12</td><td class="r">7,84</td><td class="r">3</td></tr></tbody></table>
+<div class="tok">
+<h2 style="margin-top:0">Tokens nuevos (propuesta para T2)</h2>
+<table class="tbl"><tbody><tr><td class="m">--measure-chat</td><td class="m">46rem</td><td>Ancho de lectura único del hilo y del compositor (sustituye el 48rem local de Inicio).</td></tr><tr><td class="m">--space-turn</td><td class="m">var(--space-8)</td><td>Separación entre turnos (32 px).</td></tr><tr><td class="m">--text-answer</td><td class="m">var(--text-body)</td><td>Cuerpo de las respuestas (16 px).</td></tr><tr><td class="m">--leading-answer</td><td class="m">1.6</td><td>Interlineado de las respuestas.</td></tr><tr><td class="m">--color-bubble</td><td class="m">var(--color-fill)</td><td>Burbuja del usuario: claro #f4f4f4, oscuro #161618. Sin borde: la identifican la posición a la derecha y el nombre accesible «Tu pregunta».</td></tr>
+<tr><td class="m">--color-control-border</td><td class="m">#858585 · #707075</td><td>Ya está en tokens.css y lo usa la app; falta en design/system.md (sincronizado en a5825d36, desactualizado).</td></tr></tbody></table>
+<p style="margin-top:var(--space-2);font-size:var(--text-sm)">Iconos nuevos con la rejilla y el trazo de icons.ts: <code>copy</code>, <code>retry</code>, <code>stop</code>, <code>sidebar</code>, <code>arrowDown</code>.</p>
+</div>
+<p style="margin-top:var(--space-4);font-size:var(--text-sm);color:var(--color-muted)">Datos sintéticos: el proyecto Valle Quillay, sus localidades, actores e identificadores son inventados. Cada marco fija su tema con <code>data-theme</code>; la barra lateral se oculta con su botón (Ctrl+B) en los marcos de escritorio.</p>
+</div>
+</header>
+<main>
+<div class="sect-cap"><h2>Escritorio 1440 × 900</h2><p>Cinco marcos: vacío, conversación, pendiente, error 503 e IA externa desactivada, alternando claro y oscuro.</p></div>
+<p class="cap"><b>A · Vacío</b><span>Escritorio 1440 × 900 · claro · orden de L11: lo urgente primero, el compositor debajo, «Esta semana» al final</span></p>
+<div class="frame desk" data-theme="light" role="region" aria-label="Escritorio claro, Inicio vacío"><div class="app" data-side="shown"><aside class="side" id="side28" aria-label="Barra lateral">
+<div class="side-top"><span class="brand">SIPGES</span><button type="button" class="iconbtn" data-toggle-side aria-controls="side28" aria-expanded="true" aria-label="Ocultar barra lateral" title="Ocultar barra lateral · Ctrl+B"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 4h18v16H3zM9 4v16"/></svg></button></div>
+<a class="nav-i new" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg><span>Nueva pregunta</span><kbd class="k">Ctrl+Mayús+O</kbd></a>
+<button type="button" class="nav-i"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16M21 21l-4.3-4.3"/></svg><span>Buscar</span><kbd class="k">Ctrl+K</kbd></button>
+<nav aria-label="Destinos"><ul class="nav"><li><a class="nav-i" href="#" aria-current="page"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Inicio</span></a></li><li><a class="nav-i" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg><span>Registros</span></a></li><li><a class="nav-i" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14"/></svg><span>Territorio</span></a></li><li><a class="nav-i" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M22 12h-6l-2 3h-4l-2-3H2M5.5 5h13L22 12v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6z"/></svg><span>Bandeja</span><span class="badge" aria-label="2 pendientes">2</span></a></li><li><a class="nav-i" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18M7 16v-4M12 16V8M17 16v-7"/></svg><span>Análisis</span></a></li><li><a class="nav-i" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0zM12 17v5"/></svg><span>Integraciones</span></a></li></ul></nav>
+<section class="convs" aria-label="Conversaciones"><h2 class="side-h">Conversaciones <span>esta sesión</span></h2><ul><li><a class="nav-i" href="#"><span class="one" title="Compromisos con la Asociación de Pescadores">Compromisos con la Asociación de Pescadores</span></a></li><li><a class="nav-i" href="#"><span class="one" title="¿Qué alertas rojas siguen abiertas?">¿Qué alertas rojas siguen abiertas?</span></a></li><li><a class="nav-i" href="#"><span class="one" title="Resumen de la semana 9–15 nov">Resumen de la semana 9–15 nov</span></a></li><li><a class="nav-i" href="#"><span class="one" title="Demandas abiertas en Ichumayo">Demandas abiertas en Ichumayo</span></a></li></ul></section>
+<div class="side-foot"><button type="button" class="nav-i proj"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 7h18v13H3zM9 7V4h6v3M3 13h18"/></svg><span>Valle Quillay</span><svg class="ico end" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button><button type="button" class="nav-i acct"><span class="av" aria-hidden="true">RA</span><span>Renata Arce</span><svg class="ico end" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button></div>
+</aside><div class="main"><header class="bar"><button type="button" class="iconbtn show-side" data-toggle-side aria-controls="side28" aria-expanded="false" aria-label="Mostrar barra lateral" title="Mostrar barra lateral · Ctrl+B"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 4h18v16H3zM9 4v16"/></svg></button><nav class="tabs" aria-label="Vistas de Inicio"><a href="#" aria-current="page">Inicio</a><a href="#">Panel</a><a href="#">Centro gerencial</a></nav></header><div class="scroll"><div class="measure lead-col"><div class="hello"><div><p class="date">Martes 17 de noviembre · Valle Quillay</p><h1 class="greet">Hola, Renata</h1></div><div class="p-pills"><span class="pill pos"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M8 12l3 3 5-6"/></svg>IA externa activada</span><span class="pill warn"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3 2 20h20zM12 10v4M12 17.5h.01"/></svg>Metodología pendiente de validación</span></div></div>
+<section class="att" aria-labelledby="att29"><div class="sh"><h2 id="att29">Necesita tu atención</h2><span class="n">3</span><a href="#">Abrir Bandeja</a></div>
+<ul class="arows"><li class="arow"><span class="lvc"><span class="lv r">Rojo</span></span><div><b>Bloqueo anunciado en el acceso a Caleta Verdín</b><span class="meta">Alerta activa · 15 nov · Caleta Verdín</span></div><a href="#" aria-label="Abrir alerta: Bloqueo anunciado en el acceso a Caleta Verdín">Abrir alerta</a></li><li class="arow"><span class="lvc"><span class="lv o">Naranja</span></span><div><b>Reclamo por polvo en la vía a Pampa Saltera</b><span class="meta">Alerta activa · 14 nov · Pampa Saltera</span></div><a href="#" aria-label="Abrir alerta: Reclamo por polvo en la vía a Pampa Saltera">Abrir alerta</a></li><li class="arow"><span class="lvc"><span class="lv n">Bandeja</span></span><div><b>2 alertas digitales esperan verificación</b><span class="meta">Bandeja › Pendientes</span></div><a href="#" aria-label="Revisar en Bandeja: 2 alertas digitales esperan verificación">Revisar en Bandeja</a></li></ul></section>
+<section class="ask-block" aria-label="Preguntar al analista"><form class="composer" aria-label="Preguntar al analista" onsubmit="return false">
+<label class="vh" for="c30">Pregunta</label>
+<textarea id="c30" rows="2" maxlength="500" placeholder="Pregunta por eventos, actores, demandas o compromisos…"></textarea>
+<div class="c-row"><fieldset class="seg"><legend class="vh">Modo</legend><label><input type="radio" name="c30-m" value="buscar"><span>Buscar</span></label><label><input type="radio" name="c30-m" value="preguntar" checked><span>Preguntar</span></label></fieldset><span class="hint push">Enter pregunta · Mayús+Enter, nueva línea</span><span class="counter" id="c30-n" hidden>0 / 500</span><button type="submit" class="send" aria-label="Enviar pregunta" aria-disabled="true"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></div>
+
+</form>
+<p class="disc">Las respuestas citan registros del proyecto; revísalas antes de decidir.</p><div class="chips" role="group" aria-label="Prueba con"><span class="chips-l" aria-hidden="true">Prueba con</span><button type="button" class="chip">¿Qué alertas rojas siguen abiertas?</button><button type="button" class="chip">Resume lo ocurrido esta semana</button><button type="button" class="chip">¿Qué compromisos vencen este mes?</button><button type="button" class="chip">¿Quién lidera la demanda de Caleta Verdín?</button></div></section>
+<section class="week" aria-labelledby="wk31"><div class="sh"><h2 id="wk31">Esta semana</h2><span class="n">9–15 nov</span><a href="#">Ver en Registros</a></div><ul class="tiles"><li><a class="tile" href="#"><data value="12">12</data><span>eventos</span><small>Caleta Verdín concentra 5</small></a></li><li><a class="tile" href="#"><data value="3">3</data><span>demandas nuevas</span><small>1 sin responsable asignado</small></a></li><li><a class="tile" href="#"><data value="2">2</data><span>compromisos vencen este mes</span><small>CP-0219 el 30 nov</small></a></li></ul></section></div></div></div></div></div>
+<p class="cap"><b>B · Conversación de tres turnos</b><span>Escritorio · oscuro · al empezar, lo urgente y «Esta semana» se pliegan en una línea y el hilo ocupa la columna</span></p>
+<div class="frame desk" data-theme="dark" role="region" aria-label="Escritorio oscuro, conversación"><div class="app" data-side="shown"><aside class="side" id="side32" aria-label="Barra lateral">
+<div class="side-top"><span class="brand">SIPGES</span><button type="button" class="iconbtn" data-toggle-side aria-controls="side32" aria-expanded="true" aria-label="Ocultar barra lateral" title="Ocultar barra lateral · Ctrl+B"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 4h18v16H3zM9 4v16"/></svg></button></div>
+<a class="nav-i new" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg><span>Nueva pregunta</span><kbd class="k">Ctrl+Mayús+O</kbd></a>
+<button type="button" class="nav-i"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16M21 21l-4.3-4.3"/></svg><span>Buscar</span><kbd class="k">Ctrl+K</kbd></button>
+<nav aria-label="Destinos"><ul class="nav"><li><a class="nav-i" href="#" aria-current="page"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Inicio</span></a></li><li><a class="nav-i" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg><span>Registros</span></a></li><li><a class="nav-i" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14"/></svg><span>Territorio</span></a></li><li><a class="nav-i" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M22 12h-6l-2 3h-4l-2-3H2M5.5 5h13L22 12v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6z"/></svg><span>Bandeja</span><span class="badge" aria-label="2 pendientes">2</span></a></li><li><a class="nav-i" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18M7 16v-4M12 16V8M17 16v-7"/></svg><span>Análisis</span></a></li><li><a class="nav-i" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0zM12 17v5"/></svg><span>Integraciones</span></a></li></ul></nav>
+<section class="convs" aria-label="Conversaciones"><h2 class="side-h">Conversaciones <span>esta sesión</span></h2><ul><li><a class="nav-i" href="#" aria-current="true"><span class="one" title="Compromisos con la Asociación de Pescadores">Compromisos con la Asociación de Pescadores</span></a></li><li><a class="nav-i" href="#"><span class="one" title="¿Qué alertas rojas siguen abiertas?">¿Qué alertas rojas siguen abiertas?</span></a></li><li><a class="nav-i" href="#"><span class="one" title="Resumen de la semana 9–15 nov">Resumen de la semana 9–15 nov</span></a></li><li><a class="nav-i" href="#"><span class="one" title="Demandas abiertas en Ichumayo">Demandas abiertas en Ichumayo</span></a></li></ul></section>
+<div class="side-foot"><button type="button" class="nav-i proj"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 7h18v13H3zM9 7V4h6v3M3 13h18"/></svg><span>Valle Quillay</span><svg class="ico end" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button><button type="button" class="nav-i acct"><span class="av" aria-hidden="true">RA</span><span>Renata Arce</span><svg class="ico end" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button></div>
+</aside><div class="main"><header class="bar"><button type="button" class="iconbtn show-side" data-toggle-side aria-controls="side32" aria-expanded="false" aria-label="Mostrar barra lateral" title="Mostrar barra lateral · Ctrl+B"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 4h18v16H3zM9 4v16"/></svg></button><p class="bt">Compromisos con la Asociación de Pescadores</p><div class="sp"><span class="pill pos"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M8 12l3 3 5-6"/></svg>IA externa activada</span><span class="pill warn"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3 2 20h20zM12 10v4M12 17.5h.01"/></svg>Metodología pendiente de validación</span></div></header><div class="fold"><div class="measure"><div class="fold-in"><button type="button" class="fold-b main-f" data-fold aria-expanded="false" aria-controls="fold34"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><b>Necesita tu atención</b><span class="badge" style="margin-left:0">3</span><span class="first">Bloqueo en el acceso a Caleta Verdín y 2 más</span><svg class="ico chev" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button><button type="button" class="fold-b week-f" data-fold aria-expanded="false" aria-controls="fold35">Esta semana <svg class="ico chev" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button></div><div class="fold-panel" id="fold34" hidden><section class="att" aria-labelledby="att36"><h2 class="vh" id="att36">Necesita tu atención</h2>
+<ul class="arows"><li><a class="arow c" href="#"><div><b>Bloqueo anunciado en el acceso a Caleta Verdín</b><span class="meta"><span class="lv r">Rojo</span><span>Alerta activa · 15 nov · Caleta Verdín</span></span></div><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></a></li><li><a class="arow c" href="#"><div><b>Reclamo por polvo en la vía a Pampa Saltera</b><span class="meta"><span class="lv o">Naranja</span><span>Alerta activa · 14 nov · Pampa Saltera</span></span></div><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></a></li><li><a class="arow c" href="#"><div><b>2 alertas digitales esperan verificación</b><span class="meta"><span class="lv n">Bandeja</span><span>Bandeja › Pendientes</span></span></div><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></a></li></ul></section></div><div class="fold-panel" id="fold35" hidden><section class="week" aria-labelledby="wk37"><div class="sh"><h2 id="wk37">Esta semana</h2><span class="n">9–15 nov</span><a href="#">Ver en Registros</a></div><ul class="tiles"><li><a class="tile" href="#"><data value="12">12</data><span>eventos</span><small>Caleta Verdín concentra 5</small></a></li><li><a class="tile" href="#"><data value="3">3</data><span>demandas nuevas</span><small>1 sin responsable asignado</small></a></li><li><a class="tile" href="#"><data value="2">2</data><span>compromisos vencen este mes</span><small>CP-0219 el 30 nov</small></a></li></ul></section></div></div></div>
+<div class="scroll thread" role="log" aria-label="Conversación con el analista" aria-busy="false" tabindex="0" data-at="end"><div class="measure turns"><article class="turn user" aria-label="Tu pregunta"><p class="bubble">¿Qué pasó esta semana en Caleta Verdín?</p></article><article class="turn ai" aria-labelledby="f33-t1-h">
+<p class="who" id="f33-t1-h"><span class="ia">IA</span><span>Analista</span><span class="vh">, respuesta a «¿Qué pasó esta semana en Caleta Verdín?»</span><time datetime="2026-11-17T10:41">10:41</time></p>
+<div class="prose"><p>Se registraron un evento y una demanda nueva. El 12 nov la Asociación de Pescadores Caleta Verdín pidió una mesa de diálogo por la descarga de agua de la planta <a class="cite" href="#f33-t1-s1" aria-label="Fuente 1: Pedido de mesa de diálogo por la descarga de la planta">[1]</a>. El 14 nov hubo una reunión informativa en el local comunal, con unas 40 personas <a class="cite" href="#f33-t1-s2" aria-label="Fuente 2: Reunión informativa en el local comunal de Caleta Verdín">[2]</a>.</p></div>
+<h3 class="src-h" id="f33-t1-fh">Fuentes</h3>
+<ol class="srcs" aria-labelledby="f33-t1-fh"><li id="f33-t1-s1" value="1"><span class="sn" aria-hidden="true">1</span><span><a href="#">Pedido de mesa de diálogo por la descarga de la planta</a> <small>demandas · DM-0071</small></span></li><li id="f33-t1-s2" value="2"><span class="sn" aria-hidden="true">2</span><span><a href="#">Reunión informativa en el local comunal de Caleta Verdín</a> <small>eventos · EV-0418</small></span></li></ol>
+
+<div class="acts" role="group" aria-label="Acciones de la respuesta"><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 9h11v11H9zM5 15H4V4h11v1"/></svg><span>Copiar</span></button><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg><span>Volver a preguntar</span></button><span class="act-note">Copia el texto y sus fuentes numeradas</span></div>
+</article><article class="turn user" aria-label="Tu pregunta"><p class="bubble">¿Quién lidera esa demanda?</p></article><article class="turn ai" aria-labelledby="f33-t2-h">
+<p class="who" id="f33-t2-h"><span class="ia">IA</span><span>Analista</span><span class="vh">, respuesta a «¿Quién lidera esa demanda?»</span><time datetime="2026-11-17T10:43">10:43</time></p>
+<div class="prose"><p>La presenta la junta directiva de la Asociación de Pescadores Caleta Verdín <a class="cite" href="#f33-t2-s1" aria-label="Fuente 1: Asociación de Pescadores Caleta Verdín">[1]</a>. El Frente de Defensa de Pampa Saltera la respaldó en un pronunciamiento del 13 nov <a class="cite" href="#f33-t2-s2" aria-label="Fuente 2: Pronunciamiento del Frente de Defensa de Pampa Saltera">[2]</a>.</p></div>
+<h3 class="src-h" id="f33-t2-fh">Fuentes</h3>
+<ol class="srcs" aria-labelledby="f33-t2-fh"><li id="f33-t2-s1" value="1"><span class="sn" aria-hidden="true">1</span><span><a href="#">Asociación de Pescadores Caleta Verdín</a> <small>actores · AC-0112</small></span></li><li id="f33-t2-s2" value="2"><span class="sn" aria-hidden="true">2</span><span><a href="#">Pronunciamiento del Frente de Defensa de Pampa Saltera</a> <small>eventos · EV-0421</small></span></li></ol>
+
+<div class="acts" role="group" aria-label="Acciones de la respuesta"><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 9h11v11H9zM5 15H4V4h11v1"/></svg><span>Copiar</span></button><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg><span>Volver a preguntar</span></button><span class="act-note">Copia el texto y sus fuentes numeradas</span></div>
+</article><article class="turn user" aria-label="Tu pregunta"><p class="bubble">¿Qué compromisos tenemos abiertos con ellos?</p></article><article class="turn ai" aria-labelledby="f33-t3-h">
+<p class="who" id="f33-t3-h"><span class="ia">IA</span><span>Analista</span><span class="vh">, respuesta a «¿Qué compromisos tenemos abiertos con ellos?»</span><time datetime="2026-11-17T10:44">10:44</time></p>
+<div class="prose"><p>Hay <strong>dos compromisos abiertos</strong> con la Asociación <a class="cite" href="#f33-t3-s1" aria-label="Fuente 1: Asociación de Pescadores Caleta Verdín">[1]</a>:</p><ol><li>Monitoreo participativo de la calidad del agua: vence el 30 nov <a class="cite" href="#f33-t3-s2" aria-label="Fuente 2: Monitoreo participativo de la calidad del agua">[2]</a>.</li><li>Apoyo a la feria de pesca artesanal: no tiene fecha de cierre registrada <a class="cite" href="#f33-t3-s3" aria-label="Fuente 3: Apoyo a la feria de pesca artesanal">[3]</a>.</li></ol><p>El monitoreo lleva un 40 % de avance según su último seguimiento, del 10 nov <a class="cite" href="#f33-t3-s2" aria-label="Fuente 2: Monitoreo participativo de la calidad del agua">[2]</a>.</p></div>
+<h3 class="src-h" id="f33-t3-fh">Fuentes</h3>
+<ol class="srcs" aria-labelledby="f33-t3-fh"><li id="f33-t3-s1" value="1"><span class="sn" aria-hidden="true">1</span><span><a href="#">Asociación de Pescadores Caleta Verdín</a> <small>actores · AC-0112</small></span></li><li id="f33-t3-s2" value="2"><span class="sn" aria-hidden="true">2</span><span><a href="#">Monitoreo participativo de la calidad del agua</a> <small>compromisos · CP-0219</small></span></li><li id="f33-t3-s3" value="3"><span class="sn" aria-hidden="true">3</span><span><a href="#">Apoyo a la feria de pesca artesanal</a> <small>compromisos · CP-0227</small></span></li></ol>
+<ul class="blocks" aria-label="Detalles de la respuesta"><li><article class="rcard" aria-labelledby="f33-t3-b"><p class="rk"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8zM14 3v5h5M9 13h6M9 17h6"/></svg>Compromiso</p><h3 id="f33-t3-b"><a href="#">Monitoreo participativo de la calidad del agua</a></h3><p class="where">compromisos · CP-0219</p></article></li></ul>
+<div class="acts" role="group" aria-label="Acciones de la respuesta"><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 9h11v11H9zM5 15H4V4h11v1"/></svg><span>Copiar</span></button><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg><span>Volver a preguntar</span></button><span class="act-note">Copia el texto y sus fuentes numeradas</span></div>
+</article></div></div><div class="dock"><button type="button" class="tobottom" data-to-bottom hidden><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>Ir al final</button><div class="measure"><form class="composer" aria-label="Preguntar al analista" onsubmit="return false">
+<label class="vh" for="c38">Pregunta</label>
+<textarea id="c38" rows="2" maxlength="500" placeholder="Pregunta por eventos, actores, demandas o compromisos…">Prepara un resumen para la reunión del jueves con la Asociación de Pescadores Caleta Verdín: qué demandas siguen abiertas, qué compromisos vencen antes de fin de mes y con qué avance, qué eventos se registraron desde el 1 de noviembre en Caleta Verdín y Pampa Saltera, quién habló en nombre de cada organización y qué alertas siguen activas en el acceso a la caleta. Separa lo verificado de lo que aún espera revisión en Bandeja y cita cada registro que uses en el resumen.</textarea>
+<div class="c-row"><fieldset class="seg"><legend class="vh">Modo</legend><label><input type="radio" name="c38-m" value="buscar"><span>Buscar</span></label><label><input type="radio" name="c38-m" value="preguntar" checked><span>Preguntar</span></label></fieldset><span class="hint push">Enter pregunta · Mayús+Enter, nueva línea</span><span class="counter" id="c38-n">473 / 500</span><button type="submit" class="send" aria-label="Enviar pregunta"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></div>
+
+</form>
+<p class="disc">Las respuestas citan registros del proyecto; revísalas antes de decidir.</p></div></div></div></div></div>
+<p class="cap"><b>Pendiente</b><span>Escritorio · claro · barra lateral oculta · la línea plegada abierta mientras espera; «Detener» en el lugar de Enviar</span></p>
+<div class="frame desk" data-theme="light" role="region" aria-label="Escritorio claro, respuesta pendiente"><div class="app" data-side="hidden"><aside class="side" id="side39" aria-label="Barra lateral">
+<div class="side-top"><span class="brand">SIPGES</span><button type="button" class="iconbtn" data-toggle-side aria-controls="side39" aria-expanded="true" aria-label="Ocultar barra lateral" title="Ocultar barra lateral · Ctrl+B"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 4h18v16H3zM9 4v16"/></svg></button></div>
+<a class="nav-i new" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg><span>Nueva pregunta</span><kbd class="k">Ctrl+Mayús+O</kbd></a>
+<button type="button" class="nav-i"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16M21 21l-4.3-4.3"/></svg><span>Buscar</span><kbd class="k">Ctrl+K</kbd></button>
+<nav aria-label="Destinos"><ul class="nav"><li><a class="nav-i" href="#" aria-current="page"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Inicio</span></a></li><li><a class="nav-i" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg><span>Registros</span></a></li><li><a class="nav-i" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14"/></svg><span>Territorio</span></a></li><li><a class="nav-i" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M22 12h-6l-2 3h-4l-2-3H2M5.5 5h13L22 12v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6z"/></svg><span>Bandeja</span><span class="badge" aria-label="2 pendientes">2</span></a></li><li><a class="nav-i" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18M7 16v-4M12 16V8M17 16v-7"/></svg><span>Análisis</span></a></li><li><a class="nav-i" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0zM12 17v5"/></svg><span>Integraciones</span></a></li></ul></nav>
+<section class="convs" aria-label="Conversaciones"><h2 class="side-h">Conversaciones <span>esta sesión</span></h2><ul><li><a class="nav-i" href="#" aria-current="true"><span class="one" title="Compromisos con la Asociación de Pescadores">Compromisos con la Asociación de Pescadores</span></a></li><li><a class="nav-i" href="#"><span class="one" title="¿Qué alertas rojas siguen abiertas?">¿Qué alertas rojas siguen abiertas?</span></a></li><li><a class="nav-i" href="#"><span class="one" title="Resumen de la semana 9–15 nov">Resumen de la semana 9–15 nov</span></a></li><li><a class="nav-i" href="#"><span class="one" title="Demandas abiertas en Ichumayo">Demandas abiertas en Ichumayo</span></a></li></ul></section>
+<div class="side-foot"><button type="button" class="nav-i proj"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 7h18v13H3zM9 7V4h6v3M3 13h18"/></svg><span>Valle Quillay</span><svg class="ico end" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button><button type="button" class="nav-i acct"><span class="av" aria-hidden="true">RA</span><span>Renata Arce</span><svg class="ico end" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button></div>
+</aside><div class="main"><header class="bar"><button type="button" class="iconbtn show-side" data-toggle-side aria-controls="side39" aria-expanded="false" aria-label="Mostrar barra lateral" title="Mostrar barra lateral · Ctrl+B"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 4h18v16H3zM9 4v16"/></svg></button><button type="button" class="iconbtn" aria-label="Nueva pregunta" title="Nueva pregunta · Ctrl+Mayús+O"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg></button><p class="bt">Compromisos con la Asociación de Pescadores</p><div class="sp"><span class="pill pos"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M8 12l3 3 5-6"/></svg>IA externa activada</span><span class="pill warn"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3 2 20h20zM12 10v4M12 17.5h.01"/></svg>Metodología pendiente de validación</span></div></header><div class="fold"><div class="measure"><div class="fold-in"><button type="button" class="fold-b main-f" data-fold aria-expanded="true" aria-controls="fold41"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><b>Necesita tu atención</b><span class="badge" style="margin-left:0">3</span><span class="first">Bloqueo en el acceso a Caleta Verdín y 2 más</span><svg class="ico chev" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button><button type="button" class="fold-b week-f" data-fold aria-expanded="false" aria-controls="fold42">Esta semana <svg class="ico chev" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button></div><div class="fold-panel" id="fold41"><section class="att" aria-labelledby="att43"><h2 class="vh" id="att43">Necesita tu atención</h2>
+<ul class="arows"><li><a class="arow c" href="#"><div><b>Bloqueo anunciado en el acceso a Caleta Verdín</b><span class="meta"><span class="lv r">Rojo</span><span>Alerta activa · 15 nov · Caleta Verdín</span></span></div><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></a></li><li><a class="arow c" href="#"><div><b>Reclamo por polvo en la vía a Pampa Saltera</b><span class="meta"><span class="lv o">Naranja</span><span>Alerta activa · 14 nov · Pampa Saltera</span></span></div><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></a></li><li><a class="arow c" href="#"><div><b>2 alertas digitales esperan verificación</b><span class="meta"><span class="lv n">Bandeja</span><span>Bandeja › Pendientes</span></span></div><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></a></li></ul></section></div><div class="fold-panel" id="fold42" hidden><section class="week" aria-labelledby="wk44"><div class="sh"><h2 id="wk44">Esta semana</h2><span class="n">9–15 nov</span><a href="#">Ver en Registros</a></div><ul class="tiles"><li><a class="tile" href="#"><data value="12">12</data><span>eventos</span><small>Caleta Verdín concentra 5</small></a></li><li><a class="tile" href="#"><data value="3">3</data><span>demandas nuevas</span><small>1 sin responsable asignado</small></a></li><li><a class="tile" href="#"><data value="2">2</data><span>compromisos vencen este mes</span><small>CP-0219 el 30 nov</small></a></li></ul></section></div></div></div>
+<div class="scroll thread" role="log" aria-label="Conversación con el analista" aria-busy="true" tabindex="0" data-at="end"><div class="measure turns"><article class="turn user" aria-label="Tu pregunta"><p class="bubble">¿Qué pasó esta semana en Caleta Verdín?</p></article><article class="turn ai" aria-labelledby="f40-t1-h">
+<p class="who" id="f40-t1-h"><span class="ia">IA</span><span>Analista</span><span class="vh">, respuesta a «¿Qué pasó esta semana en Caleta Verdín?»</span><time datetime="2026-11-17T10:41">10:41</time></p>
+<div class="prose"><p>Se registraron un evento y una demanda nueva. El 12 nov la Asociación de Pescadores Caleta Verdín pidió una mesa de diálogo por la descarga de agua de la planta <a class="cite" href="#f40-t1-s1" aria-label="Fuente 1: Pedido de mesa de diálogo por la descarga de la planta">[1]</a>. El 14 nov hubo una reunión informativa en el local comunal, con unas 40 personas <a class="cite" href="#f40-t1-s2" aria-label="Fuente 2: Reunión informativa en el local comunal de Caleta Verdín">[2]</a>.</p></div>
+<h3 class="src-h" id="f40-t1-fh">Fuentes</h3>
+<ol class="srcs" aria-labelledby="f40-t1-fh"><li id="f40-t1-s1" value="1"><span class="sn" aria-hidden="true">1</span><span><a href="#">Pedido de mesa de diálogo por la descarga de la planta</a> <small>demandas · DM-0071</small></span></li><li id="f40-t1-s2" value="2"><span class="sn" aria-hidden="true">2</span><span><a href="#">Reunión informativa en el local comunal de Caleta Verdín</a> <small>eventos · EV-0418</small></span></li></ol>
+
+<div class="acts" role="group" aria-label="Acciones de la respuesta"><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 9h11v11H9zM5 15H4V4h11v1"/></svg><span>Copiar</span></button><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg><span>Volver a preguntar</span></button><span class="act-note">Copia el texto y sus fuentes numeradas</span></div>
+</article><article class="turn user" aria-label="Tu pregunta"><p class="bubble">¿Quién lidera esa demanda?</p></article><article class="turn ai" aria-labelledby="f40-t2-h">
+<p class="who" id="f40-t2-h"><span class="ia">IA</span><span>Analista</span><span class="vh">, respuesta a «¿Quién lidera esa demanda?»</span><time datetime="2026-11-17T10:43">10:43</time></p>
+<div class="prose"><p>La presenta la junta directiva de la Asociación de Pescadores Caleta Verdín <a class="cite" href="#f40-t2-s1" aria-label="Fuente 1: Asociación de Pescadores Caleta Verdín">[1]</a>. El Frente de Defensa de Pampa Saltera la respaldó en un pronunciamiento del 13 nov <a class="cite" href="#f40-t2-s2" aria-label="Fuente 2: Pronunciamiento del Frente de Defensa de Pampa Saltera">[2]</a>.</p></div>
+<h3 class="src-h" id="f40-t2-fh">Fuentes</h3>
+<ol class="srcs" aria-labelledby="f40-t2-fh"><li id="f40-t2-s1" value="1"><span class="sn" aria-hidden="true">1</span><span><a href="#">Asociación de Pescadores Caleta Verdín</a> <small>actores · AC-0112</small></span></li><li id="f40-t2-s2" value="2"><span class="sn" aria-hidden="true">2</span><span><a href="#">Pronunciamiento del Frente de Defensa de Pampa Saltera</a> <small>eventos · EV-0421</small></span></li></ol>
+
+<div class="acts" role="group" aria-label="Acciones de la respuesta"><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 9h11v11H9zM5 15H4V4h11v1"/></svg><span>Copiar</span></button><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg><span>Volver a preguntar</span></button><span class="act-note">Copia el texto y sus fuentes numeradas</span></div>
+</article><article class="turn user" aria-label="Tu pregunta"><p class="bubble">¿Qué compromisos tenemos abiertos con ellos?</p></article><article class="turn ai" aria-labelledby="f40-t3-h">
+<p class="who" id="f40-t3-h"><span class="ia">IA</span><span>Analista</span><span class="vh">, respuesta a «¿Qué compromisos tenemos abiertos con ellos?»</span><time datetime="2026-11-17T10:44">10:44</time></p>
+<div class="prose"><p>Hay <strong>dos compromisos abiertos</strong> con la Asociación <a class="cite" href="#f40-t3-s1" aria-label="Fuente 1: Asociación de Pescadores Caleta Verdín">[1]</a>:</p><ol><li>Monitoreo participativo de la calidad del agua: vence el 30 nov <a class="cite" href="#f40-t3-s2" aria-label="Fuente 2: Monitoreo participativo de la calidad del agua">[2]</a>.</li><li>Apoyo a la feria de pesca artesanal: no tiene fecha de cierre registrada <a class="cite" href="#f40-t3-s3" aria-label="Fuente 3: Apoyo a la feria de pesca artesanal">[3]</a>.</li></ol><p>El monitoreo lleva un 40 % de avance según su último seguimiento, del 10 nov <a class="cite" href="#f40-t3-s2" aria-label="Fuente 2: Monitoreo participativo de la calidad del agua">[2]</a>.</p></div>
+<h3 class="src-h" id="f40-t3-fh">Fuentes</h3>
+<ol class="srcs" aria-labelledby="f40-t3-fh"><li id="f40-t3-s1" value="1"><span class="sn" aria-hidden="true">1</span><span><a href="#">Asociación de Pescadores Caleta Verdín</a> <small>actores · AC-0112</small></span></li><li id="f40-t3-s2" value="2"><span class="sn" aria-hidden="true">2</span><span><a href="#">Monitoreo participativo de la calidad del agua</a> <small>compromisos · CP-0219</small></span></li><li id="f40-t3-s3" value="3"><span class="sn" aria-hidden="true">3</span><span><a href="#">Apoyo a la feria de pesca artesanal</a> <small>compromisos · CP-0227</small></span></li></ol>
+<ul class="blocks" aria-label="Detalles de la respuesta"><li><article class="rcard" aria-labelledby="f40-t3-b"><p class="rk"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8zM14 3v5h5M9 13h6M9 17h6"/></svg>Compromiso</p><h3 id="f40-t3-b"><a href="#">Monitoreo participativo de la calidad del agua</a></h3><p class="where">compromisos · CP-0219</p></article></li></ul>
+<div class="acts" role="group" aria-label="Acciones de la respuesta"><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 9h11v11H9zM5 15H4V4h11v1"/></svg><span>Copiar</span></button><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg><span>Volver a preguntar</span></button><span class="act-note">Copia el texto y sus fuentes numeradas</span></div>
+</article><article class="turn user" aria-label="Tu pregunta"><p class="bubble">¿Hubo incidentes en el acceso a Ichumayo este mes?</p></article><article class="turn ai" aria-label="Respuesta en preparación"><p class="who"><span class="ia">IA</span><span>Analista</span></p><p class="step"><span class="pulse" aria-hidden="true"></span>Buscando registros…</p><p class="step-sub">Puedes detenerla con Esc o con «Detener», en el lugar de Enviar.</p></article></div></div><div class="dock"><button type="button" class="tobottom" data-to-bottom hidden><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>Ir al final</button><div class="measure"><form class="composer" aria-label="Preguntar al analista" onsubmit="return false">
+<label class="vh" for="c45">Pregunta</label>
+<textarea id="c45" rows="2" maxlength="500" placeholder="Pregunta por eventos, actores, demandas o compromisos…"></textarea>
+<div class="c-row"><fieldset class="seg"><legend class="vh">Modo</legend><label><input type="radio" name="c45-m" value="buscar"><span>Buscar</span></label><label><input type="radio" name="c45-m" value="preguntar" checked><span>Preguntar</span></label></fieldset><span class="hint push">Esc detiene</span><span class="counter" id="c45-n" hidden>0 / 500</span><button type="button" class="send stop" aria-label="Detener respuesta" title="Detener respuesta · Esc"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 7h10v10H7z"/></svg></button></div>
+
+</form>
+<p class="disc">Las respuestas citan registros del proyecto; revísalas antes de decidir.</p></div></div></div></div></div>
+<p class="cap"><b>C · Error 503</b><span>Escritorio · oscuro · error con «Buscar en registros»; la línea plegada sigue arriba</span></p>
+<div class="frame desk" data-theme="dark" role="region" aria-label="Escritorio oscuro, error 503"><div class="app" data-side="shown"><aside class="side" id="side46" aria-label="Barra lateral">
+<div class="side-top"><span class="brand">SIPGES</span><button type="button" class="iconbtn" data-toggle-side aria-controls="side46" aria-expanded="true" aria-label="Ocultar barra lateral" title="Ocultar barra lateral · Ctrl+B"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 4h18v16H3zM9 4v16"/></svg></button></div>
+<a class="nav-i new" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg><span>Nueva pregunta</span><kbd class="k">Ctrl+Mayús+O</kbd></a>
+<button type="button" class="nav-i"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16M21 21l-4.3-4.3"/></svg><span>Buscar</span><kbd class="k">Ctrl+K</kbd></button>
+<nav aria-label="Destinos"><ul class="nav"><li><a class="nav-i" href="#" aria-current="page"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Inicio</span></a></li><li><a class="nav-i" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg><span>Registros</span></a></li><li><a class="nav-i" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14"/></svg><span>Territorio</span></a></li><li><a class="nav-i" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M22 12h-6l-2 3h-4l-2-3H2M5.5 5h13L22 12v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6z"/></svg><span>Bandeja</span><span class="badge" aria-label="2 pendientes">2</span></a></li><li><a class="nav-i" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18M7 16v-4M12 16V8M17 16v-7"/></svg><span>Análisis</span></a></li><li><a class="nav-i" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0zM12 17v5"/></svg><span>Integraciones</span></a></li></ul></nav>
+<section class="convs" aria-label="Conversaciones"><h2 class="side-h">Conversaciones <span>esta sesión</span></h2><ul><li><a class="nav-i" href="#"><span class="one" title="Compromisos con la Asociación de Pescadores">Compromisos con la Asociación de Pescadores</span></a></li><li><a class="nav-i" href="#" aria-current="true"><span class="one" title="¿Qué alertas rojas siguen abiertas?">¿Qué alertas rojas siguen abiertas?</span></a></li><li><a class="nav-i" href="#"><span class="one" title="Resumen de la semana 9–15 nov">Resumen de la semana 9–15 nov</span></a></li><li><a class="nav-i" href="#"><span class="one" title="Demandas abiertas en Ichumayo">Demandas abiertas en Ichumayo</span></a></li></ul></section>
+<div class="side-foot"><button type="button" class="nav-i proj"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 7h18v13H3zM9 7V4h6v3M3 13h18"/></svg><span>Valle Quillay</span><svg class="ico end" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button><button type="button" class="nav-i acct"><span class="av" aria-hidden="true">RA</span><span>Renata Arce</span><svg class="ico end" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button></div>
+</aside><div class="main"><header class="bar"><button type="button" class="iconbtn show-side" data-toggle-side aria-controls="side46" aria-expanded="false" aria-label="Mostrar barra lateral" title="Mostrar barra lateral · Ctrl+B"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 4h18v16H3zM9 4v16"/></svg></button><p class="bt">¿Qué alertas rojas siguen abiertas?</p><div class="sp"><span class="pill pos"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M8 12l3 3 5-6"/></svg>IA externa activada</span><span class="pill warn"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3 2 20h20zM12 10v4M12 17.5h.01"/></svg>Metodología pendiente de validación</span></div></header><div class="fold"><div class="measure"><div class="fold-in"><button type="button" class="fold-b main-f" data-fold aria-expanded="false" aria-controls="fold47"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><b>Necesita tu atención</b><span class="badge" style="margin-left:0">3</span><span class="first">Bloqueo en el acceso a Caleta Verdín y 2 más</span><svg class="ico chev" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button><button type="button" class="fold-b week-f" data-fold aria-expanded="false" aria-controls="fold48">Esta semana <svg class="ico chev" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button></div><div class="fold-panel" id="fold47" hidden><section class="att" aria-labelledby="att49"><h2 class="vh" id="att49">Necesita tu atención</h2>
+<ul class="arows"><li><a class="arow c" href="#"><div><b>Bloqueo anunciado en el acceso a Caleta Verdín</b><span class="meta"><span class="lv r">Rojo</span><span>Alerta activa · 15 nov · Caleta Verdín</span></span></div><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></a></li><li><a class="arow c" href="#"><div><b>Reclamo por polvo en la vía a Pampa Saltera</b><span class="meta"><span class="lv o">Naranja</span><span>Alerta activa · 14 nov · Pampa Saltera</span></span></div><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></a></li><li><a class="arow c" href="#"><div><b>2 alertas digitales esperan verificación</b><span class="meta"><span class="lv n">Bandeja</span><span>Bandeja › Pendientes</span></span></div><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></a></li></ul></section></div><div class="fold-panel" id="fold48" hidden><section class="week" aria-labelledby="wk50"><div class="sh"><h2 id="wk50">Esta semana</h2><span class="n">9–15 nov</span><a href="#">Ver en Registros</a></div><ul class="tiles"><li><a class="tile" href="#"><data value="12">12</data><span>eventos</span><small>Caleta Verdín concentra 5</small></a></li><li><a class="tile" href="#"><data value="3">3</data><span>demandas nuevas</span><small>1 sin responsable asignado</small></a></li><li><a class="tile" href="#"><data value="2">2</data><span>compromisos vencen este mes</span><small>CP-0219 el 30 nov</small></a></li></ul></section></div></div></div>
+<div class="scroll thread" role="log" aria-label="Conversación con el analista" aria-busy="false" tabindex="0" data-at="top"><div class="measure turns"><article class="turn user" aria-label="Tu pregunta"><p class="bubble">¿Qué alertas rojas siguen abiertas?</p></article><article class="turn ai" aria-label="El analista no respondió"><p class="who"><span class="ia">IA</span><span>Analista</span></p>
+<div class="alert err"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3 2 20h20zM12 10v4M12 17.5h.01"/></svg><div><p>El analista no respondió: el servicio de IA no está disponible. Prueba de nuevo en unos minutos o avisa a quien administra SIPGES.</p><p class="alert-sub">Error 503 · tu pregunta sigue en el compositor; nada se guardó ni se envió a Bandeja.</p><div class="alert-acts"><button type="button" class="btn sec s"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16M21 21l-4.3-4.3"/></svg>Buscar en registros</button><button type="button" class="btn gh s"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>Volver a preguntar</button></div></div></div>
+</article></div></div><div class="dock"><div class="measure"><form class="composer" aria-label="Preguntar al analista" onsubmit="return false">
+<label class="vh" for="c51">Pregunta</label>
+<textarea id="c51" rows="2" maxlength="500" placeholder="Pregunta por eventos, actores, demandas o compromisos…">¿Qué alertas rojas siguen abiertas?</textarea>
+<div class="c-row"><fieldset class="seg"><legend class="vh">Modo</legend><label><input type="radio" name="c51-m" value="buscar"><span>Buscar</span></label><label><input type="radio" name="c51-m" value="preguntar" checked><span>Preguntar</span></label></fieldset><span class="hint push">Enter pregunta · Mayús+Enter, nueva línea</span><span class="counter" id="c51-n" hidden>35 / 500</span><button type="submit" class="send" aria-label="Enviar pregunta"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></div>
+
+</form>
+<p class="disc">Las respuestas citan registros del proyecto; revísalas antes de decidir.</p></div></div></div></div></div>
+<p class="cap"><b>D · IA externa desactivada</b><span>Escritorio · claro · mismo orden; el compositor queda en Buscar con el motivo</span></p>
+<div class="frame desk" data-theme="light" role="region" aria-label="Escritorio claro, IA externa desactivada"><div class="app" data-side="shown"><aside class="side" id="side52" aria-label="Barra lateral">
+<div class="side-top"><span class="brand">SIPGES</span><button type="button" class="iconbtn" data-toggle-side aria-controls="side52" aria-expanded="true" aria-label="Ocultar barra lateral" title="Ocultar barra lateral · Ctrl+B"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 4h18v16H3zM9 4v16"/></svg></button></div>
+<a class="nav-i new" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg><span>Nueva pregunta</span><kbd class="k">Ctrl+Mayús+O</kbd></a>
+<button type="button" class="nav-i"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16M21 21l-4.3-4.3"/></svg><span>Buscar</span><kbd class="k">Ctrl+K</kbd></button>
+<nav aria-label="Destinos"><ul class="nav"><li><a class="nav-i" href="#" aria-current="page"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Inicio</span></a></li><li><a class="nav-i" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg><span>Registros</span></a></li><li><a class="nav-i" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14"/></svg><span>Territorio</span></a></li><li><a class="nav-i" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M22 12h-6l-2 3h-4l-2-3H2M5.5 5h13L22 12v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6z"/></svg><span>Bandeja</span><span class="badge" aria-label="2 pendientes">2</span></a></li><li><a class="nav-i" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18M7 16v-4M12 16V8M17 16v-7"/></svg><span>Análisis</span></a></li><li><a class="nav-i" href="#"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0zM12 17v5"/></svg><span>Integraciones</span></a></li></ul></nav>
+<section class="convs" aria-label="Conversaciones"><h2 class="side-h">Conversaciones <span>esta sesión</span></h2><ul><li><a class="nav-i" href="#"><span class="one" title="Compromisos con la Asociación de Pescadores">Compromisos con la Asociación de Pescadores</span></a></li><li><a class="nav-i" href="#"><span class="one" title="¿Qué alertas rojas siguen abiertas?">¿Qué alertas rojas siguen abiertas?</span></a></li><li><a class="nav-i" href="#"><span class="one" title="Resumen de la semana 9–15 nov">Resumen de la semana 9–15 nov</span></a></li><li><a class="nav-i" href="#"><span class="one" title="Demandas abiertas en Ichumayo">Demandas abiertas en Ichumayo</span></a></li></ul></section>
+<div class="side-foot"><button type="button" class="nav-i proj"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 7h18v13H3zM9 7V4h6v3M3 13h18"/></svg><span>Valle Quillay</span><svg class="ico end" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button><button type="button" class="nav-i acct"><span class="av" aria-hidden="true">RA</span><span>Renata Arce</span><svg class="ico end" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button></div>
+</aside><div class="main"><header class="bar"><button type="button" class="iconbtn show-side" data-toggle-side aria-controls="side52" aria-expanded="false" aria-label="Mostrar barra lateral" title="Mostrar barra lateral · Ctrl+B"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 4h18v16H3zM9 4v16"/></svg></button><nav class="tabs" aria-label="Vistas de Inicio"><a href="#" aria-current="page">Inicio</a><a href="#">Panel</a><a href="#">Centro gerencial</a></nav></header><div class="scroll"><div class="measure lead-col"><div class="hello"><div><p class="date">Martes 17 de noviembre · Valle Quillay</p><h1 class="greet">Hola, Renata</h1></div><div class="p-pills"><span class="pill neu"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/></svg>IA externa desactivada</span><span class="pill warn"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3 2 20h20zM12 10v4M12 17.5h.01"/></svg>Metodología pendiente de validación</span></div></div>
+<section class="att" aria-labelledby="att53"><div class="sh"><h2 id="att53">Necesita tu atención</h2><span class="n">3</span><a href="#">Abrir Bandeja</a></div>
+<ul class="arows"><li class="arow"><span class="lvc"><span class="lv r">Rojo</span></span><div><b>Bloqueo anunciado en el acceso a Caleta Verdín</b><span class="meta">Alerta activa · 15 nov · Caleta Verdín</span></div><a href="#" aria-label="Abrir alerta: Bloqueo anunciado en el acceso a Caleta Verdín">Abrir alerta</a></li><li class="arow"><span class="lvc"><span class="lv o">Naranja</span></span><div><b>Reclamo por polvo en la vía a Pampa Saltera</b><span class="meta">Alerta activa · 14 nov · Pampa Saltera</span></div><a href="#" aria-label="Abrir alerta: Reclamo por polvo en la vía a Pampa Saltera">Abrir alerta</a></li><li class="arow"><span class="lvc"><span class="lv n">Bandeja</span></span><div><b>2 alertas digitales esperan verificación</b><span class="meta">Bandeja › Pendientes</span></div><a href="#" aria-label="Revisar en Bandeja: 2 alertas digitales esperan verificación">Revisar en Bandeja</a></li></ul></section>
+<section class="ask-block" aria-label="Buscar en registros"><form class="composer" aria-label="Preguntar al analista" onsubmit="return false">
+<label class="vh" for="c54">Búsqueda</label>
+<textarea id="c54" rows="2" maxlength="500" placeholder="Palabras de eventos, actores, demandas o compromisos…" aria-describedby="c54-r"></textarea>
+<div class="c-row"><fieldset class="seg"><legend class="vh">Modo</legend><label><input type="radio" name="c54-m" value="buscar" checked><span>Buscar</span></label><label><input type="radio" name="c54-m" value="preguntar" disabled aria-describedby="c54-r"><span>Preguntar</span></label></fieldset><span class="hint push">Enter busca</span><span class="counter" id="c54-n" hidden>0 / 500</span><button type="submit" class="send" aria-label="Buscar en registros" aria-disabled="true"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16M21 21l-4.3-4.3"/></svg></button></div>
+<p class="c-reason" id="c54-r"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3 2 20h20zM12 10v4M12 17.5h.01"/></svg><span>La IA externa está desactivada en este proyecto: solo Buscar. <a href="#">Activar en Configuración → Privacidad y datos</a></span></p>
+</form>
+<p class="disc">Buscar lee los registros del proyecto en esta instalación; no envía nada fuera.</p><div class="chips" role="group" aria-label="Buscar en registros"><span class="chips-l" aria-hidden="true">Buscar</span><button type="button" class="chip"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16M21 21l-4.3-4.3"/></svg>bloqueo Caleta Verdín</button><button type="button" class="chip"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16M21 21l-4.3-4.3"/></svg>compromisos vencidos</button><button type="button" class="chip"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16M21 21l-4.3-4.3"/></svg>Asociación de Pescadores</button><button type="button" class="chip"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16M21 21l-4.3-4.3"/></svg>Pampa Saltera</button></div></section>
+<section class="week" aria-labelledby="wk55"><div class="sh"><h2 id="wk55">Esta semana</h2><span class="n">9–15 nov</span><a href="#">Ver en Registros</a></div><ul class="tiles"><li><a class="tile" href="#"><data value="12">12</data><span>eventos</span><small>Caleta Verdín concentra 5</small></a></li><li><a class="tile" href="#"><data value="3">3</data><span>demandas nuevas</span><small>1 sin responsable asignado</small></a></li><li><a class="tile" href="#"><data value="2">2</data><span>compromisos vencen este mes</span><small>CP-0219 el 30 nov</small></a></li></ul></section></div></div></div></div></div>
+<div class="sect-cap"><h2>Teléfono 390 × 844</h2><p>Los mismos estados en teléfono; el compositor queda fijo sobre el teclado y el área segura (env(safe-area-inset-bottom)). Objetivos táctiles de 44 px.</p></div>
+<div class="phones"><div class="phone-w"><p class="cap"><b>A · Vacío</b><span>390 × 844 · oscuro · lo urgente arriba; el compositor va en el flujo hasta la primera pregunta</span></p><div class="frame phone" data-theme="dark" role="region" aria-label="Teléfono oscuro, Inicio vacío"><div class="pa"><header class="pbar"><button type="button" class="iconbtn" aria-label="Abrir menú" aria-haspopup="dialog"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button><p class="t" title="Inicio">Inicio</p><button type="button" class="iconbtn" aria-label="Nueva pregunta" title="Ctrl+Mayús+O"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg></button></header><div class="scroll"><div class="measure lead-col"><div class="hello"><div><p class="date">Martes 17 de noviembre · Valle Quillay</p><h1 class="greet">Hola, Renata</h1></div><div class="p-pills"><span class="pill pos"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M8 12l3 3 5-6"/></svg>IA externa activada</span><span class="pill warn"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3 2 20h20zM12 10v4M12 17.5h.01"/></svg>Metodología pendiente de validación</span></div></div>
+<section class="att" aria-labelledby="att56"><div class="sh"><h2 id="att56">Necesita tu atención</h2><span class="n">3</span><a href="#">Abrir Bandeja</a></div>
+<ul class="arows"><li><a class="arow c" href="#"><div><b>Bloqueo anunciado en el acceso a Caleta Verdín</b><span class="meta"><span class="lv r">Rojo</span><span>Alerta activa · 15 nov · Caleta Verdín</span></span></div><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></a></li><li><a class="arow c" href="#"><div><b>Reclamo por polvo en la vía a Pampa Saltera</b><span class="meta"><span class="lv o">Naranja</span><span>Alerta activa · 14 nov · Pampa Saltera</span></span></div><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></a></li><li><a class="arow c" href="#"><div><b>2 alertas digitales esperan verificación</b><span class="meta"><span class="lv n">Bandeja</span><span>Bandeja › Pendientes</span></span></div><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></a></li></ul></section>
+<section class="ask-block" aria-label="Preguntar al analista"><form class="composer" aria-label="Preguntar al analista" onsubmit="return false">
+<label class="vh" for="c57">Pregunta</label>
+<textarea id="c57" rows="1" maxlength="500" placeholder="Pregunta por eventos, actores…"></textarea>
+<div class="c-row"><fieldset class="seg"><legend class="vh">Modo</legend><label><input type="radio" name="c57-m" value="buscar"><span>Buscar</span></label><label><input type="radio" name="c57-m" value="preguntar" checked><span>Preguntar</span></label></fieldset><span class="push"></span><span class="counter" id="c57-n" hidden>0 / 500</span><button type="submit" class="send" aria-label="Enviar pregunta" aria-disabled="true"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></div>
+
+</form>
+<p class="disc">Las respuestas citan registros del proyecto; revísalas antes de decidir.</p><div class="chips" role="group" aria-label="Prueba con"><span class="chips-l" aria-hidden="true">Prueba con</span><button type="button" class="chip">¿Qué alertas rojas siguen abiertas?</button><button type="button" class="chip">Resume lo ocurrido esta semana</button><button type="button" class="chip">¿Qué compromisos vencen este mes?</button></div></section>
+<section class="week" aria-labelledby="wk58"><div class="sh"><h2 id="wk58">Esta semana</h2><span class="n">9–15 nov</span><a href="#">Ver en Registros</a></div><ul class="tiles"><li><a class="tile" href="#"><data value="12">12</data><span>eventos</span><small>Caleta Verdín concentra 5</small></a></li><li><a class="tile" href="#"><data value="3">3</data><span>demandas nuevas</span><small>1 sin responsable asignado</small></a></li><li><a class="tile" href="#"><data value="2">2</data><span>compromisos vencen este mes</span><small>CP-0219 el 30 nov</small></a></li></ul></section></div></div></div></div></div>
+<div class="phone-w"><p class="cap"><b>B · Conversación</b><span>claro · una línea plegada arriba; «Ir al final» al leer arriba</span></p><div class="frame phone" data-theme="light" role="region" aria-label="Teléfono claro, conversación"><div class="pa"><header class="pbar"><button type="button" class="iconbtn" aria-label="Abrir menú" aria-haspopup="dialog"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button><p class="t" title="Compromisos con la Asociación de Pescadores">Compromisos con la Asociación de Pescadores</p><button type="button" class="iconbtn" aria-label="Nueva pregunta" title="Ctrl+Mayús+O"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg></button></header><div class="fold"><div class="measure"><div class="fold-in"><button type="button" class="fold-b main-f" data-fold aria-expanded="false" aria-controls="fold60"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><b>Necesita tu atención</b><span class="badge" style="margin-left:0">3</span><span class="first">Bloqueo en el acceso a Caleta Verdín y 2 más</span><svg class="ico chev" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button><button type="button" class="fold-b week-f" data-fold aria-expanded="false" aria-controls="fold61">Esta semana <svg class="ico chev" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button></div><div class="fold-panel" id="fold60" hidden><section class="att" aria-labelledby="att62"><h2 class="vh" id="att62">Necesita tu atención</h2>
+<ul class="arows"><li><a class="arow c" href="#"><div><b>Bloqueo anunciado en el acceso a Caleta Verdín</b><span class="meta"><span class="lv r">Rojo</span><span>Alerta activa · 15 nov · Caleta Verdín</span></span></div><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></a></li><li><a class="arow c" href="#"><div><b>Reclamo por polvo en la vía a Pampa Saltera</b><span class="meta"><span class="lv o">Naranja</span><span>Alerta activa · 14 nov · Pampa Saltera</span></span></div><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></a></li><li><a class="arow c" href="#"><div><b>2 alertas digitales esperan verificación</b><span class="meta"><span class="lv n">Bandeja</span><span>Bandeja › Pendientes</span></span></div><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></a></li></ul></section></div><div class="fold-panel" id="fold61" hidden><section class="week" aria-labelledby="wk63"><div class="sh"><h2 id="wk63">Esta semana</h2><span class="n">9–15 nov</span><a href="#">Ver en Registros</a></div><ul class="tiles"><li><a class="tile" href="#"><data value="12">12</data><span>eventos</span><small>Caleta Verdín concentra 5</small></a></li><li><a class="tile" href="#"><data value="3">3</data><span>demandas nuevas</span><small>1 sin responsable asignado</small></a></li><li><a class="tile" href="#"><data value="2">2</data><span>compromisos vencen este mes</span><small>CP-0219 el 30 nov</small></a></li></ul></section></div></div></div><div class="scroll thread" role="log" aria-label="Conversación con el analista" aria-busy="false" tabindex="0" data-at="top"><div class="measure turns"><article class="turn user" aria-label="Tu pregunta"><p class="bubble">¿Qué pasó esta semana en Caleta Verdín?</p></article><article class="turn ai" aria-labelledby="f59-t1-h">
+<p class="who" id="f59-t1-h"><span class="ia">IA</span><span>Analista</span><span class="vh">, respuesta a «¿Qué pasó esta semana en Caleta Verdín?»</span><time datetime="2026-11-17T10:41">10:41</time></p>
+<div class="prose"><p>Se registraron un evento y una demanda nueva. El 12 nov la Asociación de Pescadores Caleta Verdín pidió una mesa de diálogo por la descarga de agua de la planta <a class="cite" href="#f59-t1-s1" aria-label="Fuente 1: Pedido de mesa de diálogo por la descarga de la planta">[1]</a>. El 14 nov hubo una reunión informativa en el local comunal, con unas 40 personas <a class="cite" href="#f59-t1-s2" aria-label="Fuente 2: Reunión informativa en el local comunal de Caleta Verdín">[2]</a>.</p></div>
+<h3 class="src-h" id="f59-t1-fh">Fuentes</h3>
+<ol class="srcs" aria-labelledby="f59-t1-fh"><li id="f59-t1-s1" value="1"><span class="sn" aria-hidden="true">1</span><span><a href="#">Pedido de mesa de diálogo por la descarga de la planta</a> <small>demandas · DM-0071</small></span></li><li id="f59-t1-s2" value="2"><span class="sn" aria-hidden="true">2</span><span><a href="#">Reunión informativa en el local comunal de Caleta Verdín</a> <small>eventos · EV-0418</small></span></li></ol>
+
+<div class="acts" role="group" aria-label="Acciones de la respuesta"><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 9h11v11H9zM5 15H4V4h11v1"/></svg><span>Copiar</span></button><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg><span>Volver a preguntar</span></button></div>
+</article><article class="turn user" aria-label="Tu pregunta"><p class="bubble">¿Quién lidera esa demanda?</p></article><article class="turn ai" aria-labelledby="f59-t2-h">
+<p class="who" id="f59-t2-h"><span class="ia">IA</span><span>Analista</span><span class="vh">, respuesta a «¿Quién lidera esa demanda?»</span><time datetime="2026-11-17T10:43">10:43</time></p>
+<div class="prose"><p>La presenta la junta directiva de la Asociación de Pescadores Caleta Verdín <a class="cite" href="#f59-t2-s1" aria-label="Fuente 1: Asociación de Pescadores Caleta Verdín">[1]</a>. El Frente de Defensa de Pampa Saltera la respaldó en un pronunciamiento del 13 nov <a class="cite" href="#f59-t2-s2" aria-label="Fuente 2: Pronunciamiento del Frente de Defensa de Pampa Saltera">[2]</a>.</p></div>
+<h3 class="src-h" id="f59-t2-fh">Fuentes</h3>
+<ol class="srcs" aria-labelledby="f59-t2-fh"><li id="f59-t2-s1" value="1"><span class="sn" aria-hidden="true">1</span><span><a href="#">Asociación de Pescadores Caleta Verdín</a> <small>actores · AC-0112</small></span></li><li id="f59-t2-s2" value="2"><span class="sn" aria-hidden="true">2</span><span><a href="#">Pronunciamiento del Frente de Defensa de Pampa Saltera</a> <small>eventos · EV-0421</small></span></li></ol>
+
+<div class="acts" role="group" aria-label="Acciones de la respuesta"><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 9h11v11H9zM5 15H4V4h11v1"/></svg><span>Copiar</span></button><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg><span>Volver a preguntar</span></button></div>
+</article><article class="turn user" aria-label="Tu pregunta"><p class="bubble">¿Qué compromisos tenemos abiertos con ellos?</p></article><article class="turn ai" aria-labelledby="f59-t3-h">
+<p class="who" id="f59-t3-h"><span class="ia">IA</span><span>Analista</span><span class="vh">, respuesta a «¿Qué compromisos tenemos abiertos con ellos?»</span><time datetime="2026-11-17T10:44">10:44</time></p>
+<div class="prose"><p>Hay <strong>dos compromisos abiertos</strong> con la Asociación <a class="cite" href="#f59-t3-s1" aria-label="Fuente 1: Asociación de Pescadores Caleta Verdín">[1]</a>:</p><ol><li>Monitoreo participativo de la calidad del agua: vence el 30 nov <a class="cite" href="#f59-t3-s2" aria-label="Fuente 2: Monitoreo participativo de la calidad del agua">[2]</a>.</li><li>Apoyo a la feria de pesca artesanal: no tiene fecha de cierre registrada <a class="cite" href="#f59-t3-s3" aria-label="Fuente 3: Apoyo a la feria de pesca artesanal">[3]</a>.</li></ol><p>El monitoreo lleva un 40 % de avance según su último seguimiento, del 10 nov <a class="cite" href="#f59-t3-s2" aria-label="Fuente 2: Monitoreo participativo de la calidad del agua">[2]</a>.</p></div>
+<h3 class="src-h" id="f59-t3-fh">Fuentes</h3>
+<ol class="srcs" aria-labelledby="f59-t3-fh"><li id="f59-t3-s1" value="1"><span class="sn" aria-hidden="true">1</span><span><a href="#">Asociación de Pescadores Caleta Verdín</a> <small>actores · AC-0112</small></span></li><li id="f59-t3-s2" value="2"><span class="sn" aria-hidden="true">2</span><span><a href="#">Monitoreo participativo de la calidad del agua</a> <small>compromisos · CP-0219</small></span></li><li id="f59-t3-s3" value="3"><span class="sn" aria-hidden="true">3</span><span><a href="#">Apoyo a la feria de pesca artesanal</a> <small>compromisos · CP-0227</small></span></li></ol>
+<ul class="blocks" aria-label="Detalles de la respuesta"><li><article class="rcard" aria-labelledby="f59-t3-b"><p class="rk"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8zM14 3v5h5M9 13h6M9 17h6"/></svg>Compromiso</p><h3 id="f59-t3-b"><a href="#">Monitoreo participativo de la calidad del agua</a></h3><p class="where">compromisos · CP-0219</p></article></li></ul>
+<div class="acts" role="group" aria-label="Acciones de la respuesta"><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 9h11v11H9zM5 15H4V4h11v1"/></svg><span>Copiar</span></button><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg><span>Volver a preguntar</span></button></div>
+</article></div></div><div class="dock"><button type="button" class="tobottom" data-to-bottom hidden><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>Ir al final</button><div class="measure"><form class="composer" aria-label="Preguntar al analista" onsubmit="return false">
+<label class="vh" for="c64">Pregunta</label>
+<textarea id="c64" rows="1" maxlength="500" placeholder="Pregunta por eventos, actores…"></textarea>
+<div class="c-row"><fieldset class="seg"><legend class="vh">Modo</legend><label><input type="radio" name="c64-m" value="buscar"><span>Buscar</span></label><label><input type="radio" name="c64-m" value="preguntar" checked><span>Preguntar</span></label></fieldset><span class="push"></span><span class="counter" id="c64-n" hidden>0 / 500</span><button type="submit" class="send" aria-label="Enviar pregunta" aria-disabled="true"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></div>
+
+</form>
+<p class="disc">Las respuestas citan registros del proyecto; revísalas antes de decidir.</p></div></div></div></div></div>
+<div class="phone-w"><p class="cap"><b>Pendiente</b><span>oscuro · «Detener» en el lugar de Enviar</span></p><div class="frame phone" data-theme="dark" role="region" aria-label="Teléfono oscuro, pendiente"><div class="pa"><header class="pbar"><button type="button" class="iconbtn" aria-label="Abrir menú" aria-haspopup="dialog"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button><p class="t" title="Compromisos con la Asociación de Pescadores">Compromisos con la Asociación de Pescadores</p><button type="button" class="iconbtn" aria-label="Nueva pregunta" title="Ctrl+Mayús+O"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg></button></header><div class="fold"><div class="measure"><div class="fold-in"><button type="button" class="fold-b main-f" data-fold aria-expanded="false" aria-controls="fold66"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><b>Necesita tu atención</b><span class="badge" style="margin-left:0">3</span><span class="first">Bloqueo en el acceso a Caleta Verdín y 2 más</span><svg class="ico chev" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button><button type="button" class="fold-b week-f" data-fold aria-expanded="false" aria-controls="fold67">Esta semana <svg class="ico chev" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button></div><div class="fold-panel" id="fold66" hidden><section class="att" aria-labelledby="att68"><h2 class="vh" id="att68">Necesita tu atención</h2>
+<ul class="arows"><li><a class="arow c" href="#"><div><b>Bloqueo anunciado en el acceso a Caleta Verdín</b><span class="meta"><span class="lv r">Rojo</span><span>Alerta activa · 15 nov · Caleta Verdín</span></span></div><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></a></li><li><a class="arow c" href="#"><div><b>Reclamo por polvo en la vía a Pampa Saltera</b><span class="meta"><span class="lv o">Naranja</span><span>Alerta activa · 14 nov · Pampa Saltera</span></span></div><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></a></li><li><a class="arow c" href="#"><div><b>2 alertas digitales esperan verificación</b><span class="meta"><span class="lv n">Bandeja</span><span>Bandeja › Pendientes</span></span></div><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></a></li></ul></section></div><div class="fold-panel" id="fold67" hidden><section class="week" aria-labelledby="wk69"><div class="sh"><h2 id="wk69">Esta semana</h2><span class="n">9–15 nov</span><a href="#">Ver en Registros</a></div><ul class="tiles"><li><a class="tile" href="#"><data value="12">12</data><span>eventos</span><small>Caleta Verdín concentra 5</small></a></li><li><a class="tile" href="#"><data value="3">3</data><span>demandas nuevas</span><small>1 sin responsable asignado</small></a></li><li><a class="tile" href="#"><data value="2">2</data><span>compromisos vencen este mes</span><small>CP-0219 el 30 nov</small></a></li></ul></section></div></div></div><div class="scroll thread" role="log" aria-label="Conversación con el analista" aria-busy="true" tabindex="0" data-at="end"><div class="measure turns"><article class="turn user" aria-label="Tu pregunta"><p class="bubble">¿Qué pasó esta semana en Caleta Verdín?</p></article><article class="turn ai" aria-labelledby="f65-t1-h">
+<p class="who" id="f65-t1-h"><span class="ia">IA</span><span>Analista</span><span class="vh">, respuesta a «¿Qué pasó esta semana en Caleta Verdín?»</span><time datetime="2026-11-17T10:41">10:41</time></p>
+<div class="prose"><p>Se registraron un evento y una demanda nueva. El 12 nov la Asociación de Pescadores Caleta Verdín pidió una mesa de diálogo por la descarga de agua de la planta <a class="cite" href="#f65-t1-s1" aria-label="Fuente 1: Pedido de mesa de diálogo por la descarga de la planta">[1]</a>. El 14 nov hubo una reunión informativa en el local comunal, con unas 40 personas <a class="cite" href="#f65-t1-s2" aria-label="Fuente 2: Reunión informativa en el local comunal de Caleta Verdín">[2]</a>.</p></div>
+<h3 class="src-h" id="f65-t1-fh">Fuentes</h3>
+<ol class="srcs" aria-labelledby="f65-t1-fh"><li id="f65-t1-s1" value="1"><span class="sn" aria-hidden="true">1</span><span><a href="#">Pedido de mesa de diálogo por la descarga de la planta</a> <small>demandas · DM-0071</small></span></li><li id="f65-t1-s2" value="2"><span class="sn" aria-hidden="true">2</span><span><a href="#">Reunión informativa en el local comunal de Caleta Verdín</a> <small>eventos · EV-0418</small></span></li></ol>
+
+<div class="acts" role="group" aria-label="Acciones de la respuesta"><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 9h11v11H9zM5 15H4V4h11v1"/></svg><span>Copiar</span></button><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg><span>Volver a preguntar</span></button></div>
+</article><article class="turn user" aria-label="Tu pregunta"><p class="bubble">¿Quién lidera esa demanda?</p></article><article class="turn ai" aria-labelledby="f65-t2-h">
+<p class="who" id="f65-t2-h"><span class="ia">IA</span><span>Analista</span><span class="vh">, respuesta a «¿Quién lidera esa demanda?»</span><time datetime="2026-11-17T10:43">10:43</time></p>
+<div class="prose"><p>La presenta la junta directiva de la Asociación de Pescadores Caleta Verdín <a class="cite" href="#f65-t2-s1" aria-label="Fuente 1: Asociación de Pescadores Caleta Verdín">[1]</a>. El Frente de Defensa de Pampa Saltera la respaldó en un pronunciamiento del 13 nov <a class="cite" href="#f65-t2-s2" aria-label="Fuente 2: Pronunciamiento del Frente de Defensa de Pampa Saltera">[2]</a>.</p></div>
+<h3 class="src-h" id="f65-t2-fh">Fuentes</h3>
+<ol class="srcs" aria-labelledby="f65-t2-fh"><li id="f65-t2-s1" value="1"><span class="sn" aria-hidden="true">1</span><span><a href="#">Asociación de Pescadores Caleta Verdín</a> <small>actores · AC-0112</small></span></li><li id="f65-t2-s2" value="2"><span class="sn" aria-hidden="true">2</span><span><a href="#">Pronunciamiento del Frente de Defensa de Pampa Saltera</a> <small>eventos · EV-0421</small></span></li></ol>
+
+<div class="acts" role="group" aria-label="Acciones de la respuesta"><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 9h11v11H9zM5 15H4V4h11v1"/></svg><span>Copiar</span></button><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg><span>Volver a preguntar</span></button></div>
+</article><article class="turn user" aria-label="Tu pregunta"><p class="bubble">¿Qué compromisos tenemos abiertos con ellos?</p></article><article class="turn ai" aria-labelledby="f65-t3-h">
+<p class="who" id="f65-t3-h"><span class="ia">IA</span><span>Analista</span><span class="vh">, respuesta a «¿Qué compromisos tenemos abiertos con ellos?»</span><time datetime="2026-11-17T10:44">10:44</time></p>
+<div class="prose"><p>Hay <strong>dos compromisos abiertos</strong> con la Asociación <a class="cite" href="#f65-t3-s1" aria-label="Fuente 1: Asociación de Pescadores Caleta Verdín">[1]</a>:</p><ol><li>Monitoreo participativo de la calidad del agua: vence el 30 nov <a class="cite" href="#f65-t3-s2" aria-label="Fuente 2: Monitoreo participativo de la calidad del agua">[2]</a>.</li><li>Apoyo a la feria de pesca artesanal: no tiene fecha de cierre registrada <a class="cite" href="#f65-t3-s3" aria-label="Fuente 3: Apoyo a la feria de pesca artesanal">[3]</a>.</li></ol><p>El monitoreo lleva un 40 % de avance según su último seguimiento, del 10 nov <a class="cite" href="#f65-t3-s2" aria-label="Fuente 2: Monitoreo participativo de la calidad del agua">[2]</a>.</p></div>
+<h3 class="src-h" id="f65-t3-fh">Fuentes</h3>
+<ol class="srcs" aria-labelledby="f65-t3-fh"><li id="f65-t3-s1" value="1"><span class="sn" aria-hidden="true">1</span><span><a href="#">Asociación de Pescadores Caleta Verdín</a> <small>actores · AC-0112</small></span></li><li id="f65-t3-s2" value="2"><span class="sn" aria-hidden="true">2</span><span><a href="#">Monitoreo participativo de la calidad del agua</a> <small>compromisos · CP-0219</small></span></li><li id="f65-t3-s3" value="3"><span class="sn" aria-hidden="true">3</span><span><a href="#">Apoyo a la feria de pesca artesanal</a> <small>compromisos · CP-0227</small></span></li></ol>
+<ul class="blocks" aria-label="Detalles de la respuesta"><li><article class="rcard" aria-labelledby="f65-t3-b"><p class="rk"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8zM14 3v5h5M9 13h6M9 17h6"/></svg>Compromiso</p><h3 id="f65-t3-b"><a href="#">Monitoreo participativo de la calidad del agua</a></h3><p class="where">compromisos · CP-0219</p></article></li></ul>
+<div class="acts" role="group" aria-label="Acciones de la respuesta"><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 9h11v11H9zM5 15H4V4h11v1"/></svg><span>Copiar</span></button><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg><span>Volver a preguntar</span></button></div>
+</article><article class="turn user" aria-label="Tu pregunta"><p class="bubble">¿Hubo incidentes en el acceso a Ichumayo este mes?</p></article><article class="turn ai" aria-label="Respuesta en preparación"><p class="who"><span class="ia">IA</span><span>Analista</span></p><p class="step"><span class="pulse" aria-hidden="true"></span>Buscando registros…</p><p class="step-sub">Puedes detenerla con Esc o con «Detener», en el lugar de Enviar.</p></article></div></div><div class="dock"><button type="button" class="tobottom" data-to-bottom hidden><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>Ir al final</button><div class="measure"><form class="composer" aria-label="Preguntar al analista" onsubmit="return false">
+<label class="vh" for="c70">Pregunta</label>
+<textarea id="c70" rows="1" maxlength="500" placeholder="Pregunta por eventos, actores…"></textarea>
+<div class="c-row"><fieldset class="seg"><legend class="vh">Modo</legend><label><input type="radio" name="c70-m" value="buscar"><span>Buscar</span></label><label><input type="radio" name="c70-m" value="preguntar" checked><span>Preguntar</span></label></fieldset><span class="push"></span><span class="counter" id="c70-n" hidden>0 / 500</span><button type="button" class="send stop" aria-label="Detener respuesta" title="Detener respuesta · Esc"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 7h10v10H7z"/></svg></button></div>
+
+</form>
+<p class="disc">Las respuestas citan registros del proyecto; revísalas antes de decidir.</p></div></div></div></div></div>
+<div class="phone-w"><p class="cap"><b>C · Error 503</b><span>claro · «Buscar en registros» como salida</span></p><div class="frame phone" data-theme="light" role="region" aria-label="Teléfono claro, error 503"><div class="pa"><header class="pbar"><button type="button" class="iconbtn" aria-label="Abrir menú" aria-haspopup="dialog"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button><p class="t" title="¿Qué alertas rojas siguen abiertas?">¿Qué alertas rojas siguen abiertas?</p><button type="button" class="iconbtn" aria-label="Nueva pregunta" title="Ctrl+Mayús+O"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg></button></header><div class="fold"><div class="measure"><div class="fold-in"><button type="button" class="fold-b main-f" data-fold aria-expanded="false" aria-controls="fold71"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><b>Necesita tu atención</b><span class="badge" style="margin-left:0">3</span><span class="first">Bloqueo en el acceso a Caleta Verdín y 2 más</span><svg class="ico chev" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button><button type="button" class="fold-b week-f" data-fold aria-expanded="false" aria-controls="fold72">Esta semana <svg class="ico chev" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button></div><div class="fold-panel" id="fold71" hidden><section class="att" aria-labelledby="att73"><h2 class="vh" id="att73">Necesita tu atención</h2>
+<ul class="arows"><li><a class="arow c" href="#"><div><b>Bloqueo anunciado en el acceso a Caleta Verdín</b><span class="meta"><span class="lv r">Rojo</span><span>Alerta activa · 15 nov · Caleta Verdín</span></span></div><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></a></li><li><a class="arow c" href="#"><div><b>Reclamo por polvo en la vía a Pampa Saltera</b><span class="meta"><span class="lv o">Naranja</span><span>Alerta activa · 14 nov · Pampa Saltera</span></span></div><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></a></li><li><a class="arow c" href="#"><div><b>2 alertas digitales esperan verificación</b><span class="meta"><span class="lv n">Bandeja</span><span>Bandeja › Pendientes</span></span></div><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></a></li></ul></section></div><div class="fold-panel" id="fold72" hidden><section class="week" aria-labelledby="wk74"><div class="sh"><h2 id="wk74">Esta semana</h2><span class="n">9–15 nov</span><a href="#">Ver en Registros</a></div><ul class="tiles"><li><a class="tile" href="#"><data value="12">12</data><span>eventos</span><small>Caleta Verdín concentra 5</small></a></li><li><a class="tile" href="#"><data value="3">3</data><span>demandas nuevas</span><small>1 sin responsable asignado</small></a></li><li><a class="tile" href="#"><data value="2">2</data><span>compromisos vencen este mes</span><small>CP-0219 el 30 nov</small></a></li></ul></section></div></div></div><div class="scroll thread" role="log" aria-label="Conversación con el analista" aria-busy="false" tabindex="0" data-at="top"><div class="measure turns"><article class="turn user" aria-label="Tu pregunta"><p class="bubble">¿Qué alertas rojas siguen abiertas?</p></article><article class="turn ai" aria-label="El analista no respondió"><p class="who"><span class="ia">IA</span><span>Analista</span></p>
+<div class="alert err"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3 2 20h20zM12 10v4M12 17.5h.01"/></svg><div><p>El analista no respondió: el servicio de IA no está disponible. Prueba de nuevo en unos minutos o avisa a quien administra SIPGES.</p><p class="alert-sub">Error 503 · tu pregunta sigue en el compositor; nada se guardó ni se envió a Bandeja.</p><div class="alert-acts"><button type="button" class="btn sec s"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16M21 21l-4.3-4.3"/></svg>Buscar en registros</button><button type="button" class="btn gh s"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>Volver a preguntar</button></div></div></div>
+</article></div></div><div class="dock"><div class="measure"><form class="composer" aria-label="Preguntar al analista" onsubmit="return false">
+<label class="vh" for="c75">Pregunta</label>
+<textarea id="c75" rows="1" maxlength="500" placeholder="Pregunta por eventos, actores…">¿Qué alertas rojas siguen abiertas?</textarea>
+<div class="c-row"><fieldset class="seg"><legend class="vh">Modo</legend><label><input type="radio" name="c75-m" value="buscar"><span>Buscar</span></label><label><input type="radio" name="c75-m" value="preguntar" checked><span>Preguntar</span></label></fieldset><span class="push"></span><span class="counter" id="c75-n" hidden>35 / 500</span><button type="submit" class="send" aria-label="Enviar pregunta"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></div>
+
+</form>
+<p class="disc">Las respuestas citan registros del proyecto; revísalas antes de decidir.</p></div></div></div></div></div>
+<div class="phone-w"><p class="cap"><b>D · IA externa desactivada</b><span>oscuro · solo Buscar, con el motivo</span></p><div class="frame phone" data-theme="dark" role="region" aria-label="Teléfono oscuro, IA desactivada"><div class="pa"><header class="pbar"><button type="button" class="iconbtn" aria-label="Abrir menú" aria-haspopup="dialog"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button><p class="t" title="Inicio">Inicio</p><button type="button" class="iconbtn" aria-label="Nueva pregunta" title="Ctrl+Mayús+O"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg></button></header><div class="scroll"><div class="measure lead-col"><div class="hello"><div><p class="date">Martes 17 de noviembre · Valle Quillay</p><h1 class="greet">Hola, Renata</h1></div><div class="p-pills"><span class="pill neu"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/></svg>IA externa desactivada</span><span class="pill warn"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3 2 20h20zM12 10v4M12 17.5h.01"/></svg>Metodología pendiente de validación</span></div></div>
+<section class="att" aria-labelledby="att76"><div class="sh"><h2 id="att76">Necesita tu atención</h2><span class="n">3</span><a href="#">Abrir Bandeja</a></div>
+<ul class="arows"><li><a class="arow c" href="#"><div><b>Bloqueo anunciado en el acceso a Caleta Verdín</b><span class="meta"><span class="lv r">Rojo</span><span>Alerta activa · 15 nov · Caleta Verdín</span></span></div><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></a></li><li><a class="arow c" href="#"><div><b>Reclamo por polvo en la vía a Pampa Saltera</b><span class="meta"><span class="lv o">Naranja</span><span>Alerta activa · 14 nov · Pampa Saltera</span></span></div><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></a></li><li><a class="arow c" href="#"><div><b>2 alertas digitales esperan verificación</b><span class="meta"><span class="lv n">Bandeja</span><span>Bandeja › Pendientes</span></span></div><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></a></li></ul></section>
+<section class="ask-block" aria-label="Buscar en registros"><form class="composer" aria-label="Preguntar al analista" onsubmit="return false">
+<label class="vh" for="c77">Búsqueda</label>
+<textarea id="c77" rows="1" maxlength="500" placeholder="Palabras de eventos, actores…" aria-describedby="c77-r"></textarea>
+<div class="c-row"><fieldset class="seg"><legend class="vh">Modo</legend><label><input type="radio" name="c77-m" value="buscar" checked><span>Buscar</span></label><label><input type="radio" name="c77-m" value="preguntar" disabled aria-describedby="c77-r"><span>Preguntar</span></label></fieldset><span class="push"></span><span class="counter" id="c77-n" hidden>0 / 500</span><button type="submit" class="send" aria-label="Buscar en registros" aria-disabled="true"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16M21 21l-4.3-4.3"/></svg></button></div>
+<p class="c-reason" id="c77-r"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3 2 20h20zM12 10v4M12 17.5h.01"/></svg><span>La IA externa está desactivada en este proyecto: solo Buscar. <a href="#">Activar en Configuración → Privacidad y datos</a></span></p>
+</form>
+<p class="disc">Buscar lee los registros del proyecto en esta instalación; no envía nada fuera.</p><div class="chips" role="group" aria-label="Buscar en registros"><span class="chips-l" aria-hidden="true">Buscar</span><button type="button" class="chip"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16M21 21l-4.3-4.3"/></svg>bloqueo Caleta Verdín</button><button type="button" class="chip"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16M21 21l-4.3-4.3"/></svg>compromisos vencidos</button><button type="button" class="chip"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16M21 21l-4.3-4.3"/></svg>Asociación de Pescadores</button></div></section>
+<section class="week" aria-labelledby="wk78"><div class="sh"><h2 id="wk78">Esta semana</h2><span class="n">9–15 nov</span><a href="#">Ver en Registros</a></div><ul class="tiles"><li><a class="tile" href="#"><data value="12">12</data><span>eventos</span><small>Caleta Verdín concentra 5</small></a></li><li><a class="tile" href="#"><data value="3">3</data><span>demandas nuevas</span><small>1 sin responsable asignado</small></a></li><li><a class="tile" href="#"><data value="2">2</data><span>compromisos vencen este mes</span><small>CP-0219 el 30 nov</small></a></li></ul></section></div></div></div></div></div>
+<div class="phone-w"><p class="cap"><b>Línea plegada abierta</b><span>claro · lo urgente sigue a un toque durante la conversación</span></p><div class="frame phone" data-theme="light" role="region" aria-label="Teléfono claro, atención desplegada"><div class="pa"><header class="pbar"><button type="button" class="iconbtn" aria-label="Abrir menú" aria-haspopup="dialog"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button><p class="t" title="Compromisos con la Asociación de Pescadores">Compromisos con la Asociación de Pescadores</p><button type="button" class="iconbtn" aria-label="Nueva pregunta" title="Ctrl+Mayús+O"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg></button></header><div class="fold"><div class="measure"><div class="fold-in"><button type="button" class="fold-b main-f" data-fold aria-expanded="true" aria-controls="fold80"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><b>Necesita tu atención</b><span class="badge" style="margin-left:0">3</span><span class="first">Bloqueo en el acceso a Caleta Verdín y 2 más</span><svg class="ico chev" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button><button type="button" class="fold-b week-f" data-fold aria-expanded="false" aria-controls="fold81">Esta semana <svg class="ico chev" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button></div><div class="fold-panel" id="fold80"><section class="att" aria-labelledby="att82"><h2 class="vh" id="att82">Necesita tu atención</h2>
+<ul class="arows"><li><a class="arow c" href="#"><div><b>Bloqueo anunciado en el acceso a Caleta Verdín</b><span class="meta"><span class="lv r">Rojo</span><span>Alerta activa · 15 nov · Caleta Verdín</span></span></div><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></a></li><li><a class="arow c" href="#"><div><b>Reclamo por polvo en la vía a Pampa Saltera</b><span class="meta"><span class="lv o">Naranja</span><span>Alerta activa · 14 nov · Pampa Saltera</span></span></div><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></a></li><li><a class="arow c" href="#"><div><b>2 alertas digitales esperan verificación</b><span class="meta"><span class="lv n">Bandeja</span><span>Bandeja › Pendientes</span></span></div><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></a></li></ul></section></div><div class="fold-panel" id="fold81" hidden><section class="week" aria-labelledby="wk83"><div class="sh"><h2 id="wk83">Esta semana</h2><span class="n">9–15 nov</span><a href="#">Ver en Registros</a></div><ul class="tiles"><li><a class="tile" href="#"><data value="12">12</data><span>eventos</span><small>Caleta Verdín concentra 5</small></a></li><li><a class="tile" href="#"><data value="3">3</data><span>demandas nuevas</span><small>1 sin responsable asignado</small></a></li><li><a class="tile" href="#"><data value="2">2</data><span>compromisos vencen este mes</span><small>CP-0219 el 30 nov</small></a></li></ul></section></div></div></div><div class="scroll thread" role="log" aria-label="Conversación con el analista" aria-busy="false" tabindex="0" data-at="top"><div class="measure turns"><article class="turn user" aria-label="Tu pregunta"><p class="bubble">¿Qué pasó esta semana en Caleta Verdín?</p></article><article class="turn ai" aria-labelledby="f79-t1-h">
+<p class="who" id="f79-t1-h"><span class="ia">IA</span><span>Analista</span><span class="vh">, respuesta a «¿Qué pasó esta semana en Caleta Verdín?»</span><time datetime="2026-11-17T10:41">10:41</time></p>
+<div class="prose"><p>Se registraron un evento y una demanda nueva. El 12 nov la Asociación de Pescadores Caleta Verdín pidió una mesa de diálogo por la descarga de agua de la planta <a class="cite" href="#f79-t1-s1" aria-label="Fuente 1: Pedido de mesa de diálogo por la descarga de la planta">[1]</a>. El 14 nov hubo una reunión informativa en el local comunal, con unas 40 personas <a class="cite" href="#f79-t1-s2" aria-label="Fuente 2: Reunión informativa en el local comunal de Caleta Verdín">[2]</a>.</p></div>
+<h3 class="src-h" id="f79-t1-fh">Fuentes</h3>
+<ol class="srcs" aria-labelledby="f79-t1-fh"><li id="f79-t1-s1" value="1"><span class="sn" aria-hidden="true">1</span><span><a href="#">Pedido de mesa de diálogo por la descarga de la planta</a> <small>demandas · DM-0071</small></span></li><li id="f79-t1-s2" value="2"><span class="sn" aria-hidden="true">2</span><span><a href="#">Reunión informativa en el local comunal de Caleta Verdín</a> <small>eventos · EV-0418</small></span></li></ol>
+
+<div class="acts" role="group" aria-label="Acciones de la respuesta"><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 9h11v11H9zM5 15H4V4h11v1"/></svg><span>Copiar</span></button><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg><span>Volver a preguntar</span></button></div>
+</article><article class="turn user" aria-label="Tu pregunta"><p class="bubble">¿Quién lidera esa demanda?</p></article><article class="turn ai" aria-labelledby="f79-t2-h">
+<p class="who" id="f79-t2-h"><span class="ia">IA</span><span>Analista</span><span class="vh">, respuesta a «¿Quién lidera esa demanda?»</span><time datetime="2026-11-17T10:43">10:43</time></p>
+<div class="prose"><p>La presenta la junta directiva de la Asociación de Pescadores Caleta Verdín <a class="cite" href="#f79-t2-s1" aria-label="Fuente 1: Asociación de Pescadores Caleta Verdín">[1]</a>. El Frente de Defensa de Pampa Saltera la respaldó en un pronunciamiento del 13 nov <a class="cite" href="#f79-t2-s2" aria-label="Fuente 2: Pronunciamiento del Frente de Defensa de Pampa Saltera">[2]</a>.</p></div>
+<h3 class="src-h" id="f79-t2-fh">Fuentes</h3>
+<ol class="srcs" aria-labelledby="f79-t2-fh"><li id="f79-t2-s1" value="1"><span class="sn" aria-hidden="true">1</span><span><a href="#">Asociación de Pescadores Caleta Verdín</a> <small>actores · AC-0112</small></span></li><li id="f79-t2-s2" value="2"><span class="sn" aria-hidden="true">2</span><span><a href="#">Pronunciamiento del Frente de Defensa de Pampa Saltera</a> <small>eventos · EV-0421</small></span></li></ol>
+
+<div class="acts" role="group" aria-label="Acciones de la respuesta"><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 9h11v11H9zM5 15H4V4h11v1"/></svg><span>Copiar</span></button><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg><span>Volver a preguntar</span></button></div>
+</article><article class="turn user" aria-label="Tu pregunta"><p class="bubble">¿Qué compromisos tenemos abiertos con ellos?</p></article><article class="turn ai" aria-labelledby="f79-t3-h">
+<p class="who" id="f79-t3-h"><span class="ia">IA</span><span>Analista</span><span class="vh">, respuesta a «¿Qué compromisos tenemos abiertos con ellos?»</span><time datetime="2026-11-17T10:44">10:44</time></p>
+<div class="prose"><p>Hay <strong>dos compromisos abiertos</strong> con la Asociación <a class="cite" href="#f79-t3-s1" aria-label="Fuente 1: Asociación de Pescadores Caleta Verdín">[1]</a>:</p><ol><li>Monitoreo participativo de la calidad del agua: vence el 30 nov <a class="cite" href="#f79-t3-s2" aria-label="Fuente 2: Monitoreo participativo de la calidad del agua">[2]</a>.</li><li>Apoyo a la feria de pesca artesanal: no tiene fecha de cierre registrada <a class="cite" href="#f79-t3-s3" aria-label="Fuente 3: Apoyo a la feria de pesca artesanal">[3]</a>.</li></ol><p>El monitoreo lleva un 40 % de avance según su último seguimiento, del 10 nov <a class="cite" href="#f79-t3-s2" aria-label="Fuente 2: Monitoreo participativo de la calidad del agua">[2]</a>.</p></div>
+<h3 class="src-h" id="f79-t3-fh">Fuentes</h3>
+<ol class="srcs" aria-labelledby="f79-t3-fh"><li id="f79-t3-s1" value="1"><span class="sn" aria-hidden="true">1</span><span><a href="#">Asociación de Pescadores Caleta Verdín</a> <small>actores · AC-0112</small></span></li><li id="f79-t3-s2" value="2"><span class="sn" aria-hidden="true">2</span><span><a href="#">Monitoreo participativo de la calidad del agua</a> <small>compromisos · CP-0219</small></span></li><li id="f79-t3-s3" value="3"><span class="sn" aria-hidden="true">3</span><span><a href="#">Apoyo a la feria de pesca artesanal</a> <small>compromisos · CP-0227</small></span></li></ol>
+<ul class="blocks" aria-label="Detalles de la respuesta"><li><article class="rcard" aria-labelledby="f79-t3-b"><p class="rk"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8zM14 3v5h5M9 13h6M9 17h6"/></svg>Compromiso</p><h3 id="f79-t3-b"><a href="#">Monitoreo participativo de la calidad del agua</a></h3><p class="where">compromisos · CP-0219</p></article></li></ul>
+<div class="acts" role="group" aria-label="Acciones de la respuesta"><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 9h11v11H9zM5 15H4V4h11v1"/></svg><span>Copiar</span></button><button type="button" class="act"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg><span>Volver a preguntar</span></button></div>
+</article></div></div><div class="dock"><div class="measure"><form class="composer" aria-label="Preguntar al analista" onsubmit="return false">
+<label class="vh" for="c84">Pregunta</label>
+<textarea id="c84" rows="1" maxlength="500" placeholder="Pregunta por eventos, actores…"></textarea>
+<div class="c-row"><fieldset class="seg"><legend class="vh">Modo</legend><label><input type="radio" name="c84-m" value="buscar"><span>Buscar</span></label><label><input type="radio" name="c84-m" value="preguntar" checked><span>Preguntar</span></label></fieldset><span class="push"></span><span class="counter" id="c84-n" hidden>0 / 500</span><button type="submit" class="send" aria-label="Enviar pregunta" aria-disabled="true"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></div>
+
+</form>
+<p class="disc">Las respuestas citan registros del proyecto; revísalas antes de decidir.</p></div></div></div></div></div></div>
+</main>
+<script>
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll('[data-toggle-side]').forEach((b) => b.addEventListener('click', () => {
+    const app = b.closest('.app'); const hide = app.dataset.side !== 'hidden';
+    app.dataset.side = hide ? 'hidden' : 'shown';
+    app.querySelectorAll('[data-toggle-side]').forEach((x) => x.setAttribute('aria-expanded', String(!hide)));
+    const next = app.querySelector(hide ? '.show-side' : '.side [data-toggle-side]'); if (next) next.focus();
+  }));
+  document.querySelectorAll('.thread').forEach((t) => {
+    const btn = t.parentElement.querySelector('[data-to-bottom]');
+    const at = t.dataset.at;
+    if (at === 'end') t.scrollTop = t.scrollHeight;
+    if (at && at.startsWith('px:')) t.scrollTop = Number(at.slice(3));
+    const sync = () => { if (btn) btn.hidden = t.scrollHeight - t.scrollTop - t.clientHeight < 8; };
+    t.addEventListener('scroll', sync, { passive: true }); sync();
+    if (btn) btn.addEventListener('click', () => t.scrollTo({ top: t.scrollHeight, behavior: reduce ? 'auto' : 'smooth' }));
+  });
+  document.querySelectorAll('[data-fold]').forEach((b) => b.addEventListener('click', () => {
+    const el = document.getElementById(b.getAttribute('aria-controls'));
+    const open = b.getAttribute('aria-expanded') !== 'true';
+    b.setAttribute('aria-expanded', String(open)); el.hidden = !open;
+  }));
+  document.querySelectorAll('.composer textarea').forEach((ta) => {
+    const c = ta.closest('.composer').querySelector('.counter');
+    ta.addEventListener('input', () => { const n = ta.value.length; c.hidden = n < 450; c.textContent = n + ' / 500'; c.classList.toggle('near', n >= 490); });
+  });
+})();
+</script>
+</body>
+</html>

@@ -31,11 +31,11 @@ the AI is off or down. This document continues closure-roadmap T31 (direction 01
 
 Phase A — design and foundations (web only):
 
-- T1 [ ] — S1, S2: two or three directions on the gentle-design canvas for the chat-first Inicio, at 1440 px and 390 px,
+- T1 [x] — S1, S2: two or three directions on the gentle-design canvas for the chat-first Inicio, at 1440 px and 390 px,
   in light and dark. Each shows the empty state, a three-turn thread with citations and a record block, an error turn
   (503) and AI off. Open question for these artboards: closure-roadmap L11 put the attention list first and the
   composer below, while S2 puts the composer at the centre. Each direction must show where «Necesita tu atención»
-  lives. Route: gentle-design, owner picks. Commit: pending.
+  lives. Route: gentle-design, owner picks. Done: `design/chat-first/` (three directions), decision in L6.
 - T2 [ ] — S1, S3: chat tokens in `apps/web/src/shared/styles/tokens.css` and `design/system.md`:
   - `--measure-chat` (about 46rem) as one shared reading width, replacing Inicio's local `48rem`;
   - message rhythm (`--space-turn`), prose size and line height for answers (`--text-answer`, 1rem/1.6);
@@ -175,3 +175,26 @@ T18(b) → T16 → T17. Phases A, B and D change no API and no stored data.
     - the project is a native select above the search;
     - the sidebar cannot be hidden.
   - Signing in first showed «Seleccione un proyecto» (two projects), as expected.
+- L5 — 2026-11-17, owner (verbatim): «yes te autorizo todo and continue has lo que haria gentleman + buens practicas de
+  ingeneria de softwart e informacion actualizada de la web». Web research the same day (search results stored
+  under `mwl1hazms40jpi`) agreed with T5–T10 and added these rules:
+  - The thread is `role="log"`. A pending answer carries `aria-busy`. A status region announces the start and the end
+    once each, never per update (W3C ARIA23, MDN log role, MUI X Chat accessibility, accessibility.build 2026-08).
+  - «Detener» sits where «Enviar» was and keeps what was produced. The view does not follow the bottom while the
+    person reads earlier text (Apple HIG Generative AI via uxpickle checklist, NN/g).
+  - Progress text names the work being done («Buscando registros…»), never «Procesando…» (Apple HIG).
+  - Starter chips are based on the task and send in one click (designpixil 2026-03, aiuxplayground).
+  - The first visible change comes in under 400 ms: shell, progress and stop button before any content (ui-craft).
+- L6 — 2026-11-17, T1 decision, taken by the parent under the owner's delegation (L5): build **02 «Atención primero»**
+  with the sidebar of **01** (T12–T13: «Nueva pregunta» first, «Buscar Ctrl K», «Conversaciones», hideable). Reasons:
+  - In social-conflict monitoring, an urgent item must never fall to a counter. 02 keeps «Necesita tu atención»
+    visible in every state, as closure-roadmap L11 requires; 01 hides it behind a popover during a thread.
+  - It is the smallest change from today's Inicio (L4) and the cheapest to build (about 10 slices against 11 and 12).
+  - T5 already specifies the fold.
+  - 03 «Panel lateral» narrows answers to about 55 characters and adds shell state across routes; it stays a later
+    option for asking from other destinations.
+  The owner can overturn this on the canvas before T4. Artboards were checked by the worker: contrast pairs all pass
+  in both themes, no overflow at 390 px, targets ≥ 24 px (44 px on phones), only tokens. Proposed tokens for T2:
+  `--measure-chat` 46rem, `--space-turn`, `--text-answer`, `--leading-answer` 1.6, `--color-bubble` mapped to
+  `--color-fill`, and five icons (copy, retry, stop, sidebar, arrowDown). The error turn drops `role="alert"` so the
+  log announces it once.
