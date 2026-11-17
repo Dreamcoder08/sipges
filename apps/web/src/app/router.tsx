@@ -24,7 +24,7 @@ import { ProjectSettingsProvider } from '../shared/lib/project-settings.tsx';
 import { projectSettingsQuery } from '../shared/api/project-settings.ts';
 import { Button } from '../shared/ui/Button.tsx';
 import { ChipRow } from '../shared/ui/ChipRow.tsx';
-import { DashboardPage, InicioPage } from '../features/dashboard/index.ts';
+import { AnalystThreadProvider, DashboardPage, InicioPage } from '../features/dashboard/index.ts';
 import { DecisionInbox } from '../features/bandeja/index.ts';
 import {
   GoogleSignInError,
@@ -335,27 +335,30 @@ const appRoute = createRoute({
     return (
       <ProjectSettingsProvider value={settings}>
         <NavigateProvider value={(href) => void router.navigate({ href })}>
-          <AppShell
-            {...(missing ? { title: MISSING_PAGE_TITLE } : {})}
-            projectLabel={projectLabel}
-            projectKey={scope.scope}
-            search={<SearchPalette scope={scope.scope} commands={commands} />}
-            unread={unread}
-            live={<LiveUpdates scope={scope.scope} />}
-            projectSwitcher={
-              <ProjectSwitcher
-                current={scope}
-                onSwitched={async () => {
-                  await queryClient.invalidateQueries();
-                  await router.invalidate();
-                }}
-              />
-            }
-          >
-            <Suspense fallback={<p role="status">Cargando sección…</p>}>
-              <Outlet />
-            </Suspense>
-          </AppShell>
+          {/* Inicio's conversation, shared with the sidebar's «Conversaciones» (chat-first-ui T19). */}
+          <AnalystThreadProvider scope={scope.scope}>
+            <AppShell
+              {...(missing ? { title: MISSING_PAGE_TITLE } : {})}
+              projectLabel={projectLabel}
+              projectKey={scope.scope}
+              search={<SearchPalette scope={scope.scope} commands={commands} />}
+              unread={unread}
+              live={<LiveUpdates scope={scope.scope} />}
+              projectSwitcher={
+                <ProjectSwitcher
+                  current={scope}
+                  onSwitched={async () => {
+                    await queryClient.invalidateQueries();
+                    await router.invalidate();
+                  }}
+                />
+              }
+            >
+              <Suspense fallback={<p role="status">Cargando sección…</p>}>
+                <Outlet />
+              </Suspense>
+            </AppShell>
+          </AnalystThreadProvider>
         </NavigateProvider>
       </ProjectSettingsProvider>
     );
@@ -385,13 +388,14 @@ const DashboardScreen = (context: FeatureContext) => (
   />
 );
 
-const InicioScreen = (context: FeatureContext) => (
+const InicioScreen = ({ tabs, ...context }: FeatureContext & { tabs?: ReactNode }) => (
   <InicioPage
     scope={context.scope}
     projectId={context.projectId}
     projectLabel={context.projectLabel}
     fullName={context.fullName}
     onAsk={openSearch}
+    tabs={tabs}
   />
 );
 
@@ -656,21 +660,27 @@ const hubRoute = (hub: Destination) => {
           />
         );
       const tab = hub.tabs.find((item) => item.value === asked) ?? hub.tabs[0];
-      const Screen = tab.value === 'inicio' ? InicioScreen : screenFor(tab.screen);
+      const tabs = (
+        <ChipRow label={hub.label}>
+          {hub.tabs.map((item) => (
+            <Button
+              key={item.value}
+              variant={item.value === tab.value ? 'primary' : 'secondary'}
+              aria-pressed={item.value === tab.value}
+              onClick={() => void navigate({ href: hubHref(hub, item.value) })}
+            >
+              {item.label}
+            </Button>
+          ))}
+        </ChipRow>
+      );
+      // Inicio puts the tabs in its own top bar, beside its attention button (chat-first-ui T19).
+      if (tab.value === 'inicio')
+        return <InicioScreen key={`${context.scope}/inicio`} {...context} tabs={tabs} />;
+      const Screen = screenFor(tab.screen);
       return (
         <>
-          <ChipRow label={hub.label}>
-            {hub.tabs.map((item) => (
-              <Button
-                key={item.value}
-                variant={item.value === tab.value ? 'primary' : 'secondary'}
-                aria-pressed={item.value === tab.value}
-                onClick={() => void navigate({ href: hubHref(hub, item.value) })}
-              >
-                {item.label}
-              </Button>
-            ))}
-          </ChipRow>
+          {tabs}
           {hub.path === '/bandeja' && tab.value === 'pendientes' ? (
             <DecisionInbox
               key={`${context.scope}/${tab.value}`}

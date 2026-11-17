@@ -6,6 +6,8 @@
 }
 
 .user {
+  /* Brought into view from the sidebar's «Conversaciones»: clear of the sticky top bar. */
+  scroll-margin-top: calc(var(--topbar-height, 0px) + var(--space-4));
   display: flex;
   justify-content: flex-end;
 }

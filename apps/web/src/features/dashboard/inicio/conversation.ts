@@ -19,11 +19,12 @@ export const ANNOUNCE = {
 const NO_TURNS: readonly Turn[] = [];
 
 /**
- * Inicio's conversation (odd/tasks/chat-first-ui.md T5): turns kept in this component's memory
- * only, never in browser storage (T11 decides what is saved), and only for the project they were
- * asked in. A stopped or replaced request is let go: its late result is dropped.
+ * Inicio's conversation (odd/tasks/chat-first-ui.md T5): turns kept in memory only, never in
+ * browser storage (T11 decides what is saved), and only for the project they were asked in. A
+ * stopped or replaced request is let go: its late result is dropped. The shell holds one
+ * (`thread-context.tsx`, T19), so Inicio and the sidebar's «Conversaciones» share it.
  */
-export const useAnalystThread = (scope: string) => {
+export const useThreadState = (scope: string) => {
   const [thread, setThread] = useState<{ scope: string; turns: readonly Turn[] }>({
     scope,
     turns: NO_TURNS,
@@ -81,3 +82,5 @@ export const useAnalystThread = (scope: string) => {
 
   return { turns, pending: turns.at(-1)?.state === 'pending', announcement, ask, stop, clear };
 };
+
+export type ThreadState = ReturnType<typeof useThreadState>;

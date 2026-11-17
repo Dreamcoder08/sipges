@@ -6,6 +6,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { ProjectSettingsProvider } from '../../../shared/lib/project-settings.tsx';
 import { resetApi, server } from '../../../test/server.ts';
 import { InicioPage } from './InicioPage.tsx';
+import { AnalystThreadProvider } from './thread-context.tsx';
 
 /* The conversation thread, in memory for the session (odd/tasks/chat-first-ui.md T5, L5, L6). */
 
@@ -65,13 +66,16 @@ const renderInicio = (onAsk = vi.fn()) => {
           } as ProjectSettings
         }
       >
-        <InicioPage
-          scope="DEMO/PRJ-DEMO"
-          projectId="PRJ-DEMO"
-          projectLabel="Proyecto Demo"
-          fullName="Persona Demo"
-          onAsk={onAsk}
-        />
+        {/* The shell's conversation, as in the app: it owns Ctrl+Mayús+O (T19). */}
+        <AnalystThreadProvider scope="DEMO/PRJ-DEMO">
+          <InicioPage
+            scope="DEMO/PRJ-DEMO"
+            projectId="PRJ-DEMO"
+            projectLabel="Proyecto Demo"
+            fullName="Persona Demo"
+            onAsk={onAsk}
+          />
+        </AnalystThreadProvider>
       </ProjectSettingsProvider>
     </QueryClientProvider>,
   );
@@ -239,32 +243,6 @@ it('jumps to the end without smooth scrolling when the person prefers reduced mo
   atBottom(false);
   fireEvent.click(await screen.findByRole('button', { name: 'Ir al final' }));
   expect(scroll).toHaveBeenLastCalledWith(expect.objectContaining({ behavior: 'auto' }));
-});
-
-it('folds what needs attention and the week into one line once a conversation starts', async () => {
-  renderInicio();
-  await ready();
-  expect(await screen.findByRole('region', { name: ATTENTION })).toBeVisible();
-  expect(screen.queryByRole('button', { name: ATTENTION })).toBeNull();
-  await exchange('¿Qué pasó?');
-  const fold = screen.getByRole('button', { name: ATTENTION });
-  expect(fold).toHaveTextContent('Necesita tu atención 2 · Corte de vía y 1 más');
-  expect(fold).toHaveAttribute('aria-expanded', 'false');
-  expect(screen.queryByRole('region', { name: ATTENTION })).toBeNull();
-  fireEvent.click(fold);
-  expect(fold).toHaveAttribute('aria-expanded', 'true');
-  const list = screen.getByRole('region', { name: ATTENTION });
-  expect(within(list).getByText('Corte de vía')).toBeVisible();
-  // The fold line comes before the thread.
-  expect(fold.compareDocumentPosition(screen.getByRole('log', LOG))).toBe(
-    Node.DOCUMENT_POSITION_FOLLOWING,
-  );
-  const week = screen.getByRole('button', { name: 'Esta semana' });
-  expect(week).toHaveAttribute('aria-expanded', 'false');
-  expect(screen.queryByRole('region', { name: /Esta semana/ })).toBeNull();
-  fireEvent.click(week);
-  expect(week).toHaveAttribute('aria-expanded', 'true');
-  expect(screen.getByRole('region', { name: /Esta semana/ })).toBeVisible();
 });
 
 it('starts over from «Nueva conversación», back to the empty state', async () => {

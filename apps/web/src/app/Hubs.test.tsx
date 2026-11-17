@@ -5,7 +5,6 @@ import { HttpResponse, delay, http } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { installRecordsApi } from '../test/records-api.ts';
 import { resetApi, server } from '../test/server.ts';
-import { formatDay } from '../shared/lib/format.ts';
 import { App } from './App.tsx';
 import { DESTINATIONS, hubHref, titleFor } from './navigation.ts';
 
@@ -444,6 +443,7 @@ describe('Inicio hub', () => {
   };
   const SEARCH = 'Buscar en registros de Proyecto Demo';
   const attention = () => screen.findByRole('region', { name: /Necesita tu atención/ });
+  const week = () => screen.findByRole('region', { name: 'Esta semana' });
 
   it('opens on the Inicio tab with Panel and Centro gerencial next to it', async () => {
     await open();
@@ -465,17 +465,17 @@ describe('Inicio hub', () => {
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
   });
 
-  it('lists what needs attention first, each row with a direct link, and the composer below', async () => {
+  it('lists what needs attention first, each card one direct link, and the composer below', async () => {
     await open();
     const list = await attention();
-    const decisions = await within(list).findByRole('link', { name: 'Revisar en Bandeja' });
-    expect(decisions).toHaveAttribute('href', '/bandeja');
-    expect(within(list).getByText('2 alertas digitales esperan verificación')).toBeVisible();
-    // The visible word stays «Abrir alerta»; the name says which one (functional-10 T5).
-    const alert = await within(list).findByRole('link', {
-      name: 'Abrir alerta Alerta sin causa documentada',
+    // Each card is one link whose text names the item (chat-first-ui T19).
+    const decisions = await within(list).findByRole('link', {
+      name: /^2 alertas digitales esperan verificación .*Revisar en Bandeja$/,
     });
-    expect(alert).toHaveTextContent(/^Abrir alerta$/);
+    expect(decisions).toHaveAttribute('href', '/bandeja');
+    const alert = await within(list).findByRole('link', {
+      name: /^Alerta sin causa documentada .*Abrir alerta$/,
+    });
     expect(alert).toHaveAttribute('href', '/objeto/alertas/AL-1');
     expect(within(list).getByRole('link', { name: 'Abrir Bandeja' })).toHaveAttribute(
       'href',
@@ -483,7 +483,7 @@ describe('Inicio hub', () => {
     );
     const rows = within(within(list).getByRole('list')).getAllByRole('listitem');
     expect(rows.length).toBeGreaterThanOrEqual(2);
-    expect(rows.length).toBeLessThanOrEqual(5);
+    expect(rows.length).toBeLessThanOrEqual(3);
     const composer = screen.getByRole('textbox', { name: SEARCH });
     expect(list.compareDocumentPosition(composer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
@@ -575,7 +575,7 @@ describe('Inicio hub', () => {
     // Registered after open(), so it overrides the handler open() adds.
     server.use(http.get('/system/intelligence/territorial-alerts', () => delay('infinite')));
     const list = await attention();
-    await screen.findByRole('region', { name: /Registros nuevos/ });
+    await within(await week()).findByRole('link', { name: '3 eventos' });
     expect(within(list).queryByText('Nada necesita tu atención ahora.')).toBeNull();
     expect(within(list).getByRole('status')).toHaveTextContent(/Cargando/);
   });
@@ -635,38 +635,22 @@ describe('Inicio hub', () => {
     expect(within(palette).getByRole('combobox')).toHaveValue(text);
   });
 
-  it('briefs the week from existing data and links to Registros and the IRSA tab of Análisis', async () => {
+  it('briefs the week in one line of links to Registros, the IRSA and the risk by locality', async () => {
     await open();
-    const fresh = await screen.findByRole('region', { name: /Registros nuevos/ });
-    await waitFor(() => expect(within(fresh).getByText('3')).toBeVisible());
-    expect(within(fresh).getByText('Hecho de hoy')).toBeVisible();
-    expect(within(fresh).getByText('Sin proyecto')).toBeVisible();
-    expect(within(fresh).queryByText('Hecho viejo')).toBeNull();
-    expect(within(fresh).getByRole('link', { name: /Ver en Registros/ })).toHaveAttribute(
+    const line = await week();
+    // Three events this week: today, yesterday and one saved before Proyecto_ID was stamped (S13).
+    expect(await within(line).findByRole('link', { name: '3 eventos' })).toHaveAttribute(
       'href',
       '/registros',
     );
-    const territory = await screen.findByRole('region', { name: /Riesgo del territorio/ });
-    expect(within(territory).getByText(/^Amarillo/)).toBeVisible();
-    expect(within(territory).getByRole('link', { name: /Abrir IRSA/ })).toHaveAttribute(
+    // A decimal comma, as every other screen (functional-10 T1, F1).
+    const irsa = await within(line).findByRole('link', { name: 'IRSA 42,3 · Amarillo' });
+    expect(irsa).toHaveAttribute('href', '/analisis');
+    expect(within(line).getByRole('link', { name: 'Riesgo por localidad' })).toHaveAttribute(
       'href',
-      '/analisis',
+      '/analisis?vista=riesgo',
     );
-    expect(
-      within(territory).getByRole('link', { name: /Riesgo de conflicto por localidad/ }),
-    ).toHaveAttribute('href', '/analisis?vista=riesgo');
-  });
-
-  // functional-10 T1 (F1) and T2 (F6): the week's dates in the shared style and a labelled IRSA.
-  it('labels the current IRSA with a decimal comma and dates the week like every other screen', async () => {
-    await open();
-    const fresh = await screen.findByRole('region', { name: /Registros nuevos/ });
-    await waitFor(() => expect(within(fresh).getByText('Hecho de hoy')).toBeVisible());
-    expect(fresh).toHaveTextContent(`Evento · ${formatDay(day(0))}`);
-    expect(fresh).not.toHaveTextContent(day(0));
-    const territory = await screen.findByRole('region', { name: /Riesgo del territorio/ });
-    expect(territory).toHaveTextContent('IRSA actual 42,3');
-    expect(territory).not.toHaveTextContent('42.3');
+    expect(line).not.toHaveTextContent('42.3');
   });
 
   it('shows «Sin datos suficientes» and asks for records when the IRSA has no evidence (S3)', async () => {
@@ -684,15 +668,17 @@ describe('Inicio hub', () => {
       ),
     );
     await open();
-    const territory = await screen.findByRole('region', { name: /Riesgo del territorio/ });
-    expect(await within(territory).findByText('Sin datos suficientes')).toBeVisible();
-    expect(within(territory).queryByText(/Verde|Amarillo|Naranja|Rojo/)).toBeNull();
-    expect(within(territory).queryByText('5.6')).toBeNull();
+    const line = await week();
+    expect(
+      await within(line).findByRole('link', { name: 'IRSA sin datos suficientes' }),
+    ).toBeVisible();
+    expect(line).not.toHaveTextContent(/Verde|Amarillo|Naranja|Rojo/);
+    expect(line).not.toHaveTextContent('5,6');
     const list = await attention();
     expect(
-      within(list).getByText('Carga registros del proyecto para calcular el IRSA.'),
+      await within(list).findByText('Carga registros del proyecto para calcular el IRSA.'),
     ).toBeVisible();
-    expect(within(list).getByRole('link', { name: 'Ir a Registros' })).toHaveAttribute(
+    expect(within(list).getByRole('link', { name: /Ir a Registros$/ })).toHaveAttribute(
       'href',
       '/registros',
     );
@@ -704,10 +690,10 @@ describe('Inicio hub', () => {
   it('shows the provisional IRSA caveat once, in the status line (S3)', async () => {
     await open();
     expect(await screen.findByText('Metodología pendiente de validación')).toBeVisible();
-    const territory = await screen.findByRole('region', { name: /Riesgo del territorio/ });
-    expect(await within(territory).findByText(/^Amarillo/)).toBeVisible();
+    const line = await week();
+    expect(await within(line).findByRole('link', { name: 'IRSA 42,3 · Amarillo' })).toBeVisible();
     expect(screen.getAllByText('Metodología pendiente de validación')).toHaveLength(1);
-    expect(within(territory).queryByText('Sin datos suficientes')).toBeNull();
+    expect(line).not.toHaveTextContent('Sin datos suficientes');
   });
 
   it('shows no pending badge once the methodology is validated (S3)', async () => {
@@ -722,22 +708,22 @@ describe('Inicio hub', () => {
       ),
     );
     await open();
-    const territory = await screen.findByRole('region', { name: /Riesgo del territorio/ });
-    expect(await within(territory).findByText(/^Amarillo/)).toBeVisible();
+    const line = await week();
+    expect(await within(line).findByRole('link', { name: 'IRSA 42,3 · Amarillo' })).toBeVisible();
     expect(screen.queryByText('Metodología pendiente de validación')).toBeNull();
   });
 
-  it('hides the card whose source fails instead of inventing numbers', async () => {
+  it('leaves out the week links whose source fails instead of inventing numbers', async () => {
     await open();
     server.use(
       http.get('/api/eventos', () => HttpResponse.json({ detail: 'caído' }, { status: 500 })),
       http.get('/system/irsa', () => HttpResponse.json({ detail: 'caído' }, { status: 500 })),
     );
     await attention();
-    await waitFor(() =>
-      expect(screen.queryByRole('region', { name: /Registros nuevos/ })).toBeNull(),
-    );
-    expect(screen.queryByRole('region', { name: /Riesgo del territorio/ })).toBeNull();
+    const line = await week();
+    expect(within(line).getByRole('link', { name: 'Riesgo por localidad' })).toBeVisible();
+    await waitFor(() => expect(within(line).queryByRole('link', { name: /eventos?$/ })).toBeNull());
+    expect(within(line).queryByRole('link', { name: /^IRSA/ })).toBeNull();
   });
 });
 

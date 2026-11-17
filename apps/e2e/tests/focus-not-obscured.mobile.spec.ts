@@ -109,7 +109,9 @@ for (const width of [360, 412] as const) {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await signInToProject(page, admin, DEFAULT_SCOPE);
     await page.goto('/inicio');
-    await expect(page.getByRole('region', { name: /Riesgo del territorio/ })).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: 'Esta semana' }).getByRole('link', { name: /^IRSA/ }),
+    ).toBeVisible();
     await expect(page.getByRole('list', { name: 'Prueba con' }).getByRole('button')).toHaveCount(4);
     const end = await page.evaluate(
       () => document.documentElement.scrollHeight - window.innerHeight,
@@ -137,7 +139,9 @@ for (const width of [360, 412] as const) {
     await signInToProject(page, admin, DEFAULT_SCOPE);
     await page.goto('/inicio');
     const composer = composerOf(page);
-    await expect(page.getByRole('region', { name: /Riesgo del territorio/ })).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: 'Esta semana' }).getByRole('link', { name: /^IRSA/ }),
+    ).toBeVisible();
     await expect(page.getByRole('list', { name: 'Prueba con' }).getByRole('button')).toHaveCount(4);
     expect(
       await page.evaluate(() => document.documentElement.scrollHeight > window.innerHeight),

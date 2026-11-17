@@ -1,20 +1,28 @@
-import { useId, type ReactNode } from 'react';
+import { type MouseEvent, type ReactNode, useId } from 'react';
+import { INICIO_HREF, useSharedThread } from '../../features/dashboard/index.ts';
 import { InternalLink } from '../../shared/lib/navigation.tsx';
 import { useRecents } from '../../shared/lib/recents.ts';
 import { Icon } from '../../shared/ui/Icon.tsx';
 import { AVISOS_HREF, DESTINATIONS, destinationFor } from '../navigation.ts';
 import shell from './AppShell.module.css';
 import { NavLink } from './NavLink.tsx';
+import { GLOBAL_SHORTCUTS, ariaShortcut, shortcutText } from './shortcuts.ts';
 import { SidebarAccount } from './SidebarAccount.tsx';
 import styles from './Sidebar.module.css';
 
+/** A plain left click: the others keep the link's own behaviour (a new tab or window). */
+const plainClick = (event: MouseEvent) =>
+  event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
+
 /**
- * Sidebar of wide screens (docs/adr/0015): brand, project, search and the bell on top (it opens Bandeja › Avisos and counts the
- * unread ones, functional-closure S9), then the
- * five destinations, Integraciones and the last screens opened («Recientes»), and the account
- * menu at the foot. A destination is current on its hub and on the old screens it absorbs.
- * Every other tool of the shell lives here too, so the top bar keeps the title only. Phones and
- * tablets show the same sidebar inside the menu drawer (`inDrawer`), whose header names it.
+ * Sidebar of wide screens (docs/adr/0015), in the order of chat-first-ui T13 (built in T19):
+ * «Nueva pregunta» first, then search and the bell (it opens Bandeja › Avisos and counts the
+ * unread ones, functional-closure S9), the five destinations and Integraciones, then this
+ * session's questions under «Conversaciones» while a conversation exists, or the last screens
+ * opened («Recientes») otherwise, and the project and the account menu at the foot. A
+ * destination is current on its hub and on the old screens it absorbs. Every other tool of the
+ * shell lives here too, so the top bar keeps the title only. Phones and tablets show the same
+ * sidebar inside the menu drawer (`inDrawer`), whose header names it.
  */
 export const Sidebar = ({
   id,
@@ -28,6 +36,7 @@ export const Sidebar = ({
   unread = 0,
   inDrawer = false,
   onShortcuts,
+  onPick,
 }: {
   id?: string;
   /** Wide screens only: the person hid it (chat-first-ui T12); it leaves no rail behind. */
@@ -45,9 +54,21 @@ export const Sidebar = ({
   inDrawer?: boolean;
   /** Opens the shortcuts sheet from the account menu. */
   onShortcuts?: () => void;
+  /** «Nueva pregunta» or a question was chosen: the drawer closes even when Inicio stays. */
+  onPick?: () => void;
 }) => {
   const ids = useId();
   const recents = useRecents(projectKey);
+  const shared = useSharedThread();
+  const questions = shared?.thread.turns ?? [];
+  const fresh = GLOBAL_SHORTCUTS.newQuestion;
+  // Without the shell's conversation (a test rendering the sidebar alone) the links just navigate.
+  const pick = (action: () => void) => (event: MouseEvent) => {
+    if (!shared || !plainClick(event)) return;
+    event.preventDefault();
+    onPick?.();
+    action();
+  };
 
   return (
     <aside id={id} hidden={hidden} className={styles.sidebar} data-drawer={inDrawer}>
@@ -63,7 +84,19 @@ export const Sidebar = ({
           {toggle}
         </div>
       )}
-      <div className={styles.project}>{projectSwitcher}</div>
+      <a
+        href={INICIO_HREF}
+        className={`${styles.link} ${styles.fresh}`}
+        title={`Nueva pregunta · ${shortcutText(fresh)}`}
+        aria-keyshortcuts={ariaShortcut(fresh)}
+        onClick={pick(() => shared?.newQuestion())}
+      >
+        <Icon name="plus" className={shell.icon} />
+        <span className={shell.text}>Nueva pregunta</span>
+        <kbd className={styles.hint} aria-hidden="true">
+          {shortcutText(fresh)}
+        </kbd>
+      </a>
       <div className={styles.tools}>
         {search ? <div className={styles.search}>{search}</div> : null}
         <InternalLink
@@ -104,7 +137,27 @@ export const Sidebar = ({
             />
           </li>
         </ul>
-        {recents.length > 0 ? (
+        {questions.length > 0 ? (
+          <section aria-labelledby={`${ids}-conversations`}>
+            <p id={`${ids}-conversations`} className={styles.groupLabel}>
+              Conversaciones
+            </p>
+            <ul>
+              {questions.map((turn) => (
+                <li key={turn.id}>
+                  <a
+                    href={INICIO_HREF}
+                    className={`${styles.link} ${styles.small}`}
+                    title={turn.question}
+                    onClick={pick(() => shared?.showTurn(turn.id))}
+                  >
+                    <span className={`${shell.text} ${styles.question}`}>{turn.question}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : recents.length > 0 ? (
           <section aria-labelledby={`${ids}-recents`}>
             <p id={`${ids}-recents`} className={styles.groupLabel}>
               Recientes
@@ -122,6 +175,7 @@ export const Sidebar = ({
           </section>
         ) : null}
       </nav>
+      <div className={styles.project}>{projectSwitcher}</div>
       <SidebarAccount pathname={pathname} projectLabel={projectLabel} onShortcuts={onShortcuts} />
     </aside>
   );

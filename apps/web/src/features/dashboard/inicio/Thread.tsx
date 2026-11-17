@@ -38,10 +38,13 @@ export const Thread = ({
   turns,
   pending,
   onSearch,
+  anchor,
 }: {
   turns: readonly Turn[];
   pending: boolean;
   onSearch: (text: string) => void;
+  /** The id of each question, which the sidebar's «Conversaciones» brings into view (T19). */
+  anchor?: (id: number) => string;
 }) => (
   <div
     role="log"
@@ -51,7 +54,12 @@ export const Thread = ({
   >
     {turns.map((turn) => (
       <Fragment key={turn.id}>
-        <article className={styles.user} aria-label="Tu pregunta">
+        <article
+          id={anchor?.(turn.id)}
+          className={styles.user}
+          aria-label="Tu pregunta"
+          tabIndex={anchor ? -1 : undefined}
+        >
           <p className={styles.bubble}>{turn.question}</p>
         </article>
         <AssistantTurn turn={turn} onSearch={onSearch} />

@@ -210,3 +210,30 @@
     color: var(--color-text);
   }
 }
+
+/* «Nueva pregunta» opens the sidebar (chat-first-ui T13), with its shortcut at the end. */
+.fresh {
+  flex: none;
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+}
+
+.hint {
+  margin-left: auto;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-regular);
+}
+
+/* A question of the conversation keeps to one line; its title attribute holds all of it. */
+.question {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* In the drawer, keyboard hints have no keyboard to answer them. */
+.sidebar[data-drawer='true'] .hint {
+  display: none;
+}

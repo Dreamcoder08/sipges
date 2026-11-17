@@ -198,6 +198,7 @@ export const AppShell = ({
       unread={unread}
       inDrawer={compact}
       onShortcuts={openShortcuts}
+      onPick={() => setDrawer(false)}
     />
   );
   // On wide screens the sidebar already shows the project and the active screen,
