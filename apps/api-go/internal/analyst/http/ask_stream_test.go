@@ -374,3 +374,20 @@ func TestACancelledRequestStopsTheLoopOnBothRoutes(t *testing.T) {
 		})
 	}
 }
+
+// A panic while answering is an error event like /ask's 500, never a crash of the API process
+// (the stream answers from its own goroutine, out of reach of httpx.Recover).
+func TestAPanicWhileAnsweringOnTheStreamIsAnErrorEventNotACrash(t *testing.T) {
+	t.Parallel()
+	opts := analysthttp.Options{Ask: func(context.Context, string) (*application.Ask, error) {
+		panic("synthetic analyst panic")
+	}}
+	_, events := askStream(t, opts, `{"question":"¿Algo?"}`)
+	want := []sseEvent{
+		{"error", `{"status":500,"detail":"Internal Server Error"}`},
+		{"done", `{}`},
+	}
+	if !slices.Equal(events, want) {
+		t.Fatalf("events = %q\nwant     %q", events, want)
+	}
+}

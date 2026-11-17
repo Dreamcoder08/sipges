@@ -98,6 +98,12 @@ func askStreamRoute(opts Options) http.HandlerFunc {
 		steps := make(chan string)
 		done := make(chan askOutcome, 1)
 		go func() {
+			// httpx.Recover cannot reach this goroutine: a panic becomes /ask's 500, not a crash.
+			defer func() {
+				if r := recover(); r != nil {
+					done <- askOutcome{err: fmt.Errorf("analyst stream panic: %v", r)}
+				}
+			}()
 			answer, err := answerQuestion(ctx, opts, question, valid, stepRelay{ctx: ctx, steps: steps})
 			done <- askOutcome{answer, err}
 		}()
