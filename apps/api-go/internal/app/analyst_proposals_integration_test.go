@@ -250,3 +250,43 @@ func TestReadOnlyRolesNeverReadRestrictedContentThroughProposals(t *testing.T) {
 		t.Fatalf("the administrator sees %d proposals, want 1", len(mine))
 	}
 }
+
+// S2/S4 (T4 verifier): the analyst cannot reach the write tools, and a read-only account or a
+// coordinator cannot file a proposal for a module it may not write.
+func TestTheAnalystNeverWritesAndOnlyWritersPropose(t *testing.T) {
+	model := analystSetup(t, true)
+	t.Setenv("SIPGES_DATA_KEY", dataKey)
+	conn := scratchConn(t)
+	t.Cleanup(func() { _, _ = conn.Exec(context.Background(), `DELETE FROM analyst_proposals`) })
+	model.steps = []string{
+		toolCall("w1", "create_record", `{"module":"acciones","payload":{"Accion":"x"}}`),
+		toolCall("w2", "link_records", `{"link_type":"relacionado_con","source":{"module":"eventos","id":"north"},"target":{"module":"eventos","id":"north"}}`),
+		`{"choices":[{"message":{"content":"No pude."}}]}`,
+	}
+	s := start(t, false)
+	if got := askAs(t, s, "multi", "ACME/NORTE", "crea"); got.status != http.StatusOK {
+		t.Fatalf("ask: %d %s", got.status, got.body)
+	}
+	reqs := model.requests()
+	if !strings.Contains(reqs[1], "Herramienta desconocida: create_record") || !strings.Contains(reqs[2], "Herramienta desconocida: link_records") {
+		t.Fatal("a write tool was not refused")
+	}
+	for _, user := range []string{"reader", "coord"} {
+		model.steps = []string{
+			toolCall("p1", "propose_record", `{"module":"acciones","fields":{"Accion":"x","Estado":"Pendiente"},"reason":"r"}`),
+			`{"choices":[{"message":{"content":"No pude."}}]}`,
+		}
+		if got := askAs(t, s, user, "ACME/NORTE", "crea"); got.status != http.StatusOK {
+			t.Fatalf("%s: %d %s", user, got.status, got.body)
+		}
+		if last := model.requests()[len(model.requests())-1]; !strings.Contains(last, "Tu rol no puede escribir en ese módulo") {
+			t.Fatalf("%s: the proposal was not refused", user)
+		}
+	}
+	if n := count(t, conn, `SELECT count(*) FROM analyst_proposals`); n != 0 {
+		t.Fatalf("%d proposals stored", n)
+	}
+	if n := count(t, conn, `SELECT count(*) FROM module_records WHERE module = 'Acciones'`); n != 0 {
+		t.Fatalf("%d records written", n)
+	}
+}
