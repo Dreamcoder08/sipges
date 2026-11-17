@@ -33,9 +33,19 @@
   padding: 0 var(--space-2);
 }
 
-.brand span:last-child {
+.brand .name {
   display: grid;
   line-height: 1.2;
+}
+
+/* The hide button closes the brand row (chat-first-ui T12). */
+.brand button {
+  margin-left: auto;
+}
+
+/* Hidden means gone: no icon rail is left behind (chat-first-ui S3). */
+.sidebar[hidden] {
+  display: none;
 }
 
 .brand b {
