@@ -31,6 +31,10 @@ const (
 	askBadSources  = "El analista no citó bien sus fuentes; vuelve a preguntar"
 	askNoAnswer    = "El analista no llegó a una respuesta; vuelve a preguntar"
 	askTooSlow     = "El analista tardó demasiado; vuelve a preguntar"
+	// askProviderDown is a model provider out of reach (local QA T6): the bridge stopped, its
+	// login expired or its quota ran out. A 503, like no analyst at all: the search still works.
+	askProviderDown = "El analista no respondió: el servicio de IA no está disponible. " +
+		"Prueba de nuevo en unos minutos o avisa a quien administra SIPGES."
 )
 
 // StatusClientClosed answers a question whose client went away (nginx's 499): no server fault,
@@ -127,6 +131,8 @@ func askFailure(err error) (int, string) {
 		return StatusClientClosed, "Pregunta cancelada"
 	case errors.Is(err, context.DeadlineExceeded):
 		return http.StatusGatewayTimeout, askTooSlow
+	case errors.Is(err, application.ErrModelUnavailable):
+		return http.StatusServiceUnavailable, askProviderDown
 	case errors.Is(err, application.ErrModel):
 		return http.StatusBadGateway, askNoAnswer
 	}

@@ -13,6 +13,7 @@ import (
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/analyst/application"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/analyst/domain"
 	analysthttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/analyst/http"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/analyst/infrastructure"
 	privacy "github.com/Dreamcoder08/sipges/apps/api-go/internal/privacy/application"
 	tenancydomain "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/domain"
 	tenancyhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/http"
@@ -118,6 +119,77 @@ func TestAskReportsAFailedFactoryWithoutDetails(t *testing.T) {
 	res := ask(t, broken, `{"question":"¿Algo?"}`)
 	if res.Code != http.StatusInternalServerError || strings.Contains(res.Body.String(), "secret-host") {
 		t.Fatalf("status = %d, body = %s", res.Code, res.Body)
+	}
+}
+
+// providerDown is the answer of a question whose model provider cannot be reached (local QA T6):
+// the bridge stopped, its login expired, its quota ran out, or the provider failed.
+const providerDown = `{"detail":"El analista no respondió: el servicio de IA no está disponible. ` +
+	`Prueba de nuevo en unos minutos o avisa a quien administra SIPGES."}`
+
+func TestAskSaysTheAnalystDidNotAnswerWhenItsProviderIsDown(t *testing.T) {
+	t.Parallel()
+	answering := func(status int) string {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(status)
+			_, _ = w.Write([]byte(`{"error":{"message":"synthetic provider detail"}}`))
+		}))
+		t.Cleanup(srv.Close)
+		return srv.URL
+	}
+	closed := httptest.NewServer(http.NotFoundHandler())
+	refused := closed.URL
+	closed.Close()
+	bases := map[string]string{
+		"connection refused": refused,
+		"unknown host":       "http://sipges-claude-bridge.invalid",
+		"login expired":      answering(http.StatusUnauthorized),
+		"forbidden":          answering(http.StatusForbidden),
+		"quota exhausted":    answering(http.StatusTooManyRequests),
+		"provider error":     answering(http.StatusInternalServerError),
+		"bridge down":        answering(http.StatusBadGateway),
+	}
+	for name, base := range bases {
+		models := map[string]application.ToolModel{
+			"claude": infrastructure.NewClaude("m", lookup(map[string]string{
+				"ANTHROPIC_BASE_URL": base, "ANTHROPIC_API_KEY": "synthetic-test-value",
+			})),
+			"openai-compatible": infrastructure.NewOpenAICompatible("m", lookup(map[string]string{
+				"SIPGES_ANALYST_BASE_URL": base, "SIPGES_ANALYST_API_KEY": "synthetic-test-value",
+			})),
+		}
+		for provider, model := range models {
+			t.Run(provider+"/"+name, func(t *testing.T) {
+				t.Parallel()
+				res := ask(t, analysthttp.Options{Ask: analystFor(model, oneTool{}, nil)}, `{"question":"¿Algo?"}`)
+				if res.Code != http.StatusServiceUnavailable || strings.TrimSpace(res.Body.String()) != providerDown {
+					t.Fatalf("status = %d, body = %s", res.Code, res.Body)
+				}
+			})
+		}
+	}
+}
+
+func TestAskKeepsANoAnswerForAModelThatAnsweredBadly(t *testing.T) {
+	t.Parallel()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+	}))
+	t.Cleanup(srv.Close)
+	model := infrastructure.NewClaude("m", lookup(map[string]string{
+		"ANTHROPIC_BASE_URL": srv.URL, "ANTHROPIC_API_KEY": "synthetic-test-value",
+	}))
+	res := ask(t, analysthttp.Options{Ask: analystFor(model, oneTool{}, nil)}, `{"question":"¿Algo?"}`)
+	want := `{"detail":"El analista no llegó a una respuesta; vuelve a preguntar"}`
+	if res.Code != http.StatusBadGateway || strings.TrimSpace(res.Body.String()) != want {
+		t.Fatalf("status = %d, body = %s", res.Code, res.Body)
+	}
+}
+
+func lookup(values map[string]string) func(string) (string, bool) {
+	return func(key string) (string, bool) {
+		value, ok := values[key]
+		return value, ok
 	}
 }
 

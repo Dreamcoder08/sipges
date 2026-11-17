@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/analyst/application"
 	records "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/domain"
 	js "github.com/Dreamcoder08/sipges/apps/api-go/internal/situations/domain"
 )
@@ -114,15 +115,23 @@ func post(ctx context.Context, client *http.Client, endpoint string, header map[
 	}
 	res, err := client.Do(req)
 	if err != nil {
-		if ctx.Err() != nil || isRedirectRefusal(err) {
-			return nil, -1, errors.New("narrator: request failed") // the wrapped error holds the URL
+		// The wrapped error holds the URL. A spent budget is a provider that did not answer.
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			return nil, -1, unavailable("narrator: request failed")
 		}
-		return nil, backoff(), errors.New("narrator: connection failed")
+		if ctx.Err() != nil || isRedirectRefusal(err) {
+			return nil, -1, errors.New("narrator: request failed")
+		}
+		return nil, backoff(), unavailable("narrator: connection failed")
 	}
 	defer func() { _ = res.Body.Close() }()
 	if res.StatusCode < 200 || res.StatusCode > 299 {
 		// The body is not read: a provider error may quote the request.
-		err := fmt.Errorf("narrator: the model answered %d", res.StatusCode)
+		text := fmt.Sprintf("narrator: the model answered %d", res.StatusCode)
+		err := errors.New(text)
+		if unavailableStatus(res.StatusCode) {
+			err = unavailable(text)
+		}
 		if retryable(res) {
 			return nil, retryWait(res.Header), err
 		}
@@ -136,6 +145,20 @@ func post(ctx context.Context, client *http.Client, endpoint string, header map[
 		return nil, -1, errors.New("narrator: answer too large")
 	}
 	return answer, 0, nil
+}
+
+// unavailable is a fixed text that also says the provider could not serve the question
+// (application.ErrModelUnavailable), so the person is told to try later, not to rephrase.
+type unavailable string
+
+func (u unavailable) Error() string { return string(u) }
+func (u unavailable) Unwrap() error { return application.ErrModelUnavailable }
+
+// unavailableStatus is a provider that refused the credential (an expired login), ran out of
+// quota or failed itself: asking again in other words would not help.
+func unavailableStatus(status int) bool {
+	return status == http.StatusUnauthorized || status == http.StatusForbidden ||
+		status == http.StatusTooManyRequests || status >= http.StatusInternalServerError
 }
 
 func isRedirectRefusal(err error) bool {

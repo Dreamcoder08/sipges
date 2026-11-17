@@ -1,6 +1,6 @@
 import type { ProjectSettings } from '@sipges/contracts';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { HttpResponse, http } from 'msw';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { ProjectSettingsProvider } from '../../../shared/lib/project-settings.tsx';
@@ -111,4 +111,22 @@ it('says external AI is off for this project when the installation has an analys
   ).toBeVisible();
   ask('bloqueo');
   expect(onAsk).toHaveBeenCalledWith('bloqueo');
+});
+
+it('says the analyst did not answer when its AI service is down, and offers the search', async () => {
+  const down =
+    'El analista no respondió: el servicio de IA no está disponible. Prueba de nuevo en unos minutos o avisa a quien administra SIPGES.';
+  server.use(
+    http.get('/system/analyst', () => HttpResponse.json({ available: true })),
+    http.post('/system/analyst/ask', () => HttpResponse.json({ detail: down }, { status: 503 })),
+  );
+  const onAsk = renderInicio(true);
+  await screen.findByRole('textbox', { name: 'Preguntar, con citas' });
+  ask('bloqueo norte');
+  const answer = await screen.findByRole('region', { name: 'Respuesta del analista' });
+  expect((await within(answer).findByRole('alert')).textContent).toContain(down);
+  fireEvent.click(
+    within(answer).getByRole('button', { name: 'Buscar «bloqueo norte» en registros' }),
+  );
+  expect(onAsk).toHaveBeenCalledWith('bloqueo norte');
 });

@@ -27,6 +27,11 @@ var (
 	ErrTooManyToolCalls = errors.New("analyst: too many tool calls for one question")
 	// ErrModel is a model that failed to answer; the adapter's own error stays out of it.
 	ErrModel = errors.New("analyst: the model did not answer")
+	// ErrModelUnavailable is a model provider that could not be reached or would not serve the
+	// question (local QA T6): no connection, an unknown host, its time budget spent, no credential,
+	// or a 401, 403, 429 or 5xx. An adapter's error wraps it next to ErrModel; asking again later,
+	// or the administrator, is what helps.
+	ErrModelUnavailable = errors.New("analyst: the model provider is unavailable")
 )
 
 // ToolSpec describes a tool to the model.

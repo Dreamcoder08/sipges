@@ -308,6 +308,23 @@ Más detalle en [integraciones](../integrations/README.md).
 
 Las claves de `.env` son secretos: nunca las envíes por correo ni las pegues en un chat. Las de canales se guardan selladas con `SIPGES_DATA_KEY`.
 
+## Analista con tu suscripción de Claude (solo local)
+
+En esta computadora el analista de Inicio puede responder con tu cuenta de claude.ai a través de un puente personal. El puente no forma parte del repositorio ni de `./sipges`:
+
+- Vive en `~/.local/share/sipges-claude-bridge`. Esa carpeta guarda un secreto: no la compartas ni la copies a otro equipo.
+- Corre como el contenedor de Docker `sipges-claude-bridge`, en la red `sipges_frontend`, sin puertos publicados.
+- Usa tu sesión de claude.ai guardada en `~/.claude`.
+
+| Para | Ejecuta |
+| --- | --- |
+| Ver si está en marcha | `docker ps --filter name=sipges-claude-bridge` |
+| Iniciarlo | `docker start sipges-claude-bridge` |
+| Detenerlo | `docker stop sipges-claude-bridge` |
+| Volver a iniciar sesión cuando venció | Ejecuta `claude` en la computadora (no en el contenedor), inicia sesión otra vez y luego `docker restart sipges-claude-bridge` |
+
+Si el puente está detenido, tu sesión venció o se agotó la cuota de tu suscripción, Inicio muestra «El analista no respondió: el servicio de IA no está disponible. Prueba de nuevo en unos minutos o avisa a quien administra SIPGES.» y ofrece buscar la pregunta en los registros. La búsqueda sigue funcionando.
+
 ## Si algo sale mal
 
 | Qué ves | Qué hacer |
