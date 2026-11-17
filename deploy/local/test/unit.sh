@@ -258,6 +258,12 @@ run install
 check 'keys the operator set are never replaced' grep -qx 'SIPGES_VAPID_PUBLIC_KEY=mine' "$SIPGES_ENV_FILE"
 check 'nor a new pair asked for' test ! -f "$FAKE/vapid"
 
+fresh
+printf 'SIPGES_ANALYST_MODEL=synthetic-model' >>"$SIPGES_ENV_FILE" # an operator's edit with no final newline
+run install
+check 'the line before the keys keeps its value' grep -qx 'SIPGES_ANALYST_MODEL=synthetic-model' "$SIPGES_ENV_FILE"
+check 'and the keys are still added' grep -qx 'SIPGES_VAPID_PUBLIC_KEY=public-1' "$SIPGES_ENV_FILE"
+
 # --- previous points only at a build that started
 
 fresh

@@ -152,10 +152,12 @@ preflight() {
 ensure_push_keys() {
   [[ -z $(env_value SIPGES_VAPID_PUBLIC_KEY) && -z $(env_value SIPGES_VAPID_PRIVATE_KEY) ]] || return 0
   local keys
-  if ! keys=$(docker run --rm --network none --entrypoint /api "sipges-local:$(image_tag)" vapid-keys); then
+  if ! keys=$(docker run --rm --pull never --network none --entrypoint /api "sipges-local:$(image_tag)" vapid-keys); then
     say 'Device notifications stay off: this version cannot make their keys.'
     return 0
   fi
+  # A hand-edited .env may lack its final newline: the block must not glue onto that last line.
+  [[ ! -s $ENV_FILE || -z $(tail -c 1 "$ENV_FILE") ]] || printf '\n' >>"$ENV_FILE"
   {
     printf '# Device notifications (push), made once by ./sipges. A new pair cuts off subscribed devices.\n'
     printf '%s\n' "$keys"
