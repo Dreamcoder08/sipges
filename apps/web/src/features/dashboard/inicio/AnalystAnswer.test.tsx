@@ -11,26 +11,18 @@ const answer = {
   ],
 };
 
-it('shows progress, not an announcement, while the analyst works', () => {
-  render(<AnalystAnswer pending question="¿Qué pasa?" onSearch={() => undefined} />);
-  expect(screen.getByRole('progressbar', { name: 'Preparando la respuesta' })).toBeTruthy();
-  expect(screen.queryByRole('status')?.textContent ?? '').toBe('');
-});
-
-it('announces the answer and links every citation to its source and record', () => {
-  render(
-    <AnalystAnswer
-      pending={false}
-      question="¿Qué pasa?"
-      data={answer}
-      onSearch={() => undefined}
-    />,
-  );
-  const region = screen.getByRole('status');
+it('links every citation to its source in this answer and each source to its record', () => {
+  render(<AnalystAnswer question="¿Qué pasa?" data={answer} onSearch={() => undefined} />);
+  const region = screen.getByRole('region', { name: 'Respuesta del analista' });
   expect(region.textContent).toContain('El bloqueo sigue');
+  // The conversation log reads the answer; the answer holds no live region of its own (T5).
+  expect(within(region).queryByRole('status')).toBeNull();
   const cite = within(region).getByRole('link', { name: 'Fuente 1: Bloqueo de vía' });
-  expect(cite.getAttribute('href')).toBe('#analista-fuente-1');
   const list = screen.getByRole('list', { name: 'Fuentes citadas' });
+  // Per answer, so two answers on one page never share an anchor.
+  const target = document.getElementById(cite.getAttribute('href')?.slice(1) ?? '');
+  expect(target?.parentElement).toBe(list);
+  expect(target).toHaveTextContent('Bloqueo de vía');
   const first = within(list).getByRole('link', { name: /Bloqueo de vía/ });
   expect(first.getAttribute('href')).toBe('/objeto/eventos/EV-1');
   // A source without a title is named by its id.
@@ -42,28 +34,26 @@ it('announces the answer and links every citation to its source and record', () 
 it('offers the record search when the analyst is off for the project', () => {
   const onSearch = vi.fn();
   const off = new ApiError(409, 'El envío a IA externa está desactivado para este proyecto', null);
-  render(
-    <AnalystAnswer pending={false} question="bloqueo norte" error={off} onSearch={onSearch} />,
-  );
-  expect(screen.getByRole('alert').textContent).toContain('desactivado');
+  render(<AnalystAnswer question="bloqueo norte" error={off} onSearch={onSearch} />);
+  expect(screen.getByText(/desactivado/)).toBeVisible();
   fireEvent.click(screen.getByRole('button', { name: 'Buscar «bloqueo norte» en registros' }));
   expect(onSearch).toHaveBeenCalledWith('bloqueo norte');
 });
 
-it('shows the analyst failure as an alert with the server text', () => {
+it('shows the analyst failure with the server text, without an alert role', () => {
   const failed = new ApiError(
     502,
     'El analista no citó bien sus fuentes; vuelve a preguntar',
     null,
   );
-  render(<AnalystAnswer pending={false} question="x" error={failed} onSearch={() => undefined} />);
-  expect(screen.getByRole('alert').textContent).toContain('no citó bien sus fuentes');
+  render(<AnalystAnswer question="x" error={failed} onSearch={() => undefined} />);
+  expect(screen.getByText(/no citó bien sus fuentes/)).toBeVisible();
+  expect(screen.queryByRole('alert')).toBeNull();
 });
 
 it('draws the typed blocks after the answer and its sources', () => {
   render(
     <AnalystAnswer
-      pending={false}
       question="¿Qué pasa?"
       data={{
         ...answer,

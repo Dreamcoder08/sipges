@@ -1,4 +1,4 @@
-/* One reading column after design/vanguard/01-calma-conversacional.html: attention, composer, week. */
+/* One reading column after design/chat-first/01-centro-conversacional.html: attention, composer, week. */
 
 /* Widths of the suggestion strip's edge fades; registered so they interpolate. */
 @property --fade-start {
@@ -26,10 +26,54 @@
 }
 .home {
   display: grid;
-  gap: var(--space-8);
+  gap: var(--space-6);
   max-width: var(--measure-chat);
   margin: 0 auto;
   padding-top: var(--space-4);
+}
+
+/* Inicio's top bar: the destination's tabs, and during a conversation the attention button. */
+.bar {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.bar > [role='group'] {
+  flex: 1;
+  min-width: 0;
+}
+
+.compose {
+  display: grid;
+  gap: var(--space-3);
+}
+
+/*
+ * Wider than a phone, the empty block sits in the middle of the column when the screen has room
+ * for it (a min-height under the tabs, its rows centred; taller content flows from the top) and
+ * reads from the middle, as the chat products do (S2). Phones keep their docked composer.
+ */
+@media (min-width: 40.0625rem) {
+  .home[data-centred] {
+    align-content: center;
+    min-height: calc(100dvh - var(--topbar-height, 0px) - 8rem);
+    padding-bottom: var(--space-8);
+  }
+
+  .home[data-centred] .head {
+    justify-items: center;
+    text-align: center;
+  }
+
+  .home[data-centred] .state,
+  .home[data-centred] .chips {
+    justify-content: center;
+  }
+
+  .home[data-centred] .suggestLabel {
+    text-align: center;
+  }
 }
 
 .head {
@@ -67,74 +111,6 @@
   height: 0.5rem;
   border: 1.5px solid currentColor;
   border-radius: 50%;
-}
-
-.attention,
-.compose {
-  display: grid;
-  gap: var(--space-3);
-}
-
-.rows {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--color-hairline);
-}
-
-.rowText {
-  display: grid;
-  /* An implicit auto track grows to its widest child's min-content: the one-line level pill below
-     then pushed the row past a 360 px phone with wider fonts (CI, functional-10 T13). */
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-1);
-  min-width: 0;
-}
-
-.rowText b {
-  font-weight: var(--weight-medium);
-  line-height: var(--leading-snug);
-}
-
-.rowText small {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--color-muted);
-  font-size: var(--text-caption);
-}
-
-/*
- * The level pill keeps to one line: the project's meaning («Rojo – Situación crítica / atención
- * inmediata») ends in an ellipsis where the row is narrower, instead of a second line that pushed
- * «Esta semana» under the phone composer (functional-10 T13). The whole text stays in the DOM.
- */
-.level {
-  display: flex;
-  min-width: 0;
-  max-width: 100%;
-}
-
-.level > * {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.rowAction {
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  white-space: nowrap;
 }
 
 .eyebrow {
@@ -202,124 +178,95 @@
   background: var(--color-fill);
 }
 
-.brief {
+/* The chips wait, hidden, while a conversation holds the page. */
+.suggest[hidden] {
+  display: none;
+}
+
+.conversation {
   display: grid;
   gap: var(--space-4);
 }
 
-.sectionHead {
+.threadBar {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-2);
-  padding-bottom: var(--space-2);
-  border-bottom: 1px solid var(--color-hairline);
+  justify-content: flex-end;
 }
 
-.headLink {
+.newChat,
+.jump {
   display: inline-flex;
   align-items: center;
-  min-height: var(--touch-target);
-  margin-left: auto;
-  font-size: var(--text-sm);
-}
-
-.sectionHead h2 {
-  margin: 0;
-  font-size: var(--text-lg);
-  letter-spacing: var(--tracking-tight);
-}
-
-.muted {
-  color: var(--color-muted);
-  font-size: var(--text-sm);
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-4);
-}
-
-.card {
-  display: grid;
-  align-content: start;
-  gap: var(--space-3);
-  padding: var(--space-5);
-  border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-xl);
-  background: var(--color-surface);
-}
-
-.card h3 {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin: 0;
-  font-size: var(--text-md);
-  font-weight: var(--weight-semibold);
-}
-
-.count {
-  padding: 0 var(--space-2);
+  gap: var(--space-1);
+  min-height: var(--control-sm);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-control-border);
   border-radius: var(--radius-pill);
-  background: var(--color-fill-hover);
-  font-size: var(--text-sm);
-  font-variant-numeric: tabular-nums;
-}
-
-.list {
-  display: grid;
-  gap: var(--space-3);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.list li {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.text {
-  display: grid;
-  gap: var(--space-0);
-  min-width: 0;
-  font-size: var(--text-sm);
-}
-
-.text small {
-  color: var(--color-muted);
-  font-size: var(--text-xs);
-}
-
-.risk,
-.empty {
-  margin: 0;
-  font-size: var(--text-sm);
-}
-
-.empty {
-  color: var(--color-muted);
-}
-
-.more {
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
+  cursor: pointer;
 }
 
-@media (max-width: 60rem) {
-  .grid {
-    grid-template-columns: minmax(0, 1fr);
+/* On a phone, «Nueva conversación» as an icon beside the attention bell (T15). */
+.newChatIcon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  border: 1px solid var(--color-control-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-lg);
+  cursor: pointer;
+}
+
+/* The dock sticks only inside its parent: during a conversation the page column is that parent. */
+.home[data-thread] .compose {
+  display: contents;
+}
+
+/* Wider than a phone; the phone layout below already docks the composer, safe area included. */
+@media (min-width: 40.0625rem) {
+  .home[data-thread] .dock {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    padding-block: var(--space-2) var(--space-4);
+    background: var(--color-bg);
   }
 }
 
+/* Shown only away from the end of the conversation, floating above the composer. */
+.jump {
+  position: absolute;
+  inset-block-end: calc(100% + var(--space-2));
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  white-space: nowrap;
+  background: var(--color-surface-raised);
+  box-shadow: var(--shadow-md);
+}
+
+/* The sentinel whose visibility means «at the bottom»; one pixel, after the composer. */
+.end {
+  block-size: 1px;
+  margin-block-start: calc(-1 * var(--space-6));
+}
+
+/* Focused turns and links stop above the composer resting on the bottom (WCAG 2.2 SC 2.4.11). */
+:global(html):has(.home[data-thread]) {
+  scroll-padding-bottom: calc(var(--composer-height, 0px) + var(--space-2));
+}
+
 /*
- * Phones: the greeting and status line, then the attention rows right under them (the first one
- * above the fold), the week as one-line rows, one swipeable strip of suggestions and the composer
- * resting on the bottom. The order changes only visually; the DOM keeps the desktop reading order.
+ * Phones: the greeting and status line, then the attention list right under them (the first item
+ * above the fold), the week's line, one swipeable strip of suggestions and the composer resting
+ * on the bottom. The order changes only visually; the DOM keeps the desktop reading order.
  */
 @media (max-width: 40rem) {
   .home {
@@ -342,7 +289,10 @@
 
   .attention {
     order: 2;
-    gap: 0;
+  }
+
+  .week {
+    order: 3;
   }
 
   .eyebrow,
@@ -350,90 +300,34 @@
     display: none;
   }
 
-  .row {
-    position: relative;
-    gap: var(--space-2);
-    padding: var(--space-2) var(--space-1);
-  }
-
-  /* The whole row is the link; its text stays the accessible name. */
-  .rowAction {
-    font-size: 0;
-    color: var(--color-muted);
-    text-decoration: none;
-  }
-
-  .rowAction::before {
-    content: '›' / '';
-    font-size: var(--text-xl);
-  }
-
-  .rowAction::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-  }
-
-  /* A row keeps its title and the card's own link (the last child): lists, the IRSA reading and
-     hint, and secondary links are desktop detail that squeezed the title under a second chevron. */
-  .card > :not(h3, :last-child) {
-    display: none;
-  }
-
   .title {
     font-size: var(--text-xl);
   }
 
-  .brief {
-    order: 3;
-    gap: 0;
-  }
-
-  .grid {
-    gap: 0;
-  }
-
-  .card {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    min-height: 3rem;
-    padding: var(--space-2) var(--space-1);
-    border: 0;
-    border-radius: var(--radius-md);
-    background: transparent;
-  }
-
-  .card h3 {
-    flex: 1;
-    min-width: 0;
-    font-size: var(--text-md);
-    font-weight: var(--weight-medium);
-  }
-
-  /* The whole row is the link; its text stays the accessible name. */
-  .more {
-    font-size: 0;
-    color: var(--color-muted);
-    text-decoration: none;
-  }
-
-  .more::before {
-    content: '›' / '';
-    font-size: var(--text-xl);
-  }
-
-  .more::after {
-    content: '';
+  /* During a conversation the thread owns the screen (T15): the greeting leaves the screen but
+     stays in the outline, above the answers' own headings; the status line stays. */
+  .home[data-thread] .title {
     position: absolute;
-    inset: 0;
-    border-radius: inherit;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   .suggest {
     order: 4;
     margin-top: auto;
+  }
+
+  .conversation {
+    order: 3;
+    margin-bottom: auto;
+  }
+
+  .end {
+    order: 6;
+    margin-block-start: calc(-1 * var(--space-3));
   }
 
   .chips {
@@ -512,6 +406,12 @@
    * content area ends above it at rest and while scrolling, so nothing shows under or around the
    * composer. At the end of the page the strip is back in the flow, below the suggestions.
    */
+  /* The dock holds the bottom safe area itself; the content area's own bottom padding would lift
+     it off the bottom of the screen at the end of the page. */
+  :global(main):has(.dock) {
+    padding-bottom: 0;
+  }
+
   .dock {
     position: sticky;
     bottom: 0;

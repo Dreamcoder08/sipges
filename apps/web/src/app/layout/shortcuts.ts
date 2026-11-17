@@ -21,6 +21,10 @@ export type ShortcutGroup = { title: string; items: readonly Shortcut[] };
 
 /** Shortcuts that work on every screen; their commands show them in place. */
 export const GLOBAL_SHORTCUTS = {
+  newQuestion: {
+    keys: [[MOD, 'Mayús', 'O']],
+    label: 'Nueva pregunta: una conversación nueva en Inicio',
+  },
   search: { keys: [[MOD, 'K']], label: 'Buscar en todo el proyecto' },
   sidebar: { keys: [[MOD, 'B']], label: 'Mostrar u ocultar la barra lateral (pantallas anchas)' },
   settings: { keys: [[MOD, ',']], label: 'Abrir Configuración' },
@@ -96,9 +100,15 @@ export const comboText = (combo: Combo) =>
 /** The first combination of a shortcut, for a hint next to its command. */
 export const shortcutText = (shortcut: Shortcut) => comboText(shortcut.keys[0] ?? []);
 
+/** Key names as `aria-keyshortcuts` spells them (UI Events `key` values). */
+const ARIA_KEYS: Readonly<Record<string, string>> = { Mayús: 'Shift' };
+
 /** `aria-keyshortcuts` of a command key shortcut: both Control and Meta work. */
 export const ariaShortcut = (shortcut: Shortcut) => {
   const combo = shortcut.keys[0] ?? [];
-  const rest = combo.filter((key) => key !== MOD).join('+');
+  const rest = combo
+    .filter((key) => key !== MOD)
+    .map((key) => ARIA_KEYS[key] ?? key)
+    .join('+');
   return combo.includes(MOD) ? `Control+${rest} Meta+${rest}` : rest;
 };

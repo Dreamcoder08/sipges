@@ -51,13 +51,13 @@ Phase A — design and foundations (web only):
   - a counter appears from 450 of the 500-character limit;
   - IME-safe Enter is kept.
   Route: inline, test-first (one test per key rule). Commit: pending.
-- T4 [ ] — S2: empty state from T1's chosen direction: greeting with the project name, the centred composer, and
+- T4 [x] — S2: empty state from T1's chosen direction: greeting with the project name, the centred composer, and
   starter chips that send in one click (today they only fill the textarea). Chips come from the project's real
   state, for example «¿Qué alertas rojas siguen abiertas?» only when there are some. Route: inline. Commit: pending.
 
 Phase B — the thread, client side (no backend change):
 
-- T5 [ ] — S1, S2: a conversation thread in memory for the session:
+- T5 [x] — S1, S2: a conversation thread in memory for the session:
   - each question is appended as a user turn and each answer as an assistant turn, instead of replacing the last
     answer;
   - answers keep their citations, sources and typed blocks;
@@ -113,7 +113,7 @@ Phase D — shell:
 - T12 [x] — S2: on wide screens the sidebar can be hidden with a button and Ctrl+B; the choice is kept in
   `localStorage`. Hidden means gone, with the button left in the top bar, not an icon rail (S3). Route: inline.
   Commit: pending.
-- T13 [ ] — S2: sidebar order:
+- T13 [x] — S2: sidebar order (done in T19):
   - «Nueva pregunta» first, with its shortcut;
   - «Buscar», showing Ctrl K;
   - then the five destinations and Integraciones;
@@ -122,7 +122,7 @@ Phase D — shell:
   Route: inline. Commit: pending.
 - T14 [x] — S2: a shortcuts sheet (Ctrl+/) listing every shortcut, and the shortcut shown next to each command that
   has one. Route: inline. Commit: pending.
-- T15 [ ] — S1: phones:
+- T15 [x] — S1: phones:
   - the thread fills the screen and the composer stays docked above the keyboard and the safe area;
   - the drawer holds «Nueva pregunta» and the conversations;
   - checked at 360 and 412 px with `sipges-phone-check`, no horizontal overflow.
@@ -130,6 +130,19 @@ Phase D — shell:
 
 Phase E — proof:
 
+- T19 [x] — S1, S2: build direction 01 «Centro conversacional» (`design/chat-first/01-centro-conversacional.html`),
+  the owner's pick on the canvas (L10), on top of T3, T5, T12 and T14:
+  - empty state: greeting and composer centred in the column, «Necesita tu atención» as at most three compact
+    cards just above the composer, chips below it, and «Esta semana» as one line of links;
+  - during a conversation: the thread owns the column with the composer docked at the bottom, and the urgent items
+    move to a «Necesita tu atención N» button with a popover in the top bar (a bell with the count on phones). The
+    count is never hidden, and the popover manages focus (Esc returns it);
+  - sidebar order per T13 («Nueva pregunta» first, which starts a new conversation on Inicio; «Buscar Ctrl K»;
+    destinations; «Conversaciones» with this session's questions), so T13 is done here.
+  Reopens T4's layout and replaces T5's fold. Route: worker + parent. Commit: pending.
+- T20 [ ] — S1: move the thread, AnalystAnswer and the attention popover into a lazy chunk loaded on the first
+  question, and bring the entry budget back towards 218 kB gzip (it was raised to 230 kB in L11). Route: inline.
+  Commit: pending.
 - T16 [ ] — S1: Playwright specs (Chromium, mobile, WebKit) for the thread, stop, new conversation, AI off and the
   503 fallback, waiting for state rather than time; axe with 0 violations in both themes; the CSS budget kept
   (41 kB) and the Inicio usable-time budget kept. Route: inline. Commit: pending.
@@ -146,7 +159,6 @@ Order: T1 → T2 → T3 → T4 → T5–T8 (each its own slice, about 400 lines 
 T18(b) → T16 → T17. Phases A, B and D change no API and no stored data.
 
 ## Log
-
 - L1 — 2026-11-17, owner (verbatim): «perfect estaba pensando en mejorar el diseño UI & Ux inspirado en chat gpt web and
   claude web usa ego-browser y mas , crea detalladamente las task que deseas implementar para mejorar mi proyecto»
 - L2 — 2026-11-17, evidence:
@@ -227,3 +239,55 @@ T18(b) → T16 → T17. Phases A, B and D change no API and no stored data.
     is hidden.
   - Not done: a palette command «Atajos de teclado» (the menu item and Ctrl+/ cover it). Slice: 690 lines, two
     tasks sharing AppShell.
+- L9 — 2026-11-17, T4 and T5 done on `feat/chat-thread` (e7f3ec5b). A worker built them; the parent approved the test
+  changes outside the worker's edit surfaces and committed.
+  - T4: chips send in one click (ask in «Preguntar», search in «Buscar») from `inicio/starters.ts`. «¿Qué alertas
+    rojas siguen abiertas?» comes first only while a red alert is open. The order is pinned.
+  - T5:
+    - the thread is `role="log"` with `aria-busy`, and one hidden `role="status"` announces start, end, error and
+      stop once each;
+    - user bubble, «IA Analista» answers with citation anchors unique per answer (`useId`), and error turns without
+      `role="alert"` (`Alert` gained `announce`, whose default is unchanged);
+    - the view follows the bottom only at the bottom (sentinel and IntersectionObserver), and «Ir al final» appears
+      otherwise;
+    - attention and week fold into one expandable line;
+    - «Nueva conversación» and Ctrl/⌘+Shift+O;
+    - memory only, per project, with no storage writes.
+  - Tests: RED first (T4 3 rules, T5 10 rules). The web suite passes 833/833, and typecheck, lint, build and CSS
+    39.3/41 kB pass.
+  - Changed by the spec: Hubs.test and e2e `25-inicio` (a chip now searches instead of filling the box),
+    AnalystAnswer/inicio-ask expectations (no alert role, «Buscando registros…»).
+  - Not run locally: Playwright and the phone check (CI runs the e2e).
+  - Left for later:
+    - the Ctrl+Shift+O entry in `shortcuts.ts`, which arrives with #512;
+    - the thread is lost when leaving Inicio (T11 decides persistence);
+    - «Detener» drops the pending turn until T7.
+  - Slice: 1,394 lines with tests, past the slice; T6–T8 return to small units.
+- L10 — 2026-11-17, owner on the canvas (verbatim): «Implement the design artboard
+  design/chat-first/01-centro-conversacional.html» (handoff, with the artboard's tradeoff «A cambio, durante una
+  conversación lo urgente baja a un botón con contador en la barra superior (se aparta de L11) y "Esta semana" queda
+  en una línea de enlaces»). This overrides the parent's L6 choice of 02; the urgent items stay reachable through a
+  counter that is always visible, which the owner accepts. Added T19, which absorbs T13. Built on
+  `feat/chat-center`, stacked on #512 and #513 while their CI runs.
+- L11 — 2026-11-17, owner (verbatim): «avanza mucho demoras paraleliza el trabajo y mas». T19, T13 and T15 are done on
+  `feat/chat-center`, which also carries T4 and T5 (#513 is closed in its favour). Workers built them; the parent
+  committed.
+  - T19 (commit d30637e8): centred empty state, at most three attention cards, a one-line «Esta semana», the top-bar
+    «Necesita tu atención N» panel (a bell on phones, «Nada urgente» disabled at 0), the sidebar with «Nueva
+    pregunta» first and «Conversaciones», and the thread lifted into `AnalystThreadProvider` (memory only).
+  - Tests: RED first (13 rules). The web suite passes 856/856.
+  - The #513 CI failures had real causes:
+    - the T5 fold line was 584 px wide on phones; T19 removed it, and phone specs now pin the layout;
+    - the chip strip re-snapped when the red-alert chip was prepended; it is now reset before paint.
+  - T15 (phones, each rule RED first):
+    - greeting hidden visually during a thread, and «Nueva conversación» as a 44 px icon;
+    - the composer dock keeps the safe area, and drawer targets are 44 px;
+    - `interactive-widget=resizes-content` so Android keeps the composer above the keyboard.
+  - Playwright, run locally with the CI font: mobile-chromium 96 passed, 5 skipped; the chromium shell and Inicio
+    specs 31 passed, 2 skipped. axe reports 0 violations in both themes. WebKit could not launch on this host
+    (missing system libraries); CI runs it.
+  - Entry budget raised on purpose to 768/230 kB (measured 731.1/218.7 kB plus 5%); T20 brings it back with a
+    lazy chunk.
+  - Open, for the owner:
+    - the phone artboard stacks the chips while the product keeps a swipeable strip;
+    - the phone tab row is cut beside the bell and «+» during a thread.

@@ -3,6 +3,9 @@ import { analyzeAccessibility } from '../support/accessibility.ts';
 import type { Locator } from '@playwright/test';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
 
+const GENERIC_FIRST = '¿Qué demandas siguen abiertas y quién las lidera?';
+const RED_CHIP = '¿Qué alertas rojas siguen abiertas?';
+
 const box = async (locator: Locator) => {
   const rect = await locator.boundingBox();
   if (!rect) throw new Error('element has no box');
@@ -10,26 +13,29 @@ const box = async (locator: Locator) => {
 };
 
 /**
- * At the narrowest phone (360 px) every briefing row is one line with one link: the IRSA hint and
- * the conflict-risk link are desktop detail, and on a phone they squeezed «Riesgo del territorio»
- * into three lines under a second chevron (closure-roadmap T18).
+ * At the narrowest phone (360 px) «Esta semana» is one line of links, no cards (chat-first-ui
+ * T19, direction 01): each link stays on one line and the line never widens the page.
  */
-test('each briefing row on a 360 px phone is one line with one link', async ({ page, admin }) => {
+test('the week on a 360 px phone is a line of one-line links', async ({ page, admin }) => {
   await page.setViewportSize({ width: 360, height: 780 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await signInToProject(page, admin, DEFAULT_SCOPE);
   await page.goto('/inicio');
-  const risk = page.getByRole('region', { name: /Riesgo del territorio/ });
-  await expect(risk).toBeVisible();
-  await expect(risk.getByText('Carga registros del proyecto para calcular el IRSA.')).toBeHidden();
-  await expect(risk.getByRole('link', { name: /Riesgo de conflicto/ })).toBeHidden();
-  await expect(risk.getByRole('link', { name: 'Abrir IRSA' })).toHaveAttribute('href', '/analisis');
-  const cards = page.getByRole('region', { name: /Alertas activas|Registros nuevos|Riesgo/ });
-  for (const card of await cards.all()) {
-    expect((await box(card)).height).toBeLessThanOrEqual(64);
-    const title = await box(card.getByRole('heading', { level: 3 }));
-    expect(title.height, 'the row title stays on one line').toBeLessThanOrEqual(40);
+  const week = page.getByRole('region', { name: 'Esta semana' });
+  await expect(week.getByRole('link', { name: 'Riesgo por localidad' })).toHaveAttribute(
+    'href',
+    '/analisis?vista=riesgo',
+  );
+  await expect(week.getByRole('link', { name: /^IRSA/ })).toHaveAttribute('href', '/analisis');
+  await expect(week.getByRole('heading')).toHaveCount(0);
+  for (const link of await week.getByRole('link').all()) {
+    expect((await box(link)).height, 'each week link stays on one line').toBeLessThanOrEqual(32);
   }
+  const widths = await page.evaluate(() => ({
+    scroll: document.documentElement.scrollWidth,
+    view: document.documentElement.clientWidth,
+  }));
+  expect(widths.scroll).toBeLessThanOrEqual(widths.view);
 });
 
 /**
@@ -99,7 +105,50 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
 }
 
 /**
- * Inicio on a phone: greeting and status line, what needs attention, the week as one-line rows,
+ * An open red alert puts «¿Qué alertas rojas siguen abiertas?» first once the alerts load, after the
+ * generic chips are on screen (chat-first-ui T4). The strip still rests at its start: a scroller
+ * snapped to its first chip keeps that chip in place when a chip is added before it, which left
+ * the new chip scrolled out of view behind the start fade (CI on #513, where earlier specs had
+ * opened a red alert). The alerts list is answered by the browser, so no record is stored.
+ */
+test('a red alert chip added at 360 px leaves the strip at its start', async ({ page, admin }) => {
+  await page.setViewportSize({ width: 360, height: 780 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(/\/api\/alertas\?/, async (route) => {
+    await held;
+    const response = await route.fetch();
+    const rows = (await response.json()) as unknown[];
+    const red = {
+      _id: 'AL-SINTETICO-ROJA',
+      Causa: 'Alerta sintética roja para la fila de sugerencias',
+      Nivel_Preliminar: 'Rojo',
+      Estado: 'Abierta',
+    };
+    await route.fulfill({ response, json: [red, ...rows] });
+  });
+  await signInToProject(page, admin, DEFAULT_SCOPE);
+  await page.goto('/inicio');
+  const strip = page.getByRole('list', { name: 'Prueba con' });
+  await expect(strip.getByRole('button').first()).toHaveText(GENERIC_FIRST);
+  release();
+  const red = strip.getByRole('button', { name: RED_CHIP });
+  await expect(strip.getByRole('button').first()).toHaveText(RED_CHIP);
+  await expect.poll(() => strip.evaluate((node) => node.scrollLeft)).toBe(0);
+  const chip = await box(red);
+  expect(chip.x, 'the new first chip is on screen').toBeGreaterThanOrEqual(0);
+  await expect
+    .poll(() =>
+      strip.evaluate((node) => parseFloat(getComputedStyle(node).getPropertyValue('--fade-start'))),
+    )
+    .toBe(0);
+});
+
+/**
+ * Inicio on a phone: greeting and status line, what needs attention, the week's line of links,
  * the suggestions in one swipeable strip and the composer resting at the bottom of the screen.
  */
 for (const colorScheme of ['light', 'dark'] as const) {
@@ -124,12 +173,12 @@ for (const colorScheme of ['light', 'dark'] as const) {
     expect(composerBox.y + composerBox.height).toBeLessThanOrEqual(height);
     expect(height - (composerBox.y + composerBox.height)).toBeLessThanOrEqual(24);
 
-    // Briefing cards collapse to one tappable row each.
-    const cards = page.getByRole('region', { name: /Alertas activas|Registros nuevos|Riesgo/ });
-    await expect(cards.first()).toBeVisible();
-    for (const card of await cards.all()) {
-      expect((await box(card)).height).toBeLessThanOrEqual(64);
-    }
+    // The week is one line of links, above the suggestions (chat-first-ui T19).
+    const week = page.getByRole('region', { name: 'Esta semana' });
+    await expect(week.getByRole('link').first()).toBeVisible();
+    expect((await box(week)).y).toBeLessThan(
+      (await box(page.getByRole('list', { name: 'Prueba con' }))).y,
+    );
 
     // Suggestions share one line and never widen the page.
     const chips = page.getByRole('list', { name: 'Prueba con' }).getByRole('button');

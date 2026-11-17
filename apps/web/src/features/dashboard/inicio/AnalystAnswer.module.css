@@ -3,15 +3,10 @@
   gap: var(--space-3);
 }
 
-.progress {
-  inline-size: 100%;
-  block-size: 0.25rem;
-  accent-color: var(--color-primary);
-}
-
 .answer {
   margin: 0;
-  line-height: 1.6;
+  font-size: var(--text-answer);
+  line-height: var(--leading-answer);
   white-space: pre-line;
 }
 

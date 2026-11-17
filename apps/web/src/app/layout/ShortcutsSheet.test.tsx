@@ -51,7 +51,16 @@ describe('shortcuts sheet', () => {
     const all = SHORTCUT_GROUPS.flatMap((group) => group.items).flatMap((item) =>
       item.keys.map(comboText),
     );
-    for (const keys of ['Ctrl+K', 'Ctrl+B', 'Ctrl+,', 'Ctrl+/', 'Esc', 'Enter', 'Mayús+Enter'])
+    for (const keys of [
+      'Ctrl+K',
+      'Ctrl+B',
+      'Ctrl+,',
+      'Ctrl+/',
+      'Ctrl+Mayús+O',
+      'Esc',
+      'Enter',
+      'Mayús+Enter',
+    ])
       expect(all).toContain(keys);
   });
 

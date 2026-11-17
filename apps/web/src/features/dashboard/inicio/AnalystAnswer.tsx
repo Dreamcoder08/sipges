@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { isApiError } from '../../../shared/api/client.ts';
 import { InternalLink, objectHref } from '../../../shared/lib/navigation.tsx';
 import { Alert } from '../../../shared/ui/Alert.tsx';
@@ -7,22 +8,19 @@ import { AnswerBlocks } from './AnswerBlocks.tsx';
 import styles from './AnalystAnswer.module.css';
 
 const sourceName = (source: AnalystSource) => source.title || source.id;
-const anchor = (n: number) => `analista-fuente-${n}`;
 
 /**
- * What the Inicio analyst answered (odd/tasks/agentic-analyst.md T1d). While it works a progress
- * bar shows it, without announcing it; the answer is announced politely, each [n] links to its
- * source and each source to its record; a failure is an alert, and when the analyst cannot answer
- * here the question can still search the records.
+ * What the Inicio analyst answered (odd/tasks/agentic-analyst.md T1d), as one turn of the
+ * conversation (chat-first-ui T5): each [n] links to its source in this turn and each source to its
+ * record; when the analyst cannot answer here the question can still search the records. It holds
+ * no live region: the conversation log reads it once, and the page announces start and end.
  */
 export const AnalystAnswer = ({
-  pending,
   question,
   data,
   error,
   onSearch,
 }: {
-  pending: boolean;
   question: string;
   /** Blocks may be missing in answers built before they existed (tests, cached data). */
   data?: (Omit<Answer, 'blocks'> & Partial<Pick<Answer, 'blocks'>>) | undefined;
@@ -32,13 +30,13 @@ export const AnalystAnswer = ({
   // 409: external AI off; 503: no analyst on this installation, or its AI service is out of
   // reach (stopped, login expired, quota spent). The search still works.
   const searchInstead = isApiError(error, 409) || isApiError(error, 503);
+  // Several answers share the page: each one's [n] must reach its own list of sources.
+  const prefix = useId();
+  const anchor = (n: number) => `${prefix}fuente-${n}`;
   return (
     <section className={styles.panel} aria-label="Respuesta del analista">
-      {pending ? (
-        <progress className={styles.progress} aria-label="Preparando la respuesta" />
-      ) : null}
-      <div role="status">
-        {data && !pending ? (
+      <div>
+        {data ? (
           <>
             <p className={styles.answer}>
               {answerParts(data.answer, data.sources).map((part, index) =>
@@ -73,9 +71,9 @@ export const AnalystAnswer = ({
           </>
         ) : null}
       </div>
-      {data && !pending ? <AnswerBlocks blocks={data.blocks ?? []} /> : null}
-      {error && !pending ? (
-        <Alert tone="error">
+      {data ? <AnswerBlocks blocks={data.blocks ?? []} /> : null}
+      {error ? (
+        <Alert tone="error" announce={false}>
           {isApiError(error) ? error.detail : 'No se pudo obtener la respuesta.'}
           {searchInstead ? (
             <>

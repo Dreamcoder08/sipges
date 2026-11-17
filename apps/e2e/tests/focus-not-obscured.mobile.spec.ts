@@ -109,7 +109,9 @@ for (const width of [360, 412] as const) {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await signInToProject(page, admin, DEFAULT_SCOPE);
     await page.goto('/inicio');
-    await expect(page.getByRole('region', { name: /Riesgo del territorio/ })).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: 'Esta semana' }).getByRole('link', { name: /^IRSA/ }),
+    ).toBeVisible();
     await expect(page.getByRole('list', { name: 'Prueba con' }).getByRole('button')).toHaveCount(4);
     const end = await page.evaluate(
       () => document.documentElement.scrollHeight - window.innerHeight,
@@ -137,7 +139,9 @@ for (const width of [360, 412] as const) {
     await signInToProject(page, admin, DEFAULT_SCOPE);
     await page.goto('/inicio');
     const composer = composerOf(page);
-    await expect(page.getByRole('region', { name: /Riesgo del territorio/ })).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: 'Esta semana' }).getByRole('link', { name: /^IRSA/ }),
+    ).toBeVisible();
     await expect(page.getByRole('list', { name: 'Prueba con' }).getByRole('button')).toHaveCount(4);
     expect(
       await page.evaluate(() => document.documentElement.scrollHeight > window.innerHeight),
@@ -158,7 +162,11 @@ for (const width of [360, 412] as const) {
     // Focus: from the top, Tab through the content and Shift+Tab back.
     await page.evaluate(() => window.scrollTo(0, 0));
     await composerReserved(page);
-    await page.getByRole('link', { name: 'Abrir Bandeja' }).focus();
+    // With more than three open items the head link reads «Ver todo en Bandeja» (T19).
+    await page
+      .getByRole('region', { name: 'Necesita tu atención' })
+      .getByRole('link', { name: /Bandeja$/ })
+      .focus();
     const forward = await walk(page, 'Tab', 30);
     const back = await walk(page, 'Shift+Tab', 30);
 

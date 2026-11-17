@@ -1,0 +1,84 @@
+/* The thread after design/chat-first/02-atencion-primero.html: bubbles right, answers full width. */
+.thread {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-turn);
+}
+
+.user {
+  /* Brought into view from the sidebar's «Conversaciones»: clear of the sticky top bar. */
+  scroll-margin-top: calc(var(--topbar-height, 0px) + var(--space-4));
+  display: flex;
+  justify-content: flex-end;
+}
+
+.bubble {
+  max-width: min(80%, 34rem);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-xl);
+  background: var(--color-bubble);
+  font-size: var(--text-answer);
+  line-height: var(--leading-answer);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.who {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.ia {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.75rem;
+  height: 1.25rem;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--tone-neutral-bg);
+  color: var(--tone-neutral-fg);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-caps);
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-answer);
+  font-weight: var(--weight-medium);
+}
+
+.pulse {
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+}
+
+/* The one moving thing while an answer is pending; still under reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .pulse {
+    animation: pulse var(--motion-shimmer) var(--ease-in-out) infinite;
+  }
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (max-width: 40rem) {
+  .bubble {
+    max-width: 88%;
+  }
+}
