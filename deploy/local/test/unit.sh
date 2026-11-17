@@ -61,7 +61,14 @@ build)
   if [[ -f $FAKE/same-build ]]; then count=same; fi
   echo "sha256:$count" >"$(image_file "$tag")"
   ;;
-run) ;;
+run)
+  # The image's key generator: a new pair each call.
+  if [[ $* == *vapid-keys* ]]; then
+    count=$(($(cat "$FAKE/vapid" 2>/dev/null || echo 0) + 1))
+    echo "$count" >"$FAKE/vapid"
+    printf 'SIPGES_VAPID_PUBLIC_KEY=public-%s\nSIPGES_VAPID_PRIVATE_KEY=private-%s\n' "$count" "$count"
+  fi
+  ;;
 esac
 FAKE
 printf '#!/usr/bin/env bash\n' >"$root/sleep"
@@ -230,6 +237,26 @@ echo 'SIPGES_BACKUP_HOUR=99' >>"$SIPGES_ENV_FILE"
 run update || true
 check 'update refuses before backing up or building' never_built
 check 'nor backed up' test -z "$(grep -F backup.sh "$FAKE/calls" || true)"
+
+# --- device notifications get their keys once
+
+fresh
+chmod 600 "$SIPGES_ENV_FILE" # as ./sipges install writes it
+run install
+check 'an install adds a device-notification key pair' grep -qx 'SIPGES_VAPID_PUBLIC_KEY=public-1' "$SIPGES_ENV_FILE"
+check 'with its private key' grep -qx 'SIPGES_VAPID_PRIVATE_KEY=private-1' "$SIPGES_ENV_FILE"
+check 'and a contact the push services accept' grep -qx 'SIPGES_VAPID_SUBJECT=mailto:sipges@localhost' "$SIPGES_ENV_FILE"
+check 'the .env stays readable by its owner only' test "$(stat -c %a "$SIPGES_ENV_FILE")" = 600
+run start
+check 'a later start keeps the same pair, so subscribed devices keep working' \
+  test "$(grep -c '^SIPGES_VAPID_PUBLIC_KEY=' "$SIPGES_ENV_FILE")" = 1
+check 'and asks for no new pair' test "$(cat "$FAKE/vapid")" = 1
+
+fresh
+printf 'SIPGES_VAPID_PUBLIC_KEY=mine\nSIPGES_VAPID_PRIVATE_KEY=mine-private\nSIPGES_VAPID_SUBJECT=mailto:a@b.c\n' >>"$SIPGES_ENV_FILE"
+run install
+check 'keys the operator set are never replaced' grep -qx 'SIPGES_VAPID_PUBLIC_KEY=mine' "$SIPGES_ENV_FILE"
+check 'nor a new pair asked for' test ! -f "$FAKE/vapid"
 
 # --- previous points only at a build that started
 
