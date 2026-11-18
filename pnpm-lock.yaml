@@ -207,6 +207,9 @@ importers:
       '@electric-sql/pglite':
         specifier: ^0.5.15
         version: 0.5.15
+      '@electric-sql/pglite-tools':
+        specifier: 0.4.15
+        version: 0.4.15(@electric-sql/pglite@0.5.15)
       '@hono/node-server':
         specifier: ^2.1.6
         version: 2.1.6(hono@4.13.16)
@@ -611,6 +614,11 @@ packages:
       '@deck.gl/core': ~9.4.0
       '@luma.gl/core': ~9.4.0
       '@math.gl/web-mercator': ^4.1.0
+
+  '@electric-sql/pglite-tools@0.4.15':
+    resolution: {integrity: sha512-VqKRGOgCLWUfZrfSxfVXm0OCawGMiUPf7TzPhSNOddEDiNbd9KLYfygvcL141wXSCPdlo/pr9Jsf1DlFozTR7g==}
+    peerDependencies:
+      '@electric-sql/pglite': 0.5.15
 
   '@electric-sql/pglite@0.5.15':
     resolution: {integrity: sha512-ERZWgaRTxueGV4cvL1tfpAOzFCWTXoUtbCBqnf2FhHDVs/so9eAKaanvrwWF9Dntx7BYsmFQujVQ0/B4S8Mmiw==}
@@ -3587,6 +3595,10 @@ snapshots:
       '@deck.gl/core': 9.4.1(@luma.gl/webgpu@9.4.2(@luma.gl/core@9.4.2)(@luma.gl/shadertools@9.4.2(@luma.gl/core@9.4.2)))
       '@luma.gl/core': 9.4.2
       '@math.gl/web-mercator': 4.1.0
+
+  '@electric-sql/pglite-tools@0.4.15(@electric-sql/pglite@0.5.15)':
+    dependencies:
+      '@electric-sql/pglite': 0.5.15
 
   '@electric-sql/pglite@0.5.15': {}
 
