@@ -509,7 +509,15 @@ func (s *Server) running(ctx context.Context) (bool, error) {
 }
 
 func (s *Server) pgctl(ctx context.Context, args []string) error {
-	return runLogged(ctx, s.opts.LogPath, program(s.opts.BinDir, "pg_ctl"), args)
+	return runLogged(ctx, ctlLogPath(s.opts.LogPath), program(s.opts.BinDir, "pg_ctl"), args)
+}
+
+// ctlLogPath is where pg_ctl's own output goes: next to the server log, never the server log
+// itself, which pg_ctl hands to the server with -l. On Windows pg_ctl starts the server through
+// cmd's ">> logfile", and cmd cannot open a file this process holds open for writing.
+func ctlLogPath(logPath string) string {
+	ext := filepath.Ext(logPath)
+	return strings.TrimSuffix(logPath, ext) + "-pg_ctl" + ext
 }
 
 // runLogged appends the program's output to the log. It is a file, not a pipe, so a server that
