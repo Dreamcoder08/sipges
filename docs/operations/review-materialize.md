@@ -102,9 +102,12 @@ configuration does (the tool never uses it: a throwaway key will do). Never past
 string into a document, commit or chat.
 
 The script runs the Rust port, `engines/crates/review-materialize` (ADR 0032, T43), through
-`cargo run --release`: it needs Rust 1.98 or newer, and the first run compiles it. Flags, output
+`scripts/rust-tool.mjs`, which builds it with the toolchain pinned in
+`engines/rust-toolchain.toml` (rustup must be installed; the first run compiles it). Flags, output
 and exit codes are those of the TypeScript tool, which stays reachable as `review:materialize:ts`
-until it is retired (T73); only that one still opens a local PGlite (`SIPGES_PGLITE_DIR`). The
+until it is retired (T73); only that one still opens a local PGlite (`SIPGES_PGLITE_DIR`). With
+only `SIPGES_PGLITE_DIR` set, the script stops before compiling and points at
+`review:materialize:ts`, which a PGlite install uses until it moves to pg18. The
 workflow `Ops - review approvals into records` (`ops-review-materialize.yml`) builds and runs the
 same Rust binary with the same flags.
 
