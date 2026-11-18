@@ -137,8 +137,14 @@ Besides serving, the binary runs `migrate`, `import-report`, `inventory`, `vapid
 user's second factor and every session, so the next sign-in enrols a new authenticator. It is the
 only way to recover the last administrator, because the HTTP route refuses a self-reset (ADR 0009).
 It talks to the database directly, with the same `SIPGES_DATABASE_URL` (and
-`SIPGES_ALLOW_PRIVILEGED_DB_ROLE`) as the API; it applies no migration, and, like TypeScript, it
-writes no audit row. The name is trimmed and lower-cased.
+`SIPGES_ALLOW_PRIVILEGED_DB_ROLE`) as the API; it applies no migration. The name is trimmed and
+lower-cased.
+
+Unlike TypeScript, it leaves a trace. Every call that names a user writes one JSON line on stderr
+(`time`, `level`, `msg: operator_command`, `command: reset-mfa`, `username`, `outcome`: `reset`,
+`missing` or `failed`), with no error text or connection details. A reset also appends a
+`Cuentas` / `MFA_RESET` row, the module and action of the HTTP reset, to the Auditoría of every
+project the user is granted, in the same transaction; a user without grants gets only the log line.
 
 | Case                      | Exit | Output                                                                                  |
 | ------------------------- | ---- | --------------------------------------------------------------------------------------- |

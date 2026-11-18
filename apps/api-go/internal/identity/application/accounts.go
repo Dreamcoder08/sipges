@@ -30,9 +30,10 @@ type AccountStore interface {
 	// ResetTOTPInTenant clears the factor and every session, refuses a user without a grant to
 	// tenantID, and appends the audit row to that tenant's trail, in one transaction.
 	ResetTOTPInTenant(ctx context.Context, username, tenantID, detail string, at time.Time) (AccountOutcome, error)
-	// ResetTOTP is resetTotp: the operator path, with no tenant and no audit row. It clears the
-	// factor and every session in one transaction, or answers AccountMissing.
-	ResetTOTP(ctx context.Context, username string) (AccountOutcome, error)
+	// ResetTOTP is the operator path, with no tenant: it clears the factor and every session and
+	// appends the audit row to the trail of every tenant the user is granted, in one
+	// transaction, or answers AccountMissing and writes nothing.
+	ResetTOTP(ctx context.Context, username, detail string, at time.Time) (AccountOutcome, error)
 }
 
 // AccountOutcome is what an administrative write answers; the empty value is success.
@@ -154,10 +155,14 @@ func (s *Service) ResetMFA(ctx context.Context, actor *domain.Principal, rawUser
 
 // OperatorResetMFA is the reset-mfa command of admin-cli.ts: an operator on the server clears a
 // user's second factor, including the last administrator's, which the HTTP route refuses as a
-// self-reset (ADR 0009). There is no actor, so no tenant grant applies and, as in TypeScript, no
-// audit row is written. It answers the normalized username the outcome is about.
+// self-reset (ADR 0009). There is no actor, so no tenant grant applies; unlike TypeScript, the
+// reset is audited in every project the user is granted, so each project's administrators see
+// it. It answers the normalized username the outcome is about.
 func (s *Service) OperatorResetMFA(ctx context.Context, rawUsername string) (string, AccountOutcome, error) {
 	username := domain.NormalizeUsername(rawUsername)
-	outcome, err := s.deps.Accounts.ResetTOTP(ctx, username)
+	outcome, err := s.deps.Accounts.ResetTOTP(ctx, username, OperatorResetDetail, s.now())
 	return username, outcome, err
 }
+
+// OperatorResetDetail is the audit detail of an operator's reset-mfa.
+const OperatorResetDetail = "MFA restablecido por el operador del servidor (reset-mfa); sesiones revocadas"
