@@ -5,7 +5,9 @@ package main
 import (
 	"os"
 	"os/exec"
+	"sync"
 	"syscall"
+	"unsafe"
 )
 
 // ctrlBreakEvent is CTRL_BREAK_EVENT; Go's os/signal delivers it to the API as os.Interrupt.
@@ -26,4 +28,83 @@ func interrupt(p *os.Process) error {
 		return nil
 	}
 	return p.Kill()
+}
+
+// Job object API (kernel32), for children that never outlive the launcher.
+var (
+	createJobObject          = syscall.NewLazyDLL("kernel32.dll").NewProc("CreateJobObjectW")
+	setInformationJobObject  = syscall.NewLazyDLL("kernel32.dll").NewProc("SetInformationJobObject")
+	assignProcessToJobObject = syscall.NewLazyDLL("kernel32.dll").NewProc("AssignProcessToJobObject")
+)
+
+const (
+	jobObjectExtendedLimitInformation = 9
+	jobObjectLimitKillOnJobClose      = 0x2000
+)
+
+type ioCounters struct {
+	ReadOperationCount, WriteOperationCount, OtherOperationCount uint64
+	ReadTransferCount, WriteTransferCount, OtherTransferCount    uint64
+}
+
+type jobBasicLimitInformation struct {
+	PerProcessUserTimeLimit int64
+	PerJobUserTimeLimit     int64
+	LimitFlags              uint32
+	MinimumWorkingSetSize   uintptr
+	MaximumWorkingSetSize   uintptr
+	ActiveProcessLimit      uint32
+	Affinity                uintptr
+	PriorityClass           uint32
+	SchedulingClass         uint32
+}
+
+type jobExtendedLimitInformation struct {
+	BasicLimitInformation jobBasicLimitInformation
+	IoInfo                ioCounters
+	ProcessMemoryLimit    uintptr
+	JobMemoryLimit        uintptr
+	PeakProcessMemoryUsed uintptr
+	PeakJobMemoryUsed     uintptr
+}
+
+var (
+	jobOnce   sync.Once
+	jobHandle uintptr
+)
+
+// launcherJob is a job object that kills every process in it when its last handle closes. The
+// handle is never closed on purpose.
+func launcherJob() uintptr {
+	jobOnce.Do(func() {
+		h, _, _ := createJobObject.Call(0, 0)
+		if h == 0 {
+			return
+		}
+		var info jobExtendedLimitInformation
+		info.BasicLimitInformation.LimitFlags = jobObjectLimitKillOnJobClose
+		if r, _, _ := setInformationJobObject.Call(h, jobObjectExtendedLimitInformation,
+			uintptr(unsafe.Pointer(&info)), unsafe.Sizeof(info)); r == 0 { //nolint:gosec // G103: the documented JOBOBJECT_EXTENDED_LIMIT_INFORMATION call
+			_ = syscall.CloseHandle(syscall.Handle(h))
+			return
+		}
+		jobHandle = h
+	})
+	return jobHandle
+}
+
+// joinLauncherJob puts this process in a job that kills every process in it when its last handle
+// closes, which happens when this launcher ends, however it ended: pg_ctl, postgres, api migrate
+// and the API are started from here, inherit the job and never outlive the launcher. Best effort:
+// without the job, the next start stops a PostgreSQL left running.
+func joinLauncherJob() {
+	job := launcherJob()
+	if job == 0 {
+		return
+	}
+	current, err := syscall.GetCurrentProcess()
+	if err != nil {
+		return
+	}
+	_, _, _ = assignProcessToJobObject.Call(job, uintptr(current))
 }

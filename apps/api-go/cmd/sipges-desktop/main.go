@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -41,6 +42,10 @@ const dataFolder = "pg18"
 const stopTimeout = 60 * time.Second
 
 func main() {
+	joinLauncherJob()
+	if usesInstall(os.Args[1:]) {
+		os.Exit(launcherMain(os.Args[1:]))
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	if err := run(ctx, os.Args[1:], os.Environ(), os.Stdout, os.Stderr); err != nil {
@@ -61,6 +66,8 @@ type settings struct {
 	// updateChannel is the folder the API shares with the launcher (SIPGES_DESKTOP_UPDATE_DIR);
 	// empty outside a managed install, and then the API serves no update routes.
 	updateChannel string
+	// prepareOnly makes the empty cluster for the PGlite migrator and stops (--prepare-only).
+	prepareOnly bool
 }
 
 func parseSettings(args []string, lookup func(string) (string, bool), exeDir string) (settings, error) {
@@ -72,6 +79,7 @@ func parseSettings(args []string, lookup func(string) (string, bool), exeDir str
 	fs.StringVar(&s.apiBin, "api", envOr(lookup, "SIPGES_API_BIN", filepath.Join(exeDir, program("api"))), "the Go API binary (cmd/api)")
 	fs.StringVar(&s.migrations, "migrations", envOr(lookup, "SIPGES_MIGRATIONS_DIR", filepath.Join(exeDir, "migrations")), "folder with the SQL migrations")
 	fs.IntVar(&s.port, "port", 8000, "port of the API on 127.0.0.1")
+	fs.BoolVar(&s.prepareOnly, "prepare-only", false, "create and provision an empty PostgreSQL 18 cluster, then stop")
 	fs.StringVar(&s.updateChannel, "update-channel", envOr(lookup, envUpdateChannel, managedChannel(exeDir)), "folder shared with the desktop launcher for the update notice")
 	if err := fs.Parse(args); err != nil {
 		return settings{}, &userError{msg: "Opciones de inicio inválidas.", err: err}
@@ -155,6 +163,9 @@ func runDesktop(ctx context.Context, args, environ []string, stdout, stderr io.W
 	if err != nil {
 		return err
 	}
+	if s.prepareOnly {
+		return prepareOnly(ctx, s.state, versionBins{api: s.apiBin, migrations: s.migrations, pgBin: s.pgBin}, environ, stdout, stderr)
+	}
 	sec, err := readSecrets(s.state)
 	if err != nil {
 		return err
@@ -203,6 +214,35 @@ func runDesktop(ctx context.Context, args, environ []string, stdout, stderr io.W
 		return &userError{msg: "No se pudo actualizar la base de datos local. Revise el registro de SIPGES.", err: err}
 	}
 	return serveAPI(ctx, s.apiBin, env, stdout, stderr)
+}
+
+// launcherMain runs the managed launcher (--install) until it stops: the first SIGINT or SIGTERM
+// stops SIPGES gracefully, a second one kills the server at once and exits with code 1.
+func launcherMain(args []string) int {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	signals := make(chan os.Signal, 2)
+	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
+	var held atomic.Pointer[launcher]
+	go func() {
+		<-signals
+		cancel()
+		second := <-signals
+		if l := held.Load(); l != nil {
+			l.kill()
+		}
+		newEventLog(os.Stdout).event("stop_forced", field{"signal", signalName(second)})
+		os.Exit(exitForced)
+	}()
+	return runLauncherCLI(ctx, args, os.Environ(), os.Stdout, os.Stderr, held.Store)
+}
+
+// signalName is the signal as Node names it in the stop_forced line.
+func signalName(s os.Signal) string {
+	if s == os.Interrupt {
+		return "SIGINT"
+	}
+	return "SIGTERM"
 }
 
 func lookupIn(environ []string) func(string) (string, bool) {
