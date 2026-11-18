@@ -42,6 +42,8 @@ export const MAX_NEIGHBOURHOOD_NODES = 400;
 const MAX_ID = 200;
 export const MAX_SEARCH_RESULTS = 50;
 export const MAX_TIMELINE_RESULTS = 500;
+/** Records read per count; `truncated` says the module held more. */
+export const MAX_COUNTED_RECORDS = 20000;
 
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
 /** Accepts yyyy, yyyy-mm or yyyy-mm-dd and expands it to the first or last day it covers. */
@@ -51,6 +53,18 @@ export const dayBound = (value: string, end: boolean): string | null => {
   if (/^\d{4}$/.test(trimmed)) return `${trimmed}-${end ? '12-31' : '01-01'}`;
   if (/^\d{4}-(0[1-9]|1[0-2])$/.test(trimmed)) return `${trimmed}-${end ? '31' : '01'}`;
   return ISO_DAY.test(trimmed) ? trimmed : null;
+};
+
+export type CountProblem = 'unknown_module' | 'invalid_dates' | 'no_date_field' | 'not_groupable';
+
+export type CountableRecords = {
+  readonly slug: string;
+  readonly groupBy: string | null;
+  /** Expanded day bounds, or null when the count is not bounded by dates. */
+  readonly from: string | null;
+  readonly to: string | null;
+  readonly records: readonly { id: string; marking: string; value: unknown }[];
+  readonly truncated: boolean;
 };
 
 export type SearchHit = ObjectSummary & {
@@ -668,6 +682,47 @@ export const createOntologyService = (deps: {
         return objectType ? [{ ...summarize(objectType, row), date: row.day }] : [];
       });
       return { from, to, entries, truncated: rows.length > bounded };
+    },
+
+    /**
+     * The records a count covers: every record of `slug` (bounded), with its marking and the raw
+     * value of `groupBy`, optionally kept to dates on the type's date field. Checks come first, in
+     * this order, so nothing is read for a refused request. `groupable` decides which fields may
+     * become a key; the caller owns that policy.
+     */
+    async countable(
+      tenantId: string,
+      input: {
+        slug: string;
+        groupBy: string;
+        from: string;
+        to: string;
+        groupable: (slug: string, field: string) => boolean;
+      },
+    ): Promise<Result<CountableRecords, CountProblem>> {
+      const objectType = objectTypeForSlug(input.slug);
+      if (!objectType) return err('unknown_module');
+      const dated = Boolean(input.from.trim() || input.to.trim());
+      const from = dated ? dayBound(input.from, false) : null;
+      const to = dated ? dayBound(input.to, true) : null;
+      if (dated && (!from || !to)) return err('invalid_dates');
+      if (dated && !objectType.dateField) return err('no_date_field');
+      const groupBy = input.groupBy.trim() || null;
+      if (groupBy && !input.groupable(objectType.slug, groupBy)) return err('not_groupable');
+      const range =
+        from && to && objectType.dateField ? { field: objectType.dateField, from, to } : null;
+      const rows =
+        range && range.from > range.to
+          ? []
+          : await store.scan(tenantId, objectType.module, groupBy, range, MAX_COUNTED_RECORDS + 1);
+      return ok({
+        slug: objectType.slug,
+        groupBy,
+        from,
+        to,
+        records: rows.slice(0, MAX_COUNTED_RECORDS),
+        truncated: rows.length > MAX_COUNTED_RECORDS,
+      });
     },
 
     async link(

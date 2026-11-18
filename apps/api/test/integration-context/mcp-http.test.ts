@@ -158,6 +158,7 @@ describe('MCP server', () => {
       'get_record',
       'get_links',
       'get_timeline',
+      'count_records',
       'get_briefing',
     ]);
     expect(tools[1]).toMatchObject({
