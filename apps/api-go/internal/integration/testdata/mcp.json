@@ -18673,7 +18673,7 @@
       "status": 200,
       "content_type": "application/json",
       "www_authenticate": null,
-      "response": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"tools\":{\"listChanged\":false}},\"serverInfo\":{\"name\":\"sipges\",\"title\":\"SIPGES\",\"version\":\"1.0.0\"},\"instructions\":\"SIPGES es una plataforma de gestión socioambiental territorial. Empieza con list_object_types, busca con search_records y profundiza con get_links, get_timeline y get_briefing. Cita los identificadores de los registros en tus respuestas.\"}}"
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"tools\":{\"listChanged\":false}},\"serverInfo\":{\"name\":\"sipges\",\"title\":\"SIPGES\",\"version\":\"1.0.0\"},\"instructions\":\"SIPGES es una plataforma de gestión socioambiental territorial. Empieza con list_object_types, busca con search_records y profundiza con get_links, get_timeline y get_briefing. Para totales y reportes usa count_records. Cita los identificadores de los registros en tus respuestas.\"}}"
     },
     {
       "label": "initialize 2025-11-25",
@@ -18686,7 +18686,7 @@
       "status": 200,
       "content_type": "application/json",
       "www_authenticate": null,
-      "response": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"tools\":{\"listChanged\":false}},\"serverInfo\":{\"name\":\"sipges\",\"title\":\"SIPGES\",\"version\":\"1.0.0\"},\"instructions\":\"SIPGES es una plataforma de gestión socioambiental territorial. Empieza con list_object_types, busca con search_records y profundiza con get_links, get_timeline y get_briefing. Cita los identificadores de los registros en tus respuestas.\"}}"
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"tools\":{\"listChanged\":false}},\"serverInfo\":{\"name\":\"sipges\",\"title\":\"SIPGES\",\"version\":\"1.0.0\"},\"instructions\":\"SIPGES es una plataforma de gestión socioambiental territorial. Empieza con list_object_types, busca con search_records y profundiza con get_links, get_timeline y get_briefing. Para totales y reportes usa count_records. Cita los identificadores de los registros en tus respuestas.\"}}"
     },
     {
       "label": "initialize 2025-06-18",
@@ -18699,7 +18699,7 @@
       "status": 200,
       "content_type": "application/json",
       "www_authenticate": null,
-      "response": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-06-18\",\"capabilities\":{\"tools\":{\"listChanged\":false}},\"serverInfo\":{\"name\":\"sipges\",\"title\":\"SIPGES\",\"version\":\"1.0.0\"},\"instructions\":\"SIPGES es una plataforma de gestión socioambiental territorial. Empieza con list_object_types, busca con search_records y profundiza con get_links, get_timeline y get_briefing. Cita los identificadores de los registros en tus respuestas.\"}}"
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-06-18\",\"capabilities\":{\"tools\":{\"listChanged\":false}},\"serverInfo\":{\"name\":\"sipges\",\"title\":\"SIPGES\",\"version\":\"1.0.0\"},\"instructions\":\"SIPGES es una plataforma de gestión socioambiental territorial. Empieza con list_object_types, busca con search_records y profundiza con get_links, get_timeline y get_briefing. Para totales y reportes usa count_records. Cita los identificadores de los registros en tus respuestas.\"}}"
     },
     {
       "label": "initialize 2025-03-26",
@@ -18712,7 +18712,7 @@
       "status": 200,
       "content_type": "application/json",
       "www_authenticate": null,
-      "response": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-03-26\",\"capabilities\":{\"tools\":{\"listChanged\":false}},\"serverInfo\":{\"name\":\"sipges\",\"title\":\"SIPGES\",\"version\":\"1.0.0\"},\"instructions\":\"SIPGES es una plataforma de gestión socioambiental territorial. Empieza con list_object_types, busca con search_records y profundiza con get_links, get_timeline y get_briefing. Cita los identificadores de los registros en tus respuestas.\"}}"
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-03-26\",\"capabilities\":{\"tools\":{\"listChanged\":false}},\"serverInfo\":{\"name\":\"sipges\",\"title\":\"SIPGES\",\"version\":\"1.0.0\"},\"instructions\":\"SIPGES es una plataforma de gestión socioambiental territorial. Empieza con list_object_types, busca con search_records y profundiza con get_links, get_timeline y get_briefing. Para totales y reportes usa count_records. Cita los identificadores de los registros en tus respuestas.\"}}"
     },
     {
       "label": "initialize 2024-11-05",
@@ -18725,7 +18725,7 @@
       "status": 200,
       "content_type": "application/json",
       "www_authenticate": null,
-      "response": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"tools\":{\"listChanged\":false}},\"serverInfo\":{\"name\":\"sipges\",\"title\":\"SIPGES\",\"version\":\"1.0.0\"},\"instructions\":\"SIPGES es una plataforma de gestión socioambiental territorial. Empieza con list_object_types, busca con search_records y profundiza con get_links, get_timeline y get_briefing. Cita los identificadores de los registros en tus respuestas.\"}}"
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"tools\":{\"listChanged\":false}},\"serverInfo\":{\"name\":\"sipges\",\"title\":\"SIPGES\",\"version\":\"1.0.0\"},\"instructions\":\"SIPGES es una plataforma de gestión socioambiental territorial. Empieza con list_object_types, busca con search_records y profundiza con get_links, get_timeline y get_briefing. Para totales y reportes usa count_records. Cita los identificadores de los registros en tus respuestas.\"}}"
     },
     {
       "label": "initialize ",
@@ -18738,7 +18738,7 @@
       "status": 200,
       "content_type": "application/json",
       "www_authenticate": null,
-      "response": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"tools\":{\"listChanged\":false}},\"serverInfo\":{\"name\":\"sipges\",\"title\":\"SIPGES\",\"version\":\"1.0.0\"},\"instructions\":\"SIPGES es una plataforma de gestión socioambiental territorial. Empieza con list_object_types, busca con search_records y profundiza con get_links, get_timeline y get_briefing. Cita los identificadores de los registros en tus respuestas.\"}}"
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"tools\":{\"listChanged\":false}},\"serverInfo\":{\"name\":\"sipges\",\"title\":\"SIPGES\",\"version\":\"1.0.0\"},\"instructions\":\"SIPGES es una plataforma de gestión socioambiental territorial. Empieza con list_object_types, busca con search_records y profundiza con get_links, get_timeline y get_briefing. Para totales y reportes usa count_records. Cita los identificadores de los registros en tus respuestas.\"}}"
     },
     {
       "label": "initialize 7",
@@ -18751,7 +18751,7 @@
       "status": 200,
       "content_type": "application/json",
       "www_authenticate": null,
-      "response": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"tools\":{\"listChanged\":false}},\"serverInfo\":{\"name\":\"sipges\",\"title\":\"SIPGES\",\"version\":\"1.0.0\"},\"instructions\":\"SIPGES es una plataforma de gestión socioambiental territorial. Empieza con list_object_types, busca con search_records y profundiza con get_links, get_timeline y get_briefing. Cita los identificadores de los registros en tus respuestas.\"}}"
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"tools\":{\"listChanged\":false}},\"serverInfo\":{\"name\":\"sipges\",\"title\":\"SIPGES\",\"version\":\"1.0.0\"},\"instructions\":\"SIPGES es una plataforma de gestión socioambiental territorial. Empieza con list_object_types, busca con search_records y profundiza con get_links, get_timeline y get_briefing. Para totales y reportes usa count_records. Cita los identificadores de los registros en tus respuestas.\"}}"
     },
     {
       "label": "initialize null",
@@ -18764,7 +18764,7 @@
       "status": 200,
       "content_type": "application/json",
       "www_authenticate": null,
-      "response": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"tools\":{\"listChanged\":false}},\"serverInfo\":{\"name\":\"sipges\",\"title\":\"SIPGES\",\"version\":\"1.0.0\"},\"instructions\":\"SIPGES es una plataforma de gestión socioambiental territorial. Empieza con list_object_types, busca con search_records y profundiza con get_links, get_timeline y get_briefing. Cita los identificadores de los registros en tus respuestas.\"}}"
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"tools\":{\"listChanged\":false}},\"serverInfo\":{\"name\":\"sipges\",\"title\":\"SIPGES\",\"version\":\"1.0.0\"},\"instructions\":\"SIPGES es una plataforma de gestión socioambiental territorial. Empieza con list_object_types, busca con search_records y profundiza con get_links, get_timeline y get_briefing. Para totales y reportes usa count_records. Cita los identificadores de los registros en tus respuestas.\"}}"
     },
     {
       "label": "initialize with a list as params",
@@ -18777,7 +18777,7 @@
       "status": 200,
       "content_type": "application/json",
       "www_authenticate": null,
-      "response": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"tools\":{\"listChanged\":false}},\"serverInfo\":{\"name\":\"sipges\",\"title\":\"SIPGES\",\"version\":\"1.0.0\"},\"instructions\":\"SIPGES es una plataforma de gestión socioambiental territorial. Empieza con list_object_types, busca con search_records y profundiza con get_links, get_timeline y get_briefing. Cita los identificadores de los registros en tus respuestas.\"}}"
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"tools\":{\"listChanged\":false}},\"serverInfo\":{\"name\":\"sipges\",\"title\":\"SIPGES\",\"version\":\"1.0.0\"},\"instructions\":\"SIPGES es una plataforma de gestión socioambiental territorial. Empieza con list_object_types, busca con search_records y profundiza con get_links, get_timeline y get_briefing. Para totales y reportes usa count_records. Cita los identificadores de los registros en tus respuestas.\"}}"
     },
     {
       "label": "initialize with null params",
@@ -18790,7 +18790,7 @@
       "status": 200,
       "content_type": "application/json",
       "www_authenticate": null,
-      "response": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"tools\":{\"listChanged\":false}},\"serverInfo\":{\"name\":\"sipges\",\"title\":\"SIPGES\",\"version\":\"1.0.0\"},\"instructions\":\"SIPGES es una plataforma de gestión socioambiental territorial. Empieza con list_object_types, busca con search_records y profundiza con get_links, get_timeline y get_briefing. Cita los identificadores de los registros en tus respuestas.\"}}"
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"tools\":{\"listChanged\":false}},\"serverInfo\":{\"name\":\"sipges\",\"title\":\"SIPGES\",\"version\":\"1.0.0\"},\"instructions\":\"SIPGES es una plataforma de gestión socioambiental territorial. Empieza con list_object_types, busca con search_records y profundiza con get_links, get_timeline y get_briefing. Para totales y reportes usa count_records. Cita los identificadores de los registros en tus respuestas.\"}}"
     },
     {
       "label": "ping",
