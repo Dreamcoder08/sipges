@@ -2,7 +2,7 @@ import type { ProjectSettings } from '@sipges/contracts';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { HttpResponse, http } from 'msw';
-import { beforeAll, beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import { ProjectSettingsProvider } from '../../../shared/lib/project-settings.tsx';
 import { resetApi, server } from '../../../test/server.ts';
 import { InicioPage } from './InicioPage.tsx';
@@ -18,6 +18,51 @@ const encoder = new TextEncoder();
 /** The open stream of the last question: the test sends its events. */
 let stream: { send: (event: string, data: unknown) => void; end: () => void } | undefined;
 let asked: string[] = [];
+/** Whether this file answers the stream route itself; otherwise MSW's handler does. */
+let answerStream = true;
+
+/**
+ * The stream route is answered here, at `fetch`, not through MSW. MSW 3 mocks at the socket
+ * level: on Node 22 a body the page cancels (it lets go after `answer`, `error` or «Detener»)
+ * makes Undici open a spare connection, which MSW passes through to the absent localhost:3000
+ * server and destroys when that connection is refused. A later question that Undici sent on that
+ * socket then ends after `: ping` with no events, and its turn reads «no llegó a una respuesta»
+ * (T21 CI flake). Aborting the request errors the body, as fetch does.
+ */
+const openStream = (signal: AbortSignal | null | undefined) => {
+  asked.push('stream');
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      stream = {
+        send: (event, data) => {
+          try {
+            controller.enqueue(
+              encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`),
+            );
+          } catch {
+            // The page let go of the stream.
+          }
+        },
+        end: () => {
+          try {
+            controller.close();
+          } catch {
+            // The page let go of the stream.
+          }
+        },
+      };
+      controller.enqueue(encoder.encode(': ping\n\n'));
+      signal?.addEventListener('abort', () => {
+        try {
+          controller.error(signal.reason);
+        } catch {
+          // Already closed.
+        }
+      });
+    },
+  });
+  return new Response(body, { headers: { 'content-type': 'text/event-stream' } });
+};
 
 // The answer view is a lazy chunk (T20); load it once here so no single test pays for the import
 // under CI load (inicio-lazy.test.tsx covers the loading itself).
@@ -29,34 +74,26 @@ beforeEach(() => {
   resetApi({ me: { username: 'demo', full_name: 'Persona Demo', role: 'consulta' } });
   stream = undefined;
   asked = [];
+  answerStream = true;
+  const fetchThroughMsw = globalThis.fetch;
+  vi.spyOn(globalThis, 'fetch').mockImplementation((input, init) =>
+    answerStream && new URL(String(input), window.location.href).pathname === STREAM
+      ? Promise.resolve(openStream(init?.signal))
+      : fetchThroughMsw(input, init),
+  );
   server.use(
     http.get('/system/analyst', () => HttpResponse.json({ available: true })),
-    http.post(STREAM, () => {
-      asked.push('stream');
-      const body = new ReadableStream<Uint8Array>({
-        start(controller) {
-          stream = {
-            send: (event, data) => {
-              try {
-                controller.enqueue(
-                  encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`),
-                );
-              } catch {
-                // The page let go of the stream.
-              }
-            },
-            end: () => controller.close(),
-          };
-          controller.enqueue(encoder.encode(': ping\n\n'));
-        },
-      });
-      return new HttpResponse(body, { headers: { 'content-type': 'text/event-stream' } });
-    }),
+    // Inicio's attention list; unhandled, MSW errors the request and its socket.
+    http.get('/system/intelligence/territorial-alerts', () => HttpResponse.json([])),
     http.post('/system/analyst/ask', () => {
       asked.push('ask');
       return HttpResponse.json({ answer: 'Respuesta sin pasos.', sources: [] });
     }),
   );
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 const renderInicio = (onAsk = vi.fn()) => {
@@ -157,7 +194,9 @@ it('maps an error event to the same turn as /ask, keeping «Buscar en registros�
     stream?.send('done', {});
     stream?.end();
   });
-  expect(await within(log).findByText(off)).toBeVisible();
+  // Wait for the turn to settle, so a different outcome fails here with the log's text.
+  await waitFor(() => expect(log).toHaveAttribute('aria-busy', 'false'));
+  expect(within(log).getByText(off)).toBeVisible();
   fireEvent.click(within(log).getByRole('button', { name: 'Buscar «bloqueo norte» en registros' }));
   expect(onAsk).toHaveBeenCalledWith('bloqueo norte');
 });
@@ -193,6 +232,7 @@ it('stops the stream from «Detener respuesta»: a later step or answer never sh
 });
 
 it('asks /ask when the server has no stream route', async () => {
+  answerStream = false;
   server.use(
     http.post(STREAM, () => {
       asked.push('stream');
