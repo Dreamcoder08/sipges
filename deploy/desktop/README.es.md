@@ -258,7 +258,8 @@ instalación existente.
   `127.0.0.1:8000`, con la salida en `launcher.log`. El clúster vive en `<datos>/pg18`. En este modo
   no se buscan actualizaciones. Los dos se niegan, sin iniciar nada, con una versión construida sin
   `--go` y con una carpeta de datos que todavía solo tiene PGlite (un clúster nuevo abriría SIPGES
-  vacío).
+  vacío). Un SIPGES ya abierto solo se reutiliza en el modo pedido: `-Go` nunca abre el de
+  TypeScript y un inicio normal nunca abre el de Go.
 - **Mover los datos.** El traslado a `pg18` es `migration/pglite-to-postgres.mjs`
   ([su README](migration/README.md#into-postgresql-18-for-the-go-api-adr-0036-4)) sobre una copia de
   la carpeta de datos; la carpeta PGlite original nunca se escribe, así que abrir sin `-Go` vuelve a

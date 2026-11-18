@@ -211,7 +211,8 @@ update path keep starting the TypeScript API on PGlite, and merging it changes n
   `SIPGES_PG_BIN`), on the state folder `install.json` records, serving `127.0.0.1:8000`, output in
   `launcher.log`. The cluster lives in `<state>/pg18`. No update check runs in this mode. Both refuse,
   starting nothing, a version built without `--go` and a state folder whose data are still only in
-  PGlite (a new cluster would open SIPGES empty).
+  PGlite (a new cluster would open SIPGES empty). A SIPGES already running is reused only in the
+  mode asked for: `-Go` never opens the TypeScript one, and a plain start never opens the Go one.
 - **Moving the data.** The data move into `pg18` is `migration/pglite-to-postgres.mjs`
   ([its README](migration/README.md#into-postgresql-18-for-the-go-api-adr-0036-4)) on a copy of the
   state folder; the original PGlite folder is never written, so starting without `-Go` goes back to

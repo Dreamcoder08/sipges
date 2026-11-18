@@ -51,7 +51,24 @@ function Show-Failure([string]$Message) {
     exit 1
 }
 
+# The program serving port 8000: api (the Go API) or node (TypeScript); $null when unknown.
+function Get-ServerImage {
+    try {
+        $owner = Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction Stop | Select-Object -First 1 -ExpandProperty OwningProcess
+        return (Get-Process -Id $owner -ErrorAction Stop).ProcessName
+    } catch { return $null }
+}
+
+# A SIPGES that answers is opened only in the mode asked for: -Go never reuses the TypeScript one
+# (writes would go to PGlite) and a plain start never reuses the Go one. -Go refuses an unknown one.
+function Assert-ServedMode {
+    $image = Get-ServerImage
+    if ($Go -and $image -ne 'api') { Show-Failure 'SIPGES ya está abierto sin el modo Go. Ciérrelo antes de abrirlo en modo Go.' }
+    if (-not $Go -and $image -eq 'api') { Show-Failure 'SIPGES ya está abierto en modo Go. Ciérrelo antes de abrirlo sin el modo Go.' }
+}
+
 function Open-App {
+    Assert-ServedMode
     if ($NoUi) { Write-Output "SIPGES: $Url"; return }
     Start-Process -FilePath 'msedge.exe' -ArgumentList "--app=$Url"
 }

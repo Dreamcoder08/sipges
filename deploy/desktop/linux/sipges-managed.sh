@@ -127,7 +127,31 @@ open_browser() {
   "$@" &
 }
 
-if healthy; then open_browser exec; fi
+# The program listening on the port, by the name it was started with (api: the Go API, node:
+# TypeScript; ss shows a thread name instead); empty when unknown.
+server_image() {
+  pid=$(ss -Hltnp "sport = :$PORT" 2>/dev/null | sed -n 's/.*pid=\([0-9]*\).*/\1/p' | head -n 1)
+  [ -n "$pid" ] || return 0
+  argv0=$(tr '\0' '\n' <"/proc/$pid/cmdline" 2>/dev/null | head -n 1)
+  [ -z "$argv0" ] || basename "$argv0"
+}
+
+# A SIPGES that answers is opened only in the mode asked for: --go never reuses the TypeScript one
+# (writes would go to PGlite) and a plain start never reuses the Go one; --go refuses an unknown one.
+assert_served_mode() {
+  image=$(server_image)
+  if [ -n "$GO_MODE" ] && [ "$image" != api ]; then
+    fail 'SIPGES ya está abierto sin el modo Go. Ciérrelo antes de abrirlo en modo Go.'
+  fi
+  if [ -z "$GO_MODE" ] && [ "$image" = api ]; then
+    fail 'SIPGES ya está abierto en modo Go. Ciérrelo antes de abrirlo sin el modo Go.'
+  fi
+}
+
+if healthy; then
+  assert_served_mode
+  open_browser exec
+fi
 if [ -n "$GO_MODE" ]; then start_go; else start_launcher; fi
 wait_for_server
 open_browser background

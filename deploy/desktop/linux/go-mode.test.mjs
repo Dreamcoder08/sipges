@@ -133,3 +133,43 @@ test('--go refuses, starting nothing, a version without the Go mode and data not
     rmSync(notMoved.dir, { recursive: true, force: true });
   }
 });
+
+// Review R4: a running SIPGES is reused only in the mode asked for. A real listener answers
+// /health on the port, as node (the TypeScript API) or as a program named api (the Go API).
+const OPEN_NOT_GO = 'SIPGES ya está abierto sin el modo Go. Ciérrelo antes de abrirlo en modo Go.';
+const OPEN_GO = 'SIPGES ya está abierto en modo Go. Ciérrelo antes de abrirlo sin el modo Go.';
+
+async function serving(image, dir) {
+  const { spawn } = await import('node:child_process');
+  const { symlinkSync } = await import('node:fs');
+  const port = await freePort();
+  const exe = join(dir, image);
+  if (!existsSync(exe)) symlinkSync(process.execPath, exe);
+  const child = spawn(exe, ['-e', `require('node:http').createServer((q, r) => r.end('ok')).listen(${port}, '127.0.0.1', () => console.log('up'))`], { stdio: ['ignore', 'pipe', 'ignore'] });
+  await new Promise((done) => child.stdout.once('data', done));
+  return { port, stop: () => child.kill() };
+}
+
+test('--go refuses to reuse a TypeScript SIPGES; a plain start refuses to reuse a Go one', { skip: process.platform !== 'linux' && 'ss names the listener on Linux' }, async () => {
+  const { dir, root, ran } = installRoot();
+  const env = (port) => ({ PATH: process.env.PATH, HOME: process.env.HOME, SIPGES_DESKTOP_PORT: String(port), SIPGES_DESKTOP_WAIT: '5' });
+  const ts = await serving('node', dir);
+  try {
+    const result = spawnSync('sh', [join(root, 'sipges-desktop.sh'), '--go'], { encoding: 'utf8', env: env(ts.port) });
+    assert.equal(result.status, 1);
+    assert.ok(result.stderr.includes(OPEN_NOT_GO), result.stderr);
+    assert.equal(existsSync(ran), false, 'nothing was started');
+  } finally {
+    ts.stop();
+  }
+  const go = await serving('api', dir);
+  try {
+    const result = spawnSync('sh', [join(root, 'sipges-desktop.sh')], { encoding: 'utf8', env: env(go.port) });
+    assert.equal(result.status, 1);
+    assert.ok(result.stderr.includes(OPEN_GO), result.stderr);
+    assert.equal(existsSync(ran), false, 'nothing was started');
+  } finally {
+    go.stop();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

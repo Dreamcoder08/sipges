@@ -5,7 +5,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { GO_NOT_MOVED_LINE, GO_MISSING_LINE, STUB_API, imageName, parseOptions, postmasterPort } from './go-drill.mjs';
 
@@ -62,7 +62,7 @@ test('go-drill.mjs: options, the cluster port in postmaster.pid, image names, th
   const now = new Date('2026-11-18T01:02:03Z');
   const options = parseOptions([], { now, tmp: join('/', 'tmp') });
   assert.equal(options.version, '0.0.9-go.20261118010203');
-  assert.equal(options.work, join('/', 'tmp', 'sipges-go-drill-20261118010203'));
+  assert.equal(options.work, resolve(join('/', 'tmp', 'sipges-go-drill-20261118010203')));
   assert.equal(options.logs, join(options.work, 'logs'));
   assert.throws(() => parseOptions(['--work']), /Invalid options/);
   assert.throws(() => parseOptions(['--old-commit', 'x']), /Invalid options/);
@@ -73,4 +73,17 @@ test('go-drill.mjs: options, the cluster port in postmaster.pid, image names, th
   // migrate applies nothing (the move needs an empty database); serving waits for Ctrl+Break.
   assert.ok(STUB_API.includes('os.Args[1] == "migrate"'));
   assert.ok(STUB_API.includes('signal.Notify(stop, os.Interrupt)'));
+});
+
+// Review R4: a SIPGES already answering is reused only in the mode asked for, on every path that
+// opens it (already running, a second click, its own start): Open-App checks who serves first.
+test('start-managed.ps1 reuses a running SIPGES only in the mode asked for', async () => {
+  const script = await read('start-managed.ps1');
+  assert.ok(functionBody(script, 'Open-App').startsWith('    Assert-ServedMode\n'), 'Open-App checks the runtime first');
+  const assertMode = functionBody(script, 'Assert-ServedMode');
+  assert.ok(assertMode.includes("if ($Go -and $image -ne 'api') { Show-Failure 'SIPGES ya está abierto sin el modo Go. Ciérrelo antes de abrirlo en modo Go.' }"));
+  assert.ok(assertMode.includes("if (-not $Go -and $image -eq 'api') { Show-Failure 'SIPGES ya está abierto en modo Go. Ciérrelo antes de abrirlo sin el modo Go.' }"));
+  const image = functionBody(script, 'Get-ServerImage');
+  assert.ok(image.includes('Get-NetTCPConnection -LocalPort 8000 -State Listen'));
+  assert.ok(image.includes('(Get-Process -Id $owner -ErrorAction Stop).ProcessName'));
 });
