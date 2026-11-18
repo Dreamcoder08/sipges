@@ -289,6 +289,17 @@ const refused: readonly ParityCase[] = [
   post('links, long id', 'read', call('get_links', { module: 'actores', id: 'x'.repeat(201) })),
   post('timeline, long dates', 'read', call('get_timeline', { from: 'x'.repeat(11), to: [1] })),
   post('timeline, limit 201', 'read', call('get_timeline', { limit: 201 })),
+  post('count, no module', 'read', call('count_records', {})),
+  post(
+    'count, long group_by',
+    'read',
+    call('count_records', { module: 'eventos', group_by: 'x'.repeat(81) }),
+  ),
+  post(
+    'count, long dates',
+    'read',
+    call('count_records', { module: 'eventos', from: 'x'.repeat(11) }),
+  ),
   post('briefing, list as id', 'read', call('get_briefing', { module: 'actores', id: [] })),
   post('create without a payload', 'write', call('create_record', { module: 'demandas' })),
   post(
@@ -323,6 +334,7 @@ const READS: Readonly<Record<string, unknown>> = {
   get_record: { module: 'actores', id: 'A-1' },
   get_links: { module: 'actores', id: 'A-1' },
   get_timeline: { from: '2025', to: '2026' },
+  count_records: { module: 'eventos', group_by: 'Territorio' },
   get_briefing: { module: 'actores', id: 'A-1' },
 };
 
@@ -440,6 +452,37 @@ const reads: readonly ParityCase[] = [
   open('timeline, spaces', 'get_timeline', { from: ' 2026 ' }),
   open('timeline, one module', 'get_timeline', { modules: ['compromisos'] }),
   open('timeline, a module without dates', 'get_timeline', { modules: ['acciones'] }),
+  open(
+    'count, total',
+    'count_records',
+    { module: 'eventos' },
+    { absent: [...SECRETS, ...RESTRICTED] },
+  ),
+  open('count, by territory', 'count_records', { module: 'eventos', group_by: 'Territorio' }),
+  open('count, by kind', 'count_records', { module: 'eventos', group_by: 'Tipo_Evento' }),
+  open('count, actors by kind', 'count_records', { module: 'actores', group_by: 'Tipo_Actor' }),
+  open('count, actors by influence', 'count_records', {
+    module: 'actores',
+    group_by: 'Influencia',
+  }),
+  open('count, dates', 'count_records', { module: 'eventos', from: '2026', to: '2026' }),
+  open('count, dates and group', 'count_records', {
+    module: 'eventos',
+    group_by: 'Territorio',
+    from: '2025-03',
+    to: '2026-10',
+  }),
+  open('count, reversed dates', 'count_records', { module: 'eventos', from: '2026', to: '2025' }),
+  open('count, invalid date', 'count_records', { module: 'eventos', from: '2026-13' }),
+  open('count, dates on a type without date', 'count_records', {
+    module: 'acciones',
+    from: '2026',
+  }),
+  open('count, unknown module', 'count_records', { module: 'otro' }),
+  open('count, name field', 'count_records', { module: 'eventos', group_by: 'Actor_Principal' }),
+  open('count, text field', 'count_records', { module: 'eventos', group_by: 'Descripcion_Hecho' }),
+  open('count, unlisted field', 'count_records', { module: 'eventos', group_by: 'Observaciones' }),
+  open('count, unknown module and bad dates', 'count_records', { module: 'otro', from: 'x' }),
   open('timeline, limit 1', 'get_timeline', { limit: 1 }, { present: ['"truncated":true'] }),
   open(
     'timeline, limited key',
