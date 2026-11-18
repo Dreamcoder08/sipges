@@ -164,7 +164,7 @@ func runDesktop(ctx context.Context, args, environ []string, stdout, stderr io.W
 		return err
 	}
 	if s.prepareOnly {
-		return prepareOnly(ctx, s.state, versionBins{api: s.apiBin, migrations: s.migrations, pgBin: s.pgBin}, environ, stdout, stderr)
+		return prepareOnly(ctx, s.state, s.pgBin, stdout)
 	}
 	sec, err := readSecrets(s.state)
 	if err != nil {

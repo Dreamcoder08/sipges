@@ -16,6 +16,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/desktopupdate"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/localpg"
 )
@@ -29,9 +31,9 @@ PostgreSQL 18 (<version>/postgresql/bin, else --pg-bin or SIPGES_PG_BIN) on <sta
 Go API (<version>/go/api). It checks <dir> for a newer signed release at startup and offers it in
 the app; updates run only after an administrator clicks «Actualizar». Without --releases no
 check is made.
---prepare-only creates an empty PostgreSQL 18 cluster in the state folder with the roles, the
-database and the migrations, then stops it, so the one-time PGlite migrator can load it. It is
-refused when <state>/pg18 already holds data.
+--prepare-only creates a PostgreSQL 18 cluster in the state folder with the roles and an empty
+database (no migration: the Go launcher migrates on its first start), then stops it, so the
+one-time PGlite migrator can fill it. It is refused when <state>/pg18 already holds data.
 A first SIGINT or SIGTERM stops SIPGES gracefully; a second one kills the server at once and
 exits with code 1.
 --release installs a signed release into an empty <root> and records <state> (its real path) in
@@ -476,10 +478,12 @@ func stopOrphanClusters(rt runtimeEnv, root string) func(context.Context, []stri
 	}
 }
 
-// prepareOnly makes an empty PostgreSQL 18 cluster in the state folder ready for the one-time
-// PGlite migrator: roles, database and migrations, then PostgreSQL stops. A pg18 folder that
-// already holds anything is refused.
-func prepareOnly(ctx context.Context, stateDir string, bins versionBins, base []string, stdout, stderr io.Writer) (err error) {
+// prepareOnly makes an empty PostgreSQL 18 cluster in the state folder for the one-time PGlite
+// migrator, pglite-to-postgres.mjs: the roles and an empty database owned by the API's login, no
+// migration (the migrator only fills an empty database, and its dump carries schema_migrations;
+// the Go launcher migrates on its first start). It checks the login reaches that empty database,
+// then stops PostgreSQL. A pg18 folder that already holds anything is refused.
+func prepareOnly(ctx context.Context, stateDir, pgBin string, stdout io.Writer) (err error) {
 	dataDir := filepath.Join(stateDir, dataFolder)
 	if entries, readErr := os.ReadDir(dataDir); readErr == nil && len(entries) > 0 {
 		return &userError{
@@ -493,18 +497,33 @@ func prepareOnly(ctx context.Context, stateDir string, bins versionBins, base []
 	if err != nil {
 		return err
 	}
-	pg, err := startCluster(ctx, bins.pgBin, stateDir, sec)
+	pg, err := startCluster(ctx, pgBin, stateDir, sec)
 	if err != nil {
-		return removeHalfMade(ctx, bins.pgBin, dataDir, err)
+		return removeHalfMade(ctx, pgBin, dataDir, err)
 	}
-	env, err := serverEnv(base, bins, stateDir, sec, pg.URL(appRole, sec.pgApp, appDatabase), 8000, "")
-	if err == nil {
-		err = migrateAPI(ctx, bins.api, env, stdout, stderr)
-	}
+	err = prepareCheck(ctx, pg.URL(appRole, sec.pgApp, appDatabase))
 	if err = errors.Join(err, stopCluster(ctx, pg)); err != nil {
-		return removeHalfMade(ctx, bins.pgBin, dataDir, err)
+		return removeHalfMade(ctx, pgBin, dataDir, err)
 	}
 	_, _ = fmt.Fprintf(stdout, "sipges-desktop: PostgreSQL 18 prepared in %s\n", dataDir)
+	return nil
+}
+
+// prepareCheck proves what --prepare-only leaves: the API's login connects to the application
+// database, which holds no table. A variable so a test can make it fail after the cluster exists.
+var prepareCheck = func(ctx context.Context, databaseURL string) error {
+	conn, err := pgx.Connect(ctx, databaseURL)
+	if err != nil {
+		return fmt.Errorf("connect as %s: %w", appRole, err)
+	}
+	defer func() { _ = conn.Close(context.WithoutCancel(ctx)) }()
+	var tables int
+	if err := conn.QueryRow(ctx, "SELECT count(*) FROM pg_tables WHERE schemaname NOT IN ('pg_catalog', 'information_schema')").Scan(&tables); err != nil {
+		return fmt.Errorf("count the tables: %w", err)
+	}
+	if tables != 0 {
+		return fmt.Errorf("the new database already holds %d tables", tables)
+	}
 	return nil
 }
 
@@ -709,5 +728,5 @@ func prepareManaged(ctx context.Context, root string, rt runtimeEnv) error {
 	if err != nil {
 		return err
 	}
-	return prepareOnly(ctx, stateDir, bins, rt.base, rt.stdout, rt.stderr)
+	return prepareOnly(ctx, stateDir, bins.pgBin, rt.stdout)
 }
