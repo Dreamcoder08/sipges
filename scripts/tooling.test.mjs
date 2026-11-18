@@ -649,7 +649,10 @@ test('ODD close keeps the log style of the document it edits', () =>
 test('ODD close appends after the continuation lines of a wrapped last entry', () =>
   fixture((dir) => {
     const file = path.join(dir, 'odd.md');
-    writeFileSync(file, '- T1 [ ] one\n## Log\n- L2 — Map: first line\n  second line\n  third line\n');
+    writeFileSync(
+      file,
+      '- T1 [ ] one\n## Log\n- L2 — Map: first line\n  second line\n  third line\n',
+    );
     const result = spawnSync(process.execPath, [
       path.join(root, 'scripts/odd-close-task.mjs'),
       '--log-only',
