@@ -92,9 +92,9 @@ const (
 
 // Start starts the cluster in DataDir on a free loopback port and returns once it accepts
 // connections. A missing or empty DataDir gets a new cluster, built and set up in a sibling
-// folder first (see Options.Setup); a leftover of an interrupted build is removed. A server
-// running instance holds the lock next to DataDir and makes Start return ErrInUse; a server a
-// dead instance left running is stopped first.
+// folder first (see Options.Setup); a leftover of an interrupted build is removed. A running
+// instance holds the lock next to DataDir, and Start then returns ErrInUse; a server that a dead
+// instance left running is stopped first.
 func Start(ctx context.Context, opts Options) (*Server, error) {
 	opts = withDefaults(opts)
 	if _, err := inspectDataDir(opts.DataDir); err != nil {
@@ -149,11 +149,11 @@ func buildCluster(ctx context.Context, opts Options) error {
 			if setupErr := opts.Setup(ctx, staging); setupErr != nil {
 				err = &Error{Kind: ErrInit, Path: opts.LogPath, Err: fmt.Errorf("setup: %w", setupErr)}
 			}
-			err = errors.Join(err, staging.stopDetached(ctx))
+			err = errors.Join(err, staging.stopOrKill(ctx))
 		}
 	}
 	if err == nil {
-		err = moveIntoPlace(tmp, opts.DataDir)
+		err = moveIntoPlace(tmp, opts.DataDir, opts.LogPath)
 	}
 	if err != nil {
 		_ = os.RemoveAll(tmp)
@@ -162,11 +162,52 @@ func buildCluster(ctx context.Context, opts Options) error {
 	return nil
 }
 
+// stopOrKill stops the setup server and, when that fails, ends it at once: its folder is about
+// to be discarded, so nothing in it needs a clean shutdown, and a server left running from it
+// would hold the port and the files with nothing to stop it. The stop failure is still returned.
+func (s *Server) stopOrKill(ctx context.Context) error {
+	stopErr := s.stopDetached(ctx)
+	if stopErr == nil {
+		return nil
+	}
+	killCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), s.opts.StopTimeout)
+	defer cancel()
+	return errors.Join(stopErr, s.kill(killCtx))
+}
+
+// kill sends SIGKILL (TerminateProcess on Windows) to the postmaster through pg_ctl and waits
+// until pg_ctl no longer sees it running.
+func (s *Server) kill(ctx context.Context) error {
+	body, err := os.ReadFile(filepath.Join(s.opts.DataDir, "postmaster.pid"))
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return &Error{Kind: ErrStop, Path: s.opts.LogPath, Err: err}
+	}
+	line, _, _ := strings.Cut(string(body), "\n")
+	pid, err := strconv.Atoi(strings.TrimSpace(line))
+	if err != nil {
+		return &Error{Kind: ErrStop, Path: s.opts.LogPath, Err: fmt.Errorf("postmaster.pid: %w", err)}
+	}
+	if err := s.pgctl(ctx, []string{"kill", "KILL", strconv.Itoa(pid)}); err != nil {
+		return &Error{Kind: ErrStop, Path: s.opts.LogPath, Err: fmt.Errorf("kill: %w", err)}
+	}
+	for ctx.Err() == nil {
+		if running, err := s.running(ctx); err == nil && !running {
+			return nil
+		}
+		time.Sleep(lingerPause)
+	}
+	return &Error{Kind: ErrStop, Path: s.opts.LogPath, Err: errors.New("still running after kill")}
+}
+
 // moveIntoPlace renames the finished cluster to DataDir, retrying briefly: on Windows an antivirus
-// scan may still hold a file of the folder just after the server stopped.
-func moveIntoPlace(tmp, dataDir string) error {
+// scan may still hold a file of the folder just after the server stopped. A failure points at the
+// log, as every ErrInit does; the cause names the folders.
+func moveIntoPlace(tmp, dataDir, logPath string) error {
 	if err := os.Remove(dataDir); err != nil && !errors.Is(err, os.ErrNotExist) {
-		return &Error{Kind: ErrInit, Path: dataDir, Err: err}
+		return &Error{Kind: ErrInit, Path: logPath, Err: err}
 	}
 	var err error
 	for range renameAttempts {
@@ -175,12 +216,12 @@ func moveIntoPlace(tmp, dataDir string) error {
 		}
 		time.Sleep(renamePause)
 	}
-	return &Error{Kind: ErrInit, Path: dataDir, Err: err}
+	return &Error{Kind: ErrInit, Path: logPath, Err: err}
 }
 
 // acquireLock opens the lock file and takes an exclusive lock the operating system holds for
 // this process: it ends with the process, crash included, so a leftover file never locks anyone
-// out, whatever process id it names. A lock another instance holds is ErrInUse.
+// out. A lock another instance holds is ErrInUse.
 func acquireLock(opts Options) (*os.File, error) {
 	path := opts.DataDir + lockSuffix
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
@@ -212,13 +253,19 @@ func releaseLock(f *os.File) {
 // may have left starting before returning the error.
 func (s *Server) start(ctx context.Context) error {
 	var startErr error
+	gaveUp := false
 	for range portAttempts {
 		port, err := freePort(ctx)
 		if err != nil {
 			return &Error{Kind: ErrStart, Path: s.opts.LogPath, Err: err}
 		}
 		s.port = port
-		startErr = s.pgctl(ctx, startArgs(s.opts.DataDir, s.opts.LogPath, port, startWait(s.opts.StartTimeout)))
+		wait := startWait(s.opts.StartTimeout)
+		began := time.Now()
+		startErr = s.pgctl(ctx, startArgs(s.opts.DataDir, s.opts.LogPath, port, wait))
+		// pg_ctl -w returns early only when the server accepts connections or has exited; a server
+		// may still be coming up only when it waited the whole timeout or was itself cut short.
+		gaveUp = time.Since(began) >= time.Duration(wait)*time.Second || ctx.Err() != nil
 		if startErr == nil || portFree(ctx, port) {
 			break
 		}
@@ -227,19 +274,27 @@ func (s *Server) start(ctx context.Context) error {
 		startErr = s.Ping(ctx)
 	}
 	if startErr != nil {
-		return errors.Join(&Error{Kind: ErrStart, Path: s.opts.LogPath, Err: startErr}, s.stopAfterFailedStart(ctx))
+		return errors.Join(&Error{Kind: ErrStart, Path: s.opts.LogPath, Err: startErr}, s.stopAfterFailedStart(ctx, gaveUp))
 	}
 	return nil
 }
 
-// stopAfterFailedStart waits a moment for a server pg_ctl gave up on to show up in the pid file,
-// and stops it, so a timeout never leaves a server running that nothing will stop.
-func (s *Server) stopAfterFailedStart(ctx context.Context) error {
-	for range lingerChecks {
+// stopAfterFailedStart stops a server a failed start left running. When pg_ctl gave up waiting,
+// it watches a moment for the server to show up in the pid file, so a timeout never leaves a
+// server running that nothing will stop; otherwise the server already exited and one look is
+// enough.
+func (s *Server) stopAfterFailedStart(ctx context.Context, gaveUp bool) error {
+	checks := 1
+	if gaveUp {
+		checks = lingerChecks
+	}
+	for i := range checks {
+		if i > 0 {
+			time.Sleep(lingerPause)
+		}
 		if running, err := s.running(context.WithoutCancel(ctx)); err == nil && running {
 			return s.stopDetached(ctx)
 		}
-		time.Sleep(lingerPause)
 	}
 	return nil
 }
@@ -252,8 +307,8 @@ func (s *Server) stopDetached(ctx context.Context) error {
 }
 
 // Stop shuts the server down with a fast shutdown: open transactions roll back, nothing written
-// is lost. Stopping a server that is not running does nothing.
-// It then releases this instance's lock.
+// is lost. It then releases this instance's lock. Stopping a server that is not running does
+// nothing.
 func (s *Server) Stop(ctx context.Context) error {
 	if err := s.stopServer(ctx); err != nil {
 		return err
