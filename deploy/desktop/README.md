@@ -207,8 +207,11 @@ in PGlite keeps the TypeScript API until its data are moved (the laptop visit,
   licences stay (about 132 MB): pgAdmin 4, StackBuilder, `doc`, `include` and `symbols` go, and so do
   `stackbuilder.exe`, the wxWidgets DLLs and the `*.lib` import libraries inside `bin`.
 - **Installers.** `install.ps1 -Release` and `install.sh --managed` install a release built with
-  `--go` with its own `package/go/sipges-desktop --install <root> --release <dir> --state <dir>
-  --trust-release-key`, which verifies the signature, installs, records the real path of the state
+  `--go` with the kit's trusted `deploy/desktop/bin/sipges-desktop` (built from the trusted
+  checkout; `windows/drill.mjs` `packScripts` puts it in the kit's zip): `--install <root> --release
+  <dir> --state <dir> --trust-release-key`. The release's own `go/sipges-desktop` never runs to
+  install it (it could verify itself); without the trusted one the installer refuses a Go release.
+  The trusted binary verifies the signature, installs, records the real path of the state
   folder in `install.json` and prints the key's fingerprint, exactly as `update.mjs` does: no Node
   is needed. A release without `go/` is still installed by `update.mjs` (Node 24).
 - **Launchers.** The shortcut (`start.ps1`, the install's copy of `windows/start-managed.ps1`;
@@ -218,7 +221,7 @@ in PGlite keeps the TypeScript API until its data are moved (the laptop visit,
   `install.json` records is in `pg18` or holds no PGlite data yet (a new install). It runs recovery,
   the first start, the update check and the update the person accepts, with the same halt (exit
   code 3) and the same messages, output in `launcher.log`; no Node. Data still only in PGlite keep
-  `run-current.mjs` (TypeScript, Node). `-Go` / `--go` asks for the Go launcher only: it refuses,
+  `run-current.mjs` (TypeScript, Node), and so does a cluster `--prepare-only` made that the move has not filled yet (`pg18.pending-move`), which the Go launcher also refuses. `-Go` / `--go` asks for the Go launcher only: it refuses,
   starting nothing, a version without `--go` and data not moved yet. A SIPGES already running is
   reused only in the install's mode.
 - **Moving the data.** The data move into `pg18` is `migration/pglite-to-postgres.mjs`

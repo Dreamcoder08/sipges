@@ -252,8 +252,11 @@ están solo en PGlite sigue con la API en TypeScript hasta que se trasladen (la 
   `doc`, `include` y `symbols`, y dentro de `bin` `stackbuilder.exe`, las DLL de wxWidgets y las
   bibliotecas `*.lib`.
 - **Instaladores.** `install.ps1 -Release` e `install.sh --managed` instalan una versión construida
-  con `--go` con su propio `package/go/sipges-desktop --install <raíz> --release <carpeta> --state
-  <carpeta> --trust-release-key`, que verifica la firma, instala, registra la ruta real de la carpeta
+  con `--go` con el `deploy/desktop/bin/sipges-desktop` de confianza del kit (construido desde el
+  checkout de confianza; `packScripts` de `windows/drill.mjs` lo pone en el zip del kit):
+  `--install <raíz> --release <carpeta> --state <carpeta> --trust-release-key`. El
+  `go/sipges-desktop` de la propia versión nunca se ejecuta para instalarla (podría verificarse a sí
+  mismo); sin el de confianza el instalador rechaza una versión Go. El de confianza verifica la firma, instala, registra la ruta real de la carpeta
   de datos en `install.json` e imprime la huella de la clave, igual que `update.mjs`: no hace falta
   Node. Una versión sin `go/` la sigue instalando `update.mjs` (Node 24).
 - **Lanzadores.** El acceso directo (`start.ps1`, la copia de `windows/start-managed.ps1` en la
@@ -264,7 +267,7 @@ están solo en PGlite sigue con la API en TypeScript hasta que se trasladen (la 
   instalación nueva). Hace la recuperación, el primer arranque, la búsqueda de actualizaciones y la
   actualización que la persona acepta, con la misma detención (código 3) y los mismos mensajes, con
   la salida en `launcher.log`; sin Node. Los datos que siguen solo en PGlite siguen con
-  `run-current.mjs` (TypeScript, Node). `-Go` / `--go` pide solo el lanzador Go: se niega, sin
+  `run-current.mjs` (TypeScript, Node), igual que un clúster que `--prepare-only` creó y el traslado todavía no llenó (`pg18.pending-move`), que el lanzador Go también rechaza. `-Go` / `--go` pide solo el lanzador Go: se niega, sin
   iniciar nada, con una versión sin `--go` y con datos sin trasladar. Un SIPGES ya abierto solo se
   reutiliza en el modo de la instalación.
 - **Mover los datos.** El traslado a `pg18` es `migration/pglite-to-postgres.mjs`

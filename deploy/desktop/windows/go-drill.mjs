@@ -10,15 +10,18 @@
 // 1. A package built with `builder.mjs --go` (sipges-desktop, the Go API, the migrations and the
 //    pinned PostgreSQL 18 from deploy/desktop/postgresql), signed with a throwaway key, and a
 //    second release of the same package one version newer. install.ps1 -Release installs the
-//    first one with the release's own sipges-desktop.exe, with no Node on the PATH.
+//    first one, with no Node on the PATH, with the trusted sipges-desktop.exe built from this
+//    checkout into deploy\desktop\bin (what the kit carries), never the release's own.
 // 2. An install still on PGlite: its TypeScript launcher (run-current.mjs, as the shortcut ran it
 //    before) serves from node.exe; synthetic data go in through the public API (rehearse.mjs's
 //    seed); snapshot.mjs. Then the installed start.ps1 keeps it on the TypeScript launcher.
 // 3. start.ps1 -Go refuses, changing nothing, while the data are only in PGlite.
 // 4. The move, as the visit does it: the state folder copied; `sipges-desktop.exe --install <root>
 //    --prepare-only` (no Node) creates the cluster in <state>\pg18 with the roles and an empty
-//    database and stops it; the bundled pg_ctl starts it on a free loopback port for the move,
-//    pglite-to-postgres.mjs moves the copy into it with its table-by-table proof, pg_ctl stops it.
+//    database and stops it, leaving pg18.pending-move. Opened before the move, start.ps1 stays on
+//    TypeScript and the Go launcher refuses the cluster. The bundled pg_ctl starts it on a free
+//    loopback port, pglite-to-postgres.mjs --prepared moves the copy into it with its
+//    table-by-table proof and removes the mark, pg_ctl stops it.
 // 5. start.ps1, with no switch and no Node on the PATH: the Go launcher (sipges-desktop.exe
 //    --install) applies the migrations on start and serves the Go API (api.exe) on port 8000;
 //    compare.mjs finds no difference.
@@ -192,6 +195,7 @@ async function main(args) {
       if (pgBin && existsSync(join(state, cluster, 'postmaster.pid')))
         spawnSync(join(pgBin, 'pg_ctl.exe'), ['stop', '-D', join(state, cluster), '-m', 'immediate', '-w'], { stdio: 'ignore' });
     rmSync(keyDir, { recursive: true, force: true });
+    rmSync(join(repo, 'deploy', 'desktop', 'bin', 'sipges-desktop.exe'), { force: true });
     for (const [from, name] of [
       [join(appRoot, 'launcher.log'), 'launcher.log'],
       [join(state, 'pg18.log'), 'pg18.log'],
@@ -245,8 +249,13 @@ async function main(args) {
     const noNode = withoutNode(env);
     const nodeOnPath = spawnSync('where.exe', ['node'], { env: noNode, encoding: 'utf8' });
     check(nodeOnPath.status !== 0, 'without the Node folders on PATH, where.exe finds no node');
+    // The kit's trusted installer, built from this checkout: install.ps1 verifies and installs a Go
+    // release with it, never with the release's own binary.
+    const trusted = join(repo, 'deploy', 'desktop', 'bin', 'sipges-desktop.exe');
+    const builtTrusted = await run('go', ['build', '-o', trusted, './cmd/sipges-desktop'], { cwd: join(repo, 'apps', 'api-go'), env: process.env, log: out('trusted-installer') });
+    check(builtTrusted.status === 0 && existsSync(trusted), 'the trusted sipges-desktop.exe built into deploy\\desktop\\bin');
     const installed = await run(POWERSHELL, psArgs(join(here, 'install.ps1'), ['-Release', release]), { env: noNode, log: out('install') });
-    check(installed.status === 0 && installed.output.includes('Trusting the update key that signed this release (SHA-256 '), 'install.ps1 -Release ran the release\'s sipges-desktop (it printed the key fingerprint)');
+    check(installed.status === 0 && installed.output.includes('Trusting the update key that signed this release (SHA-256 '), 'install.ps1 -Release ran the trusted sipges-desktop (it printed the key fingerprint)');
     check(installed.output.includes(`Installed ${options.version}`), `install.ps1 -Release installed ${options.version} without Node`);
     check((await readJson(join(appRoot, 'install.json'))).stateDir === state, `install.json records ${state}`);
     let version = join(appRoot, ...(await readJson(join(appRoot, 'current.json'))).path.split('/'));
@@ -316,17 +325,31 @@ async function main(args) {
     check(!postgresRunning() && !existsSync(join(state, 'pg18', 'postmaster.pid')), '--prepare-only stopped PostgreSQL');
     const again2 = await run(desktop, ['--install', appRoot, '--prepare-only'], { env: noNode, log: out('prepare-only-again') });
     check(again2.status === 1 && again2.output.includes('ya tiene una base de datos PostgreSQL 18'), 'a second --prepare-only is refused');
+    check(existsSync(join(state, 'pg18.pending-move')), '--prepare-only left pg18.pending-move');
+    // The trap between G3 and G4: the shortcut must not start Go on the empty cluster.
+    const between = await startManaged('ts-between-prepare-and-move');
+    check(serverImage() === 'node.exe', 'start.ps1 between --prepare-only and the move stays on TypeScript (node.exe)');
+    await stopTree(between, 'TypeScript version');
+    check(existsSync(join(state, 'pg18.pending-move')) && !postgresRunning(), 'the prepared cluster was not started and is still waiting for the move');
+    // That TypeScript open is the last one to write PGlite: the way back is compared with it.
+    const pgliteAfterBetween = digest(await tree(pglite));
+    const refusedGo = await run(POWERSHELL, psArgs(startPs, ['-Go']), { env: { ...noNode, SIPGES_DESKTOP_NO_UI: '1' }, log: out('go-refused-pending'), seconds: 120 });
+    check(refusedGo.status === 1 && refusedGo.output.includes(GO_NOT_MOVED_LINE), 'start.ps1 -Go refuses the prepared cluster before the move');
+    const launcherRefused = await run(desktop, ['--install', appRoot], { env: noNode, log: out('launcher-refused-pending'), seconds: 120 });
+    check(launcherRefused.status === 1 && launcherRefused.output.includes('pg18.pending-move'), 'sipges-desktop --install refuses the prepared cluster before the move');
+    check(!postgresRunning(), 'nothing started PostgreSQL on the prepared cluster');
     const port = await freePort();
     const pgCtl = join(pgBin, 'pg_ctl.exe');
     const startedPg = await run(pgCtl, ['start', '-D', join(state, 'pg18'), '-l', join(state, 'pg18.log'), '-w', '-t', '120', '-o', `-p ${port} -c listen_addresses=127.0.0.1 -c unix_socket_directories=`], { env, log: out('pg-start-for-move') });
     check(startedPg.status === 0, `pg_ctl started the cluster for the move on 127.0.0.1:${port}`);
     const appPassword = (await readFile(join(state, 'pg18-app-password'), 'utf8')).trim();
     mkdirSync(join(work, 'move-scratch'));
-    const moved = await node([join(repo, 'deploy', 'desktop', 'migration', 'pglite-to-postgres.mjs'), '--state', copy, '--scratch', join(work, 'move-scratch')], {
+    const moved = await node([join(repo, 'deploy', 'desktop', 'migration', 'pglite-to-postgres.mjs'), '--state', copy, '--prepared', state, '--scratch', join(work, 'move-scratch')], {
       env: { ...env, SIPGES_MOVE_DATABASE_URL: `postgres://sipges_app:${encodeURIComponent(appPassword)}@127.0.0.1:${port}/sipges` },
       log: out('move'),
     });
     check(moved.status === 0 && moved.output.includes('Moved: the target holds the copy, committed.'), 'pglite-to-postgres.mjs filled the prepared database with no difference (tables.mjs inside the transaction)');
+    check(moved.output.includes('The prepared cluster is ready: removed pg18.pending-move.') && !existsSync(join(state, 'pg18.pending-move')), 'the committed move removed pg18.pending-move');
     const stoppedPg = await run(pgCtl, ['stop', '-D', join(state, 'pg18'), '-m', 'fast', '-w', '-t', '120'], { env, log: out('pg-stop-after-move') });
     check(stoppedPg.status === 0 && !postgresRunning(), 'pg_ctl stopped the cluster: no postgres.exe left');
 
@@ -340,7 +363,7 @@ async function main(args) {
     await health.arrayBuffer();
     await compare('go');
 
-    step('6. The launcher killed during writes, then started again (orphaned PostgreSQL)');
+    step('6. The launcher killed during writes, then started again');
     const password = (await readFile(join(state, 'admin-password'), 'utf8')).trim();
     const totpSecret = (await readFile(secrets.secretFile, 'utf8')).trim();
     const admin = await signIn({ base: BASE, username: 'admin', password, totpSecret, totpState: secrets.totpState });
@@ -368,7 +391,7 @@ async function main(args) {
     const again = await signIn({ base: BASE, username: 'admin', password, totpSecret, totpState: secrets.totpState });
     const list = await again.call('/api/eventos', { scope: ALFA });
     await list.arrayBuffer();
-    check(list.status === 200, 'after the orphan the records read (GET /api/eventos 200)');
+    check(list.status === 200, 'after the restart the records read (GET /api/eventos 200)');
     await stopTree(goStart, 'Go launcher');
     await waitFor('PostgreSQL stopped', 120, async () => !postgresRunning());
 
@@ -423,7 +446,7 @@ async function main(args) {
     check(portListeners().length === 0 && !(await healthy()), 'port 8000 is free');
 
     step('9. The way back: pg18 set aside, the original PGlite folder on the TypeScript launcher');
-    check(digest(await tree(pglite)) === pgliteDigest, 'the original PGlite folder is byte-identical after the whole Go rehearsal');
+    check(digest(await tree(pglite)) === pgliteAfterBetween, 'the original PGlite folder is byte-identical after the whole Go rehearsal (since its last TypeScript open)');
     const aside = join(state, 'pg18.vuelta');
     renameSync(join(state, 'pg18'), aside);
     ts = await startManaged('ts-start-2');
