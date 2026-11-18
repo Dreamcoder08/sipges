@@ -110,6 +110,17 @@ export default defineConfig({
       ),
     },
   },
+  build: {
+    rolldownOptions: {
+      output: {
+        // Every module index.html loads at start goes into the entry chunk. Without this group
+        // rolldown splits the modules the entry shares with lazy routes (zod, React, shared UI)
+        // into common chunks the entry preloads anyway, which costs 1.5 kB gzip and three
+        // requests (chat-first-ui T20). Lazy chunks import those modules from the entry.
+        codeSplitting: { groups: [{ name: 'app', tags: ['$initial'] }] },
+      },
+    },
+  },
   // MapLibre's worker is an ES module served from our origin (ADR 0017), not a blob: URL.
   worker: { format: 'es' },
   server: {

@@ -17,10 +17,12 @@ import { gzipSync } from 'node:zlib';
  * all CSS measured 171.3 kB raw / 38.5 kB gzip, plus 5% headroom.
  * Entry raised on 2026-11-17 for the chat-first Inicio (chat-first-ui T3-T5, T12, T14, T19): measured 731.1 kB raw /
  * 218.7 kB gzip, plus 5% headroom. Lazy-loading the thread is chat-first-ui T20.
+ * Entry lowered on 2026-11-17 by chat-first-ui T20 (lazy answer view, initial modules kept in the entry chunk by
+ * apps/web/vite.config.ts): measured 728,089 raw / 217,740 gzip, plus 5% headroom.
  */
 export const BUDGETS = {
-  'entry (index.html scripts and styles), raw': 768_000,
-  'entry (index.html scripts and styles), gzip': 230_000,
+  'entry (index.html scripts and styles), raw': 765_000,
+  'entry (index.html scripts and styles), gzip': 229_000,
   'all JavaScript, gzip': 2_080_000,
   'all CSS, gzip': 41_000,
 };
