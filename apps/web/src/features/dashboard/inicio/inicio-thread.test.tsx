@@ -2,10 +2,11 @@ import type { ProjectSettings } from '@sipges/contracts';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { HttpResponse, http } from 'msw';
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import { ProjectSettingsProvider } from '../../../shared/lib/project-settings.tsx';
 import { resetApi, server } from '../../../test/server.ts';
 import { InicioPage } from './InicioPage.tsx';
+import { loadConversationView } from './answer-view.tsx';
 import { AnalystThreadProvider } from './thread-context.tsx';
 
 /* The conversation thread, in memory for the session (odd/tasks/chat-first-ui.md T5, L5, L6). */
@@ -13,8 +14,18 @@ import { AnalystThreadProvider } from './thread-context.tsx';
 const LOG = { name: 'Conversación con el analista' };
 const ATTENTION = /^Necesita tu atención/;
 
-/** Answers wait for `release()`, so a test can look at the pending turn. */
-let release: () => void = () => undefined;
+/**
+ * Answers wait for `release()`, so a test can look at the pending turn. The request leaves once the
+ * conversation's chunk has loaded (T20), which can be after the pending turn shows: each release
+ * lets the next request through, whether it has arrived yet or not.
+ */
+let released = 0;
+let arrived = 0;
+let wake: (() => void) | undefined;
+const release = () => {
+  released += 1;
+  wake?.();
+};
 let replies: Array<() => Response> = [];
 const answer = (text: string, title: string) => () =>
   HttpResponse.json({
@@ -22,9 +33,18 @@ const answer = (text: string, title: string) => () =>
     sources: [{ n: 1, module: 'eventos', id: `EV-${title}`, title }],
   });
 
+// The answer view is a lazy chunk (T20); load it once here so no single test pays for the import
+// under CI load (inicio-lazy.test.tsx covers the loading itself).
+beforeAll(async () => {
+  await loadConversationView();
+});
+
 beforeEach(() => {
   resetApi({ me: { username: 'demo', full_name: 'Persona Demo', role: 'consulta' } });
   replies = [];
+  released = 0;
+  arrived = 0;
+  wake = undefined;
   server.use(
     http.get('/system/analyst', () => HttpResponse.json({ available: true })),
     http.get('/system/intelligence/territorial-alerts', () => HttpResponse.json([])),
@@ -36,8 +56,10 @@ beforeEach(() => {
     ),
     http.post('/system/analyst/ask', async () => {
       const reply = replies.shift() ?? answer('Sin novedades', 'Nota');
+      const turn = ++arrived;
       await new Promise<void>((resolve) => {
-        release = resolve;
+        const check = () => (released >= turn ? resolve() : (wake = check));
+        check();
       });
       return reply();
     }),

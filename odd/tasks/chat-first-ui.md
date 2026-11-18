@@ -67,18 +67,18 @@ Phase B — the thread, client side (no backend change):
   - once a conversation starts, «Esta semana» folds into one line above the thread (it stays reachable), so the
     thread and the composer own the screen (L4).
   Route: inline. Commit: pending.
-- T6 [ ] — S1: actions under each answer:
+- T6 [x] — S1: actions under each answer:
   - «Copiar» copies the text plus its numbered sources as plain text, with no record contents beyond what the answer
     shows;
   - «Volver a preguntar» re-sends the same question as a new turn;
   - on 409/503, «Buscar en registros» stays the fallback.
   Route: inline. Commit: pending.
-- T7 [ ] — S1, S2: stop:
+- T7 [x] — S1, S2: stop:
   - the mutation passes an `AbortSignal`, so the stop button cancels the request;
   - the turn shows «Detenido» and keeps the question for editing;
   - the Go handler already ends on a cancelled context (499): pin that with a test.
   Route: inline, test-first. Commit: pending.
-- T8 [ ] — S3: a safe answer formatter: paragraphs, bold, bullet and numbered lists, `[n]` citation links, built from
+- T8 [x] — S3: a safe answer formatter: paragraphs, bold, bullet and numbered lists, `[n]` citation links, built from
   text nodes only (no `innerHTML`, no Markdown library, no links other than citations). Route: inline, test-first,
   including hostile input. Commit: pending.
 
@@ -92,7 +92,7 @@ Phase C — backend (CLI first):
     the route;
   - a reply that cites a record found only in the history must cite it again from a tool result.
   Risk: item 2 (data sent to an external model). Route: inline + independent verifier. Commit: pending.
-- T10 [ ] — S2, S3: live progress:
+- T10 [x] — S2, S3: live progress:
   - a streamed variant of ask (SSE, `POST /system/analyst/ask/stream`) sends `step` events naming the tool in Spanish
     («Buscando registros…», «Leyendo la línea de tiempo…»), then one `answer` event once the citations are validated,
     then `done` or `error`;
@@ -143,6 +143,9 @@ Phase E — proof:
 - T20 [ ] — S1: move the thread, AnalystAnswer and the attention popover into a lazy chunk loaded on the first
   question, and bring the entry budget back towards 218 kB gzip (it was raised to 230 kB in L11). Route: inline.
   Commit: pending.
+- T21 [x] — S2: Inicio asks through `/system/analyst/ask/stream` and shows each `step` label as the pending turn's
+  progress text (fallback to `/ask` when the stream is unavailable), with the same single status announcement.
+  Route: worker. Commit: pending.
 - T16 [ ] — S1: Playwright specs (Chromium, mobile, WebKit) for the thread, stop, new conversation, AI off and the
   503 fallback, waiting for state rather than time; axe with 0 violations in both themes; the CSS budget kept
   (41 kB) and the Inicio usable-time budget kept. Route: inline. Commit: pending.
@@ -282,7 +285,8 @@ T18(b) → T16 → T17. Phases A, B and D change no API and no stored data.
   - T15 (phones, each rule RED first):
     - greeting hidden visually during a thread, and «Nueva conversación» as a 44 px icon;
     - the composer dock keeps the safe area, and drawer targets are 44 px;
-    - `interactive-widget=resizes-content` so Android keeps the composer above the keyboard.
+    - `interactive-widget=resizes-content` was tried and removed (2e7360eb): WebKit logs that the viewport key is
+      not recognised, which fails the console-hygiene check of every WebKit e2e spec (#514 CI).
   - Playwright, run locally with the CI font: mobile-chromium 96 passed, 5 skipped; the chromium shell and Inicio
     specs 31 passed, 2 skipped. axe reports 0 violations in both themes. WebKit could not launch on this host
     (missing system libraries); CI runs it.
@@ -291,3 +295,35 @@ T18(b) → T16 → T17. Phases A, B and D change no API and no stored data.
   - Open, for the owner:
     - the phone artboard stacks the chips while the product keeps a swipeable strip;
     - the phone tab row is cut beside the bell and «+» during a thread.
+- L12 — 2026-11-17, parallel units (owner L11).
+  - Web, `feat/chat-actions` d4a4aa62, stacked on #514:
+    - T6: «Copiar» (text and numbered sources, one announcement, refusal shown) and «Volver a preguntar», also on
+      failed turns;
+    - T7 web: a real AbortSignal; «Detenido» with the question back in an empty composer; late answers dropped;
+    - T8: a line-scanner formatter (paragraphs, bold, lists, `[n]`) built only from React elements, with
+      hostile-input tests;
+    - web 873/873, mobile and chromium Inicio specs green, entry 220.4/230 kB.
+  - Go, #515 (1a83b78a):
+    - T10: `POST /system/analyst/ask/stream` sends step, then answer or error, then done, plus
+      `sipgesctl analyst ask --steps`;
+    - T7 Go: context checks before every model and tool call;
+    - the stream path was added to the read-only role gate next to `/ask` (identity, RED first);
+    - independent verifier (gentle-ai-verify): no blocking findings. A1, a panic in the stream goroutine killing the
+      process, was fixed RED to green. A2–A7 are follow-ups: in-stream refusals log as 200, the proposal tools show
+      the generic label, `--json` shows the stream route, format characters pass `printable`, the docs omit 500,
+      and `Cache-Control` is `no-store`.
+    - The verifier's two durable test files were lost: the parent deleted their scratch before confirming the copy.
+      The panic test was rewritten.
+  - The design handoff for 01 is implemented across #514 and this branch. Added T21 (web consumes the stream).
+- L13 — 2026-11-17, T21 done and T20 partly done, on `feat/chat-actions`. A worker built them; the parent committed.
+  - T21: Inicio asks through `/ask/stream`, read by a TextDecoderStream SSE reader (`shared/api/sse.ts`). The
+    pending turn shows the latest step label as text. There is one start and one end announcement, never one per
+    step. Error events reuse `ApiError`. It falls back to `/ask` once on 404, 405 or a response that is not SSE.
+    Abort stops reading. RED first: 16 rules.
+  - T20: the answer view (AnalystAnswer, actions, formatter, blocks, stream client) moved to a lazy chunk, preloaded
+    on composer focus or the first keypress. Entry: 736.4 → 728.1 kB raw and 220.4 → 219.2 kB gzip. It missed the
+    ≤ 218 kB goal: rolldown 1.2.15 emits a shared `format-*` chunk (28.7 kB gzip) for any new dynamic import under
+    Inicio, and a popover split made the entry bigger (221.2), so it was reverted. T20 stays open for a
+    `vite.config.ts` chunking experiment.
+  - Checks: web 893/893; Playwright mobile-chromium Inicio specs 15 passed (fallback path); chromium 25-inicio and
+    performance 3 passed, 1 skipped (median 765 ms). CSS is 40.6/41 kB, close to the limit.

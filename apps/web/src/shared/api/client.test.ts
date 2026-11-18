@@ -55,6 +55,19 @@ describe('API client', () => {
     await expect(requestJson('/bad', z.object({ ok: z.literal(true) }))).rejects.toThrow();
   });
 
+  it('asks for JSON unless the caller names another type (an event stream)', async () => {
+    const accepted: (string | null)[] = [];
+    server.use(
+      http.post('/accept', ({ request: req }) => {
+        accepted.push(req.headers.get('accept'));
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+    await request('/accept', { method: 'POST' });
+    await request('/accept', { method: 'POST', accept: 'text/event-stream' });
+    expect(accepted).toEqual(['application/json', 'text/event-stream']);
+  });
+
   it('accepts a redirect only when asked to', async () => {
     server.use(
       http.post('/go', () => new HttpResponse(null, { status: 303, headers: { location: '/' } })),

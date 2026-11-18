@@ -40,18 +40,20 @@ const knownBlocks = z
     }),
   );
 
-const AnalystAnswer = z.object({
+export const AnalystAnswer = z.object({
   answer: z.string(),
   sources: z.array(AnalystSource),
   blocks: knownBlocks,
 });
 export type AnalystAnswer = z.infer<typeof AnalystAnswer>;
 
-export const askAnalyst = (scope: string, question: string) =>
+/** «Detener» aborts the request through `signal` (chat-first-ui T7); the server ends on it. */
+export const askAnalyst = (scope: string, question: string, signal?: AbortSignal) =>
   requestJson('/system/analyst/ask', AnalystAnswer, {
     scope,
     method: 'POST',
     body: { json: { question } },
+    ...(signal ? { signal } : {}),
   });
 
 export type AnswerPart = { readonly text: string } | { readonly source: AnalystSource };

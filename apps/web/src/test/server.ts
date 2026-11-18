@@ -163,6 +163,11 @@ export const handlers = [
   ),
   // The Inicio analyst lives in the Go API only; tests that ask say it is there.
   http.get('/system/analyst', () => signedIn(() => HttpResponse.json({ available: false }))),
+  // An older server: no streamed ask, so Inicio asks /ask (chat-first-ui T21). Stream tests
+  // answer it themselves.
+  http.post('/system/analyst/ask/stream', () =>
+    HttpResponse.json({ detail: 'Not Found' }, { status: 404 }),
+  ),
   http.get('/system/v4/settings', () =>
     signedIn(() =>
       HttpResponse.json({
