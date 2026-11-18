@@ -497,6 +497,10 @@ func prepareOnly(ctx context.Context, stateDir, pgBin string, stdout io.Writer) 
 	if err != nil {
 		return err
 	}
+	// The mark goes first: from here until the move commits, nothing starts SIPGES on this cluster.
+	if err := os.WriteFile(filepath.Join(stateDir, pendingMoveName), []byte("pglite-to-postgres.mjs --prepared removes this after the move\n"), 0o600); err != nil {
+		return &userError{msg: "No se pudo preparar la base de datos local. Revise el registro de SIPGES.", err: err}
+	}
 	pg, err := startCluster(ctx, pgBin, stateDir, sec)
 	if err != nil {
 		return removeHalfMade(ctx, pgBin, dataDir, err)
@@ -533,6 +537,12 @@ func removeHalfMade(ctx context.Context, binDir, dataDir string, cause error) er
 	running, err := clusterRunning(context.WithoutCancel(ctx), binDir, dataDir)
 	if err == nil && !running {
 		err = os.RemoveAll(dataDir)
+	}
+	if err == nil && !running {
+		// Only once the cluster is gone: the mark keeps SIPGES off a cluster that is still there.
+		if rmErr := os.Remove(dataDir + ".pending-move"); rmErr != nil && !errors.Is(rmErr, os.ErrNotExist) {
+			err = rmErr
+		}
 	} else if err == nil {
 		err = errors.New("PostgreSQL still runs on it")
 	}
@@ -704,8 +714,11 @@ func reportStartError(err error, stderr io.Writer) int {
 		return exitRollbackIncomplete
 	}
 	var first *firstStartError
+	var ue *userError
 	if errors.As(err, &first) {
 		_, _ = fmt.Fprintln(stderr, firstStartNotice(first.err))
+	} else if errors.As(err, &ue) {
+		_, _ = fmt.Fprintln(stderr, ue.msg)
 	}
 	_, _ = fmt.Fprintln(stderr, "Error: "+err.Error())
 	return 1

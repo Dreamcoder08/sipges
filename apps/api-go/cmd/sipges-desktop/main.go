@@ -166,6 +166,10 @@ func runDesktop(ctx context.Context, args, environ []string, stdout, stderr io.W
 	if s.prepareOnly {
 		return prepareOnly(ctx, s.state, s.pgBin, stdout)
 	}
+	// A cluster --prepare-only made is empty until the PGlite move fills it: never migrate it here.
+	if pendingMove(s.state) {
+		return &userError{msg: pendingMoveNotice, err: errPendingMove}
+	}
 	sec, err := readSecrets(s.state)
 	if err != nil {
 		return err

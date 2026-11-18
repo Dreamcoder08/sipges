@@ -91,6 +91,10 @@ func TestManagedLauncherPreparesStartsUpdatesAndRestartsOnPostgres18(t *testing.
 		!strings.Contains(errOut.String(), "ya tiene una base de datos PostgreSQL 18") {
 		t.Fatalf("a second --prepare-only: exit %d\n%s", code, errOut.String())
 	}
+	// What a committed move (pglite-to-postgres.mjs --prepared) does last.
+	if err := os.Remove(filepath.Join(f.state, pendingMoveName)); err != nil {
+		t.Fatalf("--prepare-only left no pending-move mark: %v", err)
+	}
 
 	f.release("1.1.0", releaseOptions{notes: strp("Sintético.")})
 	port := freePort(t)

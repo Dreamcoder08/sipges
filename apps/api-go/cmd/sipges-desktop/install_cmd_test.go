@@ -161,3 +161,21 @@ func TestLauncherOptionsStillParseWithoutTheInstallForm(t *testing.T) {
 		t.Fatal("--state without --release was accepted")
 	}
 }
+
+// The release's own go/sipges-desktop is checked against the signed manifest like every file: a
+// binary swapped after signing is refused before anything is installed (B1).
+func TestInstallRefusesAReleaseBinaryChangedAfterSigning(t *testing.T) {
+	f := newFixtureWith(t, func(pkg, _ string) {
+		put(t, filepath.Join(pkg, "go", program("sipges-desktop")), "signed binary\n")
+	})
+	release := f.release("2.0.0", releaseOptions{})
+	put(t, filepath.Join(release, "package", "go", program("sipges-desktop")), "#!/bin/sh\necho tampered\n")
+	root := filepath.Join(f.dir, "new-install")
+	code, _, stderr := installCLI(t, "--install", root, "--release", release, "--state", filepath.Join(f.dir, "new-state"), "--trust-release-key")
+	if code != 1 || !strings.HasPrefix(stderr, "Error: ") {
+		t.Fatalf("exit %d, stderr %q", code, stderr)
+	}
+	if _, err := os.Stat(filepath.Join(root, "current.json")); !os.IsNotExist(err) {
+		t.Fatalf("current.json was written: %v", err)
+	}
+}
