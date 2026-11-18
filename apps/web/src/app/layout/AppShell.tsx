@@ -219,6 +219,10 @@ export const AppShell = ({
         Saltar al contenido principal
       </a>
       {compact ? null : sidebar}
+      {/* On a phone the sidebar, and the search palette in it, exist only while the drawer is
+          open. Keep the palette mounted (its trigger hidden) so «Buscar» from a page and Ctrl+K
+          still open it; the drawer's own copy takes over while it is open. */}
+      {compact && !drawer && search ? <div hidden>{search}</div> : null}
       <div className={styles.body}>
         {compact ? (
           <header ref={topbar} className={styles.topbar}>

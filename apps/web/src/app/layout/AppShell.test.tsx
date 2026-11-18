@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { installRecordsApi } from '../../test/records-api.ts';
 import { api, resetApi, server } from '../../test/server.ts';
 import { App } from '../App.tsx';
+import { openSearch } from '../../features/search/SearchPalette.tsx';
 import { DESTINATIONS, SCREENS } from '../navigation.ts';
 
 const at = (path: string) => window.history.replaceState(null, '', path);
@@ -278,6 +279,16 @@ describe('compact layout opens the sidebar as a drawer (ChatGPT / Claude mobile)
     expect(within(bar).getByRole('heading', { level: 1 })).toHaveTextContent('Panel ejecutivo');
     expect(screen.queryByRole('navigation', { name: 'Navegación principal' })).toBeNull();
     expect(document.querySelector('aside')).toBeNull();
+  });
+
+  it('opens the search palette from the page while the drawer is closed (Buscar on a phone)', async () => {
+    api.me = { username: 'persona', full_name: 'Persona Sintética', role: 'admin' };
+    at('/');
+    render(<App />);
+    await screen.findByRole('heading', { level: 1, name: 'Panel ejecutivo' });
+    openSearch('bloqueo norte');
+    const dialog = await screen.findByRole('dialog', { name: 'Búsqueda global' });
+    expect(within(dialog).getByRole('combobox')).toHaveValue('bloqueo norte');
   });
 
   it('marks the menu button while notifications are unread', async () => {

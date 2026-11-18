@@ -162,7 +162,16 @@ export const Composer = ({
           className={styles.send}
           aria-label={pending ? 'Detener respuesta' : sendLabel}
           title={pending ? 'Detener respuesta · Esc' : undefined}
-          onClick={pending ? onStop : undefined}
+          onClick={
+            pending
+              ? (event) => {
+                  // Stopping turns this button back into «Enviar» before the click's default
+                  // action runs; without this the browser would submit the question again.
+                  event.preventDefault();
+                  onStop?.();
+                }
+              : undefined
+          }
         >
           <Icon name={pending ? 'stop' : 'arrowUp'} />
         </button>

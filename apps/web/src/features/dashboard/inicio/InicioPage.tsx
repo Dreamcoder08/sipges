@@ -152,7 +152,10 @@ export const InicioPage = ({
   const follow = useEffectEvent(() => {
     if (following.current) toEnd();
   });
-  useEffect(() => {
+  // In the commit, before the browser renders: Safari can lay out a longer turn and have the
+  // observer report the end out of view before a passive effect runs, and the view would then stay
+  // above the new answer with «Ir al final» shown.
+  useLayoutEffect(() => {
     if (thread.turns.length) follow();
   }, [thread.turns]);
 
