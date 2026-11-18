@@ -255,3 +255,32 @@ test('the unpack command takes only what the bundle keeps', () => {
     'libcurl.lib',
   ]);
 });
+
+// The default download goes through node:http(s), not fetch: undici's fetch can abort the process
+// with `assert(!this.paused)` when the socket ends while a slow disk holds the body paused
+// (seen on the Windows runner, run 44262737447). Redirects are followed, a loop is refused.
+test('the default download uses node:http, follows a redirect and refuses a redirect loop', async () => {
+  const dir = await scratch();
+  const zip = zipOf(FILES);
+  const server = createServer((req, res) => {
+    if (req.url === '/moved') return res.writeHead(302, { Location: '/zip' }).end();
+    if (req.url === '/loop') return res.writeHead(302, { Location: '/loop' }).end();
+    res.writeHead(200, { 'Content-Length': zip.length });
+    res.end(zip);
+  });
+  await new Promise((done) => server.listen(0, '127.0.0.1', done));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  try {
+    const pin = pinFor(zip, { url: `${base}/moved` });
+    const got = await verifiedZip({ pin, cache: join(dir, 'cache') });
+    assert.equal(got.downloaded, true);
+    assert.equal(sha(await readFile(got.path)), pin.sha256);
+    await assert.rejects(
+      verifiedZip({ pin: pinFor(zip, { url: `${base}/loop` }), cache: join(dir, 'loop') }),
+      /Cannot download PostgreSQL.*too many redirects/s,
+    );
+  } finally {
+    await new Promise((done) => server.close(done));
+    await rm(dir, { recursive: true, force: true });
+  }
+});

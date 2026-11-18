@@ -11,11 +11,12 @@
 // StackBuilder's own files inside `bin` (stackbuilder.exe, the wxWidgets DLLs) and the import
 // libraries (*.lib). `postgresql.json` beside them records the pin it came from.
 // deploy/desktop/package/builder.mjs --go calls this; the binaries are never committed.
-/* global fetch */
 import { spawnSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { createReadStream, createWriteStream, existsSync } from 'node:fs';
 import { mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
+import { get as httpGet } from 'node:http';
+import { get as httpsGet } from 'node:https';
 import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { dirname, join, resolve } from 'node:path';
@@ -92,7 +93,38 @@ const offline = (pin, path, cause) =>
  * The cached zip, downloaded first when missing. Returns its path only when its size and SHA-256
  * match the pin; a damaged cached copy is deleted and downloaded again.
  */
-export async function verifiedZip({ pin, cache = DEFAULT_CACHE, fetchImpl = fetch, say = () => {} }) {
+/**
+ * GET through node:http(s), following up to `redirects` redirects (never from https to http), and
+ * resolves with the 200 response stream. Not fetch: undici can abort the process with
+ * `assert(!this.paused)` when the socket ends while a slow disk holds the body paused (Windows
+ * runner, run 44262737447); a node:http stream piped to a file only applies backpressure.
+ */
+export function nodeGet(url, redirects = 5) {
+  return new Promise((resolve, reject) => {
+    const target = new URL(url);
+    const get = { 'https:': httpsGet, 'http:': httpGet }[target.protocol];
+    if (!get) return reject(new Error(`unsupported protocol ${target.protocol}`));
+    const request = get(target, (response) => {
+      const status = response.statusCode ?? 0;
+      if (status >= 300 && status < 400 && response.headers.location) {
+        response.resume();
+        const next = new URL(response.headers.location, target);
+        if (redirects === 0) return reject(new Error('too many redirects'));
+        if (target.protocol === 'https:' && next.protocol !== 'https:')
+          return reject(new Error('redirect away from https refused'));
+        return nodeGet(next.href, redirects - 1).then(resolve, reject);
+      }
+      if (status !== 200) {
+        response.resume();
+        return reject(new Error(`HTTP ${status}`));
+      }
+      resolve(response);
+    });
+    request.on('error', reject);
+  });
+}
+
+export async function verifiedZip({ pin, cache = DEFAULT_CACHE, fetchImpl, say = () => {} }) {
   await mkdir(cache, { recursive: true });
   const path = cachePath(cache, pin);
   if (existsSync(path)) {
@@ -101,13 +133,20 @@ export async function verifiedZip({ pin, cache = DEFAULT_CACHE, fetchImpl = fetc
     await rm(path, { force: true });
   }
   say(`Downloading PostgreSQL ${pin.version} (${Math.round(pin.size / 1e6)} MB) from ${pin.url}`);
-  let response;
+  // `fetchImpl` is for tests that serve a web Response; the build itself uses node:http(s).
+  let body;
   try {
-    response = await fetchImpl(pin.url, { redirect: 'follow' });
+    if (fetchImpl) {
+      const response = await fetchImpl(pin.url, { redirect: 'follow' });
+      if (!response.ok || !response.body) throw offline(pin, path, `HTTP ${response.status}`);
+      body = Readable.fromWeb(response.body);
+    } else {
+      body = await nodeGet(pin.url);
+    }
   } catch (error) {
-    throw offline(pin, path, error.cause?.code ?? error.message);
+    if (error.message.startsWith('Cannot download PostgreSQL')) throw error;
+    throw offline(pin, path, error.cause?.code ?? error.code ?? error.message);
   }
-  if (!response.ok || !response.body) throw offline(pin, path, `HTTP ${response.status}`);
   const partial = `${path}.${randomUUID()}.partial`;
   const hash = createHash('sha256');
   let bytes = 0;
@@ -119,7 +158,7 @@ export async function verifiedZip({ pin, cache = DEFAULT_CACHE, fetchImpl = fetc
     },
   });
   try {
-    await pipeline(Readable.fromWeb(response.body), tap, createWriteStream(partial, { flags: 'wx' }));
+    await pipeline(body, tap, createWriteStream(partial, { flags: 'wx' }));
   } catch (error) {
     await rm(partial, { force: true });
     throw offline(pin, path, `interrupted: ${error.cause?.code ?? error.message}`);
@@ -151,7 +190,7 @@ export async function bundlePostgres({
   out,
   cache = DEFAULT_CACHE,
   pin,
-  fetchImpl = fetch,
+  fetchImpl,
   platform = process.platform,
   arch = process.arch,
   say = () => {},
