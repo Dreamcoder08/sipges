@@ -99,3 +99,23 @@ test('go-drill.mjs: the update version and a PATH without Node', () => {
   assert.deepEqual(withoutNode(env, hasNode), { Path: 'C:\\Windows;C:\\Go\\bin', OTHER: 'x' });
   assert.deepEqual(withoutNode({ PATH: 'C:\\node24' }, hasNode), { PATH: '' });
 });
+
+// Review B1: a Go release is verified and installed by the kit's trusted sipges-desktop.exe
+// (deploy\desktop\bin, built from the trusted checkout), never by the release's own binary.
+test('install.ps1 installs a Go release with the kit\'s trusted sipges-desktop.exe and never runs the release\'s', async () => {
+  const script = await read('install.ps1');
+  assert.ok(script.includes("$TrustedInstaller = Join-Path (Split-Path -Parent $PSScriptRoot) 'bin\\sipges-desktop.exe'"));
+  const lines = code(script);
+  const calls = lines.filter((line) => /^\s*&\s/.test(line) && /sipges-desktop|Installer/.test(line));
+  assert.deepEqual(calls, ['            & $TrustedInstaller --install $AppRoot --release $source --state $State --trust-release-key']);
+  assert.equal(/&\s*\$GoInstaller|&\s*\(Join-Path \$source 'package/.test(script), false, 'the release\'s binary is never run');
+  assert.ok(script.includes(`Stop-Install "Este kit no trae su sipges-desktop.exe de confianza ($TrustedInstaller): constrúyelo desde el checkout de confianza y vuelve a ejecutar este script; no se cambió nada."`));
+});
+
+// Review C1: pg18.pending-move (left by --prepare-only until the move commits) means not moved.
+test('start-managed.ps1 treats a prepared cluster waiting for the move as not moved', async () => {
+  const resolve = functionBody(await read('start-managed.ps1'), 'Get-GoServer');
+  assert.ok(resolve.includes("$pending = Test-Path -LiteralPath (Join-Path $state 'pg18.pending-move')"));
+  assert.ok(resolve.includes("if ($pending -or ($pglite -and -not (Test-Path -LiteralPath (Join-Path $state 'pg18\\PG_VERSION')))) {"));
+  assert.ok(resolve.includes(`return @{ Reason = '${GO_NOT_MOVED_LINE}' }`));
+});

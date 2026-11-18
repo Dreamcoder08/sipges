@@ -216,3 +216,23 @@ test('the Go mode refuses to reuse a TypeScript SIPGES; the TypeScript mode refu
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+// Review C1: a cluster --prepare-only made and the move has not filled (pg18.pending-move beside
+// it) is "not moved": the shortcut stays on TypeScript and --go refuses, starting nothing.
+test('a prepared cluster waiting for the move keeps the TypeScript launcher; --go refuses it', async () => {
+  const { dir, root, state, ran } = installRoot();
+  try {
+    writeFileSync(join(state, 'pglite', 'PG_VERSION'), '17\n');
+    mkdirSync(join(state, 'pg18'));
+    writeFileSync(join(state, 'pg18', 'PG_VERSION'), '18\n');
+    writeFileSync(join(state, 'pg18.pending-move'), '');
+    const refused = await launch(root, ['--go']);
+    assert.equal(refused.status, 1);
+    assert.ok(refused.stderr.includes(NOT_MOVED), refused.stderr);
+    assert.equal(existsSync(ran), false, 'nothing was started');
+    assert.equal((await launch(root, [])).status, 1);
+    assert.match(readFileSync(ran, 'utf8'), /^typescript --releases /);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

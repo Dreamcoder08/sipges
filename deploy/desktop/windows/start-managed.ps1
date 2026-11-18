@@ -121,7 +121,8 @@ function Start-Launcher {
 
 # The Go mode's files in the current version, or why it cannot run (Reason): an install that
 # cannot be read, a version without the Go mode, and data not moved yet: something in pglite\
-# and no cluster in pg18\ (a new cluster there would start SIPGES empty). Changes nothing.
+# and no cluster in pg18\ (a new cluster there would start SIPGES empty), or a cluster that
+# --prepare-only made and the move has not filled (pg18.pending-move). Changes nothing.
 function Get-GoServer {
     $release = $null
     $state = $null
@@ -145,7 +146,9 @@ function Get-GoServer {
         return @{ Reason = 'Esta versión de SIPGES no incluye el modo Go. Abra SIPGES desde su acceso directo habitual.' }
     }
     $pglite = Get-ChildItem -LiteralPath (Join-Path $state 'pglite') -Force -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($pglite -and -not (Test-Path -LiteralPath (Join-Path $state 'pg18\PG_VERSION'))) {
+    # A cluster --prepare-only made stays empty until the move commits and removes this mark.
+    $pending = Test-Path -LiteralPath (Join-Path $state 'pg18.pending-move')
+    if ($pending -or ($pglite -and -not (Test-Path -LiteralPath (Join-Path $state 'pg18\PG_VERSION')))) {
         return @{ Reason = 'SIPGES no se inició en modo Go: sus datos todavía no se movieron a PostgreSQL. No se tocó nada. Abra SIPGES desde su acceso directo habitual.' }
     }
     return $server

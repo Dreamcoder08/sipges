@@ -97,7 +97,9 @@ resolve_go() {
     say 'No se encontró PostgreSQL 18 para el modo Go: indique la carpeta bin de PostgreSQL 18 en SIPGES_PG_BIN.'
     return 1
   fi
-  if [ -n "$(ls -A "$state/pglite" 2>/dev/null)" ] && [ ! -f "$state/pg18/PG_VERSION" ]; then
+  # A cluster --prepare-only made stays empty until the move commits and removes pg18.pending-move.
+  if [ -e "$state/pg18.pending-move" ] ||
+    { [ -n "$(ls -A "$state/pglite" 2>/dev/null)" ] && [ ! -f "$state/pg18/PG_VERSION" ]; }; then
     say 'SIPGES no se inició en modo Go: sus datos todavía no se movieron a PostgreSQL. No se tocó nada. Abra SIPGES desde su acceso directo habitual.'
     return 1
   fi
