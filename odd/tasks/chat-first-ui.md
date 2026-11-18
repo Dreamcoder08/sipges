@@ -339,3 +339,23 @@ T18(b) → T16 → T17. Phases A, B and D change no API and no stored data.
     - modulePreload polyfill off: only 0.2 kB, and it changes Safari < 17.
   - Checks: web 893/893; chromium 25-inicio, performance and console specs 4 passed, 1 skipped; mobile Inicio and
     analyst specs 15/15. WebKit runs in CI.
+- L15 — 2026-11-17, T16 on `test/chat-e2e`. The owner's local install was updated to main 7014ee73 (`./sipges update`,
+  33 migrations, health 200).
+  - A worker wrote 16 Playwright tests in `40-inicio-conversation.spec.ts` (desktop, also in the WebKit list) and
+    `inicio-conversation.mobile.spec.ts`:
+    - a three-question thread with «Ir al final»;
+    - «Detener», «Nueva conversación», Ctrl/⌘+Shift+O and «Nueva pregunta» from Registros;
+    - external AI off, the 503 turn, «Copiar» with the exact clipboard text;
+    - the `/ask` fallback, and live steps through a fetch-level stream;
+    - Ctrl+B persisting across a reload, and Ctrl+/.
+  - They found two real product bugs, fixed by the parent:
+    - «Detener» resubmitted the question: the button turns back into submit before the click's default action.
+      Fixed with `preventDefault` in the stop click. jsdom cannot reproduce it, so a unit test pins the behaviour and
+      the e2e proves it.
+    - On phones, «Buscar» from Inicio (Enter, chips, the 503 button) and Ctrl+K did nothing: the palette lived only
+      in the closed drawer. AppShell now keeps a hidden palette while the drawer is closed. RED, then green, in
+      AppShell.test.
+  - `inicio.mobile` «chat-style home» expected the old «a chip fills the composer» behaviour; it now expects the
+    palette with the chip's text (T4).
+  - Checks: chromium and mobile-chromium 48/48 with `--repeat-each=2`, web 895/895, boundaries, lint, typecheck.
+    WebKit runs in CI only.
