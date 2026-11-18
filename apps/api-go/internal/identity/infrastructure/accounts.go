@@ -103,12 +103,8 @@ func (s Store) ResetTOTPInTenant(ctx context.Context, username, tenantID, detail
 		if err != nil {
 			return "", fmt.Errorf("read grant: %w", err)
 		}
-		if _, err := tx.Exec(ctx, `UPDATE users SET totp_enabled = false, totp_secret_sealed = NULL, totp_last_step = NULL
-		                           WHERE username = $1`, username); err != nil {
-			return "", fmt.Errorf("clear factor: %w", err)
-		}
-		if _, err := tx.Exec(ctx, `DELETE FROM sessions WHERE username = $1`, username); err != nil {
-			return "", fmt.Errorf("revoke sessions: %w", err)
+		if _, err := clearTOTP(ctx, tx, username); err != nil {
+			return "", err
 		}
 		if err := database.EnterTenant(ctx, tx, tenantID); err != nil {
 			return "", fmt.Errorf("enter tenant: %w", err)
@@ -121,4 +117,35 @@ func (s Store) ResetTOTPInTenant(ctx context.Context, username, tenantID, detail
 		}
 		return "", nil
 	})
+}
+
+// ResetTOTP is resetTotp: the operator command's reset, with no tenant and no audit row.
+func (s Store) ResetTOTP(ctx context.Context, username string) (application.AccountOutcome, error) {
+	return transaction(ctx, s.DB, func(tx pgx.Tx) (application.AccountOutcome, error) {
+		found, err := clearTOTP(ctx, tx, username)
+		if err != nil {
+			return "", err
+		}
+		if !found {
+			return application.AccountMissing, nil
+		}
+		return "", nil
+	})
+}
+
+// clearTOTP is clearTotp of sql-identity-store.ts: it removes the second factor and every session
+// of username, and is false when no such user exists.
+func clearTOTP(ctx context.Context, tx pgx.Tx, username string) (bool, error) {
+	tag, err := tx.Exec(ctx, `UPDATE users SET totp_enabled = false, totp_secret_sealed = NULL, totp_last_step = NULL
+	                           WHERE username = $1`, username)
+	if err != nil {
+		return false, fmt.Errorf("clear factor: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return false, nil
+	}
+	if _, err := tx.Exec(ctx, `DELETE FROM sessions WHERE username = $1`, username); err != nil {
+		return false, fmt.Errorf("revoke sessions: %w", err)
+	}
+	return true, nil
 }

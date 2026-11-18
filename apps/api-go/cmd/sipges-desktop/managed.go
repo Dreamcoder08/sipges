@@ -434,15 +434,18 @@ func clusterRunning(ctx context.Context, binDir, dataDir string) (bool, error) {
 	}
 }
 
-// stopOrphanClusters stops, through localpg (its fast stop and orphan handling), every PostgreSQL
-// left running on one of the folders, typically by a launcher that was killed. It fails without
-// touching anything else when one cannot be stopped, or when another instance owns it.
+// stopOrphanClusters stops every PostgreSQL left running on one of the folders, typically by a
+// launcher that was killed, with localpg.StopLeftover: pg_ctl stop -m fast on that data folder,
+// then a kill when that fails, and never a start, so a copy of the state folder is never served.
+// A postmaster.pid that no PostgreSQL serves (a crashed server, or a process id the system gave
+// to another program) leaves the folder free. It fails without touching anything else when a
+// server cannot be stopped.
 func stopOrphanClusters(rt runtimeEnv, root string) func(context.Context, []string) error {
 	return func(ctx context.Context, folders []string) error {
 		binDir := ""
 		for _, dir := range folders {
 			dataDir := filepath.Join(dir, dataFolder)
-			if _, err := os.Stat(filepath.Join(dataDir, "postmaster.pid")); err != nil {
+			if _, serving := localpg.Serving(ctx, dataDir); !serving {
 				continue
 			}
 			if binDir == "" {
@@ -459,27 +462,15 @@ func stopOrphanClusters(rt runtimeEnv, root string) func(context.Context, []stri
 				}
 				binDir = bins.pgBin
 			}
-			running, err := clusterRunning(ctx, binDir, dataDir)
-			if err != nil {
-				return err
-			}
-			if !running {
-				continue
-			}
-			super, err := readSuperPassword(dir)
-			if err != nil {
-				return fmt.Errorf("stop the PostgreSQL left running on %s: %w", dataDir, err)
-			}
-			pg, err := localpg.Start(ctx, localpg.Options{
-				BinDir: binDir, DataDir: dataDir, LogPath: filepath.Join(dir, dataFolder+".log"), SuperPassword: super,
+			stopped, err := localpg.StopLeftover(ctx, localpg.Options{
+				BinDir: binDir, DataDir: dataDir, LogPath: filepath.Join(dir, dataFolder+".log"),
 			})
-			if err == nil {
-				err = stopCluster(ctx, pg)
-			}
 			if err != nil {
 				return fmt.Errorf("stop the PostgreSQL left running on %s: %w", dataDir, err)
 			}
-			_, _ = fmt.Fprintf(rt.stderr, "sipges-desktop: stopped the PostgreSQL left running on %s\n", dataDir)
+			if stopped {
+				_, _ = fmt.Fprintf(rt.stderr, "sipges-desktop: stopped the PostgreSQL left running on %s\n", dataDir)
+			}
 		}
 		return nil
 	}
@@ -528,12 +519,12 @@ func removeHalfMade(ctx context.Context, binDir, dataDir string, cause error) er
 	}
 	if err != nil {
 		return &userError{
-			msg: "No se pudo preparar la base de datos local. Detenga PostgreSQL y borre la carpeta " + dataDir + " antes de volver a intentarlo.",
+			msg: "No se pudo preparar la base de datos local. Detenga PostgreSQL y borre la carpeta " + dataDir + " antes de volver a intentarlo. Detalle: " + cause.Error(),
 			err: errors.Join(cause, fmt.Errorf("remove the half-made %s: %w", dataDir, err)),
 		}
 	}
 	return &userError{
-		msg: "No se pudo preparar la base de datos local; se borró la carpeta pg18 a medio preparar. Revise el registro de SIPGES.",
+		msg: "No se pudo preparar la base de datos local; se borró la carpeta pg18 a medio preparar. Detalle: " + cause.Error(),
 		err: cause,
 	}
 }

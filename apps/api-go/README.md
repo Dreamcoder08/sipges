@@ -128,6 +128,24 @@ go test -run '^$' -bench WithTenant ./internal/platform/database/   # with SIPGE
 golangci-lint run ./...                                  # v2.15.0
 ```
 
+### Operator commands
+
+Besides serving, the binary runs `migrate`, `import-report`, `inventory`, `vapid-keys`,
+`healthcheck` and `reset-mfa` (`cmd/api/migrate.go` dispatches them).
+
+`reset-mfa <usuario>` is the break-glass path of `node src/admin-cli.ts reset-mfa`: it clears a
+user's second factor and every session, so the next sign-in enrols a new authenticator. It is the
+only way to recover the last administrator, because the HTTP route refuses a self-reset (ADR 0009).
+It talks to the database directly, with the same `SIPGES_DATABASE_URL` (and
+`SIPGES_ALLOW_PRIVILEGED_DB_ROLE`) as the API; it applies no migration, and, like TypeScript, it
+writes no audit row. The name is trimmed and lower-cased.
+
+| Case                      | Exit | Output                                                                                  |
+| ------------------------- | ---- | --------------------------------------------------------------------------------------- |
+| reset                     | 0    | stdout `MFA restablecido para <usuario>; registrará un autenticador nuevo al ingresar.` |
+| unknown user              | 1    | stderr `Usuario inexistente: <usuario>`                                                 |
+| missing or extra argument | 2    | stderr `Uso: sipges-api-go reset-mfa <usuario>`                                         |
+
 Parity with the TypeScript API (every route the Go API serves): `pnpm parity` from the repository root,
 see [apps/parity](../parity/README.md).
 
