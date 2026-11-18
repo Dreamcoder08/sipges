@@ -670,6 +670,19 @@ quedan así.
   5. Expulsar el disco y volver a abrir SIPGES.
 - [ ] Anotá la fecha de la visita en T34 de `closure-roadmap.md` al volver.
 
+### Paso 9 — Claude Desktop por MCP (T36, solo después del Paso 7)
+
+Se hace únicamente si los pasos 1 a 8 terminaron bien y sobre la versión nueva, nunca sobre la vieja.
+
+- [ ] **Consentimiento.** Ella acepta que los datos del proyecto, con los nombres seudonimizados, se envíen a
+  Anthropic. Sin ese «sí», este paso se omite.
+- [ ] Seguí [deploy/desktop/README.es.md › Opcional: Claude Desktop por MCP](../../deploy/desktop/README.es.md#opcional-claude-desktop-por-mcp):
+  la clave «Solo lectura», «Envío a IA externa» activado, Claude Desktop y `claude_desktop_config.json`.
+- [ ] Prueba: «¿Qué tipos de objeto tiene SIPGES?» y después una búsqueda de un tema que ella conozca. En
+  **Auditoría** tiene que aparecer una fila «IA externa» por cada consulta.
+- [ ] Si falla, no se depura en la visita: se borra la entrada `sipges` del archivo, se revoca la clave, se apaga
+  «Envío a IA externa» y queda para otra ocasión. SIPGES sigue igual.
+
 ## 3. Regla de corte
 
 Se aplica ante **cualquiera** de estas cosas: una diferencia o un `RESULT` distinto de `no difference` en el
