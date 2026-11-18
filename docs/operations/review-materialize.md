@@ -97,9 +97,16 @@ Discarding later is the single decision («Descartado»): the record stays, as w
 
 ## Run the backfill
 
-The CLI targets the database of the API configuration: `SIPGES_DATABASE_URL`, or
-`SIPGES_PGLITE_DIR` for a local PGlite. Never paste a connection string into a document,
-commit or chat.
+The CLI targets `SIPGES_DATABASE_URL` and requires a valid `SIPGES_DATA_KEY`, as the API
+configuration does (the tool never uses it: a throwaway key will do). Never paste a connection
+string into a document, commit or chat.
+
+The script runs the Rust port, `engines/crates/review-materialize` (ADR 0032, T43), through
+`cargo run --release`: it needs Rust 1.98 or newer, and the first run compiles it. Flags, output
+and exit codes are those of the TypeScript tool, which stays reachable as `review:materialize:ts`
+until it is retired (T73); only that one still opens a local PGlite (`SIPGES_PGLITE_DIR`). The
+workflow `Ops - review approvals into records` (`ops-review-materialize.yml`) builds and runs the
+same Rust binary with the same flags.
 
 1. Dry run, every project (writes nothing):
 

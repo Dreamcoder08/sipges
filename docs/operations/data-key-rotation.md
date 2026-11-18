@@ -34,6 +34,12 @@ pnpm --filter @sipges/api rotate:data-key -- --apply # re-encrypt
 pnpm --filter @sipges/api rotate:data-key -- --report rotation.json
 ```
 
+The script runs the Rust port, `engines/crates/rotate-data-key` (ADR 0032, T43), through
+`cargo run --release`: it needs Rust 1.98 or newer, and the first run compiles it. Flags, output
+and exit codes are those of the TypeScript tool, which stays reachable as `rotate:data-key:ts`
+until it is retired (T73). Unlike that tool, it requires `SIPGES_DATABASE_URL` and never opens a
+local PGlite.
+
 | Variable | Value |
 | --- | --- |
 | `SIPGES_DATA_KEY` | The **new** key |
