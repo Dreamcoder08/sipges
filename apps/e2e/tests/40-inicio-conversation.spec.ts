@@ -23,7 +23,11 @@ import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixture
  * stream's step and its fallback, and the sidebar and shortcuts of the shell (T12, T14). The phone
  * companion is inicio-conversation.mobile.spec.ts. Each journey waits for state, never for time.
  */
-test.use({ viewport: { width: 1440, height: 900 } });
+// No service worker: once /sw.js controls the page, WebKit sends the page's requests past
+// page.route (Chromium does not), so the analyst fakes in analyst-thread.ts would never answer and
+// Inicio would show the real API's «no analyst». The worker has no fetch handler (ADR 0014), so
+// blocking it changes nothing else these journeys check.
+test.use({ viewport: { width: 1440, height: 900 }, serviceWorkers: 'block' });
 test.beforeEach(async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
 });
