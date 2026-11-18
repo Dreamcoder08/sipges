@@ -106,6 +106,7 @@ describe('egress guard coverage', () => {
       ['get_record', 'read'],
       ['get_links', 'read'],
       ['get_timeline', 'read'],
+      ['count_records', 'read'],
       ['get_briefing', 'read'],
       ['create_record', 'write'],
       ['link_records', 'write'],

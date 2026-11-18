@@ -70,6 +70,19 @@ export type OntologyStore = {
     to: string,
     limit: number,
   ): Promise<(NodeRow & { day: string })[]>;
+  /**
+   * Every record of `module` (at most `limit`, ordered by id) with its marking, the raw value of
+   * `group` (null without one) and, when `dates` is given, only records whose `dates.field` has
+   * an ISO yyyy-mm-dd prefix in [from, to]. Nothing is aggregated here: the caller counts what
+   * the egress guard lets through.
+   */
+  scan(
+    tenantId: string,
+    module: string,
+    group: string | null,
+    dates: { field: string; from: string; to: string } | null,
+    limit: number,
+  ): Promise<{ id: string; marking: string; value: unknown }[]>;
   /** The most recently updated records of `modules`, for entity resolution in text. */
   recent(tenantId: string, modules: readonly string[], limit: number): Promise<NodeRow[]>;
   /** Explicit links with either end in `refs`. */

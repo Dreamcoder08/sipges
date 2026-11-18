@@ -14,6 +14,7 @@ import {
   type SanitisedPayload,
   type SanitisedRecord,
   exemptPayload,
+  policyFor,
 } from '../../privacy/application/index.ts';
 import { type RecordsService, moduleForSlug } from '../../records/application/index.ts';
 import { type ApiPrincipal, keyActor, payloadProject } from '../application/index.ts';
@@ -120,6 +121,33 @@ const sanitiseSummaries = (egress: EgressSession, list: readonly ObjectSummary[]
 };
 
 const fail = (error: string): Outcome => ({ ok: false, error });
+
+/** Only closed lists, codes, dates and numbers may become a group key: never a name or text. */
+const groupable = (slug: string, field: string) => policyFor(slug, field)?.kind === 'clear';
+
+const BAD_DATES = 'Fechas no válidas: use AAAA, AAAA-MM o AAAA-MM-DD';
+
+const COUNT_PROBLEMS = {
+  unknown_module: () => 'Módulo no válido',
+  invalid_dates: () => BAD_DATES,
+  no_date_field: (slug: string) => `El tipo de objeto ${slug} no tiene campo de fecha`,
+  not_groupable: (_: string, field: string) =>
+    `No se puede agrupar por «${field}»: solo campos de lista cerrada, códigos, fechas o números`,
+} as const;
+
+type Group = { readonly value: string | number | null; readonly count: number };
+
+/**
+ * Largest first, then by value as text; on the same text a number goes before a string, and the
+ * empty value always goes last (the Go API sorts the same way).
+ */
+const byCount = (a: Group, b: Group) => {
+  if (a.count !== b.count) return b.count - a.count;
+  if (a.value === null || b.value === null) return a.value === null ? 1 : -1;
+  const [x, y] = [String(a.value), String(b.value)];
+  if (x !== y) return x < y ? -1 : 1;
+  return (typeof a.value === 'number' ? 0 : 1) - (typeof b.value === 'number' ? 0 : 1);
+};
 const done = (data: unknown): Outcome => ({ ok: true, data });
 
 /**
@@ -277,13 +305,76 @@ export const MCP_TOOLS = [
         slugs: input.modules ?? null,
         limit: input.limit,
       });
-      if (!timeline) return fail('Fechas no válidas: use AAAA, AAAA-MM o AAAA-MM-DD');
+      if (!timeline) return fail(BAD_DATES);
       const summarise = sanitiseSummaries(call.egress, timeline.entries);
       return done({
         from: timeline.from,
         to: timeline.to,
         truncated: timeline.truncated,
         entries: summarise.visible(timeline.entries).map(summarise),
+      });
+    },
+  }),
+  readTool({
+    name: 'count_records',
+    title: 'Conteo de registros',
+    description:
+      'Cuenta los registros de un tipo de objeto, opcionalmente agrupados por un campo de lista cerrada y acotados por fechas. Úsalo para totales y reportes en lugar de leer registro por registro.',
+    input: z.object({
+      module: Module,
+      group_by: z
+        .string()
+        .max(80)
+        .default('')
+        .describe(
+          'Campo por el que agrupar: solo campos de lista cerrada, códigos, fechas o números; vacío = solo el total',
+        ),
+      from: z
+        .string()
+        .max(10)
+        .default('')
+        .describe(
+          'AAAA, AAAA-MM o AAAA-MM-DD sobre el campo de fecha del tipo; vacío = sin límite',
+        ),
+      to: z.string().max(10).default(''),
+    }),
+    run: async (s, call, input) => {
+      const found = await s.ontology.countable(call.principal.tenantId, {
+        slug: input.module,
+        groupBy: input.group_by,
+        from: input.from,
+        to: input.to,
+        groupable,
+      });
+      if (!found.ok) return fail(COUNT_PROBLEMS[found.error](input.module, input.group_by.trim()));
+      const { slug, groupBy, records } = found.value;
+      // Every record passes through the guard, which logs it; restricted ones are not counted
+      // and the group key is the value the guard would release, never the stored one.
+      const clean = call.egress.records(
+        records.map((r) => ({
+          module: slug,
+          id: r.id,
+          title: '',
+          date: null,
+          marking: r.marking,
+          fields: groupBy ? { [groupBy]: r.value } : {},
+        })),
+      );
+      const counted = clean.filter((r) => !r.withheld);
+      const groups = new Map<string | number | null, number>();
+      if (groupBy)
+        for (const r of counted) {
+          const value = r.fields[groupBy] ?? null;
+          groups.set(value, (groups.get(value) ?? 0) + 1);
+        }
+      return done({
+        module: slug,
+        group_by: groupBy,
+        from: found.value.from,
+        to: found.value.to,
+        total: counted.length,
+        truncated: found.value.truncated,
+        groups: [...groups].map(([value, count]) => ({ value, count })).sort(byCount),
       });
     },
   }),

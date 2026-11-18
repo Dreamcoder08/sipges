@@ -29,6 +29,9 @@ type MCPOntology interface {
 	Search(ctx context.Context, tenantID string, query ontology.Units, slugs []string, limit int64, visible ontologyapp.VisibleField) ([]ontologyapp.Hit, error)
 	Neighbours(ctx context.Context, tenantID, slug, id string) (*ontologyapp.Links, error)
 	Timeline(ctx context.Context, tenantID, from, to string, slugs []string, limit int64) (*ontologyapp.Timeline, error)
+	// Countable reads what count_records counts: field's value of every record of t and, with
+	// dated, only those whose date field holds an ISO day in [from, to].
+	Countable(ctx context.Context, tenantID string, t ontology.ObjectType, field string, dated bool, from, to string) (*ontologyapp.Countable, error)
 	// Link answers the new link's id, or the refusal: a link problem, "missing" or "duplicate".
 	Link(ctx context.Context, tenantID string, in ontologyapp.LinkInput, actor string) (int64, string, error)
 }
@@ -125,6 +128,8 @@ func (m MCP) runRead(ctx context.Context, tool domain.Tool, request privacy.Requ
 		data, refusal, err = call.links(ctx)
 	case domain.ToolGetTimeline:
 		data, refusal, err = call.timeline(ctx)
+	case domain.ToolCountRecords:
+		data, refusal, err = call.count(ctx)
 	case domain.ToolGetBriefing:
 		data, refusal, err = call.briefing(ctx)
 	default:
