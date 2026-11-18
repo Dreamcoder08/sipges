@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 import { spawnSync } from 'node:child_process';
-import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import { mkdtemp, writeFile, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -101,6 +101,25 @@ test('the scripts travel as the runbook packs them: deploy/desktop of HEAD in a 
     ])
       assert.ok(bytes.includes(name), `the zip lacks ${name}`);
     assert.equal(bytes.includes('apps/api/'), false, 'only deploy/desktop travels');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+// Review B1: the kit carries the trusted installer that install.ps1 runs for a Go release.
+test('the scripts zip carries the trusted sipges-desktop when one is given, in deploy/desktop/bin', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'sipges-drill-test-'));
+  try {
+    const trusted = join(dir, 'sipges-desktop.exe');
+    await writeFile(trusted, 'synthetic trusted installer\n');
+    const zip = join(dir, 'sipges-scripts.zip');
+    packScripts(zip, undefined, trusted);
+    const bytes = await readFile(zip);
+    assert.ok(bytes.includes('deploy/desktop/bin/sipges-desktop.exe'), 'the zip lacks the trusted installer');
+    assert.ok(bytes.includes('deploy/desktop/windows/install.ps1'));
+    const plain = join(dir, 'plain.zip');
+    packScripts(plain);
+    assert.equal((await readFile(plain)).includes('deploy/desktop/bin/sipges-desktop.exe'), false);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

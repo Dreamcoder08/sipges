@@ -6,8 +6,9 @@
 #     Managed mode: installs a signed release into %LOCALAPPDATA%\SIPGES-app, keeps the state
 #     folder where it is, and points the shortcuts at that install, so updates arrive through the
 #     update notice. A rerun keeps the installed version and only refreshes the shortcuts. A
-#     release built with --go installs itself with its package\go\sipges-desktop.exe and needs
-#     no Node; one without it is installed by update.mjs (Node 24).
+#     release built with --go is installed, without Node, by the trusted sipges-desktop.exe the
+#     kit carries in deploy\desktop\bin (built from the trusted checkout), never by the
+#     release's own binary; one without --go is installed by update.mjs (Node 24).
 #   ... install.ps1 -Release <folder> -State <folder>
 #     Managed mode on another state folder, such as a copy of %LOCALAPPDATA%\SIPGES made for
 #     the data move (deploy\desktop\migration\README.md); the original stays as it was.
@@ -258,11 +259,12 @@ function Install-Managed {
     Protect-Path $AppRoot '(OI)(CI)F'
     if (Test-Path -LiteralPath (Join-Path $AppRoot 'current.json')) {
         Write-Host 'SIPGES ya está instalado: las actualizaciones llegan por el aviso. Solo se renuevan los accesos directos.'
-    } elseif (Test-Path -LiteralPath $GoInstaller -PathType Leaf) {
-        # The release's own installer: it checks the signature with the key it ships (trusted
-        # here, its fingerprint printed) before anything is installed, as update.mjs does.
+    } elseif ($GoRelease) {
+        # Verified and installed by the kit's trusted sipges-desktop.exe, never by the release's
+        # own binary, which could verify itself; its key's fingerprint is printed, as update.mjs
+        # does. Nothing of the release runs before that.
         Invoke-Checked 'instalar la versión firmada' {
-            & $GoInstaller --install $AppRoot --release $source --state $State --trust-release-key
+            & $TrustedInstaller --install $AppRoot --release $source --state $State --trust-release-key
         }
     } else {
         Invoke-Checked 'instalar la versión firmada' {
@@ -300,9 +302,13 @@ function Assert-Node {
 # Before anything is created, in both modes.
 Assert-NoPendingUpdate
 
-$GoInstaller = $null
-if ($Release) { $GoInstaller = Join-Path $Release 'package\go\sipges-desktop.exe' }
-if (-not $Release -or -not (Test-Path -LiteralPath $GoInstaller -PathType Leaf)) { Assert-Node }
+# Built from the trusted checkout into the kit: it verifies a release before anything of it runs.
+$TrustedInstaller = Join-Path (Split-Path -Parent $PSScriptRoot) 'bin\sipges-desktop.exe'
+$GoRelease = [bool]$Release -and (Test-Path -LiteralPath (Join-Path $Release 'package\go\sipges-desktop.exe'))
+if ($GoRelease -and -not (Test-Path -LiteralPath $TrustedInstaller -PathType Leaf)) {
+    Stop-Install "Este kit no trae su sipges-desktop.exe de confianza ($TrustedInstaller): constrúyelo desde el checkout de confianza y vuelve a ejecutar este script; no se cambió nada."
+}
+if (-not $GoRelease) { Assert-Node }
 
 if ($Release) {
     Install-Managed

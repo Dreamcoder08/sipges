@@ -8,8 +8,10 @@
 #                                  beside the state folder (which stays where it is) and points
 #                                  the launcher entry at that root, so updates arrive through the
 #                                  update notice. A rerun keeps the installed version. A release
-#                                  built with --go installs itself with its go/sipges-desktop and
-#                                  needs no Node; one without it is installed by update.mjs (Node).
+#                                  built with --go is installed, without Node, by the trusted
+#                                  sipges-desktop the kit carries in deploy/desktop/bin (built from
+#                                  the trusted checkout), never by the release's own binary; one
+#                                  without --go is installed by update.mjs (Node).
 # Either mode stops without creating anything while an update is pending or halted
 # (update-journal.json in the install root).
 set -eu
@@ -18,6 +20,8 @@ HERE=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
 REPO=$(cd "$HERE/../../.." && pwd)
 LAUNCHER="$HERE/sipges-desktop.sh"
 UPDATER="$HERE/../updater"
+# Built from the trusted checkout into the kit: it verifies a release before anything of it runs.
+TRUSTED_INSTALLER="$(cd "$HERE/.." && pwd)/bin/sipges-desktop"
 STATE_GIVEN=${SIPGES_DESKTOP_STATE:-}
 ORIGINAL_STATE=$HOME/.local/share/sipges-local
 STATE=${SIPGES_DESKTOP_STATE:-$ORIGINAL_STATE}
@@ -168,12 +172,19 @@ install_managed() {
   if [ -f "$APP_ROOT/current.json" ]; then
     say "SIPGES is already installed: $(json_field "$APP_ROOT/current.json" version). Updates arrive through the update notice; only the launcher entry is refreshed."
   else
-    # The release's own installer: it checks the signature with the key it ships (trusted here,
-    # its fingerprint printed) before anything is installed, as update.mjs does.
-    go_installer="$RELEASE/package/go/sipges-desktop"
-    [ -x "$go_installer" ] || need_node
+    # A release built with --go (package/go/sipges-desktop) is verified and installed by the kit's
+    # trusted sipges-desktop, never by its own binary, which could verify itself; its key's
+    # fingerprint is printed, as update.mjs does. Nothing of the release runs before that.
+    go_installer=
+    if [ -e "$RELEASE/package/go/sipges-desktop" ]; then
+      [ -x "$TRUSTED_INSTALLER" ] ||
+        die "this kit has no trusted sipges-desktop ($TRUSTED_INSTALLER): build it from the trusted checkout and run this script again; nothing was changed."
+      go_installer=$TRUSTED_INSTALLER
+    else
+      need_node
+    fi
     mkdir -p "$APP_ROOT"
-    if [ -x "$go_installer" ]; then
+    if [ -n "$go_installer" ]; then
       "$go_installer" --install "$APP_ROOT" --release "$RELEASE" --state "$STATE" --trust-release-key ||
         die 'the signed release could not be installed; the state folder was not changed.'
     else
