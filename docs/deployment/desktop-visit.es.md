@@ -40,6 +40,7 @@ inventados. Lo marcado con ⚠ no está en ningún README: lo agrega este runboo
 | ⚠ `tables.mjs` (paso 5b): que Ctrl+C a mitad de la copia borre sus copias, termine con `RESULT: not compared (interrupted)` y `2` y deje las entradas iguales byte a byte | Lo ejecuta el drill de Windows en la fila `main` (paso «tables.mjs interrupted by a console Ctrl+C»: `tables-interrupt.ps1` manda un Ctrl+C de consola real con `GenerateConsoleCtrlEvent`); probado en Windows solo si esa ejecución del CI pasó (anotá el resultado). En Linux el mismo ensayo manda SIGINT |
 | ⚠ `tables.mjs` (paso 5b): cerrar la ventana a mitad de camino, la negativa por falta de espacio, una copia `.pre-update-…` real contra su carpeta migrada | No probado en Windows: `GenerateConsoleCtrlEvent` no puede mandar el aviso de ventana cerrada (`CTRL_CLOSE_EVENT`) y Windows termina el proceso unos segundos después; la falta de espacio y una copia real no se ensayan. En Linux el ensayo de `rehearse.mjs` lo corre completo |
 | ⚠ `install.ps1` se niega con un `-State` que lleva a la carpeta de datos original (la original misma, sin instalación gestionada) | Lo ejecuta el drill de Windows (paso 3 de `drill.mjs`); probado en Windows solo si esa ejecución del CI pasó (anotá el resultado) |
+| ⚠ Modo Go ([sección 6](#6-pasar-los-datos-a-postgresql-18-modo-go)): `install.ps1 -Release` con el `sipges-desktop.exe` de la versión y sin Node en el PATH, el acceso directo que deja en TypeScript una instalación con datos solo en PGlite y abre el lanzador Go con los datos en `pg18`, una actualización firmada ofrecida y aplicada por el lanzador Go, la vuelta atrás con `pg18` apartado | Job «go-mode» (`go-drill.mjs`); probado en Windows solo si esa ejecución del CI pasó (anotá el resultado). El traslado del ensayo usa una API de reemplazo que no migra, no `--prepare-only` (ver G3) |
 
 El ensayo automático (`deploy\desktop\windows\drill.mjs`) corre ahora una vez por cada commit que la
 laptop pudo haber instalado (sección 1). Lo que vale para la visita es la ejecución sobre el commit de
@@ -825,3 +826,57 @@ Códigos de salida de `update.mjs` (`$LASTEXITCODE`): 0 hecho, 1 rechazado, 2 fa
   Nunca en una carpeta compartida o sincronizada con la nube. Para restaurar:
   [Respaldar y restaurar](../../deploy/desktop/README.es.md#respaldar-y-restaurar), pasos 5 a 8 (la carpeta
   de datos es `%LOCALAPPDATA%\SIPGES-datos`).
+
+## 6. Pasar los datos a PostgreSQL 18 (modo Go)
+
+go-rust-stack T72d3, [ADR 0036](../adr/0036-desktop-go-with-bundled-postgresql.md) §5–6. Se hace una sola
+vez, en la laptop, después de que la versión instalada incluya el modo Go. Hasta este paso la laptop sigue
+en TypeScript sobre PGlite: el acceso directo elige solo el lanzador Go cuando los datos ya están en `pg18`
+(o la instalación es nueva). Node hace falta solo en G4; ni el instalador ni el acceso directo lo usan con
+una versión Go.
+
+> ⚠ **Bloqueado hoy:** `sipges-desktop --prepare-only` aplica las migraciones y `pglite-to-postgres.mjs`
+> solo llena una base **vacía**, así que G4 se niega («the target database is not empty … nothing was
+> written») y no cambia nada. No hagas esta sección en la laptop hasta que `--prepare-only` deje la base
+> vacía. El ensayo automático hace el traslado con una API de reemplazo que no migra.
+
+En los comandos, `$app` es `"$env:LOCALAPPDATA\SIPGES-app"`, `$datos` es la carpeta de datos que registra
+`$app\install.json` (`stateDir`) y `$v` es la carpeta de la versión actual (`path` en `$app\current.json`).
+
+- [ ] **G0 — La versión tiene el modo Go.** `Test-Path "$v\go\sipges-desktop.exe"`,
+  `Test-Path "$v\postgresql\bin\pg_ctl.exe"`: las dos `True`. Y `Test-Path "$datos\pg18"`: `False`.
+- [ ] **G1 — Foto antes de cerrar.** Con SIPGES abierto (TypeScript), `snapshot.mjs` como en el paso 2:
+  `sipges-antes-go.json` en `SIPGES-visita`.
+- [ ] **G2 — Cerrar y respaldar.** Cerrá SIPGES por completo (`SIPGES cerrado`) y esperá dos minutos (el
+  `pglite\postmaster.pid` deja de estar fresco). Respaldo completo de `$datos` en `E:` como en el paso 8,
+  con los mismos números en las dos líneas. Después, la copia que lee el traslado:
+  `Copy-Item -Recurse $datos "$env:LOCALAPPDATA\SIPGES-traslado"`.
+- [ ] **G3 — Preparar el clúster.** `& "$v\go\sipges-desktop.exe" --install $app --prepare-only`
+  Tenés que ver `sipges-desktop: PostgreSQL 18 prepared in …\pg18`, código `0`, y nada escuchando en el
+  puerto 8000. Se niega si `pg18` ya tiene algo.
+- [ ] **G4 — El traslado (Node, una sola vez).** Arrancá el clúster solo para el traslado, en un puerto
+  libre y solo en `127.0.0.1`:
+
+  ```powershell
+  & "$v\postgresql\bin\pg_ctl.exe" start -D "$datos\pg18" -l "$datos\pg18.log" -w -o "-p 54329 -c listen_addresses=127.0.0.1 -c unix_socket_directories="
+  $env:SIPGES_MOVE_DATABASE_URL = "postgres://sipges_app:$([uri]::EscapeDataString((Get-Content "$datos\pg18-app-password" -Raw).Trim()))@127.0.0.1:54329/sipges"
+  node <kit>\deploy\desktop\migration\pglite-to-postgres.mjs --state "$env:LOCALAPPDATA\SIPGES-traslado"
+  $LASTEXITCODE
+  Remove-Item Env:SIPGES_MOVE_DATABASE_URL
+  & "$v\postgresql\bin\pg_ctl.exe" stop -D "$datos\pg18" -m fast -w
+  ```
+
+  Tenés que ver `Moved: the target holds the copy, committed.` y `0`. Con `1` o `2` no se escribió nada:
+  pará el clúster igual y seguí con G7.
+- [ ] **G5 — Abrir en modo Go.** Abrí SIPGES desde el acceso directo. En `$app\launcher.log` la última
+  línea `"event":"started"` nombra la versión, y `Get-Process api` existe (`node` no sirve el puerto 8000).
+- [ ] **G6 — Comparar.** `compare.mjs` contra `sipges-antes-go.json` como en el paso 5:
+  `RESULT: no difference`. La usuaria entra y ve sus registros.
+- [ ] **G7 — La vuelta atrás** (si G4, G5 o G6 fallan, o la usuaria lo pide en los 30 días). Cerrá
+  SIPGES por completo y apartá el clúster: `Rename-Item "$datos\pg18" "pg18.vuelta-<fecha>"`. El acceso
+  directo vuelve a TypeScript sobre `pglite`, que el traslado nunca abrió. Lo cargado en modo Go queda en
+  `pg18.vuelta-<fecha>`: no se pasa solo a PGlite. Para volver a Go, cerrá SIPGES y renombrala a `pg18`.
+
+Durante 30 días no se borran `SIPGES-traslado`, el respaldo de `E:` ni `pglite`. Las actualizaciones
+siguen llegando igual (sección 5): en modo Go las ofrece y las aplica `sipges-desktop`.
+

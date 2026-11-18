@@ -228,12 +228,12 @@ laptop misma, desde un segundo clon (`C:\SIPGES-kit`), con `--out F:\` o, con un
 clon de un commit viejo, segundo clon con su `pnpm install`, las negativas, el kit, la instalación
 desde el kit y la comparación; el clon viejo queda igual byte a byte, y mide tiempo y espacio.
 
-### Modo Go (opcional hasta la visita)
+### Modo Go
 
 El escritorio pasa a la API en Go con un PostgreSQL 18 incluido (ADR 0036, go-rust-stack T72).
-Hasta la visita a la laptop es **opcional**: nada lo elige solo, los accesos directos y las
-actualizaciones siguen abriendo la API en TypeScript sobre PGlite, y fusionarlo no cambia ninguna
-instalación existente.
+Una versión construida con `--go` se instala y se abre sin Node; una instalación cuyos datos todavía
+están solo en PGlite sigue con la API en TypeScript hasta que se trasladen (la visita a la laptop,
+[docs/deployment/desktop-visit.es.md](../../docs/deployment/desktop-visit.es.md), sección 6).
 
 - **Paquete.** `node deploy/desktop/package/builder.mjs … --go` agrega `go/` (`sipges-desktop`, la
   API en Go y las migraciones SQL) y, en Windows x64, `postgresql/` (`bin`, `lib`, `share` y las
@@ -251,28 +251,37 @@ instalación existente.
   licencias de las herramientas de línea de comandos (unos 132 MB): se van pgAdmin 4, StackBuilder,
   `doc`, `include` y `symbols`, y dentro de `bin` `stackbuilder.exe`, las DLL de wxWidgets y las
   bibliotecas `*.lib`.
-- **Lanzadores.** `start.ps1 -Go` (la copia de `windows/start-managed.ps1` en la instalación
-  gestionada) y `sipges-desktop.sh --go` (Linux, `linux/sipges-managed.sh`) inician el
-  `go/sipges-desktop` de la versión actual con `SIPGES_PG_BIN` en su `postgresql/bin` (Linux: esa
-  carpeta o `SIPGES_PG_BIN`), sobre la carpeta de datos que registra `install.json`, en
-  `127.0.0.1:8000`, con la salida en `launcher.log`. El clúster vive en `<datos>/pg18`. En este modo
-  no se buscan actualizaciones. Los dos se niegan, sin iniciar nada, con una versión construida sin
-  `--go` y con una carpeta de datos que todavía solo tiene PGlite (un clúster nuevo abriría SIPGES
-  vacío). Un SIPGES ya abierto solo se reutiliza en el modo pedido: `-Go` nunca abre el de
-  TypeScript y un inicio normal nunca abre el de Go.
+- **Instaladores.** `install.ps1 -Release` e `install.sh --managed` instalan una versión construida
+  con `--go` con su propio `package/go/sipges-desktop --install <raíz> --release <carpeta> --state
+  <carpeta> --trust-release-key`, que verifica la firma, instala, registra la ruta real de la carpeta
+  de datos en `install.json` e imprime la huella de la clave, igual que `update.mjs`: no hace falta
+  Node. Una versión sin `go/` la sigue instalando `update.mjs` (Node 24).
+- **Lanzadores.** El acceso directo (`start.ps1`, la copia de `windows/start-managed.ps1` en la
+  instalación; `sipges-desktop.sh` en Linux, `linux/sipges-managed.sh`) abre el lanzador Go de la
+  versión actual, `go/sipges-desktop --install <raíz> --releases <raíz>/releases` con su
+  `postgresql/bin` (Linux: esa carpeta o `SIPGES_PG_BIN`), cuando la versión los trae y la carpeta de
+  datos que registra `install.json` está en `pg18` o todavía no tiene datos en PGlite (una
+  instalación nueva). Hace la recuperación, el primer arranque, la búsqueda de actualizaciones y la
+  actualización que la persona acepta, con la misma detención (código 3) y los mismos mensajes, con
+  la salida en `launcher.log`; sin Node. Los datos que siguen solo en PGlite siguen con
+  `run-current.mjs` (TypeScript, Node). `-Go` / `--go` pide solo el lanzador Go: se niega, sin
+  iniciar nada, con una versión sin `--go` y con datos sin trasladar. Un SIPGES ya abierto solo se
+  reutiliza en el modo de la instalación.
 - **Mover los datos.** El traslado a `pg18` es `migration/pglite-to-postgres.mjs`
   ([su README](migration/README.md#into-postgresql-18-for-the-go-api-adr-0036-4)) sobre una copia de
-  la carpeta de datos; la carpeta PGlite original nunca se escribe, así que abrir sin `-Go` vuelve a
-  TypeScript. El traslado necesita una base vacía en un clúster en marcha: hoy solo el ensayo la crea
-  (con una API sustituta que no aplica migraciones); el paso para la visita es go-rust-stack T72d.
+  la carpeta de datos, en un clúster en marcha; la carpeta PGlite original nunca se escribe, así que
+  apartar `pg18` vuelve a TypeScript. El traslado necesita una base **vacía**: `sipges-desktop
+  --install <raíz> --prepare-only` crea el clúster pero también aplica las migraciones, así que hoy
+  solo la API sustituta del ensayo (sin migraciones) deja un clúster que el traslado acepta.
 - **Ensayo.** El trabajo go-mode del workflow corre `windows/go-drill.mjs` en `windows-latest` como
   el usuario estándar del runner, solo con datos inventados: el paquete con `--go` (el zip en caché
-  por su SHA-256), TypeScript por defecto con datos cargados, `start.ps1 -Go` rechazado antes del
-  traslado, el traslado con la prueba de `tables.mjs`, `start.ps1 -Go` sirviendo desde `api.exe` con
-  `compare.mjs` sin diferencias, el lanzador terminado a la fuerza durante escrituras y vuelto a
-  abrir sobre el PostgreSQL huérfano, una parada limpia con Ctrl+C (`windows/go-console.ps1`), la
-  carpeta PGlite original idéntica byte a byte y la vuelta a TypeScript. A mano, en otro equipo con
-  Windows, con Go y el puerto 8000 libre:
+  por su SHA-256) y una segunda versión un número mayor, `install.ps1 -Release` sin Node en el PATH,
+  una instalación todavía en PGlite que `start.ps1` deja en TypeScript, `start.ps1 -Go` rechazado
+  antes del traslado, el traslado con la prueba de `tables.mjs`, `start.ps1` (sin Node) abriendo el
+  lanzador Go con `compare.mjs` sin diferencias, el lanzador terminado a la fuerza durante escrituras
+  y vuelto a abrir, la actualización ofrecida y aplicada por el lanzador Go, una parada limpia con
+  Ctrl+C (`windows/go-console.ps1`), la carpeta PGlite original idéntica byte a byte y la vuelta a
+  TypeScript con `pg18` apartado. A mano, en otro equipo con Windows, con Go y el puerto 8000 libre:
   `node deploy\desktop\windows\go-drill.mjs [--work <carpeta nueva>] [--logs <carpeta>]`.
 
 ## Respaldar y restaurar
