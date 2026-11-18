@@ -10,8 +10,9 @@
 // 1. A package built with `builder.mjs --go` (sipges-desktop, the Go API, the migrations and the
 //    pinned PostgreSQL 18 from deploy/desktop/postgresql), signed with a throwaway key, and a
 //    second release of the same package one version newer. install.ps1 -Release installs the
-//    first one, with no Node on the PATH, with the trusted sipges-desktop.exe built from this
-//    checkout into deploy\desktop\bin (what the kit carries), never the release's own.
+//    first one from the kit's scripts zip (visit-kit.mjs kitScripts, unpacked as the runbook
+//    does), with no Node on the PATH, with the trusted sipges-desktop.exe the zip carries in
+//    deploy\desktop\bin, never the release's own.
 // 2. An install still on PGlite: its TypeScript launcher (run-current.mjs, as the shortcut ran it
 //    before) serves from node.exe; synthetic data go in through the public API (rehearse.mjs's
 //    seed); snapshot.mjs. Then the installed start.ps1 keeps it on the TypeScript launcher.
@@ -48,6 +49,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import process from 'node:process';
 import console from 'node:console';
 import { signIn } from '../migration/client.mjs';
+import { kitScripts } from './visit-kit.mjs';
 import { LOGIN, digest, seed, tree } from '../migration/rehearse.mjs';
 import {
   BASE,
@@ -195,7 +197,6 @@ async function main(args) {
       if (pgBin && existsSync(join(state, cluster, 'postmaster.pid')))
         spawnSync(join(pgBin, 'pg_ctl.exe'), ['stop', '-D', join(state, cluster), '-m', 'immediate', '-w'], { stdio: 'ignore' });
     rmSync(keyDir, { recursive: true, force: true });
-    rmSync(join(repo, 'deploy', 'desktop', 'bin', 'sipges-desktop.exe'), { force: true });
     for (const [from, name] of [
       [join(appRoot, 'launcher.log'), 'launcher.log'],
       [join(state, 'pg18.log'), 'pg18.log'],
@@ -218,7 +219,7 @@ async function main(args) {
     check(portListeners().length === 0 && !(await healthy()), 'nothing listens on port 8000');
 
     const nextV = nextVersion(options.version);
-    step(`1. Package ${options.version} built with --go, signed with ${nextV}, installed by its own sipges-desktop without Node`);
+    step(`1. Package ${options.version} built with --go, ${nextV} signed too, installed from the kit with its trusted sipges-desktop, without Node`);
     const packageDir = join(repo, '.data', 'desktop-packages', `sipges-${options.version}`);
     const built = await node([join(repo, 'deploy', 'desktop', 'package', 'builder.mjs'), '--version', options.version, '--out', packageDir, '--go'], { log: out('build') });
     check(built.status === 0 && built.output.includes(`Package created: ${packageDir}`), 'builder.mjs --go exit 0');
@@ -249,12 +250,16 @@ async function main(args) {
     const noNode = withoutNode(env);
     const nodeOnPath = spawnSync('where.exe', ['node'], { env: noNode, encoding: 'utf8' });
     check(nodeOnPath.status !== 0, 'without the Node folders on PATH, where.exe finds no node');
-    // The kit's trusted installer, built from this checkout: install.ps1 verifies and installs a Go
-    // release with it, never with the release's own binary.
-    const trusted = join(repo, 'deploy', 'desktop', 'bin', 'sipges-desktop.exe');
-    const builtTrusted = await run('go', ['build', '-o', trusted, './cmd/sipges-desktop'], { cwd: join(repo, 'apps', 'api-go'), env: process.env, log: out('trusted-installer') });
-    check(builtTrusted.status === 0 && existsSync(trusted), 'the trusted sipges-desktop.exe built into deploy\\desktop\\bin');
-    const installed = await run(POWERSHELL, psArgs(join(here, 'install.ps1'), ['-Release', release]), { env: noNode, log: out('install') });
+    // The kit's scripts as visit-kit.mjs packs them (kitScripts: deploy/desktop of HEAD plus the
+    // trusted sipges-desktop.exe built from this checkout), unpacked as the runbook does: install.ps1
+    // runs from there and installs the Go release with that binary, never the release's own.
+    const zip = join(work, 'usb', 'sipges-scripts.zip');
+    await kitScripts(zip);
+    const kitDir = join(work, 'kit');
+    const unpacked = await psLines(work, 'unpack', [`Expand-Archive -LiteralPath ${quotePs(zip)} -DestinationPath ${quotePs(kitDir)}`, `Test-Path ${quotePs(join(kitDir, 'deploy', 'desktop', 'bin', 'sipges-desktop.exe'))}`], { env, log: out('unpack') });
+    check(unpacked.status === 0 && unpacked.output.trim().endsWith('True'), 'the kit\'s zip carries deploy\\desktop\\bin\\sipges-desktop.exe');
+    const kitInstall = join(kitDir, 'deploy', 'desktop', 'windows', 'install.ps1');
+    const installed = await run(POWERSHELL, psArgs(kitInstall, ['-Release', release]), { env: noNode, log: out('install') });
     check(installed.status === 0 && installed.output.includes('Trusting the update key that signed this release (SHA-256 '), 'install.ps1 -Release ran the trusted sipges-desktop (it printed the key fingerprint)');
     check(installed.output.includes(`Installed ${options.version}`), `install.ps1 -Release installed ${options.version} without Node`);
     check((await readJson(join(appRoot, 'install.json'))).stateDir === state, `install.json records ${state}`);
