@@ -161,7 +161,8 @@ comparación del paso 5, y comprueba que la carpeta original no cambió; firma N
 `SIPGES-app\releases`, pide la actualización por la API y vuelve a comparar; provoca una detención y
 comprueba el código 3 y el mensaje.
 
-Hace falta Node 24 o más, pnpm 12.11.2, Git y el puerto 8000 libre (SIPGES cerrado). Tarda: instala
+Hace falta Node 24 o más, pnpm 12.11.2, Git, Go (el kit construye su `sipges-desktop.exe` de confianza) y
+el puerto 8000 libre (SIPGES cerrado). Tarda: instala
 dependencias dos veces y construye dos paquetes. En PowerShell, dentro del checkout definitivo:
 
 ```powershell
@@ -209,11 +210,14 @@ niega a escribir ahí. Con la red de la casa.
   node --version
   pnpm --version
   git --version
+  go version
   Get-PSDrive C | Format-List Free
   Test-Path C:\SIPGES-kit
   ```
 
-  Node `v24` o más; pnpm `12.…`; git responde; `Free` con al menos 5 GB libres más lo que pide el
+  Node `v24` o más; pnpm `12.…`; git y Go responden (sin Go el kit se detiene: construye desde este clon
+  el `deploy\desktop\bin\sipges-desktop.exe` de confianza con el que `install.ps1` instala una versión Go);
+  `Free` con al menos 5 GB libres más lo que pide el
   paso 0 (cuatro veces `%LOCALAPPDATA%\SIPGES` más 2 GB); `Test-Path` dice `False`. Con Node menor que
   24 no hay visita (sección 1): **no instales ni actualices Node en la laptop**, la versión vieja de
   SIPGES corre con ese Node; parás acá y la laptop queda como está. Sin pnpm 12:

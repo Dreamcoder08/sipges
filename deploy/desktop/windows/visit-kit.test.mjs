@@ -28,6 +28,7 @@ import {
   PACKAGE_MARKER_TEXT,
   checklist,
   builderCommand,
+  buildTrustedInstaller,
   clearFailedPackage,
   freeBytes,
   leeme,
@@ -45,6 +46,9 @@ import {
   spaceRefusal,
   writeKit,
 } from './visit-kit.mjs';
+
+/** A stand-in for `go build`: what the kit packs as its trusted installer. */
+const fakeInstaller = async (out) => writeFile(out, 'synthetic trusted installer\n');
 
 const here = dirname(fileURLToPath(import.meta.url));
 const kit = join(here, 'visit-kit.mjs');
@@ -212,6 +216,7 @@ test('a kit of a synthetic package: its fingerprint.txt is what the installer pr
       visit,
       version: '1.0.0',
       commit: 'c0ffee',
+      buildInstaller: fakeInstaller,
     });
     assert.equal(made.created, true);
     const pem = await readFile(key, 'utf8');
@@ -235,6 +240,8 @@ test('a kit of a synthetic package: its fingerprint.txt is what the installer pr
       'deploy/desktop/windows/install.ps1',
       'deploy/desktop/migration/snapshot.mjs',
       'deploy/desktop/migration/compare.mjs',
+      // The trusted installer install.ps1 needs for a Go release (review B1, G0).
+      'deploy/desktop/bin/sipges-desktop.exe',
     ])
       assert.ok(zip.includes(Buffer.from(name)), `the zip lacks ${name}`);
     const leemeBytes = await readFile(join(visit, 'LEEME.txt'));
@@ -267,7 +274,7 @@ test('a kit of a synthetic package: its fingerprint.txt is what the installer pr
 
     // A second kit reuses the key; the visit folder of the first one is never overwritten.
     await assert.rejects(
-      writeKit({ packageDir: pkg, key, visit, version: '1.0.0', commit: 'c0ffee' }),
+      writeKit({ packageDir: pkg, key, visit, version: '1.0.0', commit: 'c0ffee', buildInstaller: fakeInstaller }),
       /already exists; move it away first/,
     );
     const again = await writeKit({
@@ -276,9 +283,46 @@ test('a kit of a synthetic package: its fingerprint.txt is what the installer pr
       visit: join(dir, 'F2'),
       version: '1.0.0',
       commit: 'c0ffee',
+      buildInstaller: fakeInstaller,
     });
     assert.deepEqual([again.created, again.fingerprint], [false, fingerprint]);
     assert.equal(await readFile(key, 'utf8'), pem);
+  }));
+
+const hasGo = spawnSync('go', ['version']).status === 0;
+
+test('the trusted installer is sipges-desktop.exe for windows/amd64, built from this checkout', { skip: !hasGo && 'needs the go toolchain' }, () =>
+  withTemp(async (dir) => {
+    const out = join(dir, 'sipges-desktop.exe');
+    await buildTrustedInstaller(out, { checkout: repo });
+    const bytes = await readFile(out);
+    assert.equal(bytes.subarray(0, 2).toString('latin1'), 'MZ', 'a Windows executable');
+    assert.ok(bytes.includes(Buffer.from('PE\0\0')), 'a PE image');
+    assert.ok(bytes.readUInt16LE(bytes.readUInt32LE(0x3c) + 4) === 0x8664, 'for amd64');
+  }));
+
+test('without Go the trusted installer is not built and the kit stops, loudly, writing no visit folder', () =>
+  withTemp(async (dir) => {
+    await assert.rejects(
+      buildTrustedInstaller(join(dir, 'sipges-desktop.exe'), { checkout: repo, env: { PATH: join(dir, 'no-go') } }),
+      /^Error: No se pudo construir el sipges-desktop\.exe de confianza del kit \(go build\): .*Instalá Go y repetí el comando\.$/,
+    );
+    const pkg = join(dir, 'package');
+    await makePackage(pkg, '1.0.0');
+    const visit = join(dir, 'F', 'SIPGES-visita');
+    await mkdir(join(dir, 'F'));
+    await assert.rejects(
+      writeKit({
+        packageDir: pkg,
+        key: join(dir, 'clave.pem'),
+        visit,
+        version: '1.0.0',
+        commit: 'c0ffee',
+        buildInstaller: (out) => buildTrustedInstaller(out, { checkout: repo, env: { PATH: join(dir, 'no-go') } }),
+      }),
+      /No se pudo construir el sipges-desktop\.exe de confianza/,
+    );
+    assert.equal(existsSync(visit), false, 'no visit folder was written');
   }));
 
 test('a key that is not Ed25519 is refused before the visit folder is written', () =>
