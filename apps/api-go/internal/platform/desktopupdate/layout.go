@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"runtime"
 	"slices"
+	"strconv"
 	"strings"
 )
 
@@ -272,6 +273,9 @@ func checkStateRoom(stateDir string, copies uint64, statfs func(string) (Disk, e
 	if !info.IsDir() {
 		return refuse("The state folder is not a folder: %s", stateDir)
 	}
+	if pid, ok := runningCluster(stateDir); ok {
+		return refuse("PostgreSQL is still running on %s (process %d): close SIPGES so it stops, then try again; a copy of a running database can be incomplete", filepath.Join(stateDir, clusterDir), pid)
+	}
 	var bytes, entries uint64 = 0, 1
 	var walk func(dir, prefix string) error
 	walk = func(dir, prefix string) error {
@@ -337,3 +341,21 @@ func refuseLinkedState(stateDir string) error {
 }
 
 func versionPath(version string) string { return fmt.Sprintf("%s/%s", versionsDir, version) }
+
+// clusterDir is the PostgreSQL data folder inside the state folder (ADR 0036 §3).
+const clusterDir = "pg18"
+
+// runningCluster reports the live process named on the first line of <state>/pg18/postmaster.pid.
+// A file left by a server that crashed names a process that no longer exists and does not count.
+func runningCluster(stateDir string) (int, bool) {
+	data, err := os.ReadFile(filepath.Join(stateDir, clusterDir, "postmaster.pid")) //nolint:gosec // inside the recorded state folder
+	if err != nil {
+		return 0, false
+	}
+	first, _, _ := strings.Cut(string(data), "\n")
+	pid, err := strconv.Atoi(strings.TrimSpace(first))
+	if err != nil || pid <= 0 {
+		return 0, false
+	}
+	return pid, alive(pid)
+}

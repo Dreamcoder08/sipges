@@ -139,12 +139,18 @@ func rollbackIncomplete(message, preCopy string) *Error {
 }
 
 func readJournal(root string) (*journal, error) {
-	var j journal
+	var j *journal
 	found, err := readJSON(filepath.Join(root, journalName), &j)
-	if err != nil || !found {
+	// A journal of null is no journal, as for the Node updater.
+	if err != nil || !found || j == nil {
 		return nil, err
 	}
-	return &j, nil
+	// Recovery rewrites current.json from it: without a version to go back to and an absolute state
+	// folder it would write an empty pointer, so such a journal is corrupt and is left as it is.
+	if !isVersion(j.From.Version) || !filepath.IsAbs(j.StateDir) {
+		return nil, newError(CodeCorrupt, "%s is invalid", journalName)
+	}
+	return j, nil
 }
 
 func recoverLocked(root string) (bool, error) {
