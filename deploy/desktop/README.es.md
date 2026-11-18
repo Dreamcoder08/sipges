@@ -228,6 +228,52 @@ laptop misma, desde un segundo clon (`C:\SIPGES-kit`), con `--out F:\` o, con un
 clon de un commit viejo, segundo clon con su `pnpm install`, las negativas, el kit, la instalación
 desde el kit y la comparación; el clon viejo queda igual byte a byte, y mide tiempo y espacio.
 
+### Modo Go (opcional hasta la visita)
+
+El escritorio pasa a la API en Go con un PostgreSQL 18 incluido (ADR 0036, go-rust-stack T72).
+Hasta la visita a la laptop es **opcional**: nada lo elige solo, los accesos directos y las
+actualizaciones siguen abriendo la API en TypeScript sobre PGlite, y fusionarlo no cambia ninguna
+instalación existente.
+
+- **Paquete.** `node deploy/desktop/package/builder.mjs … --go` agrega `go/` (`sipges-desktop`, la
+  API en Go y las migraciones SQL) y, en Windows x64, `postgresql/` (`bin`, `lib`, `share` y las
+  licencias). Sin `--go` el paquete es el mismo de antes.
+- **Fijado y verificado.** [`postgresql/pg18.json`](postgresql/pg18.json) fija el zip de binarios de
+  EDB para Windows x64 por URL exacta, tamaño y SHA-256: PostgreSQL 18.6-2, publicado el 2026-10-05
+  y fijado el 2026-11-18 (con al menos dos semanas, como `minimumReleaseAge` de pnpm; 18.6 es además
+  la versión que trae PGlite 0.5.15). [`postgresql/bundle.mjs`](postgresql/bundle.mjs) lo descarga
+  una vez en `.data/postgresql`, calcula su SHA-256 y borra una descarga que no coincide; sin red y
+  sin una copia verificada, la construcción se detiene con un mensaje que lo dice, nunca con un zip
+  sin verificar. Los binarios nunca se suben al repositorio. Para cambiar de versión menor, revisa
+  la [página de EDB](https://www.enterprisedb.com/download-postgresql-binaries), toma una versión con
+  al menos dos semanas y actualiza juntos versión, URL, tamaño, SHA-256 y fechas.
+- **Recortado.** Del zip (914 MB descomprimido) quedan solo `bin`, `lib`, `share` y las dos
+  licencias de las herramientas de línea de comandos (unos 132 MB): se van pgAdmin 4, StackBuilder,
+  `doc`, `include` y `symbols`, y dentro de `bin` `stackbuilder.exe`, las DLL de wxWidgets y las
+  bibliotecas `*.lib`.
+- **Lanzadores.** `start.ps1 -Go` (la copia de `windows/start-managed.ps1` en la instalación
+  gestionada) y `sipges-desktop.sh --go` (Linux, `linux/sipges-managed.sh`) inician el
+  `go/sipges-desktop` de la versión actual con `SIPGES_PG_BIN` en su `postgresql/bin` (Linux: esa
+  carpeta o `SIPGES_PG_BIN`), sobre la carpeta de datos que registra `install.json`, en
+  `127.0.0.1:8000`, con la salida en `launcher.log`. El clúster vive en `<datos>/pg18`. En este modo
+  no se buscan actualizaciones. Los dos se niegan, sin iniciar nada, con una versión construida sin
+  `--go` y con una carpeta de datos que todavía solo tiene PGlite (un clúster nuevo abriría SIPGES
+  vacío).
+- **Mover los datos.** El traslado a `pg18` es `migration/pglite-to-postgres.mjs`
+  ([su README](migration/README.md#into-postgresql-18-for-the-go-api-adr-0036-4)) sobre una copia de
+  la carpeta de datos; la carpeta PGlite original nunca se escribe, así que abrir sin `-Go` vuelve a
+  TypeScript. El traslado necesita una base vacía en un clúster en marcha: hoy solo el ensayo la crea
+  (con una API sustituta que no aplica migraciones); el paso para la visita es go-rust-stack T72d.
+- **Ensayo.** El trabajo go-mode del workflow corre `windows/go-drill.mjs` en `windows-latest` como
+  el usuario estándar del runner, solo con datos inventados: el paquete con `--go` (el zip en caché
+  por su SHA-256), TypeScript por defecto con datos cargados, `start.ps1 -Go` rechazado antes del
+  traslado, el traslado con la prueba de `tables.mjs`, `start.ps1 -Go` sirviendo desde `api.exe` con
+  `compare.mjs` sin diferencias, el lanzador terminado a la fuerza durante escrituras y vuelto a
+  abrir sobre el PostgreSQL huérfano, una parada limpia con Ctrl+C (`windows/go-console.ps1`), la
+  carpeta PGlite original idéntica byte a byte y la vuelta a TypeScript. A mano, en otro equipo con
+  Windows, con Go y el puerto 8000 libre:
+  `node deploy\desktop\windows\go-drill.mjs [--work <carpeta nueva>] [--logs <carpeta>]`.
+
 ## Respaldar y restaurar
 
 La carpeta de estado es todo: la base de datos no sirve sin `data-key`. Es
