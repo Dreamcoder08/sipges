@@ -15,12 +15,13 @@
 //    before) serves from node.exe; synthetic data go in through the public API (rehearse.mjs's
 //    seed); snapshot.mjs. Then the installed start.ps1 keeps it on the TypeScript launcher.
 // 3. start.ps1 -Go refuses, changing nothing, while the data are only in PGlite.
-// 4. The move: the state folder copied; sipges-desktop.exe creates the cluster in <state>\pg18
-//    with a stand-in API that applies no migration (built here from a few lines of Go), and while
-//    it runs, pglite-to-postgres.mjs moves the copy into it with its table-by-table proof; then a
-//    real Ctrl+C stops it cleanly (go-console.ps1).
+// 4. The move, as the visit does it: the state folder copied; `sipges-desktop.exe --install <root>
+//    --prepare-only` (no Node) creates the cluster in <state>\pg18 with the roles and an empty
+//    database and stops it; the bundled pg_ctl starts it on a free loopback port for the move,
+//    pglite-to-postgres.mjs moves the copy into it with its table-by-table proof, pg_ctl stops it.
 // 5. start.ps1, with no switch and no Node on the PATH: the Go launcher (sipges-desktop.exe
-//    --install) serves the Go API (api.exe) on port 8000 and compare.mjs finds no difference.
+//    --install) migrates on its first start and serves the Go API (api.exe) on port 8000;
+//    compare.mjs finds no difference.
 // 6. The launcher is killed (its whole process tree, taskkill /F) while writes are in flight;
 //    start.ps1 again stops a PostgreSQL that outlived it, if any, and SIPGES reads.
 // 7. The update: the second release copied into <root>\releases; start.ps1 (no Node): the Go
@@ -38,6 +39,7 @@ import { cpSync, existsSync, mkdirSync, readdirSync, realpathSync, renameSync, r
 import { readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
+import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 import process from 'node:process';
@@ -107,30 +109,6 @@ export function parseOptions(args, { now = new Date(), tmp = tmpdir() } = {}) {
   return { work, logs: resolve(options['--logs'] ?? join(work, 'logs')), version: `0.0.9-go.${digits}` };
 }
 
-/** The stand-in API of step 4: `migrate` applies nothing; serving waits for Ctrl+Break. */
-export const STUB_API = `package main
-
-import (
-	"fmt"
-	"os"
-	"os/signal"
-)
-
-func main() {
-	if len(os.Args) > 1 && os.Args[1] == "migrate" {
-		fmt.Println("stand-in api: no migration applied")
-		return
-	}
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt)
-	if ready := os.Getenv("SIPGES_STUB_READY"); ready != "" {
-		_ = os.WriteFile(ready, []byte("serving\\n"), 0o600)
-	}
-	fmt.Println("stand-in api: serving nothing until Ctrl+Break")
-	<-stop
-}
-`;
-
 /** The port in a PostgreSQL postmaster.pid (its fourth line), or null. */
 export function postmasterPort(text) {
   const port = Number((text ?? '').split(/\r?\n/)[3]);
@@ -142,6 +120,15 @@ export function imageName(csv) {
   const match = /^"([^"]+)"/.exec((csv ?? '').trim());
   return match ? match[1] : null;
 }
+
+/** A TCP port free on 127.0.0.1 right now. */
+const freePort = () =>
+  new Promise((done, fail) => {
+    const server = createServer().once('error', fail).listen(0, '127.0.0.1', () => {
+      const { port } = server.address();
+      server.close(() => done(port));
+    });
+  });
 
 const processName = (pid) => imageName(spawnSync('tasklist', ['/FI', `PID eq ${pid}`, '/FO', 'CSV', '/NH'], { encoding: 'utf8' }).stdout);
 /** How many postgres.exe run from `bin` (the installed bundle): never another PostgreSQL. */
@@ -318,38 +305,35 @@ async function main(args) {
     check(!existsSync(join(state, 'pg18')) && !(await healthy()), 'no cluster was made and nothing answers');
     check(digest(await tree(pglite)) === pgliteDigest, 'the PGlite folder is byte-identical');
 
-    step('4. The move: cluster created by sipges-desktop, the copy moved into it, clean stop');
+    step('4. The move: sipges-desktop --prepare-only, pglite-to-postgres.mjs into it');
     const copy = join(work, 'state-copy');
     cpSync(state, copy, { recursive: true });
     check(digest(await tree(join(copy, 'pglite'))) === pgliteDigest, 'the copy of the state folder holds the same PGlite');
-    const stubDir = join(work, 'stand-in-api');
-    mkdirSync(stubDir, { recursive: true });
-    writeFileSync(join(stubDir, 'main.go'), STUB_API);
-    const stub = join(stubDir, 'api.exe');
-    const builtStub = await run('go', ['build', '-o', stub, 'main.go'], { cwd: stubDir, env: { ...process.env, GO111MODULE: 'off' }, log: out('stand-in-api') });
-    check(builtStub.status === 0 && existsSync(stub), 'the stand-in API built');
     let desktop = join(version, 'go', 'sipges-desktop.exe');
     const goEnv = () => ({ SIPGES_DESKTOP_STATE: state, SIPGES_PG_BIN: pgBin, SIPGES_WEB_DIR: join(version, 'web') });
-    const ready = join(work, 'stand-in-api.ready');
-    const prepare = inConsole('prepare', desktop, ['--api', stub], { ...goEnv(), SIPGES_STUB_READY: ready });
-    await waitFor('the stand-in API serving', 240, async () => existsSync(ready), prepare.child);
-    const port = postmasterPort(await readFile(join(state, 'pg18', 'postmaster.pid'), 'utf8'));
-    check(port !== null && port !== 5432, `PostgreSQL 18 runs on 127.0.0.1:${port}, a port chosen free`);
+    const preparedRun = await run(desktop, ['--install', appRoot, '--prepare-only'], { env: noNode, log: out('prepare-only') });
+    check(preparedRun.status === 0 && preparedRun.output.includes(`sipges-desktop: PostgreSQL 18 prepared in ${join(state, 'pg18')}`), 'sipges-desktop --prepare-only made the cluster, without Node');
+    check(!postgresRunning() && !existsSync(join(state, 'pg18', 'postmaster.pid')), '--prepare-only stopped PostgreSQL');
+    const again2 = await run(desktop, ['--install', appRoot, '--prepare-only'], { env: noNode, log: out('prepare-only-again') });
+    check(again2.status === 1 && again2.output.includes('ya tiene una base de datos PostgreSQL 18'), 'a second --prepare-only is refused');
+    const port = await freePort();
+    const pgCtl = join(pgBin, 'pg_ctl.exe');
+    const startedPg = await run(pgCtl, ['start', '-D', join(state, 'pg18'), '-l', join(state, 'pg18.log'), '-w', '-t', '120', '-o', `-p ${port} -c listen_addresses=127.0.0.1 -c unix_socket_directories=`], { env, log: out('pg-start-for-move') });
+    check(startedPg.status === 0, `pg_ctl started the cluster for the move on 127.0.0.1:${port}`);
     const appPassword = (await readFile(join(state, 'pg18-app-password'), 'utf8')).trim();
     mkdirSync(join(work, 'move-scratch'));
     const moved = await node([join(repo, 'deploy', 'desktop', 'migration', 'pglite-to-postgres.mjs'), '--state', copy, '--scratch', join(work, 'move-scratch')], {
       env: { ...env, SIPGES_MOVE_DATABASE_URL: `postgres://sipges_app:${encodeURIComponent(appPassword)}@127.0.0.1:${port}/sipges` },
       log: out('move'),
     });
-    check(moved.status === 0 && moved.output.includes('Moved: the target holds the copy, committed.'), 'pglite-to-postgres.mjs moved the copy with no difference (tables.mjs inside the transaction)');
-    const prepared = await prepare.stop();
-    check(prepared.report?.sent === true && prepared.report?.exitCode === 0, `Ctrl+C: sipges-desktop exit 0 (got ${prepared.report?.exitCode}, ${prepared.report?.error ?? 'no error'})`);
-    check(prepared.report.stdout.includes('PostgreSQL stopped'), 'sipges-desktop stopped PostgreSQL');
-    check(!postgresRunning(), 'no postgres.exe left');
+    check(moved.status === 0 && moved.output.includes('Moved: the target holds the copy, committed.'), 'pglite-to-postgres.mjs filled the prepared database with no difference (tables.mjs inside the transaction)');
+    const stoppedPg = await run(pgCtl, ['stop', '-D', join(state, 'pg18'), '-m', 'fast', '-w', '-t', '120'], { env, log: out('pg-stop-after-move') });
+    check(stoppedPg.status === 0 && !postgresRunning(), 'pg_ctl stopped the cluster: no postgres.exe left');
 
     step('5. start.ps1 with no switch and no Node: the Go launcher on the moved data');
     let goStart = await startManaged('go-start-1', [], noNode);
     check(serverImage() === 'api.exe', 'start.ps1 serves from api.exe (the Go API) once the data are in pg18');
+    check((await events(launcherLog)).some((e) => e.event === 'first_start'), 'the Go launcher ran its first start (copy, rehearsal, migrations) over the moved data');
     const started = (await events(launcherLog)).filter((e) => e.event === 'started').at(-1);
     check(started?.version === options.version, `the Go launcher started ${options.version} (${JSON.stringify(started)})`);
     const health = await fetch(`${BASE}/health`);

@@ -271,13 +271,14 @@ están solo en PGlite sigue con la API en TypeScript hasta que se trasladen (la 
   ([su README](migration/README.md#into-postgresql-18-for-the-go-api-adr-0036-4)) sobre una copia de
   la carpeta de datos, en un clúster en marcha; la carpeta PGlite original nunca se escribe, así que
   apartar `pg18` vuelve a TypeScript. El traslado necesita una base **vacía**: `sipges-desktop
-  --install <raíz> --prepare-only` crea el clúster pero también aplica las migraciones, así que hoy
-  solo la API sustituta del ensayo (sin migraciones) deja un clúster que el traslado acepta.
+  --install <raíz> --prepare-only` crea el clúster con los roles y una base vacía (sin migraciones;
+  el lanzador Go las aplica en su primer arranque) y lo detiene; el `pg_ctl` incluido lo arranca para
+  el traslado ([la visita](../../docs/deployment/desktop-visit.es.md), G3–G4).
 - **Ensayo.** El trabajo go-mode del workflow corre `windows/go-drill.mjs` en `windows-latest` como
   el usuario estándar del runner, solo con datos inventados: el paquete con `--go` (el zip en caché
   por su SHA-256) y una segunda versión un número mayor, `install.ps1 -Release` sin Node en el PATH,
   una instalación todavía en PGlite que `start.ps1` deja en TypeScript, `start.ps1 -Go` rechazado
-  antes del traslado, el traslado con la prueba de `tables.mjs`, `start.ps1` (sin Node) abriendo el
+  antes del traslado, el traslado (`--prepare-only`, `pg_ctl`, `pglite-to-postgres.mjs` con la prueba de `tables.mjs`), `start.ps1` (sin Node) abriendo el
   lanzador Go con `compare.mjs` sin diferencias, el lanzador terminado a la fuerza durante escrituras
   y vuelto a abrir, la actualización ofrecida y aplicada por el lanzador Go, una parada limpia con
   Ctrl+C (`windows/go-console.ps1`), la carpeta PGlite original idéntica byte a byte y la vuelta a

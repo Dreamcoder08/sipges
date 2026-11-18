@@ -40,7 +40,7 @@ inventados. Lo marcado con ⚠ no está en ningún README: lo agrega este runboo
 | ⚠ `tables.mjs` (paso 5b): que Ctrl+C a mitad de la copia borre sus copias, termine con `RESULT: not compared (interrupted)` y `2` y deje las entradas iguales byte a byte | Lo ejecuta el drill de Windows en la fila `main` (paso «tables.mjs interrupted by a console Ctrl+C»: `tables-interrupt.ps1` manda un Ctrl+C de consola real con `GenerateConsoleCtrlEvent`); probado en Windows solo si esa ejecución del CI pasó (anotá el resultado). En Linux el mismo ensayo manda SIGINT |
 | ⚠ `tables.mjs` (paso 5b): cerrar la ventana a mitad de camino, la negativa por falta de espacio, una copia `.pre-update-…` real contra su carpeta migrada | No probado en Windows: `GenerateConsoleCtrlEvent` no puede mandar el aviso de ventana cerrada (`CTRL_CLOSE_EVENT`) y Windows termina el proceso unos segundos después; la falta de espacio y una copia real no se ensayan. En Linux el ensayo de `rehearse.mjs` lo corre completo |
 | ⚠ `install.ps1` se niega con un `-State` que lleva a la carpeta de datos original (la original misma, sin instalación gestionada) | Lo ejecuta el drill de Windows (paso 3 de `drill.mjs`); probado en Windows solo si esa ejecución del CI pasó (anotá el resultado) |
-| ⚠ Modo Go ([sección 6](#6-pasar-los-datos-a-postgresql-18-modo-go)): `install.ps1 -Release` con el `sipges-desktop.exe` de la versión y sin Node en el PATH, el acceso directo que deja en TypeScript una instalación con datos solo en PGlite y abre el lanzador Go con los datos en `pg18`, una actualización firmada ofrecida y aplicada por el lanzador Go, la vuelta atrás con `pg18` apartado | Job «go-mode» (`go-drill.mjs`); probado en Windows solo si esa ejecución del CI pasó (anotá el resultado). El traslado del ensayo usa una API de reemplazo que no migra, no `--prepare-only` (ver G3) |
+| ⚠ Modo Go ([sección 6](#6-pasar-los-datos-a-postgresql-18-modo-go)): `install.ps1 -Release` con el `sipges-desktop.exe` de la versión y sin Node en el PATH, el acceso directo que deja en TypeScript una instalación con datos solo en PGlite y abre el lanzador Go con los datos en `pg18`, una actualización firmada ofrecida y aplicada por el lanzador Go, la vuelta atrás con `pg18` apartado Job «go-mode» (`go-drill.mjs`); probado en Windows solo si esa ejecución del CI pasó (anotá el resultado). El traslado del ensayo usa una API de reemplazo que no migra, no `--prepare-only` (ver G3) |
 
 El ensayo automático (`deploy\desktop\windows\drill.mjs`) corre ahora una vez por cada commit que la
 laptop pudo haber instalado (sección 1). Lo que vale para la visita es la ejecución sobre el commit de
@@ -835,11 +835,6 @@ en TypeScript sobre PGlite: el acceso directo elige solo el lanzador Go cuando l
 (o la instalación es nueva). Node hace falta solo en G4; ni el instalador ni el acceso directo lo usan con
 una versión Go.
 
-> ⚠ **Bloqueado hoy:** `sipges-desktop --prepare-only` aplica las migraciones y `pglite-to-postgres.mjs`
-> solo llena una base **vacía**, así que G4 se niega («the target database is not empty … nothing was
-> written») y no cambia nada. No hagas esta sección en la laptop hasta que `--prepare-only` deje la base
-> vacía. El ensayo automático hace el traslado con una API de reemplazo que no migra.
-
 En los comandos, `$app` es `"$env:LOCALAPPDATA\SIPGES-app"`, `$datos` es la carpeta de datos que registra
 `$app\install.json` (`stateDir`) y `$v` es la carpeta de la versión actual (`path` en `$app\current.json`).
 
@@ -853,7 +848,8 @@ En los comandos, `$app` es `"$env:LOCALAPPDATA\SIPGES-app"`, `$datos` es la carp
   `Copy-Item -Recurse $datos "$env:LOCALAPPDATA\SIPGES-traslado"`.
 - [ ] **G3 — Preparar el clúster.** `& "$v\go\sipges-desktop.exe" --install $app --prepare-only`
   Tenés que ver `sipges-desktop: PostgreSQL 18 prepared in …\pg18`, código `0`, y nada escuchando en el
-  puerto 8000. Se niega si `pg18` ya tiene algo.
+  puerto 8000. Deja los roles y una base **vacía**, sin migraciones (el lanzador Go las aplica en su
+  primer arranque, G5). Se niega si `pg18` ya tiene algo.
 - [ ] **G4 — El traslado (Node, una sola vez).** Arrancá el clúster solo para el traslado, en un puerto
   libre y solo en `127.0.0.1`:
 
@@ -868,8 +864,9 @@ En los comandos, `$app` es `"$env:LOCALAPPDATA\SIPGES-app"`, `$datos` es la carp
 
   Tenés que ver `Moved: the target holds the copy, committed.` y `0`. Con `1` o `2` no se escribió nada:
   pará el clúster igual y seguí con G7.
-- [ ] **G5 — Abrir en modo Go.** Abrí SIPGES desde el acceso directo. En `$app\launcher.log` la última
-  línea `"event":"started"` nombra la versión, y `Get-Process api` existe (`node` no sirve el puerto 8000).
+- [ ] **G5 — Abrir en modo Go.** Abrí SIPGES desde el acceso directo. El primer arranque copia la
+  carpeta al lado, ensaya y aplica las migraciones (puede tardar unos minutos). En `$app\launcher.log`
+  hay una línea `"event":"first_start"` y la última `"event":"started"` nombra la versión, y `Get-Process api` existe (`node` no sirve el puerto 8000).
 - [ ] **G6 — Comparar.** `compare.mjs` contra `sipges-antes-go.json` como en el paso 5:
   `RESULT: no difference`. La usuaria entra y ve sus registros.
 - [ ] **G7 — La vuelta atrás** (si G4, G5 o G6 fallan, o la usuaria lo pide en los 30 días). Cerrá

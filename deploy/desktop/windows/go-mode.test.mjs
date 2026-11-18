@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { GO_NOT_MOVED_LINE, GO_MISSING_LINE, STUB_API, imageName, nextVersion, parseOptions, postmasterPort, withoutNode } from './go-drill.mjs';
+import { GO_NOT_MOVED_LINE, GO_MISSING_LINE, imageName, nextVersion, parseOptions, postmasterPort, withoutNode } from './go-drill.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const read = async (file) => (await readFile(join(here, file), 'utf8')).replace(/^\uFEFF/, '');
@@ -63,7 +63,7 @@ test('start-managed.ps1 keeps data only in PGlite, and versions without Go, on t
   assert.equal(/Start-Process|New-Item|Remove-Item|Set-Content|Show-Failure/.test(resolve), false, 'it changes and shows nothing');
 });
 
-test('go-drill.mjs: options, the cluster port in postmaster.pid, image names, the stand-in API', () => {
+test('go-drill.mjs: options, the cluster port in postmaster.pid, image names', () => {
   const now = new Date('2026-11-18T01:02:03Z');
   const options = parseOptions([], { now, tmp: join('/', 'tmp') });
   assert.equal(options.version, '0.0.9-go.20261118010203');
@@ -75,9 +75,6 @@ test('go-drill.mjs: options, the cluster port in postmaster.pid, image names, th
   assert.equal(postmasterPort('1234\n/pg18\n'), null);
   assert.equal(imageName('"api.exe","4242","Console","1","20,000 K"\r\n'), 'api.exe');
   assert.equal(imageName('INFO: No tasks are running which match the specified criteria.'), null);
-  // migrate applies nothing (the move needs an empty database); serving waits for Ctrl+Break.
-  assert.ok(STUB_API.includes('os.Args[1] == "migrate"'));
-  assert.ok(STUB_API.includes('signal.Notify(stop, os.Interrupt)'));
 });
 
 // Review R4: a SIPGES already answering is reused only in the mode asked for, on every path that

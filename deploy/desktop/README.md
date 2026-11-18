@@ -225,13 +225,14 @@ in PGlite keeps the TypeScript API until its data are moved (the laptop visit,
   ([its README](migration/README.md#into-postgresql-18-for-the-go-api-adr-0036-4)) on a copy of the
   state folder, into a running cluster; the original PGlite folder is never written, so setting
   `pg18` aside goes back to TypeScript. The move needs an **empty** database: `sipges-desktop
-  --install <root> --prepare-only` makes the cluster but also applies the migrations, so today only
-  the rehearsal's stand-in API (no migrations) makes a cluster the move accepts.
+  --install <root> --prepare-only` makes the cluster with the roles and an empty database (no
+  migration; the Go launcher migrates on its first start) and stops it; the bundled `pg_ctl` runs it
+  for the move ([the visit](../../docs/deployment/desktop-visit.es.md), G3–G4).
 - **Rehearsal.** The workflow's go-mode job runs `windows/go-drill.mjs` on `windows-latest` as the
   runner's standard user, synthetic data only: the package built with `--go` (bundle cached by its
   SHA-256) and a second release one version newer, `install.ps1 -Release` with no Node on the PATH,
   an install still on PGlite kept on TypeScript by `start.ps1`, `start.ps1 -Go` refused before the
-  move, the move with `tables.mjs`'s proof, `start.ps1` (no Node) running the Go launcher with
+  move, the move (`--prepare-only`, `pg_ctl`, `pglite-to-postgres.mjs` with `tables.mjs`'s proof), `start.ps1` (no Node) running the Go launcher with
   `compare.mjs` finding no difference, the launcher killed during writes and started again, the
   update offered and applied by the Go launcher, a clean Ctrl+C stop (`windows/go-console.ps1`), the
   original PGlite folder byte-identical, and the way back to TypeScript with `pg18` set aside. By
