@@ -4,18 +4,19 @@
 // (PGlite writes to what it opens) and it is removed at the end. The copy is dumped logically
 // with the pinned pglite-tools pgDump (plain SQL, --inserts, --no-owner) and restored into the
 // target in ONE transaction, which also compares source and target table by table with
-// tables.mjs, plus functions, views, indexes, triggers, policies and grants. Any difference rolls
-// the transaction back: the target is left empty. The copy's pglite folder is hashed before and
+// tables.mjs, plus functions, views, indexes, triggers, policies, grants, column defaults,
+// identity, generation and collation, table persistence, storage options, replica identity,
+// comments, sequence parameters, default privileges and extensions. Any difference rolls the
+// transaction back: the target is left empty. The copy's pglite folder is hashed before and
 // after and must not change. Values are never printed: counts, names and keyed fingerprints only.
 //
-// Exit code 0: moved, no difference; 1: a difference (nothing committed); 2: refused or failed
-// before anything was committed, with the reason. Read deploy/desktop/migration/README.md.
+// Exit code 0: moved, no difference; 1: a difference (nothing committed); 2: refused or failed,
+// with the reason. Read deploy/desktop/migration/README.md.
 //
 //   SIPGES_MOVE_DATABASE_URL=postgres://<login>@127.0.0.1:<port>/<database> \
 //     node deploy/desktop/migration/pglite-to-postgres.mjs --state <copy of the state folder>
-//     [--to <url>] [--scratch <folder>]
+//     [--to <url>] [--scratch <folder>] [--port 8000]
 import { randomBytes } from 'node:crypto';
-import { existsSync, rmSync } from 'node:fs';
 import { cp, lstat, mkdtemp, readFile, realpath, rm } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { homedir, tmpdir } from 'node:os';
@@ -25,14 +26,17 @@ import process from 'node:process';
 import console from 'node:console';
 import { parseArgs } from 'node:util';
 import {
+  FRESH_MS,
   NOT_COMPARED_EXIT,
   Refusal,
   compareDatabases,
+  freshLock,
   readDatabase,
   safeReason,
   treeDigest,
   verdict,
 } from './tables.mjs';
+import { portAnswers } from '../windows/visit-kit.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const API_PACKAGE = path.join(here, '../../../apps/api/package.json');
@@ -45,6 +49,11 @@ const DUMP_ARGS = ['--no-owner'];
 const SESSION = { TimeZone: 'UTC', DateStyle: 'ISO, MDY', IntervalStyle: 'postgres' };
 const USER_SCHEMAS = `n.nspname NOT IN ('pg_catalog', 'information_schema')
   AND n.nspname NOT LIKE 'pg\\_toast%' AND n.nspname NOT LIKE 'pg\\_temp%'`;
+// The name readDatabase gives a relation: bare in public, schema-qualified elsewhere.
+const RELATION = `CASE WHEN n.nspname = 'public' THEN c.relname ELSE n.nspname || '.' || c.relname END`;
+// A role as the catalog names it, the owner (who changes by design) as OWNER.
+const ROLE = (oid, owner) =>
+  `CASE WHEN ${oid} = 0 THEN 'PUBLIC' WHEN ${oid} = ${owner} THEN 'OWNER' ELSE ${oid}::regrole::text END`;
 const NOT_EXTENSION = (oid) =>
   `NOT EXISTS (SELECT FROM pg_depend d WHERE d.objid = ${oid} AND d.deptype = 'e')`;
 
@@ -107,6 +116,41 @@ export async function checkCopy(given, original = originalState()) {
   if (within(originalReal, await realpath(db)))
     refuse(`--state ${given} leads to the original state folder ${original}: pass a plain copy`);
   return db;
+}
+
+/**
+ * The scratch folder, refused inside the original state folder or inside the copy: the rule
+ * tables.mjs applies to --scratch, checked before anything is created. Returns its real path.
+ */
+export async function checkScratch(given, copy, original = originalState()) {
+  const real = await realpath(path.resolve(given)).catch(() =>
+    refuse(`--scratch ${given} does not exist`),
+  );
+  if (!(await lstat(real)).isDirectory()) refuse(`--scratch ${given} is not a folder`);
+  const originalReal = await realpath(original).catch(() => path.resolve(original));
+  if (within(originalReal, real))
+    refuse(
+      `--scratch ${given} is inside the original state folder ${original}: pick a folder outside it`,
+    );
+  if (within(await realpath(copy), real))
+    refuse(`--scratch ${given} is inside the copy given with --state: pick a folder outside it`);
+  return real;
+}
+
+/**
+ * The rule of tables.mjs for SIPGES running: something answers on the port, or the copy's PGlite
+ * holds a postmaster.pid touched in the last two minutes (PGlite writes it on open and removes it
+ * on close, so a fresh one in a copy means the copy was taken with the database open).
+ */
+export async function checkStopped(db, port, answers = portAnswers) {
+  if (await answers(port))
+    refuse(
+      `SIPGES responde en el puerto ${port}: cierre SIPGES por completo, copie la carpeta otra vez y vuelva a ejecutar`,
+    );
+  if (await freshLock(path.join(db, 'postmaster.pid')))
+    refuse(
+      `la copia se tomó con SIPGES abierto (pglite/postmaster.pid de hace menos de ${FRESH_MS / 60_000} minutos): cierre SIPGES y copie la carpeta otra vez`,
+    );
 }
 
 /** A postgres:// URL to 127.0.0.1 only; never printed, it may hold a password. */
@@ -176,8 +220,10 @@ const pairs = async (db, sql) =>
 
 /**
  * What readDatabase does not compare: functions, views, every index, trigger and policy
- * definitions, and grants (the table owner as OWNER, since the owner changes by design).
- * `{ name: digest }`, so no definition text is ever printed.
+ * definitions, grants and default privileges (the owner as OWNER, since the owner changes by
+ * design), each column's default, identity, generation, collation and comment, each table's
+ * persistence, storage options, replica identity and comment, each sequence's parameters, and
+ * the extensions. `{ name: digest }`, so no definition text is ever printed.
  */
 export async function readCatalog(db) {
   const out = Object.create(null);
@@ -205,7 +251,8 @@ export async function readCatalog(db) {
     'index',
     await pairs(
       db,
-      `SELECT n.nspname || '.' || c.relname AS k, md5(pg_get_indexdef(i.indexrelid)) AS v
+      `SELECT n.nspname || '.' || c.relname AS k, md5(concat_ws('|', pg_get_indexdef(i.indexrelid),
+         i.indisreplident, i.indisclustered)) AS v
        FROM pg_index i JOIN pg_class c ON c.oid = i.indexrelid
        JOIN pg_namespace n ON n.oid = c.relnamespace WHERE ${USER_SCHEMAS}`,
     ),
@@ -253,6 +300,61 @@ export async function readCatalog(db) {
        FROM objects o, aclexplode(o.acl) e`,
     ),
   );
+  add(
+    'column',
+    await pairs(
+      db,
+      `SELECT ${RELATION} || '.' || a.attname AS k, md5(concat_ws('|',
+         coalesce(pg_get_expr(d.adbin, d.adrelid), '-'), a.attidentity, a.attgenerated,
+         coalesce(co.collname, '-'), coalesce(col_description(c.oid, a.attnum), '-'))) AS v
+       FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid
+       JOIN pg_namespace n ON n.oid = c.relnamespace
+       LEFT JOIN pg_attrdef d ON d.adrelid = a.attrelid AND d.adnum = a.attnum
+       LEFT JOIN pg_collation co ON co.oid = a.attcollation
+       WHERE ${USER_SCHEMAS} AND c.relkind IN ('r', 'p') AND a.attnum > 0 AND NOT a.attisdropped`,
+    ),
+  );
+  add(
+    'table',
+    await pairs(
+      db,
+      `SELECT ${RELATION} AS k, md5(concat_ws('|', c.relpersistence,
+         coalesce(array_to_string(c.reloptions, ','), '-'), c.relreplident,
+         coalesce(obj_description(c.oid, 'pg_class'), '-'))) AS v
+       FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+       WHERE ${USER_SCHEMAS} AND c.relkind IN ('r', 'p')`,
+    ),
+  );
+  add(
+    'sequence',
+    await pairs(
+      db,
+      `SELECT n.nspname || '.' || c.relname AS k, concat_ws(' ', s.seqtypid::regtype::text,
+         s.seqstart, s.seqincrement, s.seqmin, s.seqmax, s.seqcache, s.seqcycle, c.relpersistence) AS v
+       FROM pg_sequence s JOIN pg_class c ON c.oid = s.seqrelid
+       JOIN pg_namespace n ON n.oid = c.relnamespace WHERE ${USER_SCHEMAS}`,
+    ),
+  );
+  add(
+    'default privileges',
+    await pairs(
+      db,
+      `SELECT 'of ' || ${ROLE('a.defaclrole', "(SELECT oid FROM pg_roles WHERE rolname = current_user)")}
+         || ' in ' || coalesce(n.nspname, 'every schema') || ' on ' || a.defaclobjtype::text
+         || ' to ' || ${ROLE('e.grantee', 'a.defaclrole')} || ' ' || e.privilege_type AS k,
+         CASE WHEN e.is_grantable THEN 'grantable' ELSE '' END AS v
+       FROM pg_default_acl a LEFT JOIN pg_namespace n ON n.oid = a.defaclnamespace,
+         aclexplode(a.defaclacl) e`,
+    ),
+  );
+  add(
+    'extension',
+    await pairs(
+      db,
+      `SELECT e.extname AS k, e.extversion || ' in ' || n.nspname AS v
+       FROM pg_extension e JOIN pg_namespace n ON n.oid = e.extnamespace`,
+    ),
+  );
   return out;
 }
 
@@ -278,31 +380,45 @@ async function sourceRoles(db) {
   return rows;
 }
 
-/** Copies the pglite folder to scratch, dumps and reads it there, and removes the copy. */
-async function readSource(tools, db, scratchRoot) {
+/**
+ * Copies the pglite folder to scratch, dumps and reads it there, and removes the copy. The run
+ * removes it, never the signal handler: every step under `work` has been awaited by then.
+ */
+async function readSource(tools, db, scratchRoot, stop) {
+  checkpoint(stop);
   const work = await mkdtemp(path.join(scratchRoot, 'sipges-pglite-move-'));
-  SCRATCH.work = work;
+  stop.work = work;
+  let result;
+  let failure = null;
   try {
     const dir = path.join(work, 'pglite');
     await cp(db, dir, { recursive: true });
+    checkpoint(stop);
     const pg = new tools.PGlite(dir);
     try {
       await pg.waitReady;
       const version = (await pg.query('SHOW server_version_num')).rows[0].server_version_num;
       const file = await tools.pgDump({ pg, args: DUMP_ARGS });
       const dump = await file.text();
+      checkpoint(stop);
       for (const [k, v] of Object.entries(SESSION)) await pg.exec(`SET ${k} = '${v}'`);
       const tables = await readDatabase(pg);
       const catalog = await readCatalog(pg);
       const roles = await sourceRoles(pg);
-      return { version, dump, tables, catalog, roles };
+      result = { version, dump, tables, catalog, roles };
     } finally {
       await pg.close().catch(() => {});
     }
-  } finally {
-    await rm(work, { recursive: true, force: true });
-    SCRATCH.work = null;
+  } catch (error) {
+    failure = error;
   }
+  await rm(work, { recursive: true, force: true, maxRetries: 5 }).catch(() => {});
+  if (await lstat(work).then(() => true, () => false))
+    refuse(`the scratch copy ${work} could not be removed: delete that folder`);
+  stop.work = null;
+  if (failure) throw failure;
+  checkpoint(stop);
+  return result;
 }
 
 /** Refuses a login that would own tables the Go API cannot serve, or a server that is not 18. */
@@ -356,34 +472,47 @@ async function prepareRoles(tx, roles) {
 
 class Different extends Error {}
 
-// The scratch copy holds the database: Ctrl+C, SIGTERM or a closed terminal removes it before
-// the process ends. An open target transaction is rolled back by the server when it drops.
-const SCRATCH = { work: null };
-export function onSignal(scratch = SCRATCH, say = console.error, exit = process.exit) {
-  // A copy write already queued may land while this runs: retry, then name what is left.
-  let left = false;
-  if (scratch.work) {
-    try {
-      rmSync(scratch.work, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
-    } catch {
-      // Reported below.
-    }
-    left = existsSync(scratch.work);
-  }
-  say(
-    left
-      ? `Interrupted: nothing was committed, but the scratch copy ${scratch.work} is still there: delete that folder.`
-      : 'Interrupted: the scratch copy was removed and nothing was committed.',
-  );
-  exit(NOT_COMPARED_EXIT);
-}
+// Set by Ctrl+C (SIGINT), SIGTERM or a closed terminal (SIGHUP). `work`: the scratch copy while
+// it exists; `committing`: COMMIT was sent, so the outcome is the server's, not ours.
+const STOP = { requested: false, work: null, committing: false };
 
 /**
- * A CHECK that PGlite stored as nested ANDs (BETWEEN in 0026) comes back flattened once the
- * dump is parsed again, so its printed text differs although it is the same expression. For
- * each CHECK whose text differs, the target parses the source's own definition on an empty
- * temporary copy of the table's columns; only when that prints exactly what the restore made is
- * the source's text taken as the target's. Any other difference stays a difference.
+ * A signal only asks the run to stop, as in tables.mjs: removing the scratch copy from the
+ * handler raced the copy still being written. The run stops at its next step, removes the copy
+ * and rolls back an open transaction; once COMMIT was sent it never claims nothing was committed.
+ */
+export function onSignal(stop = STOP, say = console.error) {
+  stop.requested = true;
+  if (stop.committing)
+    say('Interrupted while committing: wait for the RESULT line; it says whether the move was committed.');
+  else if (stop.work)
+    say(
+      `Interrupted: removing the scratch copy ${stop.work}; wait for the RESULT line. If this window is closed first, delete that folder.`,
+    );
+  else say('Interrupted: stopping; wait for the RESULT line.');
+}
+
+function checkpoint(stop) {
+  if (stop.requested) refuse('interrupted; nothing was committed');
+}
+
+// Connection failures, told apart from file system errors (safeReason calls both errno codes).
+const CONNECTION = new Set(['ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'EHOSTUNREACH', 'ENETUNREACH', 'EPIPE', 'CONNECTION_CLOSED', 'CONNECTION_ENDED', 'CONNECTION_DESTROYED', 'CONNECT_TIMEOUT']);
+const connectionError = (error) =>
+  CONNECTION.has(error?.code) || error?.syscall === 'connect';
+
+/**
+ * The CHECKs whose printed text changes when the dump is parsed again, although the expression is
+ * the same: PGlite stored the BETWEEN of media_feeds_url_check (0026) as nested ANDs, and the
+ * target prints the re-parsed text as one flat AND. Only these are re-parsed; a text difference
+ * in any other constraint stays a difference. `table.constraint`.
+ */
+export const REPARSED_CHECKS = new Set(['media_feeds.media_feeds_url_check']);
+
+/**
+ * For each CHECK of REPARSED_CHECKS whose text differs, the target parses the source's own
+ * definition on an empty temporary copy of the table's columns; only when that prints exactly
+ * what the restore made is the source's text taken as the target's.
  */
 async function reparseChecks(tx, sourceTables, targetTables, say) {
   for (const [name, table] of Object.entries(sourceTables)) {
@@ -391,7 +520,13 @@ async function reparseChecks(tx, sourceTables, targetTables, say) {
     if (!other) continue;
     for (const [key, def] of Object.entries(table.structure.keys)) {
       const now = other.structure.keys[key];
-      if (now === undefined || now === def || !key.startsWith('constraint ') || !def.startsWith('CHECK'))
+      if (
+        now === undefined ||
+        now === def ||
+        !key.startsWith('constraint ') ||
+        !def.startsWith('CHECK') ||
+        !REPARSED_CHECKS.has(`${name}.${key.slice('constraint '.length)}`)
+      )
         continue;
       const [schema, relation] = name.includes('.') ? name.split('.', 2) : ['public', name];
       // In a savepoint: a definition the target cannot parse leaves the difference, not an
@@ -423,7 +558,7 @@ async function reparseChecks(tx, sourceTables, targetTables, say) {
 }
 
 /** Restores, compares and commits in one transaction; any difference rolls everything back. */
-async function restore(postgres, url, source, say, afterRestore) {
+async function restore(postgres, url, source, say, afterRestore, stop) {
   const sql = postgres(url.toString(), {
     max: 1,
     onnotice: () => {},
@@ -431,7 +566,7 @@ async function restore(postgres, url, source, say, afterRestore) {
   });
   try {
     await checkLogin(sql);
-    return await sql.begin(async (tx) => {
+    await sql.begin(async (tx) => {
       await checkEmpty(tx);
       await prepareRoles(tx, source.roles);
       try {
@@ -445,6 +580,7 @@ async function restore(postgres, url, source, say, afterRestore) {
         );
       }
       if (afterRestore) await afterRestore(tx);
+      checkpoint(stop);
       // FORCE ROW LEVEL SECURITY binds the owner too, so its rows are read with it lifted and
       // the structure once it is back, all inside this transaction.
       const forced = await tx.unsafe(
@@ -463,8 +599,24 @@ async function restore(postgres, url, source, say, afterRestore) {
       const catalog = await readCatalog(driver(tx));
       const failed = report(source, rows, catalog, say);
       if (failed) throw new Different();
-      return true;
+      checkpoint(stop);
+      // Returning sends COMMIT: from here the outcome is the server's.
+      stop.committing = true;
     });
+    stop.committing = false;
+  } catch (error) {
+    if (stop.committing)
+      refuse(
+        `the connection failed after COMMIT was sent (${error?.code ?? 'unknown'}): the target may hold the move; check it before running again`,
+      );
+    if (error instanceof Different || error instanceof Refusal) throw error;
+    if (connectionError(error))
+      refuse(
+        error.syscall === 'connect' || error.code === 'ECONNREFUSED' || error.code === 'CONNECT_TIMEOUT'
+          ? `could not connect to the target server (${error.code}): start it and check --to; nothing was written`
+          : `the connection to the target server failed (${error.code}); the server rolls back an open transaction, nothing was committed`,
+      );
+    throw error;
   } finally {
     await sql.end({ timeout: 5 }).catch(() => {});
   }
@@ -493,7 +645,7 @@ function report(source, target, catalog, say) {
   for (const k of Object.keys(catalog))
     if (!Object.hasOwn(source.catalog, k)) changed.push(`${k}: new`);
   say(
-    `Functions, views, indexes, triggers, policies and grants: ${Object.keys(source.catalog).length} -> ${Object.keys(catalog).length}${changed.length ? '' : ', identical'}`,
+    `Catalog (functions, views, indexes, triggers, policies, grants, columns, tables, sequences, default privileges, extensions): ${Object.keys(source.catalog).length} -> ${Object.keys(catalog).length}${changed.length ? '' : ', identical'}`,
   );
   for (const line of changed) say(`  ${line}`);
   differences += changed.length;
@@ -502,23 +654,36 @@ function report(source, target, catalog, say) {
   return differences > 0 || result.incomplete.length > 0;
 }
 
-/** The whole move. Returns the exit code. */
+/**
+ * The whole move. Returns the exit code. Hooks (tests): `afterRestore(tx)`, `answers(port)`, the
+ * stop flag.
+ */
 export async function runMove(
   options,
-  { say = console.log, original = originalState(), afterRestore } = {},
+  {
+    say = console.log,
+    original = originalState(),
+    afterRestore,
+    answers = portAnswers,
+    stop = STOP,
+  } = {},
 ) {
   try {
     if (!options.state) refuse('--state <copy of the state folder> is required');
+    const port = Number(options.port ?? 8000);
+    if (!Number.isInteger(port) || port < 1 || port > 65535) refuse('invalid --port');
     const url = checkTarget(options.to);
     const db = await checkCopy(options.state, original);
+    const scratch = await checkScratch(options.scratch ?? tmpdir(), path.dirname(db), original);
+    await checkStopped(db, port, answers);
     const before = await treeDigest(db);
     const tools = await loadTools();
     say(`Source: a copy of the state folder; ${PGLITE} ${tools.pglite}, ${TOOLS} ${tools.tools}`);
-    const source = await readSource(tools, db, options.scratch ?? tmpdir());
+    const source = await readSource(tools, db, scratch, stop);
     if ((await treeDigest(db)) !== before)
       refuse('the copy changed while it was read: close every program using it and run again');
     say(`Source database read and dumped (PostgreSQL ${source.version}); the copy is unchanged`);
-    await restore(tools.postgres, url, source, say, afterRestore);
+    await restore(tools.postgres, url, source, say, afterRestore, stop);
     say('Moved: the target holds the copy, committed.');
     return 0;
   } catch (error) {
@@ -532,15 +697,20 @@ export async function runMove(
 }
 
 const USAGE = `Usage: SIPGES_MOVE_DATABASE_URL=postgres://<login>@127.0.0.1:<port>/<database> \\
-  node deploy/desktop/migration/pglite-to-postgres.mjs --state <copy of the state folder> [--scratch <folder>]
---to <url> may replace the variable. Read deploy/desktop/migration/README.md.`;
+  node deploy/desktop/migration/pglite-to-postgres.mjs --state <copy of the state folder> [--scratch <folder>] [--port 8000]
+--to <url> may replace the variable; --port is where SIPGES would answer if it were running. Read deploy/desktop/migration/README.md.`;
 
 async function main(args) {
   let parsed;
   try {
     parsed = parseArgs({
       args,
-      options: { state: { type: 'string' }, to: { type: 'string' }, scratch: { type: 'string' } },
+      options: {
+        state: { type: 'string' },
+        to: { type: 'string' },
+        scratch: { type: 'string' },
+        port: { type: 'string' },
+      },
     }).values;
   } catch {
     console.error(USAGE);
@@ -551,6 +721,8 @@ async function main(args) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.once(signal, () => onSignal());
+  for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(signal, () => onSignal());
+  // A reader that went away (EPIPE, EIO) must not end the process before the run cleans up.
+  for (const stream of [process.stdout, process.stderr]) stream.on('error', () => {});
   process.exitCode = await main(process.argv.slice(2));
 }

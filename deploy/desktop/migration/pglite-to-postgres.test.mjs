@@ -8,12 +8,13 @@ import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { once } from 'node:events';
-import { existsSync, rmSync } from 'node:fs';
-import { cp, mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
+import { existsSync, mkdirSync, rmSync, watch } from 'node:fs';
+import { cp, mkdir, mkdtemp, readdir, rm, stat, symlink, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
+import { setTimeout as sleep } from 'node:timers/promises';
 import { URL, fileURLToPath, pathToFileURL } from 'node:url';
 import { onSignal, originalState, runMove, strictRules } from './pglite-to-postgres.mjs';
 import { treeDigest } from './tables.mjs';
@@ -91,7 +92,7 @@ async function copyOf(name) {
 /** Runs the migrator with HOME and LOCALAPPDATA pointed into the scratch folder. */
 async function run(args, env = {}) {
   const home = join(scratch, 'home');
-  const child = spawn(process.execPath, [script, ...args], {
+  const child = spawn(process.execPath, [script, '--port', '1', ...args], {
     env: {
       ...process.env,
       HOME: home,
@@ -307,17 +308,6 @@ test('refuses a superuser login: the tables would not belong to the Go API', { s
   assert.match(out, /superuser/);
 });
 
-test('a signal removes the scratch copy and ends with exit code 2', async () => {
-  const work = join(scratch, 'signal-work');
-  await mkdir(join(work, 'pglite'), { recursive: true });
-  const said = [];
-  let code;
-  onSignal({ work }, (line) => said.push(line), (c) => (code = c));
-  assert.equal(existsSync(work), false);
-  assert.equal(code, 2);
-  assert.match(said.join('\n'), /nothing was committed/);
-});
-
 test('any difference exits 1 and commits nothing: the target stays empty', { skip: pgSkip }, async () => {
   const copy = await copyOf('copy-with-difference');
   const url = await target();
@@ -327,6 +317,7 @@ test('any difference exits 1 and commits nothing: the target stays empty', { ski
     {
       say: (line) => lines.push(line),
       original: join(scratch, 'home', '.local', 'share', 'sipges-local'),
+      answers: nobody,
       // A value changed between the restore and the comparison, as a lossy restore would.
       afterRestore: (tx) => tx`UPDATE tenants SET label = label || ' cambiado'`,
     },
@@ -338,4 +329,153 @@ test('any difference exits 1 and commits nothing: the target stays empty', { ski
   assert.match(out, /Nothing was committed/);
   leaks(out);
   assert.equal(await counts(url), 0, 'the target kept tables after a difference');
+});
+
+const ORIGINAL = join(scratch, 'home', '.local', 'share', 'sipges-local');
+const nobody = async () => false;
+
+/** runMove in process, its lines joined; `hooks` reach runMove's second argument. */
+async function move(options, hooks = {}) {
+  const lines = [];
+  const code = await runMove(options, {
+    say: (line) => lines.push(line),
+    original: ORIGINAL,
+    answers: nobody,
+    ...hooks,
+  });
+  return { code, out: lines.join('\n') };
+}
+
+// Each of these changes something the rows do not show, as a lossy restore could: the proof must
+// see it, exit 1 and roll back.
+const LOSSY = {
+  // audit.ts has no default (0004): DROP DEFAULT there changes nothing, so module_records.marking.
+  'column default dropped': [
+    `ALTER TABLE module_records ALTER COLUMN marking DROP DEFAULT`,
+    /column module_records\.marking: differs/,
+  ],
+  'sequence increment changed': [`ALTER SEQUENCE audit_id_seq INCREMENT BY 7`, /sequence public\.audit_id_seq: differs/],
+  'column collation changed': [
+    `ALTER TABLE audit ALTER COLUMN detail TYPE text COLLATE "C"`,
+    /column audit\.detail: differs/,
+  ],
+  'table made unlogged': [`ALTER TABLE audit SET UNLOGGED`, /table audit: differs/],
+  'storage parameter set': [`ALTER TABLE audit SET (fillfactor = 50)`, /table audit: differs/],
+  'replica identity changed': [`ALTER TABLE audit REPLICA IDENTITY FULL`, /table audit: differs/],
+  'table comment added': [`COMMENT ON TABLE audit IS 'x'`, /table audit: differs/],
+  'default privileges added': [
+    `ALTER DEFAULT PRIVILEGES GRANT SELECT ON TABLES TO sipges_tenant`,
+    /default privileges .*: new/,
+  ],
+};
+for (const [label, [change, expected]] of Object.entries(LOSSY))
+  test(`a restore that loses structure exits 1 and commits nothing: ${label}`, { skip: pgSkip }, async () => {
+    const url = await target();
+    const { code, out } = await move(
+      { state: await copyOf(`copy-lossy-${randomBytes(3).toString('hex')}`), to: url },
+      { afterRestore: (tx) => tx.unsafe(change) },
+    );
+    assert.equal(code, 1, out);
+    assert.match(out, expected);
+    assert.match(out, /Nothing was committed/);
+    assert.equal(await counts(url), 0, 'the target kept tables after a difference');
+  });
+
+test('a loosened CHECK is a difference, not a re-parse', { skip: pgSkip }, async () => {
+  const url = await target();
+  const { code, out } = await move(
+    { state: await copyOf('copy-loose-check'), to: url },
+    {
+      afterRestore: (tx) =>
+        tx.unsafe(`ALTER TABLE media_feeds DROP CONSTRAINT media_feeds_url_check,
+          ADD CONSTRAINT media_feeds_url_check CHECK (length(url) > 0)`),
+    },
+  );
+  assert.equal(code, 1, out);
+  assert.match(out, /media_feeds_url_check differs/);
+});
+
+test('refuses --scratch inside the original folder or the copy, before creating anything', async () => {
+  await mkdir(dirname(ORIGINAL), { recursive: true });
+  await cp(template, ORIGINAL, { recursive: true });
+  const db = join(ORIGINAL, 'pglite');
+  const events = [];
+  const watcher = watch(db, (event, name) => events.push(`${event} ${name}`));
+  const mtime = (await stat(db)).mtimeMs;
+  const copy = await copyOf('copy-scratch-inside');
+  try {
+    for (const [given, why] of [
+      [db, /inside the original state folder/],
+      [ORIGINAL, /inside the original state folder/],
+      [join(copy, 'pglite'), /inside the copy/],
+    ]) {
+      const { code, out } = await move({ state: copy, to: UNREACHABLE, scratch: given });
+      assert.equal(code, 2, out);
+      assert.match(out, why);
+    }
+    await sleep(300);
+  } finally {
+    watcher.close();
+  }
+  assert.deepEqual(events, [], 'the original pglite folder saw a file event');
+  assert.equal((await stat(db)).mtimeMs, mtime);
+  assert.deepEqual(
+    (await readdir(join(copy, 'pglite'))).filter((n) => n.startsWith('sipges-pglite-move-')),
+    [],
+  );
+  await rm(ORIGINAL, { recursive: true, force: true });
+});
+
+test('the signal handler removes nothing itself: the run removes the scratch copy', () => {
+  const work = join(scratch, 'signal-work');
+  mkdirSync(join(work, 'pglite'), { recursive: true });
+  const said = [];
+  const stop = { requested: false, work, committing: false };
+  onSignal(stop, (line) => said.push(line));
+  assert.equal(stop.requested, true);
+  assert.equal(existsSync(work), true, 'the handler removed the copy itself');
+  assert.match(said.join('\n'), /wait for the RESULT line/);
+  rmSync(work, { recursive: true, force: true });
+
+  said.length = 0;
+  onSignal({ requested: false, work: null, committing: true }, (line) => said.push(line));
+  assert.doesNotMatch(said.join('\n'), /nothing was committed/i);
+});
+
+test('a stop requested during the move rolls back, removes the scratch copy and exits 2', { skip: pgSkip }, async () => {
+  const url = await target();
+  const work = await mkdtemp(join(scratch, 'stop-scratch-'));
+  const stop = { requested: false, work: null, committing: false };
+  const { code, out } = await move(
+    { state: await copyOf('copy-stopped'), to: url, scratch: work },
+    {
+      stop,
+      afterRestore: async () => {
+        stop.requested = true;
+      },
+    },
+  );
+  assert.equal(code, 2, out);
+  assert.match(out, /RESULT: not moved: interrupted/);
+  assert.equal(await counts(url), 0);
+  assert.deepEqual(await readdir(work), []);
+});
+
+test('refuses a copy taken while SIPGES was running, in Spanish', async () => {
+  const copy = await copyOf('copy-while-running');
+  await writeFile(join(copy, 'pglite', 'postmaster.pid'), '-42\n');
+  let result = await move({ state: copy, to: UNREACHABLE });
+  assert.equal(result.code, 2, result.out);
+  assert.match(result.out, /cierre SIPGES y copie la carpeta otra vez/);
+  await rm(join(copy, 'pglite', 'postmaster.pid'));
+  result = await move({ state: copy, to: UNREACHABLE }, { answers: async () => true });
+  assert.equal(result.code, 2, result.out);
+  assert.match(result.out, /SIPGES responde en el puerto 8000/);
+});
+
+test('a refused connection is reported as a connection error', async () => {
+  const { code, out } = await move({ state: await copyOf('copy-refused'), to: UNREACHABLE });
+  assert.equal(code, 2, out);
+  assert.match(out, /could not connect to the target server \(ECONNREFUSED\)/);
+  assert.doesNotMatch(out, /file system error/);
 });

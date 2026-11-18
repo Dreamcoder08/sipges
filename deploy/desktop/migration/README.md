@@ -437,29 +437,42 @@ SIPGES_MOVE_DATABASE_URL='postgres://<login>@127.0.0.1:<port>/<database>' \
 
 `--to <url>` replaces the variable; the variable keeps a password out of the process list.
 `--scratch <folder>` chooses where the temporary copy of the database goes (the system temp folder
-otherwise). It needs `pnpm install` in this checkout: it takes `@electric-sql/pglite`,
+otherwise); it is refused inside the original state folder or inside the copy. `--port` (8000) is
+where SIPGES answers when it is running. It needs `pnpm install` in this checkout: it takes `@electric-sql/pglite`,
 `@electric-sql/pglite-tools` and `postgres` from `apps/api`.
 
 | Step | What happens |
 | --- | --- |
-| Refusals, before reading anything | `--state` is a link or junction, is the original folder (`%LOCALAPPDATA%\SIPGES`, `~/.local/share/sipges-local`) or inside it, or its `pglite` is a link: the rule of `install.sh` and `install.ps1`. A target not on `127.0.0.1`, or with a `host` override. |
+| Refusals, before reading anything | `--state` is a link or junction, is the original folder (`%LOCALAPPDATA%\SIPGES`, `~/.local/share/sipges-local`) or inside it, or its `pglite` is a link: the rule of `install.sh` and `install.ps1`. `--scratch` inside the original folder or the copy (the rule of `tables.mjs`). SIPGES answering on `--port`, or a `pglite/postmaster.pid` in the copy touched in the last two minutes (the copy was taken with SIPGES open): close SIPGES and copy the folder again, in Spanish for the owner. A target not on `127.0.0.1`, or with a `host` override. |
 | Pinned pair | `@electric-sql/pglite-tools` 0.4.15 needs `@electric-sql/pglite` 0.5.15 exactly; any other installed PGlite is refused. |
-| Read | The copy's `pglite` folder is hashed, copied to scratch, and only that is opened; the copy is hashed again and must be unchanged. The scratch copy is removed, also on Ctrl+C. |
+| Read | The copy's `pglite` folder is hashed, copied to scratch, and only that is opened; the copy is hashed again and must be unchanged. The scratch copy is removed by the run, also after Ctrl+C: the signal only asks the run to stop at its next step, as in `tables.mjs`. |
 | Dump | `pgDump` with `--no-owner` (plain SQL, `--inserts`): the tables become the target login's, grants to `sipges_tenant` stay. |
 | Refusals on the target | Not PostgreSQL 18; a superuser or `BYPASSRLS` login (the Go API refuses it too); a database that already holds tables, functions, types or schemas. |
 | Restore | One transaction: the roles the source grants to (`sipges_tenant`) are created `NOLOGIN NOINHERIT` when missing and granted to the login as the migrations do, then the dump. |
-| Proof, same transaction | `tables.mjs`'s comparison with every table `identical`, every column, structure included; sequences equal; functions, views, indexes, triggers, policies and grants equal by digest. `FORCE ROW LEVEL SECURITY` is lifted to read and restored before the structure is read. |
-| Commit | Only with `RESULT: no difference`. |
+| Proof, same transaction | `tables.mjs`'s comparison with every table `identical`, every column, structure included; sequences equal; and by digest: functions, views, indexes (with replica identity and cluster flags), triggers, policies, grants, default privileges, each column's default, identity, generation, collation and comment, each table's persistence (unlogged), storage options, replica identity and comment, each sequence's parameters (type, start, increment, min, max, cache, cycle) and the extensions. `FORCE ROW LEVEL SECURITY` is lifted to read and restored before the structure is read. |
+| Commit | Only with `RESULT: no difference`. A signal before COMMIT rolls back; once COMMIT was sent the run waits for the server and never claims that nothing was committed. |
 
 Exit code 0: moved, no difference. 1: a difference; the transaction is rolled back and the target
-is as empty as before. 2: refused or failed before anything was committed. Only counts, names and
+is as empty as before. 2: refused, interrupted or failed; the reason says whether anything was
+committed (a refused connection is reported as `could not connect to the target server`). Only counts, names and
 8-hex fingerprints are printed, never a value or the URL.
 
 One difference is expected and checked, not ignored: PGlite stored the `BETWEEN` of
 `media_feeds_url_check` (0026) as nested `AND`s, and the target re-parses the dumped text into a
-flat `AND`. For any CHECK whose text differs, the target parses the source's own definition on an
-empty temporary table; only an exact match is accepted (`… re-parsed by the target to the same
-definition`).
+flat `AND`. Only for the CHECKs listed in `REPARSED_CHECKS` (today that one), when the text
+differs, the target parses the source's own definition on an empty temporary table; only an
+exact match is accepted (`… re-parsed by the target to the same definition`). A text difference
+in any other constraint is a difference.
+
+What the move does not carry: it moves the database only. `uploads/`, `data-key` and
+`admin-password` stay in the state folder and its copy; the Go API needs the **same** `data-key`
+to open the sealed values (MFA secrets) the move carried, so keep it with the install. Proving that
+the Go API answers the same as before over HTTP (an API snapshot before and after) is T72c, not
+this tool.
+
+Memory: the whole dump is held in memory as one string and sent as one simple query, so a very
+large database needs that much free memory twice over (the dump and the server's copy of the
+query). Desktop installs are small; streaming the dump is not done yet.
 
 Migrations: the TypeScript and Go migrators share one `schema_migrations (version text PRIMARY
 KEY, applied_at timestamptz)` table, the file names without `.sql` as versions and no checksum.
