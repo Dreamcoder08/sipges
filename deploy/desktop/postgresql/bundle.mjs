@@ -20,7 +20,7 @@ import { get as httpsGet } from 'node:https';
 import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { URL, fileURLToPath } from 'node:url';
 import process from 'node:process';
 import console from 'node:console';
 
