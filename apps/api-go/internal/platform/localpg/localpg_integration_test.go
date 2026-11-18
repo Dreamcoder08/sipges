@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -158,6 +159,21 @@ func TestStartRefusesWhileAnotherInstanceServesTheFolder(t *testing.T) {
 	}
 }
 
+func TestStartTakesOverAServerWhoseLauncherDied(t *testing.T) {
+	opts := options(t)
+	orphan := startT(t, opts)
+	// The launcher was ended from Task Manager: its lock names a process that no longer exists,
+	// while the server it started still answers.
+	deadLauncher(t, opts)
+	if err := orphan.Ping(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	next := startT(t, opts)
+	if err := next.Ping(context.Background()); err != nil {
+		t.Fatalf("Ping after taking over the orphan: %v", err)
+	}
+}
+
 func TestStartRecoversFromAServerWhoseProcessIsGone(t *testing.T) {
 	opts := options(t)
 	first := startT(t, opts)
@@ -166,6 +182,7 @@ func TestStartRecoversFromAServerWhoseProcessIsGone(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitGone(t, pid)
+	deadLauncher(t, opts) // the whole instance crashed, not only its server
 	second := startT(t, opts)
 	if err := second.Ping(context.Background()); err != nil {
 		t.Fatalf("Ping after a crash: %v", err)
@@ -225,6 +242,16 @@ func TestAStartThatTimesOutLeavesNoServer(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(opts.DataDir, "postmaster.pid")); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("a server is still running after the start timed out: %v", err)
 	}
+}
+
+// deadLauncher rewrites the lock as left by an instance whose process no longer exists.
+func deadLauncher(t *testing.T, opts Options) {
+	t.Helper()
+	gone := exec.Command(os.Args[0], "-test.run=^$")
+	if err := gone.Run(); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, opts.DataDir+lockSuffix, strconv.Itoa(gone.Process.Pid)+"\nsynthetic-dead-launcher\n")
 }
 
 func waitGone(t *testing.T, pid int) {

@@ -6,6 +6,8 @@ package localpg
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net"
@@ -20,7 +22,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // DefaultSuperUser is the cluster's superuser when Options.SuperUser is empty.
@@ -70,10 +71,15 @@ type Options struct {
 // setupSuffix names the sibling folder a new cluster is built in.
 const setupSuffix = ".setup"
 
+// lockSuffix names the sibling file that ties the cluster to the instance that started it.
+const lockSuffix = ".lock"
+
 // Server is a started cluster.
 type Server struct {
 	opts Options
 	port int
+	// token identifies this instance in the lock file; empty for the setup server.
+	token string
 }
 
 type dataState int
@@ -86,33 +92,47 @@ const (
 // Start starts the cluster in DataDir on a free loopback port and returns once it accepts
 // connections. A missing or empty DataDir gets a new cluster, built and set up in a sibling
 // folder first (see Options.Setup); a leftover of an interrupted build is removed. A server
-// another instance runs on DataDir is refused with ErrInUse; one whose process is gone or no
-// longer answers is stopped first.
+// instance whose process still runs holds the lock next to DataDir and makes Start return
+// ErrInUse; a server a dead instance left running is stopped first.
 func Start(ctx context.Context, opts Options) (*Server, error) {
 	opts = withDefaults(opts)
-	state, err := inspectDataDir(opts.DataDir)
-	if err != nil {
+	if _, err := inspectDataDir(opts.DataDir); err != nil {
 		return nil, err
 	}
 	if err := checkBinaries(ctx, opts.BinDir); err != nil {
 		return nil, err
 	}
-	if err := os.RemoveAll(opts.DataDir + setupSuffix); err != nil {
-		return nil, &Error{Kind: ErrInit, Path: opts.LogPath, Err: fmt.Errorf("remove the leftover setup folder: %w", err)}
-	}
-	if state == dataEmpty {
-		if err := buildCluster(ctx, opts); err != nil {
-			return nil, err
-		}
-	}
-	s := &Server{opts: opts}
-	if err := s.refuseLiveOrClearStale(ctx); err != nil {
+	token, err := acquireLock(opts)
+	if err != nil {
 		return nil, err
 	}
-	if err := s.start(ctx); err != nil {
+	s := &Server{opts: opts, token: token}
+	if err := s.startLocked(ctx); err != nil {
+		releaseLock(opts, token)
 		return nil, err
 	}
 	return s, nil
+}
+
+// startLocked runs under the lock: no other instance is building or serving this cluster, so a
+// leftover setup folder and a server still running on DataDir are orphans of a dead instance.
+func (s *Server) startLocked(ctx context.Context) error {
+	state, err := inspectDataDir(s.opts.DataDir) // again: another instance may have built it meanwhile
+	if err != nil {
+		return err
+	}
+	if err := os.RemoveAll(s.opts.DataDir + setupSuffix); err != nil {
+		return &Error{Kind: ErrInit, Path: s.opts.LogPath, Err: fmt.Errorf("remove the leftover setup folder: %w", err)}
+	}
+	if state == dataEmpty {
+		if err := buildCluster(ctx, s.opts); err != nil {
+			return err
+		}
+	}
+	if err := s.stopServer(ctx); err != nil {
+		return err
+	}
+	return s.start(ctx)
 }
 
 // buildCluster runs initdb and Setup in the sibling setup folder, stops that server and only then
@@ -157,42 +177,62 @@ func moveIntoPlace(tmp, dataDir string) error {
 	return &Error{Kind: ErrInit, Path: dataDir, Err: err}
 }
 
-// refuseLiveOrClearStale leaves a server that answers alone (ErrInUse) and stops one that runs
-// but does not answer. A pid file whose process is gone needs nothing: the server replaces it.
-func (s *Server) refuseLiveOrClearStale(ctx context.Context) error {
-	running, err := s.running(ctx)
-	if err != nil || !running {
-		return err
+// acquireLock creates the lock file with this process id and a random token. A lock whose process
+// still runs belongs to another instance (ErrInUse); one whose process is gone is an orphan's and
+// is replaced.
+func acquireLock(opts Options) (string, error) {
+	raw := make([]byte, 16)
+	if _, err := rand.Read(raw); err != nil {
+		return "", &Error{Kind: ErrStart, Path: opts.LogPath, Err: err}
 	}
-	if port := pidFilePort(s.opts.DataDir); port > 0 && (&Server{opts: s.opts, port: port}).answers(ctx) {
-		return &Error{Kind: ErrInUse, Path: s.opts.DataDir}
+	token := hex.EncodeToString(raw)
+	path := opts.DataDir + lockSuffix
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return "", &Error{Kind: ErrStart, Path: opts.LogPath, Err: err}
 	}
-	return s.Stop(ctx)
+	for range 2 {
+		f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600) //nolint:gosec // G304: next to the configured data folder
+		if err == nil {
+			_, werr := fmt.Fprintf(f, "%d\n%s\n", os.Getpid(), token)
+			if err := errors.Join(werr, f.Close()); err != nil {
+				_ = os.Remove(path)
+				return "", &Error{Kind: ErrStart, Path: opts.LogPath, Err: err}
+			}
+			return token, nil
+		}
+		if !errors.Is(err, os.ErrExist) {
+			return "", &Error{Kind: ErrStart, Path: opts.LogPath, Err: err}
+		}
+		if pid, _ := readLock(path); pid > 0 && processAlive(pid) {
+			return "", &Error{Kind: ErrInUse, Path: opts.DataDir}
+		}
+		if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+			return "", &Error{Kind: ErrStart, Path: opts.LogPath, Err: err}
+		}
+	}
+	return "", &Error{Kind: ErrInUse, Path: opts.DataDir}
 }
 
-// answers is true when a PostgreSQL server replies on the port, even with an error such as
-// "the database system is starting up": something else owns it.
-func (s *Server) answers(ctx context.Context) bool {
-	err := s.Ping(ctx)
-	var pgErr *pgconn.PgError
-	return err == nil || errors.As(err, &pgErr)
+// releaseLock removes the lock only while it still holds this instance's token.
+func releaseLock(opts Options, token string) {
+	path := opts.DataDir + lockSuffix
+	if _, held := readLock(path); token != "" && held == token {
+		_ = os.Remove(path)
+	}
 }
 
-// pidFilePort reads the port, line 4 of postmaster.pid; zero when unreadable.
-func pidFilePort(dataDir string) int {
-	body, err := os.ReadFile(filepath.Join(dataDir, "postmaster.pid")) //nolint:gosec // G304: the configured data folder
+// readLock returns the process id and token of a lock file; zero and "" when unreadable.
+func readLock(path string) (int, string) {
+	body, err := os.ReadFile(path) //nolint:gosec // G304: next to the configured data folder
 	if err != nil {
-		return 0
+		return 0, ""
 	}
-	lines := strings.Split(string(body), "\n")
-	if len(lines) < 4 {
-		return 0
-	}
-	port, err := strconv.Atoi(strings.TrimSpace(lines[3]))
+	pidLine, token, _ := strings.Cut(string(body), "\n")
+	pid, err := strconv.Atoi(strings.TrimSpace(pidLine))
 	if err != nil {
-		return 0
+		return 0, ""
 	}
-	return port
+	return pid, strings.TrimSpace(token)
 }
 
 // start runs pg_ctl start on a free port. A start that fails or times out stops whatever server it
@@ -235,12 +275,22 @@ func (s *Server) stopAfterFailedStart(ctx context.Context) error {
 func (s *Server) stopDetached(ctx context.Context) error {
 	stopCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), s.opts.StopTimeout+5*time.Second)
 	defer cancel()
-	return s.Stop(stopCtx)
+	return s.stopServer(stopCtx)
 }
 
 // Stop shuts the server down with a fast shutdown: open transactions roll back, nothing written
 // is lost. Stopping a server that is not running does nothing.
+// It then releases this instance's lock.
 func (s *Server) Stop(ctx context.Context) error {
+	if err := s.stopServer(ctx); err != nil {
+		return err
+	}
+	releaseLock(s.opts, s.token)
+	return nil
+}
+
+// stopServer stops whatever server runs on the data folder and keeps the lock.
+func (s *Server) stopServer(ctx context.Context) error {
 	running, err := s.running(ctx)
 	if err != nil || !running {
 		return err
