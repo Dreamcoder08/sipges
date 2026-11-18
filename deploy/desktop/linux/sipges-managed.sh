@@ -5,7 +5,14 @@
 # run-current.mjs (the launcher of the current version, which checks <root>/releases for updates),
 # opens the browser in app mode and stays with the launcher: if an update cannot be rolled back
 # (exit code 3) the person gets the notice naming the copy to restore. Read deploy/desktop/README.md.
+# --go (opt-in, go-rust-stack T72c; the launcher entry never passes it) starts the current
+# version's Go mode instead: go/sipges-desktop with PostgreSQL 18 from the version's postgresql/bin
+# or SIPGES_PG_BIN, on the state folder install.json records, output appended to launcher.log. No
+# update check runs in that mode. It refuses, before starting anything, a version built without
+# --go and a state folder whose data are still only in PGlite.
 set -eu
+GO_MODE=
+[ "${1:-}" != --go ] || GO_MODE=1
 
 ROOT=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
 PORT=${SIPGES_DESKTOP_PORT:-8000}
@@ -56,6 +63,33 @@ start_launcher() {
   LAUNCHER_PID=$!
 }
 
+# A field of a JSON file in the install root (node is already required by the launcher).
+json_field() {
+  node -e 'const v = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"))[process.argv[2]]; if (typeof v !== "string") process.exit(1); process.stdout.write(v)' "$ROOT/$1" "$2" 2>/dev/null
+}
+
+# The Go mode's files and state folder; refuses, changing nothing, a version without it and data
+# not moved yet (something in pglite/ and no cluster in pg18/: a new one would start SIPGES empty).
+start_go() {
+  command -v node >/dev/null 2>&1 || fail 'Node.js is not installed'
+  if ! release=$(json_field current.json path) || ! state=$(json_field install.json stateDir); then
+    fail "SIPGES no está instalado correctamente en $ROOT. Vuelva a ejecutar el instalador."
+  fi
+  case $release in /*) ;; *) release="$ROOT/$release" ;; esac
+  [ -x "$release/go/sipges-desktop" ] ||
+    fail 'Esta versión de SIPGES no incluye el modo Go. Abra SIPGES desde su acceso directo habitual.'
+  pg_bin=${SIPGES_PG_BIN:-}
+  [ ! -x "$release/postgresql/bin/pg_ctl" ] || pg_bin="$release/postgresql/bin"
+  [ -n "$pg_bin" ] ||
+    fail 'No se encontró PostgreSQL 18 para el modo Go: indique la carpeta bin de PostgreSQL 18 en SIPGES_PG_BIN.'
+  if [ -n "$(ls -A "$state/pglite" 2>/dev/null)" ] && [ ! -f "$state/pg18/PG_VERSION" ]; then
+    fail 'SIPGES no se inició en modo Go: sus datos todavía no se movieron a PostgreSQL. No se tocó nada. Abra SIPGES desde su acceso directo habitual.'
+  fi
+  SIPGES_DESKTOP_STATE=$state SIPGES_PG_BIN=$pg_bin SIPGES_WEB_DIR="$release/web" \
+    nohup "$release/go/sipges-desktop" --port "$PORT" >>"$LOG" 2>&1 </dev/null &
+  LAUNCHER_PID=$!
+}
+
 # Ends the script when the launcher is gone: the halt notice for code 3, otherwise its code.
 launcher_ended() {
   kill -0 "$LAUNCHER_PID" 2>/dev/null && return 0
@@ -94,7 +128,7 @@ open_browser() {
 }
 
 if healthy; then open_browser exec; fi
-start_launcher
+if [ -n "$GO_MODE" ]; then start_go; else start_launcher; fi
 wait_for_server
 open_browser background
 # Stay with the launcher: an update after the click can still end in a halt.
