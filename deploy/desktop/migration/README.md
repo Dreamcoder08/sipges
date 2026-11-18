@@ -106,6 +106,11 @@ release copy is deleted; the state folders, `before.json` and the logs stay unde
 
 ## Reading the comparison
 
+Since snapshot format 4 (2026-11-18), the bigint columns of the export (`attachments.size_bytes`) compare
+by value: the TypeScript API on PGlite sends them as JSON numbers, the Go API and the TypeScript API on
+PostgreSQL as digit strings. Any other number against a string still counts as a difference, and a
+format-3 snapshot is refused rather than compared.
+
 From the rehearsal of `e490339c` (2026-11-12, run `20261112T033655Z`), first start. That run used
 snapshot format 2; since format 3 the upload lines say `content <keyed hash>… identical` instead
 of the plain `sha256`, shown below as `<keyed>` (not rerun since):

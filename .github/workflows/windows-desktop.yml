@@ -14,6 +14,12 @@ name: Windows desktop drill
 # this commit with its own pnpm install, the kit's refusals (old clone, SIPGES open), the kit,
 # then the managed install from it; the old clone stays byte-identical. It also measures the time
 # and disk space the runbook quotes.
+# The go-mode job rehearses the opt-in Go mode (go-rust-stack T72c, docs/adr/0036 §6) with
+# deploy/desktop/windows/go-drill.mjs: a package built with --go (the pinned PostgreSQL 18 from
+# deploy/desktop/postgresql, cached by its SHA-256 and verified again before use), the TypeScript
+# default seeded, the PGlite data moved by pglite-to-postgres.mjs, start.ps1 -Go, the launcher
+# killed during writes and started again over the orphaned PostgreSQL, a clean Ctrl+C stop, the
+# original PGlite folder byte-identical and the way back to TypeScript.
 # No secrets: every signing key is made inside its job, used for throwaway releases and deleted
 # with the runner.
 on:
@@ -204,5 +210,45 @@ jobs:
         with:
           name: windows-laptop-kit-logs
           path: ${{ runner.temp }}/laptop-kit-logs
+          if-no-files-found: warn
+          retention-days: 14
+
+  go-mode:
+    name: Go mode (bundled PostgreSQL 18, data move, kill and restart, clean stop, way back)
+    runs-on: windows-latest
+    # The hard cap only stops a hung run.
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.27.4'
+          cache-dependency-path: apps/api-go/go.sum
+      # The pinned zip, keyed by the pin file (its URL and SHA-256): builder.mjs --go hashes it
+      # again before it unpacks anything, and downloads it when the cache is cold.
+      - uses: actions/cache@v6
+        with:
+          path: .data/postgresql
+          key: postgresql-bundle-${{ hashFiles('deploy/desktop/postgresql/pg18.json') }}
+      - name: Install this checkout
+        run: pnpm install --frozen-lockfile
+      - name: Go mode unit tests on Windows
+        run: node --test deploy/desktop/windows/go-mode.test.mjs deploy/desktop/postgresql/bundle.test.mjs
+      - name: Go mode rehearsal (synthetic data only)
+        run: node deploy/desktop/windows/go-drill.mjs --work "$env:RUNNER_TEMP\g" --logs "$env:RUNNER_TEMP\go-drill-logs"
+      # Logs and command outputs only: never a state folder, a snapshot or the key.
+      - name: Upload the rehearsal logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-go-mode-logs
+          path: ${{ runner.temp }}/go-drill-logs
           if-no-files-found: warn
           retention-days: 14

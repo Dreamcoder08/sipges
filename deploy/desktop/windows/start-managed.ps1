@@ -6,6 +6,12 @@
 # rolled back (exit code 3) a message box names the copy to restore. Read deploy\desktop\README.md.
 # SIPGES_DESKTOP_NO_UI=1 (the Windows drill, deploy\desktop\windows\drill.mjs): every message
 # goes to stdout instead of a message box and Edge is not opened; exit codes stay the same.
+# -Go (opt-in, go-rust-stack T72c; never on a shortcut until the laptop visit) starts the current
+# version's Go mode instead: go\sipges-desktop.exe with its bundled PostgreSQL 18
+# (postgresql\bin) on the state folder install.json records, serving 127.0.0.1:8000, output
+# appended to launcher.log. No update check runs in that mode. It refuses, before starting
+# anything, a version built without --go and a state folder whose data are still only in PGlite.
+param([switch]$Go)
 $ErrorActionPreference = 'Stop'
 # Accents as typed for whoever reads this output through a pipe (SIPGES_DESKTOP_NO_UI=1 under the
 # drill): Windows PowerShell 5.1 would write it in the console's OEM code page. A console window
@@ -45,7 +51,24 @@ function Show-Failure([string]$Message) {
     exit 1
 }
 
+# The program serving port 8000: api (the Go API) or node (TypeScript); $null when unknown.
+function Get-ServerImage {
+    try {
+        $owner = Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction Stop | Select-Object -First 1 -ExpandProperty OwningProcess
+        return (Get-Process -Id $owner -ErrorAction Stop).ProcessName
+    } catch { return $null }
+}
+
+# A SIPGES that answers is opened only in the mode asked for: -Go never reuses the TypeScript one
+# (writes would go to PGlite) and a plain start never reuses the Go one. -Go refuses an unknown one.
+function Assert-ServedMode {
+    $image = Get-ServerImage
+    if ($Go -and $image -ne 'api') { Show-Failure 'SIPGES ya está abierto sin el modo Go. Ciérrelo antes de abrirlo en modo Go.' }
+    if (-not $Go -and $image -eq 'api') { Show-Failure 'SIPGES ya está abierto en modo Go. Ciérrelo antes de abrirlo sin el modo Go.' }
+}
+
 function Open-App {
+    Assert-ServedMode
     if ($NoUi) { Write-Output "SIPGES: $Url"; return }
     Start-Process -FilePath 'msedge.exe' -ArgumentList "--app=$Url"
 }
@@ -92,6 +115,50 @@ function Start-Launcher {
         -WorkingDirectory $Root -WindowStyle Hidden -PassThru
 }
 
+# The Go mode's files in the current version and the state folder install.json records. Refuses,
+# changing nothing, a version without the Go mode, and data not moved yet: something in pglite\
+# and no cluster in pg18\ (a new cluster there would start SIPGES empty).
+function Resolve-GoServer {
+    $release = $null
+    $state = $null
+    try {
+        $pointer = (Get-Content -LiteralPath (Join-Path $Root 'current.json') -Raw -Encoding UTF8 | ConvertFrom-Json).path
+        if ($pointer -is [string]) {
+            if ([System.IO.Path]::IsPathRooted($pointer)) { $release = $pointer }
+            else { $release = Join-Path $Root ($pointer -replace '/', '\') }
+        }
+        $state = (Get-Content -LiteralPath (Join-Path $Root 'install.json') -Raw -Encoding UTF8 | ConvertFrom-Json).stateDir
+    } catch { }
+    if (-not $release -or -not ($state -is [string]) -or -not [System.IO.Path]::IsPathRooted($state)) {
+        Show-Failure "SIPGES no está instalado correctamente en $Root. Vuelva a ejecutar el instalador."
+    }
+    $server = @{
+        Exe = Join-Path $release 'go\sipges-desktop.exe'
+        PgBin = Join-Path $release 'postgresql\bin'
+        Web = Join-Path $release 'web'
+        State = $state
+    }
+    if (-not (Test-Path -LiteralPath $server.Exe) -or -not (Test-Path -LiteralPath (Join-Path $server.PgBin 'pg_ctl.exe'))) {
+        Show-Failure 'Esta versión de SIPGES no incluye el modo Go. Abra SIPGES desde su acceso directo habitual.'
+    }
+    $pglite = Get-ChildItem -LiteralPath (Join-Path $state 'pglite') -Force -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($pglite -and -not (Test-Path -LiteralPath (Join-Path $state 'pg18\PG_VERSION'))) {
+        Show-Failure 'SIPGES no se inició en modo Go: sus datos todavía no se movieron a PostgreSQL. No se tocó nada. Abra SIPGES desde su acceso directo habitual.'
+    }
+    return $server
+}
+
+# The launcher of -Go: sipges-desktop.exe through cmd (its output appended to
+# launcher.log), in a hidden console of its own, which it needs to stop the API with Ctrl+Break.
+function Start-GoServer($Server) {
+    $env:SIPGES_DESKTOP_STATE = $Server.State
+    $env:SIPGES_PG_BIN = $Server.PgBin
+    $env:SIPGES_WEB_DIR = $Server.Web
+    $command = '"{0}" >> "{1}" 2>&1' -f $Server.Exe, $Log
+    Start-Process -FilePath $env:ComSpec -ArgumentList "/d /c `"$command`"" `
+        -WorkingDirectory $Root -WindowStyle Hidden -PassThru
+}
+
 # A second click while another start of this script holds the mutex: it waits for the same server
 # as long as that start does, and never starts a second launcher.
 function Wait-Other([System.Threading.Mutex]$Mutex) {
@@ -111,6 +178,8 @@ function Wait-Other([System.Threading.Mutex]$Mutex) {
 }
 
 try {
+    $GoServer = $null
+    if ($Go) { $GoServer = Resolve-GoServer }
     if (Test-Server) {
         Open-App
         exit 0
@@ -124,7 +193,7 @@ try {
         Open-App
         exit 0
     }
-    $launcher = Start-Launcher
+    $launcher = if ($Go) { Start-GoServer $GoServer } else { Start-Launcher }
     # Without a handle taken right away, ExitCode stays empty after the process ends.
     $null = $launcher.Handle
     $deadline = (Get-Date).AddSeconds($WaitSeconds)
