@@ -29,7 +29,7 @@ export const FORMAT = 'sipges.migration-snapshot';
 // 2: values hashed with their JSON type; every upload and audit entry, or marked incomplete.
 // 3: upload contents keyed like every other value; records read to an empty page and checked
 // against the export, or marked incomplete.
-export const FORMAT_VERSION = 3;
+export const FORMAT_VERSION = 4;
 const PAGE = 500;
 // A list longer than this many pages is not read further (and marked incomplete).
 const MAX_PAGES = 10_000;
@@ -40,6 +40,23 @@ const UPLOAD_LIST_CAP = 500;
 // by entry; every other exported table is compared as a set of row hashes.
 const EXPORT_COMPARED_ELSEWHERE = new Set(['module_records', 'audit']);
 const STREAM_TIMEOUT_MS = 120_000;
+// The bigint columns of the exported tables. The TypeScript API on PGlite sends them as JSON
+// numbers, the Go API and the TypeScript API on PostgreSQL as digit strings (a bigint can pass
+// 2^53); the visit's "before" comes from the installed TypeScript version. They compare by value:
+// a safe integer number is hashed as its digits. Owner's decision, 2026-11-18 (option 2).
+const EXPORT_BIGINT_COLUMNS = { attachments: new Set(['size_bytes']) };
+
+/** The keyed hash of one export row, with its bigint columns compared by value. */
+export const exportRowHash = (h, table, row) => {
+  const bigints = EXPORT_BIGINT_COLUMNS[table];
+  if (!bigints) return h(row);
+  const byValue = Object.fromEntries(
+    Object.entries(row).map(([column, value]) =>
+      bigints.has(column) && Number.isSafeInteger(value) ? [column, String(value)] : [column, value],
+    ),
+  );
+  return h(byValue);
+};
 
 const failed = (what, status) => new Error(`${what} answered ${status}`);
 
@@ -252,7 +269,7 @@ export async function takeSnapshot(session, { salt = randomBytes(16).toString('h
       ? Object.fromEntries(
           Object.entries(exported)
             .filter(([table]) => !EXPORT_COMPARED_ELSEWHERE.has(table))
-            .map(([table, rows]) => [table, rows.map((row) => h(row)).sort()]),
+            .map(([table, rows]) => [table, rows.map((row) => exportRowHash(h, table, row)).sort()]),
         )
       : null;
     // The export proves the lists complete when every stored record was read; then a list that
