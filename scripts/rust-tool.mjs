@@ -56,20 +56,45 @@ if (!installed) {
   );
 }
 
+// The binary is taken from cargo's own report: CARGO_BUILD_TARGET_DIR or a user build.target-dir
+// move the target folder, and running engines/target/release would start an old build on real data.
 const build = spawnSync(
   'cargo',
-  [`+${channel}`, 'build', '--quiet', '--release', '--locked', '-p', crate, '--bin', binary],
-  { cwd: ENGINES, stdio: 'inherit' },
+  [
+    `+${channel}`,
+    'build',
+    '--quiet',
+    '--release',
+    '--locked',
+    '--message-format=json-render-diagnostics',
+    '-p',
+    crate,
+    '--bin',
+    binary,
+  ],
+  {
+    cwd: ENGINES,
+    stdio: ['inherit', 'pipe', 'inherit'],
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+  },
 );
 if (build.error) fail(`No se pudo ejecutar cargo: ${build.error.message}`);
 if (build.status !== 0) process.exit(build.status ?? 1);
 
-const targetDir = path.resolve(ENGINES, process.env.CARGO_TARGET_DIR ?? 'target');
-const executable = path.join(
-  targetDir,
-  'release',
-  process.platform === 'win32' ? `${binary}.exe` : binary,
-);
+const executable = build.stdout
+  .split('\n')
+  .map((line) => {
+    try {
+      return JSON.parse(line);
+    } catch {
+      return null;
+    }
+  })
+  .filter((message) => message?.reason === 'compiler-artifact' && message.target?.name === binary)
+  .map((message) => message.executable)
+  .findLast(Boolean);
+if (!executable) fail(`cargo no informó dónde quedó ${binary}; no se ejecutó nada.`);
 const run = spawnSync(executable, toolArgs, { stdio: 'inherit' });
 if (run.error) fail(`No se pudo ejecutar ${executable}: ${run.error.message}`);
 process.exit(run.status ?? 1);

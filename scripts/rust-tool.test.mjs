@@ -66,7 +66,7 @@ ${body}
   fake(
     'cargo',
     `const bin = args[args.indexOf('--bin') + 1];
-const out = path.join(process.env.CARGO_TARGET_DIR, 'release');
+const out = path.join(process.env.CARGO_BUILD_TARGET_DIR ?? process.env.CARGO_TARGET_DIR, 'release');
 fs.mkdirSync(out, { recursive: true });
 fs.writeFileSync(path.join(out, bin), ${JSON.stringify(
       `#!/usr/bin/env node
@@ -75,7 +75,9 @@ console.log('tool output');
 process.exit(${toolExit});
 `,
     )});
-fs.chmodSync(path.join(out, bin), 0o755);`,
+fs.chmodSync(path.join(out, bin), 0o755);
+if (args.includes('--message-format=json-render-diagnostics'))
+  console.log(JSON.stringify({ reason: 'compiler-artifact', target: { name: bin, kind: ['bin'] }, executable: path.join(out, bin) }));`,
   );
   const run = (args, env = {}) => {
     const result = spawnSync(process.execPath, [LAUNCHER, ...args], {
@@ -95,7 +97,7 @@ fs.chmodSync(path.join(out, bin), 0o755);`,
     }
     return { ...result, calls };
   };
-  return { run, caller };
+  return { run, caller, target };
 };
 
 const DB = { SIPGES_DATABASE_URL: 'postgres://synthetic@127.0.0.1:1/none' };
@@ -163,6 +165,7 @@ test('cargo builds with the pinned toolchain from engines/, whatever the caller 
     '--quiet',
     '--release',
     '--locked',
+    '--message-format=json-render-diagnostics',
     '-p',
     'sipges-base-maestra',
     '--bin',
@@ -189,4 +192,22 @@ test('a launcher call without crate, binary and script name prints its usage', (
   const result = run(['sipges-base-maestra'], DB);
   assert.equal(result.status, 2);
   assert.match(result.stderr, /Usage: node scripts\/rust-tool\.mjs <crate> <binary> <script>/);
+});
+
+// Verifier advisory on #541: with CARGO_BUILD_TARGET_DIR (or a user build.target-dir) cargo builds
+// elsewhere; the launcher must run the binary cargo reports, never an old one left in engines/target.
+test('the binary cargo just built runs, not a stale one in the default target folder', () => {
+  const { run, target } = sandbox();
+  const elsewhere = mkdtempSync(path.join(tmpdir(), 'rust-tool-elsewhere-'));
+  const stale = path.join(target, 'release', 'import-base-maestra');
+  mkdirSync(path.dirname(stale), { recursive: true });
+  writeFileSync(stale, '#!/bin/sh\necho stale binary >&2\nexit 99\n');
+  chmodSync(stale, 0o755);
+  const result = run(['sipges-base-maestra', 'import-base-maestra', 'import:base-maestra'], {
+    ...DB,
+    CARGO_BUILD_TARGET_DIR: elsewhere,
+  });
+  rmSync(elsewhere, { recursive: true, force: true });
+  assert.equal(result.status, 0, `the stale binary ran: ${result.stderr}`);
+  assert.equal(result.calls.filter((call) => call.name === 'tool').length, 1);
 });
