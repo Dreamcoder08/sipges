@@ -106,10 +106,36 @@ export function commandFor(command, args, platform = process.platform, comspec =
   return { file: comspec || 'cmd.exe', args: ['/d', '/s', '/c', `"${[command, ...args].map(quote).join(' ')}"`], options: { windowsVerbatimArguments: true } };
 }
 
-function run(command, args) {
+function run(command, args, cwd = repo) {
   const { file, args: argv, options } = commandFor(command, args);
-  const result = spawnSync(file, argv, { cwd: repo, stdio: 'inherit', ...options });
+  const result = spawnSync(file, argv, { cwd, stdio: 'inherit', ...options });
   if (result.error || result.status !== 0) throw new Error(`${command} failed: ${result.error?.message ?? result.status}`);
+}
+
+/** The SQL migrations both APIs apply (apps/api-go reads the same folder). */
+const MIGRATIONS = 'apps/api/src/platform/database/migrations';
+
+/**
+ * The opt-in Go mode (docs/adr/0036, go-rust-stack T72c): sipges-desktop and the Go API built
+ * from apps/api-go into go/, the migrations beside them, and on Windows x64 the pinned PostgreSQL
+ * 18 in postgresql/ (deploy/desktop/postgresql/bundle.mjs: exact URL and SHA-256). Returns what
+ * metadata.json records. The default entry (start.mjs, the TypeScript API) does not change.
+ */
+export async function addGoRuntime(destination, { platform = process.platform, arch = process.arch, say = console.log } = {}) {
+  const exe = (name) => (platform === 'win32' ? `${name}.exe` : name);
+  await mkdir(join(destination, 'go'), { mode: 0o700 });
+  for (const name of ['sipges-desktop', 'api'])
+    run('go', ['build', '-trimpath', '-o', join(destination, 'go', exe(name)), `./cmd/${name}`], join(repo, 'apps', 'api-go'));
+  await cp(join(repo, MIGRATIONS), join(destination, 'go', 'migrations'), { recursive: true, errorOnExist: true, force: false });
+  let postgresql = null;
+  // Imported here: a build without --go never reads the pin or needs the network.
+  const { bundlePostgres, readPin } = await import('../postgresql/bundle.mjs');
+  const pin = await readPin();
+  if (platform === pin.platform && arch === pin.arch) {
+    await bundlePostgres({ out: join(destination, 'postgresql'), pin, platform, arch, say });
+    postgresql = { version: pin.version, sha256: pin.sha256, bin: 'postgresql/bin' };
+  } else say(`No PostgreSQL bundle for ${platform}-${arch}: the Go mode there needs SIPGES_PG_BIN (a PostgreSQL 18 bin folder).`);
+  return { entry: `go/${exe('sipges-desktop')}`, api: `go/${exe('api')}`, migrations: 'go/migrations', postgresql };
 }
 
 async function outputPath(root, out, version) {
@@ -148,8 +174,15 @@ async function assertReleaseVersion(root, version) {
 }
 
 async function main(args) {
-  if (args.length === 1 && args[0] === '--help') { console.log('Usage: node deploy/desktop/package/builder.mjs [--version <semver>] --out .data/desktop-packages/sipges-<version> [--platform <host>] [--arch <host>]\nThe version defaults to the root package.json version; a release version must equal it, a pre-release (1.2.3-rc.1) marks a rehearsal.'); return; }
+  if (args.length === 1 && args[0] === '--help') { console.log('Usage: node deploy/desktop/package/builder.mjs [--version <semver>] --out .data/desktop-packages/sipges-<version> [--platform <host>] [--arch <host>] [--go]\nThe version defaults to the root package.json version; a release version must equal it, a pre-release (1.2.3-rc.1) marks a rehearsal.\n--go (opt-in) adds the Go mode: sipges-desktop, the Go API and the migrations in go/, and on Windows x64 the pinned PostgreSQL 18 in postgresql/ (downloaded once, SHA-256 verified). The default entry stays the TypeScript one.'); return; }
   const options = {};
+  const go = args.includes('--go');
+  if (go) {
+    const at = args.indexOf('--go');
+    const value = args[at + 1];
+    if (args.lastIndexOf('--go') !== at || (value !== undefined && !value.startsWith('--'))) throw new Error('Invalid options; use --help');
+    args = args.filter((arg) => arg !== '--go');
+  }
   for (let i = 0; i < args.length; i += 2) {
     const key = args[i];
     if (!['--version', '--out', '--platform', '--arch'].includes(key) || !args[i + 1] || args[i + 1].startsWith('--') || options[key]) throw new Error('Invalid options; use --help');
@@ -176,7 +209,8 @@ async function main(args) {
   await cp(join(repo, 'apps/web/dist'), join(destination, 'web'), { recursive: true, errorOnExist: true, force: false });
   await rejectExternalLinks(destination);
   await compileDeployed(join(destination, 'api'));
-  await writeManagedEntry(destination, { version: options['--version'], platform: process.platform, arch: process.arch });
+  const goRuntime = go ? await addGoRuntime(destination) : null;
+  await writeManagedEntry(destination, { version: options['--version'], platform: process.platform, arch: process.arch, ...(goRuntime ? { go: goRuntime } : {}) });
   await addDesktopRuntime(destination);
   // Last: everything above finished.
   await writeFile(join(destination, PACKAGE_COMPLETE), 'Build finished.\n', { flag: 'wx' });

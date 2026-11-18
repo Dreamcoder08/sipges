@@ -41,15 +41,32 @@ if (args.includes('build')) {
 process.exit(2);
 `;
 
+// A fake Go toolchain: `go build -trimpath -o <file> ./cmd/<name>` (in apps/api-go) writes a
+// file naming the command; `go version` answers. Anything else fails.
+const FAKE_GO = `#!/usr/bin/env node
+const { writeFileSync } = require('node:fs');
+const args = process.argv.slice(2);
+if (args[0] === 'version') { console.log('go version go0.0.0-fake'); process.exit(0); }
+if (process.env.SIPGES_FAKE_GO === 'fail') { console.error('fake go build failed'); process.exit(1); }
+if (args[0] === 'build' && args.includes('-o') && process.cwd().replace(/\\\\/g, '/').endsWith('apps/api-go')) {
+  writeFileSync(args[args.indexOf('-o') + 1], 'fake ' + args[args.length - 1] + '\\n');
+  process.exit(0);
+}
+process.exit(2);
+`;
+
 /**
  * A checkout at `root` with builder.mjs, the updater runtime it ships, node_modules (a link to
- * this repository's, for TypeScript) and a fake pnpm in `<root>-bin`. Returns `build(version,
- * { failWebBuild })`, which runs builder.mjs like visit-kit.mjs does and returns its result.
+ * this repository's, for TypeScript) and a fake pnpm and go in `<root>-bin`. Returns `build(version,
+ * { failWebBuild, failGo, args })`, which runs builder.mjs like visit-kit.mjs does (`args` are
+ * appended, such as `--go`) and returns its result.
  */
 export async function fakeCheckout(root) {
   await mkdir(join(root, 'deploy/desktop/package'), { recursive: true });
   await mkdir(join(root, 'deploy/desktop/updater'), { recursive: true });
   await copyFile(join(repo, 'deploy/desktop/package/builder.mjs'), join(root, 'deploy/desktop/package/builder.mjs'));
+  await mkdir(join(root, 'deploy/desktop/postgresql'), { recursive: true });
+  for (const name of ['bundle.mjs', 'pg18.json']) await copyFile(join(repo, 'deploy/desktop/postgresql', name), join(root, 'deploy/desktop/postgresql', name));
   for (const name of UPDATER) await copyFile(join(repo, 'deploy/desktop/updater', name), join(root, 'deploy/desktop/updater', name));
   // A junction on Windows (no privilege needed); the type is ignored elsewhere.
   await symlink(join(repo, 'node_modules'), join(root, 'node_modules'), 'junction');
@@ -60,19 +77,27 @@ export async function fakeCheckout(root) {
   await writeFile(join(bin, 'pnpm'), FAKE_PNPM, { mode: 0o755 });
   // cmd.exe resolves `pnpm` through PATHEXT to this shim, which runs the same script with Node.
   await writeFile(join(bin, 'pnpm.cmd'), `@"${process.execPath}" "%~dp0pnpm" %*\r\n`);
+  await writeFile(join(bin, 'go'), FAKE_GO, { mode: 0o755 });
+  await writeFile(join(bin, 'go.cmd'), `@"${process.execPath}" "%~dp0go" %*\r\n`);
+  // What `--go` copies: the Go module folder the fake go builds in, and the SQL migrations.
+  await mkdir(join(root, 'apps/api-go'), { recursive: true });
+  await mkdir(join(root, 'apps/api/src/platform/database/migrations'), { recursive: true });
+  await writeFile(join(root, 'apps/api/src/platform/database/migrations/0001_synthetic.sql'), 'SELECT 1;\n');
   /** The environment builder.mjs runs in: the fake pnpm first on PATH (whatever its key's case). */
-  const env = ({ failWebBuild = false } = {}) => {
+  const env = ({ failWebBuild = false, failGo = false } = {}) => {
     const out = { ...process.env };
     const key = Object.keys(out).find((name) => name.toUpperCase() === 'PATH') ?? 'PATH';
     out[key] = `${bin}${delimiter}${out[key] ?? ''}`;
     if (failWebBuild) out.SIPGES_FAKE_WEB_BUILD = 'fail';
     else delete out.SIPGES_FAKE_WEB_BUILD;
+    if (failGo) out.SIPGES_FAKE_GO = 'fail';
+    else delete out.SIPGES_FAKE_GO;
     return out;
   };
   const build = (version, options = {}) =>
     spawnSync(
       process.execPath,
-      [join(root, 'deploy/desktop/package/builder.mjs'), '--version', version, '--out', join(root, '.data', 'desktop-packages', `sipges-${version}`)],
+      [join(root, 'deploy/desktop/package/builder.mjs'), '--version', version, '--out', join(root, '.data', 'desktop-packages', `sipges-${version}`), ...(options.args ?? [])],
       { cwd: root, encoding: 'utf8', env: env(options) },
     );
   return { build, env };
