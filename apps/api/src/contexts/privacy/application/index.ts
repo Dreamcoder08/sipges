@@ -18,6 +18,7 @@ export type {
   NameDirectory,
   PseudonymKeys,
 } from './ports.ts';
+export { type FieldPolicy, policyFor } from '../domain/allowlist.ts';
 export type { SanitisedPayload } from '../domain/sanitised.ts';
 export type { RawRecord, SanitisedRecord } from '../domain/sanitise.ts';
 export type { KnownName, Mac, PseudonymKind } from '../domain/pseudonyms.ts';

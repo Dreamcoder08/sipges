@@ -132,6 +132,21 @@ export const createSqlOntologyStore = (sql: SqlClient): OntologyStore => ({
       ).map((row) => ({ ...row, updatedAt: new Date(row.updated_at) })),
     ),
 
+  scan: (tenantId, module, group, dates, limit) =>
+    withTenant(sql, tenantId, async (tx) =>
+      tx.query<{ id: string; marking: string; value: unknown }>(
+        `SELECT r.id, r.marking, CASE WHEN $2::text IS NULL THEN NULL ELSE r.payload->$2::text END AS value
+         FROM module_records r
+         CROSS JOIN LATERAL (SELECT left(r.payload->>$3::text, 10) AS day) d
+         WHERE r.module = $1
+           AND ($3::text IS NULL
+                OR (d.day ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' AND d.day >= $4 AND d.day <= $5))
+         ORDER BY r.id
+         LIMIT $6`,
+        [module, group, dates?.field ?? null, dates?.from ?? '', dates?.to ?? '', limit],
+      ),
+    ),
+
   links: (tenantId, refs) =>
     withTenant(sql, tenantId, async (tx) =>
       (
