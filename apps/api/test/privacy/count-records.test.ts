@@ -116,11 +116,14 @@ describe('count_records', () => {
     const month = await t.tool(token, 'count_records', { module: 'eventos', from: '2026-10' });
     expect(month.structuredContent).toMatchObject({
       from: '2026-10-01',
-      to: '9999-12-31',
+      to: null,
       total: 2,
     });
     const day = await t.tool(token, 'count_records', { module: 'eventos', to: '2025-05-10' });
-    expect(day.structuredContent).toMatchObject({ from: '0000-01-01', to: '2025-05-10', total: 1 });
+    expect(day.structuredContent).toMatchObject({ from: null, to: '2025-05-10', total: 1 });
+    // Blank sides are empty: no bound, and undated records still count.
+    const blank = await t.tool(token, 'count_records', { module: 'eventos', from: '  ', to: ' ' });
+    expect(blank.structuredContent).toMatchObject({ from: null, to: null });
   });
 
   it('refuses dates on a type without date field', async () => {

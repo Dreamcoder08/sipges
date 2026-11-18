@@ -280,6 +280,11 @@ func TestMCPCountRecords(t *testing.T) {
 				`"groups":[{"value":"Asamblea","count":1}]}`},
 		{"one date excludes undated records", `{"module":"eventos","from":"2026"}`,
 			`{"module":"eventos","group_by":null,"from":"2026-01-01","to":null,"total":2,"truncated":false,"groups":[]}`},
+		{"a padded field is the field", `{"module":"eventos","group_by":" Tipo_Evento "}`,
+			`{"module":"eventos","group_by":"Tipo_Evento","from":null,"to":null,"total":5,"truncated":false,` +
+				`"groups":[{"value":"Asamblea","count":2},{"value":"Bloqueo","count":1},{"value":"Paro","count":1},{"value":null,"count":1}]}`},
+		{"blank arguments are empty", `{"module":"eventos","group_by":"  ","from":" ","to":"\t"}`,
+			`{"module":"eventos","group_by":null,"from":null,"to":null,"total":5,"truncated":false,"groups":[]}`},
 		{"an empty range", `{"module":"eventos","from":"2027","to":"2026"}`,
 			`{"module":"eventos","group_by":null,"from":"2027-01-01","to":"2026-12-31","total":0,"truncated":false,"groups":[]}`},
 	} {

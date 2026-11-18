@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/integration/domain"
 	ontology "github.com/Dreamcoder08/sipges/apps/api-go/internal/ontology/domain"
 	sanitised "github.com/Dreamcoder08/sipges/apps/api-go/internal/privacy/domain"
 	situations "github.com/Dreamcoder08/sipges/apps/api-go/internal/situations/domain"
@@ -46,7 +47,10 @@ func nonEmpty(s string) *string {
 }
 
 func (c readCall) count(ctx context.Context) (any, string, error) {
-	slug, field, fromRaw, toRaw := c.text("module"), c.text("group_by"), c.text("from"), c.text("to")
+	// Trimmed as countable in ontology-service.ts does: a blank argument is an empty one.
+	slug := c.text("module")
+	field := domain.TrimJS(c.text("group_by"))
+	fromRaw, toRaw := domain.TrimJS(c.text("from")), domain.TrimJS(c.text("to"))
 	t, known := ontology.ObjectTypeForSlug(slug)
 	if !known {
 		return nil, unknownModule, nil

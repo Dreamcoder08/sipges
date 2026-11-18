@@ -483,6 +483,15 @@ const reads: readonly ParityCase[] = [
   open('count, text field', 'count_records', { module: 'eventos', group_by: 'Descripcion_Hecho' }),
   open('count, unlisted field', 'count_records', { module: 'eventos', group_by: 'Observaciones' }),
   open('count, unknown module and bad dates', 'count_records', { module: 'otro', from: 'x' }),
+  open('count, padded field', 'count_records', { module: 'eventos', group_by: ' Territorio ' }),
+  open('count, blank field', 'count_records', { module: 'eventos', group_by: '   ' }),
+  open('count, blank from', 'count_records', { module: 'eventos', from: '  ' }),
+  open('count, to alone', 'count_records', { module: 'eventos', to: '2025' }),
+  open('count, from alone', 'count_records', { module: 'eventos', from: '2026-10' }),
+  open('count, blank date on a type without date', 'count_records', {
+    module: 'actores',
+    from: ' ',
+  }),
   open('timeline, limit 1', 'get_timeline', { limit: 1 }, { present: ['"truncated":true'] }),
   open(
     'timeline, limited key',

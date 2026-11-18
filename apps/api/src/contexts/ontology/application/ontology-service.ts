@@ -718,8 +718,9 @@ export const createOntologyService = (deps: {
       return ok({
         slug: objectType.slug,
         groupBy,
-        from,
-        to,
+        // S3: a side left blank has no bound, so it answers null rather than the open bound.
+        from: input.from.trim() ? from : null,
+        to: input.to.trim() ? to : null,
         records: rows.slice(0, MAX_COUNTED_RECORDS),
         truncated: rows.length > MAX_COUNTED_RECORDS,
       });
