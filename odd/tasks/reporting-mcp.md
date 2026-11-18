@@ -38,14 +38,14 @@ bounded by dates, so an agent can build reports without reading every record. Br
 
 ## Tasks
 
-- T1 [ ] — S3, S4: TypeScript `count_records` (store query, ontology service, MCP tool, tests). Route: delegated,
+- T1 [x] — S3, S4: TypeScript `count_records` (store query, ontology service, MCP tool, tests). Route: delegated,
   Herdr tab `report-ts` (writer reason: parallel with T2, disjoint surface `apps/api/**`).
-- T2 [ ] — S3–S5: Go `count_records` (descriptors, analyst label, tests). Route: delegated, Herdr tab `report-go`
+- T2 [x] — S3–S5: Go `count_records` (descriptors, analyst label, tests). Route: delegated, Herdr tab `report-go`
   (writer reason: parallel with T1, disjoint surface `apps/api-go/**`).
-- T3 [ ] — S5: parity cases (switch off, grouped, dates, refused field, restricted) and the seam check
+- T3 [x] — S5: parity cases (switch off, grouped, dates, refused field, restricted) and the seam check
   (`mcp.mjs --check` on the merged code). Route: inline, after T1 and T2.
 - T4 [ ] — S1: docs (MCP instructions text, desktop README tool list, CHANGELOG). Route: inline.
-- T5 [ ] — S4: independent verification. Risk item 2 (data leaving through the egress guard). Route: verifier.
+- T5 [x] — S4: independent verification. Risk item 2 (data leaving through the egress guard). Route: verifier.
 
 ## Log
 
@@ -55,6 +55,10 @@ bounded by dates, so an agent can build reports without reading every record. Br
   vista, y les puedes preguntar.» and «un MCP de lectura para el sistema , así sacan todos los reportes que se les
   ocurran.»
 - L2 — 2026-11-17 — Map: no generic aggregation exists (dashboard counters are fixed; records summary is per module
+- L3 — T1: T1 done in Herdr tab report-ts, PR #522 (2ae7d362): count_records in the TypeScript API; 10 RED tests then GREEN (11 in count-records.test.ts), API suite 1256 passed; one-line re-export of policyFor in privacy/application/index.ts accepted (boundary rule). verify:fast died of memory (7 GB machine), not of a test.
+- L4 — T2: T2 done in Herdr tab report-go, PR #520: count_records in Go, RED then GREEN against a throwaway PostgreSQL, go vet and golangci-lint clean, progress label «Contando registros…». Seam: mcp.mjs --check on the merged branches found the MCP instructions text differed (TS named count_records); fixed in Go (2a7dc674).
+- L5 — T3: T3 done on feat/report-mcp-go (0ccca35d, a77b0ca0): 26 count_records parity cases; pnpm parity 2637/2639 (the two misses are the known Node 26 multipart upload cases).
+- L6 — T5: T5 independent verifier: S1, S2, S4 PASS (no leak: only clear fields group, values scrubbed, restricted never counted, RLS and tenant hold, one access-log row of ids and counts); S3/S5 FAIL on blank and one-sided arguments (Go did not trim, TS echoed open bounds). One correction batch a77b0ca0, RED then GREEN in both APIs, recheck by six parity probes: match. Advisories kept open: grouping by id or date fields can return up to 20000 groups; total is a lower bound when truncated.
   only). Reuse the ontology date bound (`dayBound`) and the guard session; a SQL GROUP BY would count restricted rows
   and could key on names, so values are counted after `egress.records`. Go descriptors are generated from the TS
   `MCP_TOOLS` by `apps/api-go/internal/integration/testdata/mcp.mjs`; `apps/api/test/privacy/structure.test.ts` pins
