@@ -13,6 +13,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 )
 
@@ -136,6 +137,11 @@ func parseManifest(data []byte) (*Manifest, error) {
 	fail := func(why string) error { return refuse(KindManifestInvalid, "The release manifest is invalid: %s", why) }
 	if !json.Valid(data) {
 		return nil, fail("not JSON")
+	}
+	// JSON.parse keeps a lone surrogate; encoding/json would turn it into U+FFFD and could merge two
+	// keys the Node updater keeps apart, so such a manifest is refused as Node can never match it.
+	if hasLoneSurrogateEscape(data) {
+		return nil, fail("an unpaired UTF-16 surrogate escape")
 	}
 	if jsKind(data) != "object" {
 		return nil, fail("not an object")
@@ -299,7 +305,59 @@ func mustQuote(s string) json.RawMessage {
 }
 
 // isLink reports whether a mode is a link the Node updater sees as one: a symbolic link, or on
-// Windows a junction, which Go 1.23+ reports as an irregular folder and Node as a link.
-func isLink(mode fs.FileMode) bool {
-	return mode&fs.ModeSymlink != 0 || (mode.IsDir() && mode&fs.ModeIrregular != 0)
+// Windows any other reparse point such as a junction, which libuv reports as a link and Go 1.23+
+// reports as ModeIrregular without ModeDir ($GOROOT/src/os/types_windows.go).
+func isLink(mode fs.FileMode) bool { return isLinkOn(mode, runtime.GOOS) }
+
+func isLinkOn(mode fs.FileMode, goos string) bool {
+	if mode&fs.ModeSymlink != 0 {
+		return true
+	}
+	return goos == "windows" && mode&fs.ModeIrregular != 0
+}
+
+// hasLoneSurrogateEscape reports a \uD800-\uDFFF escape in a JSON text that is not a high surrogate
+// immediately followed by a low one. data is valid JSON, so every backslash starts an escape.
+func hasLoneSurrogateEscape(data []byte) bool {
+	unit := func(i int) (rune, bool) {
+		if i+6 > len(data) || data[i] != '\\' || data[i+1] != 'u' {
+			return 0, false
+		}
+		var r rune
+		for _, c := range data[i+2 : i+6] {
+			switch {
+			case c >= '0' && c <= '9':
+				r = r<<4 | rune(c-'0')
+			case c >= 'a' && c <= 'f':
+				r = r<<4 | rune(c-'a'+10)
+			case c >= 'A' && c <= 'F':
+				r = r<<4 | rune(c-'A'+10)
+			default:
+				return 0, false
+			}
+		}
+		return r, true
+	}
+	for i := 0; i < len(data); i++ {
+		if data[i] != '\\' {
+			continue
+		}
+		r, ok := unit(i)
+		if !ok {
+			i++ // a two-character escape such as \\ or \"
+			continue
+		}
+		switch {
+		case r >= 0xD800 && r <= 0xDBFF:
+			if low, ok := unit(i + 6); ok && low >= 0xDC00 && low <= 0xDFFF {
+				i += 11
+				continue
+			}
+			return true
+		case r >= 0xDC00 && r <= 0xDFFF:
+			return true
+		}
+		i += 5
+	}
+	return false
 }
