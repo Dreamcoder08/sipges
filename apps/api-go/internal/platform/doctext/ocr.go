@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 )
 
@@ -88,13 +87,13 @@ func (o *OCR) Recognize(ctx context.Context, data []byte) ([]string, error) {
 	output := &boundedOutput{stop: cancel}
 	cmd.Stdout, cmd.Stderr = output, output
 	// Its own process group: ocrmypdf starts Tesseract and Ghostscript, which must stop with it.
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-	cmd.Cancel = func() error { return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL) }
+	ownProcessGroup(cmd)
+	cmd.Cancel = func() error { return killProcessGroup(cmd) }
 	cmd.WaitDelay = ocrWaitDelay
 	err = cmd.Run()
 	if cmd.Process != nil {
-		// Children may outlive a leader that exited on its own; an empty group answers ESRCH.
-		_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+		// Children may outlive a leader that exited on its own.
+		_ = killProcessGroup(cmd)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("doctext: ocrmypdf: %w", err)
