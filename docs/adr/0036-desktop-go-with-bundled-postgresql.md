@@ -36,7 +36,7 @@ Facts read on 2026-11-17 (go-rust-stack L74):
 1. The desktop install runs the Go API (`apps/api-go`) against a PostgreSQL 18 server shipped with the installer:
    the EDB Windows x64 binaries zip trimmed to `bin`, `lib` and `share`, at a pinned minor version with its SHA-256
    recorded in the repository.
-2. The Go launcher owns the server: `initdb` once with `--locale-provider=builtin --locale=C.UTF-8 -E UTF8`, then
+2. The Go launcher owns the server: `initdb` once with `--locale-provider=builtin --builtin-locale=C.UTF-8 --locale=C -E UTF8` (amended 2026-11-18: Windows has no `C.UTF-8` libc locale and initdb refused `--locale=C.UTF-8` on the Windows rehearsal), then
    `pg_ctl start` and `stop`, listening on `127.0.0.1` only, on a free port chosen at start, never 5432 by
    assumption. No Windows service and no administrator rights.
 3. The server's data folder lives under `%LOCALAPPDATA%\SIPGES-datos\pg18`, never under a folder OneDrive may sync.
