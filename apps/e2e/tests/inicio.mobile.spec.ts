@@ -213,9 +213,13 @@ for (const colorScheme of ['light', 'dark'] as const) {
     const send = await box(page.getByRole('button', { name: 'Buscar en registros' }));
     expect(send.x + send.width).toBeLessThanOrEqual(360);
 
-    // A suggestion still fills the composer.
+    // In «Buscar» a suggestion searches in one tap (chat-first-ui T4): the palette opens with it.
+    const suggestion = (await chips.first().textContent())?.trim() ?? '';
     await chips.first().tap();
-    await expect(field).toHaveValue(/\S/);
+    const palette = page.getByRole('dialog', { name: 'Búsqueda global' });
+    await expect(palette.getByRole('combobox')).toHaveValue(suggestion);
+    await page.keyboard.press('Escape');
+    await expect(palette).toBeHidden();
 
     const result = await analyzeAccessibility(page);
     expect(result.violations.map((v) => v.id)).toEqual([]);
