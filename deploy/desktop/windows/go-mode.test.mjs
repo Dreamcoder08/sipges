@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { GO_NOT_MOVED_LINE, GO_MISSING_LINE, STUB_API, imageName, parseOptions, postmasterPort } from './go-drill.mjs';
+import { GO_NOT_MOVED_LINE, GO_MISSING_LINE, STUB_API, imageName, nextVersion, parseOptions, postmasterPort, withoutNode } from './go-drill.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const read = async (file) => (await readFile(join(here, file), 'utf8')).replace(/^\uFEFF/, '');
@@ -91,4 +91,14 @@ test('start-managed.ps1 reuses a running SIPGES only in the install\'s mode', as
   const image = functionBody(script, 'Get-ServerImage');
   assert.ok(image.includes('Get-NetTCPConnection -LocalPort 8000 -State Listen'));
   assert.ok(image.includes('(Get-Process -Id $owner -ErrorAction Stop).ProcessName'));
+});
+
+test('go-drill.mjs: the update version and a PATH without Node', () => {
+  assert.equal(nextVersion('0.0.9-go.20261118010203'), '0.0.10-go.20261118010203');
+  assert.equal(nextVersion('1.2.3'), '1.2.4');
+  assert.throws(() => nextVersion('1.2'), /Invalid version/);
+  const env = { Path: 'C:\\Windows;C:\\node24;;C:\\Go\\bin', OTHER: 'x' };
+  const hasNode = (dir) => dir === 'C:\\node24';
+  assert.deepEqual(withoutNode(env, hasNode), { Path: 'C:\\Windows;C:\\Go\\bin', OTHER: 'x' });
+  assert.deepEqual(withoutNode({ PATH: 'C:\\node24' }, hasNode), { PATH: '' });
 });
