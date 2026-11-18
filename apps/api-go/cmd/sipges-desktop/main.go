@@ -42,6 +42,7 @@ const dataFolder = "pg18"
 const stopTimeout = 60 * time.Second
 
 func main() {
+	joinLauncherJob()
 	if usesInstall(os.Args[1:]) {
 		os.Exit(launcherMain(os.Args[1:]))
 	}
@@ -263,7 +264,7 @@ func sameKey(a, b string) bool {
 	return a == b
 }
 
-func program(name string) string { //nolint:unparam // one binary name today; the argument says which
+func program(name string) string {
 	if runtime.GOOS == "windows" {
 		return name + ".exe"
 	}

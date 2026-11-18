@@ -14,8 +14,9 @@ func ownProcessGroup(cmd *exec.Cmd) {
 	cmd.SysProcAttr = &syscall.SysProcAttr{Pdeathsig: syscall.SIGKILL}
 }
 
-// bindToLauncher matters only on Windows; Pdeathsig does it here.
-func bindToLauncher(*os.Process) {}
-
 // interrupt asks the API to stop as the Compose stop does.
 func interrupt(p *os.Process) error { return p.Signal(syscall.SIGTERM) }
+
+// joinLauncherJob matters only on Windows: here a PostgreSQL that a killed launcher left running
+// is stopped by the next start, before recovery (stopOrphanClusters).
+func joinLauncherJob() {}

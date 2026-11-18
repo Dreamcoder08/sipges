@@ -20,6 +20,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"sync"
 	"time"
 
@@ -69,6 +70,9 @@ type launchConfig struct {
 	Ready        desktopupdate.Hook
 	Verifier     desktopupdate.Verifier
 	Serve        func(ctx context.Context, spec serverSpec) (server, error)
+	// StopOrphans stops PostgreSQL servers a dead launcher left running on these state folders
+	// (the state folder and its copies); nil in tests that have none.
+	StopOrphans func(ctx context.Context, folders []string) error
 }
 
 type launcher struct {
@@ -82,6 +86,8 @@ type launcher struct {
 	haltText string
 
 	verified *desktoprelease.Available
+	// ignoredRequest is the last unparsable request.json, logged once and kept.
+	ignoredRequest string
 }
 
 func newLauncher(cfg launchConfig) *launcher { return &launcher{cfg: cfg} }
@@ -144,6 +150,67 @@ func holdsFiles(dir string) bool {
 	return err == nil && len(entries) > 0
 }
 
+// launcherLockName is the install root's file a running launcher holds locked.
+const launcherLockName = "launcher.lock"
+
+// errLauncherRunning: another launcher holds the install's lock.
+var errLauncherRunning = errors.New("another sipges-desktop runs this install")
+
+// acquireLauncherLock locks <root>/launcher.lock for this process; the system releases it when
+// the process ends, however it ended.
+func acquireLauncherLock(root string) (*os.File, error) {
+	f, err := os.OpenFile(filepath.Join(root, launcherLockName), os.O_RDWR|os.O_CREATE, 0o600) //nolint:gosec // the install root's own lock
+	if err != nil {
+		return nil, err
+	}
+	if err := lockExclusive(f); err != nil {
+		_ = f.Close()
+		return nil, err
+	}
+	return f, nil
+}
+
+// orphanNotice is what the person reads when a PostgreSQL left running could not be stopped.
+const orphanNotice = "SIPGES no se inició: un PostgreSQL de un inicio anterior sigue en ejecución sobre la carpeta de datos y no se pudo detener. No borre nada. Reinicie el equipo y vuelva a abrir SIPGES, o contacte con soporte."
+
+// orphanError: a PostgreSQL left running could not be stopped; nothing was renamed.
+type orphanError struct{ err error }
+
+func (e *orphanError) Error() string { return e.err.Error() }
+func (e *orphanError) Unwrap() error { return e.err }
+
+// stateFolders are the state folder, every copy a pending journal names and every copy beside
+// the state folder: wherever a killed launcher may have left PostgreSQL running.
+func stateFolders(root string) []string {
+	var folders []string
+	add := func(dir string) {
+		if dir != "" && !slices.Contains(folders, dir) {
+			folders = append(folders, dir)
+		}
+	}
+	if state, err := desktopupdate.ReadStateDir(root); err == nil {
+		add(state)
+	}
+	if named, err := desktopupdate.JournalFolders(root); err == nil {
+		for _, dir := range named {
+			add(dir)
+		}
+	}
+	if list, err := desktopupdate.ListStateCopies(root); err == nil {
+		for _, c := range list.Copies {
+			add(c.Path)
+		}
+	}
+	return folders
+}
+
+func (l *launcher) stopOrphans(ctx context.Context) error {
+	if l.cfg.StopOrphans == nil {
+		return nil
+	}
+	return l.cfg.StopOrphans(ctx, stateFolders(l.root))
+}
+
 // firstStartError marks a startup error that came from the first start (its notice differs).
 type firstStartError struct{ err error }
 
@@ -181,6 +248,20 @@ func (l *launcher) run(ctx context.Context) (int, error) {
 	}
 	l.root = root
 	log := l.cfg.Log
+	// One launcher per install: a second one is refused before it touches anything.
+	lock, err := acquireLauncherLock(root)
+	if err != nil {
+		log.event("start_refused", field{"code", nil}, field{"reason", err.Error()})
+		return 0, err
+	}
+	defer func() { _ = lock.Close() }()
+	// A PostgreSQL that a killed launcher left running is stopped before recovery renames or
+	// deletes the folder it runs on.
+	if err := l.stopOrphans(ctx); err != nil {
+		err = &orphanError{err}
+		log.event("start_refused", field{"code", nil}, field{"reason", err.Error()}, field{"action", orphanNotice})
+		return 0, err
+	}
 	recovered, err := desktopupdate.Recover(ctx, root)
 	if err != nil {
 		// The state may be half-migrated: starting any version on it would write on top of it.
@@ -275,7 +356,9 @@ func (l *launcher) loop(ctx context.Context) int {
 		}
 		select {
 		case <-ctx.Done():
-			l.stopServer(ctx)
+			if l.stopServer(ctx) != nil {
+				return 1
+			}
 			return 0
 		case <-exited:
 			// Stopped by its own failure: the launcher ends with it.
@@ -364,17 +447,38 @@ func (l *launcher) copiesNow() any {
 	return map[string]any{"count": list.Count, "bytes": list.Bytes}
 }
 
-// stopServer stops the server, gracefully first, and waits for it.
-func (l *launcher) stopServer(ctx context.Context) {
+// stopServer stops the server, gracefully first, and waits for it. When the stop fails, a server
+// that still runs is kept.
+func (l *launcher) stopServer(ctx context.Context) error {
 	srv := l.server()
 	if srv == nil {
-		return
+		return nil
 	}
 	// A stop request (ctx) must not cut the server's own graceful stop short.
 	if err := srv.Stop(context.WithoutCancel(ctx)); err != nil {
 		l.cfg.Log.event("stop_failed", field{"reason", err.Error()})
+		select {
+		case <-srv.Exited():
+			l.setServer(nil)
+		default:
+		}
+		return err
 	}
 	l.setServer(nil)
+	return nil
+}
+
+// keepServing follows a stop that failed before an update: no update runs; a server that still
+// runs is kept, one that ended is started again.
+func (l *launcher) keepServing(ctx context.Context) (int, bool) {
+	if l.server() != nil {
+		return 0, false
+	}
+	if err := l.start(ctx); err != nil {
+		l.cfg.Log.event("start_failed", field{"version", nil}, field{"reason", err.Error()})
+		return stoppedOr(ctx, 1), true
+	}
+	return 0, false
 }
 
 // takeRequest reads and removes request.json and applies it when it names the verified version.
@@ -385,28 +489,38 @@ func (l *launcher) takeRequest(ctx context.Context) (code int, end bool) {
 	if errors.Is(err, fs.ErrNotExist) {
 		return 0, false
 	}
-	if err == nil {
-		err = os.Remove(path)
-	}
-	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+	if err != nil {
 		l.cfg.Log.event("update_request_failed", field{"reason", err.Error()})
 		return 0, false
 	}
-	var version any
 	var request map[string]any
-	if json.Unmarshal(text, &request) == nil && request != nil {
-		version = request["version"]
+	if json.Unmarshal(text, &request) != nil || request == nil {
+		// Half written, or not a request: kept (the API may still be writing it), logged once.
+		if string(text) != l.ignoredRequest {
+			l.ignoredRequest = string(text)
+			l.cfg.Log.event("update_request_ignored", field{"version", nil}, field{"verified", l.verifiedVersion()})
+		}
+		return 0, false
 	}
+	l.ignoredRequest = ""
+	if err := os.Remove(path); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		l.cfg.Log.event("update_request_failed", field{"reason", err.Error()})
+		return 0, false
+	}
+	version := request["version"]
 	asked, isString := version.(string)
 	if l.verified == nil || !isString || asked != l.verified.Version {
-		var verified any
-		if l.verified != nil {
-			verified = l.verified.Version
-		}
-		l.cfg.Log.event("update_request_ignored", field{"version", version}, field{"verified", verified})
+		l.cfg.Log.event("update_request_ignored", field{"version", version}, field{"verified", l.verifiedVersion()})
 		return 0, false
 	}
 	return l.apply(ctx, asked)
+}
+
+func (l *launcher) verifiedVersion() any {
+	if l.verified == nil {
+		return nil
+	}
+	return l.verified.Version
 }
 
 // stillVerified re-checks that the release folder holds exactly the version verified at startup.
@@ -439,7 +553,13 @@ func (l *launcher) apply(ctx context.Context, version string) (int, bool) {
 		return 0, false
 	}
 	log.event("update_started", field{"version", version})
-	l.stopServer(ctx)
+	if l.stopServer(ctx) != nil {
+		return l.keepServing(ctx)
+	}
+	if err := l.stopOrphans(ctx); err != nil {
+		log.event("stop_failed", field{"reason", err.Error()})
+		return l.keepServing(ctx)
+	}
 	result, err := desktopupdate.Update(ctx, desktopupdate.UpdateOptions{
 		Root: l.root, Release: release, Verifier: l.cfg.Verifier,
 		Migrate: l.cfg.Migrate, Ready: l.cfg.Ready, ExpectVersion: version,
@@ -474,8 +594,8 @@ func (l *launcher) apply(ctx context.Context, version string) (int, bool) {
 		return 0, true
 	}
 	if err := l.start(ctx); err != nil {
+		// A failed start set no server: nothing is left to stop.
 		log.event("start_failed", field{"version", current.Version}, field{"reason", err.Error()})
-		l.stopServer(ctx)
 		return stoppedOr(ctx, 1), true
 	}
 	return 0, false

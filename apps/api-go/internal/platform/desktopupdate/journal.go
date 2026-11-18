@@ -254,3 +254,25 @@ func AcceptRestoredState(_ context.Context, root string) (AcceptResult, error) {
 	current, err := ReadCurrent(root)
 	return AcceptResult{Current: current, Accepted: true}, err
 }
+
+// JournalFolders returns the state folder and every copy a pending update or first-start journal
+// names (pre-update copy, the changed state set aside, a restore in progress), in that order, or
+// nil without a journal. It reads only, without the lock: a launcher uses it to stop a server a
+// dead launcher left running on one of them before Recover renames or deletes anything.
+func JournalFolders(root string) ([]string, error) {
+	root, err := filepath.Abs(root)
+	if err != nil {
+		return nil, err
+	}
+	j, err := readJournal(root)
+	if err != nil || j == nil {
+		return nil, err
+	}
+	folders := []string{j.StateDir}
+	for _, p := range []string{j.PreCopy, j.FailedAside, j.Restoring} {
+		if p != "" {
+			folders = append(folders, p)
+		}
+	}
+	return folders, nil
+}

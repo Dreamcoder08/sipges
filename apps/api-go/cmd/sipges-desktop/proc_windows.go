@@ -40,8 +40,6 @@ var (
 const (
 	jobObjectExtendedLimitInformation = 9
 	jobObjectLimitKillOnJobClose      = 0x2000
-	processSetQuota                   = 0x0100
-	processTerminate                  = 0x0001
 )
 
 type ioCounters struct {
@@ -75,8 +73,8 @@ var (
 	jobHandle uintptr
 )
 
-// launcherJob is a job object that kills every process in it when its last handle closes, which
-// happens when this launcher ends, however it ended. The handle is never closed on purpose.
+// launcherJob is a job object that kills every process in it when its last handle closes. The
+// handle is never closed on purpose.
 func launcherJob() uintptr {
 	jobOnce.Do(func() {
 		h, _, _ := createJobObject.Call(0, 0)
@@ -95,17 +93,18 @@ func launcherJob() uintptr {
 	return jobHandle
 }
 
-// bindToLauncher puts the API in the launcher's job, so it never outlives the launcher. Best
-// effort: without the job the API still stops with the launcher's own stop.
-func bindToLauncher(p *os.Process) {
+// joinLauncherJob puts this process in a job that kills every process in it when its last handle
+// closes, which happens when this launcher ends, however it ended: pg_ctl, postgres, api migrate
+// and the API are started from here, inherit the job and never outlive the launcher. Best effort:
+// without the job, the next start stops a PostgreSQL left running.
+func joinLauncherJob() {
 	job := launcherJob()
 	if job == 0 {
 		return
 	}
-	h, err := syscall.OpenProcess(processSetQuota|processTerminate, false, uint32(p.Pid)) //nolint:gosec // G115: a Windows process id fits in uint32
+	current, err := syscall.GetCurrentProcess()
 	if err != nil {
 		return
 	}
-	defer func() { _ = syscall.CloseHandle(h) }()
-	_, _, _ = assignProcessToJobObject.Call(job, uintptr(h))
+	_, _, _ = assignProcessToJobObject.Call(job, uintptr(current))
 }

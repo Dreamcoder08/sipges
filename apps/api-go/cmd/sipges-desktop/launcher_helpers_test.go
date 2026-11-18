@@ -210,6 +210,9 @@ type fakeServer struct {
 	exited chan struct{}
 	once   sync.Once
 	code   int
+	// failStop makes the next Stop fail and leave the server running.
+	mu       sync.Mutex
+	failStop error
 }
 
 func (s *fakeServer) Exited() <-chan struct{} { return s.exited }
@@ -217,8 +220,18 @@ func (s *fakeServer) Code() int               { return s.code }
 func (s *fakeServer) end(code int) {
 	s.once.Do(func() { s.code = code; close(s.exited) })
 }
-func (s *fakeServer) Stop(context.Context) error { s.end(0); return nil }
-func (s *fakeServer) Kill()                      { s.end(137) }
+func (s *fakeServer) Stop(context.Context) error {
+	s.mu.Lock()
+	fail := s.failStop
+	s.failStop = nil
+	s.mu.Unlock()
+	if fail != nil {
+		return fail
+	}
+	s.end(0)
+	return nil
+}
+func (s *fakeServer) Kill() { s.end(137) }
 
 func (fs *fakeServe) serve(_ context.Context, spec serverSpec) (server, error) {
 	key, err := os.ReadFile(filepath.Join(spec.StateDir, "data-key"))

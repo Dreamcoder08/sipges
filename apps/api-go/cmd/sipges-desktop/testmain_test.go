@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"testing"
 	"time"
@@ -12,7 +13,14 @@ import (
 // helperEnv makes this test binary act as an API that stops cleanly on SIGTERM (TestMain).
 const helperEnv = "SIPGES_DESKTOP_TEST_API"
 
+// launcherEnvHelper makes this test binary run the managed launcher with these arguments
+// (separated by \x1f), so a test can kill it as the person's computer would.
+const launcherEnvHelper = "SIPGES_DESKTOP_TEST_LAUNCHER"
+
 func TestMain(m *testing.M) {
+	if args := os.Getenv(launcherEnvHelper); args != "" {
+		os.Exit(launcherMain(strings.Split(args, "\x1f")))
+	}
 	if dir := os.Getenv(helperEnv); dir != "" {
 		fakeAPI(dir)
 		return

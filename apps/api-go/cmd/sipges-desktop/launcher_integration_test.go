@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -196,4 +197,25 @@ func waitForN(t *testing.T, name string, n int, events func() []map[string]any) 
 	}
 	t.Fatalf("no %d× %s: %v", n, name, events())
 	return nil
+}
+
+// A2: --prepare-only that fails after building the cluster removes the half-provisioned pg18, so
+// the next attempt is not refused as «already holds data».
+func TestAFailedPrepareOnlyRemovesTheHalfMadeCluster(t *testing.T) {
+	bin := pgbin.ForTest(t)
+	state := t.TempDir()
+	put(t, filepath.Join(state, "data-key"), "c3ludGhldGljLWRhdGEta2V5LTMyLWJ5dGVzLXh4eHg=\n")
+	put(t, filepath.Join(state, "admin-password"), "SyntheticAdmin-2026\n")
+	missingAPI := filepath.Join(t.TempDir(), program("api"))
+	err := run(context.Background(), []string{"--state", state, "--pg-bin", bin, "--api", missingAPI,
+		"--migrations", dbtest.MigrationsDir(), "--prepare-only"}, []string{"PATH=" + os.Getenv("PATH")}, io.Discard, io.Discard)
+	if err == nil {
+		t.Fatal("--prepare-only without its API binary succeeded")
+	}
+	if _, statErr := os.Stat(filepath.Join(state, "pg18")); !errors.Is(statErr, os.ErrNotExist) {
+		t.Fatalf("the half-made cluster is still there: %v (%v)", statErr, err)
+	}
+	if msg := userMessage(err); !strings.Contains(msg, "se borró la carpeta pg18 a medio preparar") {
+		t.Fatalf("message %q", msg)
+	}
 }
