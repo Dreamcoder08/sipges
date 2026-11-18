@@ -26,7 +26,7 @@ const { values } = parseArgs({
 });
 const { task, label, file } = values;
 const logOnly = values['log-only'];
-const validTask = logOnly ? !task : Boolean(task && /^T\d+[a-z]?$/.test(task));
+const validTask = logOnly ? !task : Boolean(task && /^T\d+(?:[a-z]\d*)?$/.test(task));
 if (!validTask || !file || !label?.trim() || /[\r\n]/.test(label) || !values.text) {
   console.error(
     'usage: (--task T<n> | --log-only) --label <label> --text <entry|@file> --file <doc> [--dry-run]',
