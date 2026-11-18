@@ -1,0 +1,30 @@
+{
+  "format": 1,
+  "version": "1.1.0",
+  "minimumPrevious": "1.0.0",
+  "platform": "linux",
+  "arch": "x64",
+  "notes": "Corrige el filtro.\nNuevo resumen: año ✓.",
+  "files": {
+    ".sipges-desktop-package": "beddbcef23aae05f32ac135623d4a899db86b3722c5e8d4c7e80954c229768b5",
+    "api/deps/.store/dep@1.0.0/dep/index.txt": "5ac65b0bd86bded5034ca25339482602081a8b1e2c4db8c813f890a64b42fe23",
+    "api/src/main.txt": "c5cc247bf903411e2fe4dbe715bd3b07d2238149ee9ddf7507e9c9736b4abd54",
+    "metadata.json": "6cd844f9529d55b0317d2357fcf61c83c998c318da836ebd03e487eb57233d0e",
+    "start.mjs": "fd3b68d1f6e5961f8eb3bae8e00f069129195dc8204c67e2b99489a6efed021b",
+    "update-public-key.pem": "42a1e392298a667acb1eb6f13061d6355c5d8ea44dda63fe1c9f7756a8e1d7c1",
+    "web/index.txt": "bf825a6122c2d71596e13ceece1418a69e7115421e12813fa1363006e1fb0ca2"
+  },
+  "links": {
+    "api/deps/dep": ".store/dep@1.0.0/dep"
+  },
+  "directories": [
+    "api",
+    "api/deps",
+    "api/deps/.store",
+    "api/deps/.store/dep@1.0.0",
+    "api/deps/.store/dep@1.0.0/dep",
+    "api/src",
+    "references",
+    "web"
+  ]
+}
