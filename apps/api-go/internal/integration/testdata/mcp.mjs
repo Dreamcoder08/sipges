@@ -138,6 +138,12 @@ const FIELDS = {
   get_record: { module: '"actores"', id: ID },
   get_links: { module: '"actores"', id: ID },
   get_timeline: { from: '"2026"', to: '"2026-12"', modules: '["eventos"]', limit: '7' },
+  count_records: {
+    module: '"eventos"',
+    group_by: '"Tipo_Evento"',
+    from: '"2026"',
+    to: '"2026-12"',
+  },
   get_briefing: { module: '"actores"', id: ID },
   create_record: { module: '"demandas"', payload: '{"Descripcion":"Sintética"}' },
   link_records: { link_type: '"relacionado_con"', source: REF, target: REF, note: '"nota"' },

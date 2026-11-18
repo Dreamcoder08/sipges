@@ -96,6 +96,12 @@ func (m mcpOntology) Timeline(ctx context.Context, tenantID, from, to string, sl
 	})
 }
 
+func (m mcpOntology) Countable(ctx context.Context, tenantID string, t ontologydomain.ObjectType, field string, dated bool, from, to string) (*ontology.Countable, error) {
+	return inProject(ctx, m.d, tenantID, func(ctx context.Context, s ontology.Service) (*ontology.Countable, error) {
+		return s.Countable(ctx, t, field, dated, from, to)
+	})
+}
+
 func (m mcpOntology) Link(ctx context.Context, tenantID string, in ontology.LinkInput, actor string) (int64, string, error) {
 	type created struct {
 		id      int64

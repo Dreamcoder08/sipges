@@ -34,6 +34,7 @@ var (
 	mcpOtro    = mcpKey("c0ffee44b001", "c")
 	mcpOff     = mcpKey("c0ffee44c001", "d")
 	mcpWrite   = mcpKey("c0ffee44a003", "e")
+	mcpCounts  = mcpKey("c0ffee44d001", "f")
 )
 
 func mcpSeed(t *testing.T) {
@@ -56,11 +57,12 @@ func mcpSeed(t *testing.T) {
 	}
 	if _, err := conn.Exec(t.Context(), `
 		INSERT INTO tenants (company_id, project_id, label) VALUES
-		  ('MCP','UNO','Uno'), ('MCP','DOS','Dos'), ('MCP','OFF','Apagado')
+		  ('MCP','UNO','Uno'), ('MCP','DOS','Dos'), ('MCP','OFF','Apagado'), ('MCP','CNT','Conteos')
 		  ON CONFLICT DO NOTHING;
 		INSERT INTO project_settings (tenant_id, settings, updated_by, updated_at) VALUES
 		  ('MCP/UNO', '{"externalAi":{"enabled":true}}', 'test', now()),
-		  ('MCP/DOS', '{"externalAi":{"enabled":true}}', 'test', now())
+		  ('MCP/DOS', '{"externalAi":{"enabled":true}}', 'test', now()),
+		  ('MCP/CNT', '{"externalAi":{"enabled":true}}', 'test', now())
 		  ON CONFLICT DO NOTHING;
 		INSERT INTO module_records (tenant_id, module, id, payload, created_at, updated_at, marking) VALUES
 		  ('MCP/UNO', 'Actores', 'A-1',
@@ -77,6 +79,19 @@ func mcpSeed(t *testing.T) {
 		  ('MCP/DOS', 'Eventos', 'E-9', '{"Fecha":"2026-10-03","Descripcion_Hecho":"Asamblea AJENA"}',
 		   now(), now(), 'interno'),
 		  ('MCP/OFF', 'Actores', 'A-1', '{"Nombre_Actor/Organizacion":"Comunidad Apagada"}',
+		   now(), now(), 'interno'),
+		  ('MCP/CNT', 'Eventos', 'C-1', '{"Fecha":"2026-01-15","Tipo_Evento":"Asamblea","Descripcion_Hecho":"Uno"}',
+		   now(), now(), 'interno'),
+		  ('MCP/CNT', 'Eventos', 'C-2', '{"Fecha":"2026-03-02T10:00:00","Tipo_Evento":"Asamblea"}',
+		   now(), now(), 'interno'),
+		  ('MCP/CNT', 'Eventos', 'C-3', '{"Fecha":"2025-12-31","Tipo_Evento":"Paro"}',
+		   now(), now(), 'publico'),
+		  ('MCP/CNT', 'Eventos', 'C-4', '{"Tipo_Evento":"  "}', now(), now(), 'interno'),
+		  ('MCP/CNT', 'Eventos', 'C-5', '{"Fecha":"2026-02-10","Tipo_Evento":"Reservado"}',
+		   now(), now(), 'restringido'),
+		  ('MCP/CNT', 'Eventos', 'C-6', '{"Fecha":"sin fecha","Tipo_Evento":"Bloqueo"}',
+		   now(), now(), 'interno'),
+		  ('MCP/CNT', 'Actores', 'A-1', '{"Nombre_Actor/Organizacion":"Comunidad Contada","Tipo_Actor":"comunidad"}',
 		   now(), now(), 'interno')
 		  ON CONFLICT DO NOTHING;
 		INSERT INTO record_links (tenant_id, link_type, source_module, source_id, target_module, target_id,
@@ -90,6 +105,7 @@ func mcpSeed(t *testing.T) {
 		key(44003, "MCP/DOS", "otra", "c0ffee44b001", "c", "write", "full"),
 		key(44004, "MCP/OFF", "apagada", "c0ffee44c001", "d", "read", "full"),
 		key(44005, "MCP/UNO", "escritura", "c0ffee44a003", "e", "write", "full"),
+		key(44006, "MCP/CNT", "conteos", "c0ffee44d001", "f", "read", "full"),
 	}, ",")+` ON CONFLICT DO NOTHING`); err != nil {
 		t.Fatal(err)
 	}
@@ -125,6 +141,7 @@ var mcpReads = [][2]string{
 	{"get_briefing", `{"module":"actores","id":"A-1"}`},
 	{"get_briefing", `{"module":"actores","id":"A-2"}`},
 	{"get_briefing", `{"module":"eventos","id":"E-1"}`},
+	{"count_records", `{"module":"eventos","group_by":"Territorio","from":"2026"}`},
 }
 
 func mcpEgressRows(t *testing.T, tenant string) int {
@@ -243,6 +260,62 @@ func TestMCPReadToolsAreRefusedWithoutADataKey(t *testing.T) {
 		if text, isError := tool(t, s, mcpFull, read[0], read[1]); !isError || text != disabled {
 			t.Errorf("%s: %v %s", read[0], isError, text)
 		}
+	}
+}
+
+// count_records against PostgreSQL: the total, the groups and the date bounds count only what the
+// guard lets through, and every refusal keeps its fixed wording (odd/tasks/reporting-mcp.md S3, S4).
+func TestMCPCountRecords(t *testing.T) {
+	mcpSeed(t)
+	t.Setenv("SIPGES_DATA_KEY", dataKey)
+	s := start(t, false)
+	for _, c := range []struct{ name, args, want string }{
+		{"total without group_by", `{"module":"eventos"}`,
+			`{"module":"eventos","group_by":null,"from":null,"to":null,"total":5,"truncated":false,"groups":[]}`},
+		{"grouped, largest first, null last", `{"module":"eventos","group_by":"Tipo_Evento"}`,
+			`{"module":"eventos","group_by":"Tipo_Evento","from":null,"to":null,"total":5,"truncated":false,` +
+				`"groups":[{"value":"Asamblea","count":2},{"value":"Bloqueo","count":1},{"value":"Paro","count":1},{"value":null,"count":1}]}`},
+		{"dates bound the count", `{"module":"eventos","group_by":"Tipo_Evento","from":"2026","to":"2026-02"}`,
+			`{"module":"eventos","group_by":"Tipo_Evento","from":"2026-01-01","to":"2026-02-31","total":1,"truncated":false,` +
+				`"groups":[{"value":"Asamblea","count":1}]}`},
+		{"one date excludes undated records", `{"module":"eventos","from":"2026"}`,
+			`{"module":"eventos","group_by":null,"from":"2026-01-01","to":null,"total":2,"truncated":false,"groups":[]}`},
+		{"a padded field is the field", `{"module":"eventos","group_by":" Tipo_Evento "}`,
+			`{"module":"eventos","group_by":"Tipo_Evento","from":null,"to":null,"total":5,"truncated":false,` +
+				`"groups":[{"value":"Asamblea","count":2},{"value":"Bloqueo","count":1},{"value":"Paro","count":1},{"value":null,"count":1}]}`},
+		{"blank arguments are empty", `{"module":"eventos","group_by":"  ","from":" ","to":"\t"}`,
+			`{"module":"eventos","group_by":null,"from":null,"to":null,"total":5,"truncated":false,"groups":[]}`},
+		{"an empty range", `{"module":"eventos","from":"2027","to":"2026"}`,
+			`{"module":"eventos","group_by":null,"from":"2027-01-01","to":"2026-12-31","total":0,"truncated":false,"groups":[]}`},
+	} {
+		if text, isError := tool(t, s, mcpCounts, "count_records", c.args); isError || text != c.want {
+			t.Errorf("%s: %v %s", c.name, isError, text)
+		}
+	}
+	before := mcpEgressRows(t, "MCP/CNT")
+	for args, want := range map[string]string{
+		`{"module":"otro"}`:                                           "Módulo no válido",
+		`{"module":"eventos","from":"2026-13"}`:                       "Fechas no válidas: use AAAA, AAAA-MM o AAAA-MM-DD",
+		`{"module":"eventos","to":"ayer"}`:                            "Fechas no válidas: use AAAA, AAAA-MM o AAAA-MM-DD",
+		`{"module":"actores","from":"2026"}`:                          "El tipo de objeto actores no tiene campo de fecha",
+		`{"module":"actores","group_by":"Nombre_Actor/Organizacion"}`: "No se puede agrupar por «Nombre_Actor/Organizacion»: solo campos de lista cerrada, códigos, fechas o números",
+		`{"module":"eventos","group_by":"Descripcion_Hecho"}`:         "No se puede agrupar por «Descripcion_Hecho»: solo campos de lista cerrada, códigos, fechas o números",
+		`{"module":"eventos","group_by":"Actor_Principal"}`:           "No se puede agrupar por «Actor_Principal»: solo campos de lista cerrada, códigos, fechas o números",
+		`{"module":"actores","group_by":"Observaciones"}`:             "No se puede agrupar por «Observaciones»: solo campos de lista cerrada, códigos, fechas o números",
+	} {
+		if text, isError := tool(t, s, mcpCounts, "count_records", args); !isError || text != want {
+			t.Errorf("%s: %v %s", args, isError, text)
+		}
+	}
+	if got := mcpEgressRows(t, "MCP/CNT"); got != before {
+		t.Errorf("%d access-log rows for refused counts", got-before)
+	}
+	if text, isError := tool(t, s, mcpCounts, "count_records", `{"module":"actores","group_by":"Tipo_Actor"}`); isError ||
+		text != `{"module":"actores","group_by":"Tipo_Actor","from":null,"to":null,"total":1,"truncated":false,"groups":[{"value":"comunidad","count":1}]}` {
+		t.Errorf("a closed-list field of actores: %s", text)
+	}
+	if got := mcpEgressRows(t, "MCP/CNT"); got != before+1 {
+		t.Errorf("%d access-log rows after one count", got-before)
 	}
 }
 

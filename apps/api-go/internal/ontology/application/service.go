@@ -64,6 +64,30 @@ type InferredMatch struct {
 	Holder, Target NodeRef
 }
 
+// CountQuery is what Countable reads: every record of Module, with the value of Field when it is
+// set and, when DateField is set, only those whose ISO day of that field lies in [From, To].
+type CountQuery struct {
+	Module, Field string
+	DateField     string
+	From, To      string
+}
+
+// CountRow is a record as a count needs it: its id, its marking and the decoded JSON value of the
+// counted field (nil when the field is missing or not asked for). Never a title or any other field.
+type CountRow struct {
+	ID, Marking string
+	Value       any
+}
+
+// Countable is the records a count reads, at most MaxCountRecords; Truncated says more existed.
+type Countable struct {
+	Rows      []CountRow
+	Truncated bool
+}
+
+// MaxCountRecords is how many records a count reads at most.
+const MaxCountRecords = 20000
+
 // DateField names a module's date field.
 type DateField struct{ Module, Field string }
 
@@ -73,6 +97,7 @@ type Store interface {
 	Nodes(ctx context.Context, refs []NodeRef) ([]NodeRow, error)
 	Search(ctx context.Context, query *string, exactID string, modules []string, limit int) ([]NodeRow, error)
 	Dated(ctx context.Context, fields []DateField, from, to string, limit int) ([]DatedRow, error)
+	Countable(ctx context.Context, query CountQuery, limit int) ([]CountRow, error)
 	Links(ctx context.Context, refs []NodeRef) ([]StoredLink, error)
 	Inferred(ctx context.Context, refs []NodeRef, rules []ResolvedRule) ([]InferredMatch, error)
 }
@@ -598,6 +623,22 @@ func (s Service) Fuse(ctx context.Context, found Lexical, refs []NodeRef) ([]Hit
 		}
 	}
 	return hits, nil
+}
+
+// Countable reads the records of t a count needs (odd/tasks/reporting-mcp.md S3): field's value
+// when field is set and, with dated, only records whose date field holds an ISO day in [from, to],
+// the bounds DayBound already expanded. It never aggregates in SQL: the caller counts what the
+// egress guard lets through, so a restricted record is never counted.
+func (s Service) Countable(ctx context.Context, t domain.ObjectType, field string, dated bool, from, to string) (*Countable, error) {
+	query := CountQuery{Module: t.Module, Field: field}
+	if dated {
+		query.DateField, query.From, query.To = t.DateField, from, to
+	}
+	rows, err := s.Store.Countable(ctx, query, MaxCountRecords+1)
+	if err != nil {
+		return nil, err
+	}
+	return &Countable{Rows: rows[:min(len(rows), MaxCountRecords)], Truncated: len(rows) > MaxCountRecords}, nil
 }
 
 // Timeline is timeline (docs/adr/0011 §7); nil when a bound is not a date.

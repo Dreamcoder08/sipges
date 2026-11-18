@@ -13,6 +13,7 @@ var toolSteps = map[string]string{
 	"get_record":        "Leyendo el registro…",
 	"get_links":         "Revisando vínculos…",
 	"get_timeline":      "Leyendo la línea de tiempo…",
+	"count_records":     "Contando registros…",
 	"get_briefing":      "Leyendo el resumen del proyecto…",
 	"list_object_types": "Revisando los tipos de registro…",
 }

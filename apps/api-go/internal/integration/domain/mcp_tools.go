@@ -27,6 +27,7 @@ const (
 	ToolGetRecord       = "get_record"
 	ToolGetLinks        = "get_links"
 	ToolGetTimeline     = "get_timeline"
+	ToolCountRecords    = "count_records"
 	ToolGetBriefing     = "get_briefing"
 	ToolCreateRecord    = "create_record"
 	ToolLinkRecords     = "link_records"
@@ -67,6 +68,12 @@ var inputs = []struct {
 		{"to", defaultSchema{stringSchema{length{max: 10}}, ""}},
 		{"modules", modules},
 		{"limit", defaultSchema{intSchema{1, 200}, float64(50)}},
+	}},
+	{ToolCountRecords, ToolRead, objectSchema{
+		{"module", module},
+		{"group_by", defaultSchema{stringSchema{length{max: 80}}, ""}},
+		{"from", defaultSchema{stringSchema{length{max: 10}}, ""}},
+		{"to", defaultSchema{stringSchema{length{max: 10}}, ""}},
 	}},
 	{ToolGetBriefing, ToolRead, ref},
 	{ToolCreateRecord, ToolWrite, objectSchema{{"module", module}, {"payload", recordSchema{}}}},

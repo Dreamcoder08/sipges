@@ -26,8 +26,8 @@ import (
 var mcpVersions = []string{"2025-11-25", "2025-06-18", "2025-03-26"}
 
 const mcpInstructions = "SIPGES es una plataforma de gestión socioambiental territorial. Empieza con list_object_types, " +
-	"busca con search_records y profundiza con get_links, get_timeline y get_briefing. Cita los " +
-	"identificadores de los registros en tus respuestas."
+	"busca con search_records y profundiza con get_links, get_timeline y get_briefing. Para totales y " +
+	"reportes usa count_records. Cita los identificadores de los registros en tus respuestas."
 
 // Tools runs a tool of the MCP server.
 type Tools interface {

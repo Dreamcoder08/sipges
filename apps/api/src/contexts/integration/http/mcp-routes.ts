@@ -13,8 +13,8 @@ export const MCP_VERSIONS = ['2025-11-25', '2025-06-18', '2025-03-26'] as const;
 const SERVER_INFO = { name: 'sipges', title: 'SIPGES', version: '1.0.0' };
 const INSTRUCTIONS =
   'SIPGES es una plataforma de gestión socioambiental territorial. Empieza con list_object_types, ' +
-  'busca con search_records y profundiza con get_links, get_timeline y get_briefing. Cita los ' +
-  'identificadores de los registros en tus respuestas.';
+  'busca con search_records y profundiza con get_links, get_timeline y get_briefing. Para totales ' +
+  'y reportes usa count_records. Cita los identificadores de los registros en tus respuestas.';
 
 type JsonRpcId = string | number | null;
 type Message = { jsonrpc?: unknown; id?: JsonRpcId; method?: unknown; params?: unknown };
