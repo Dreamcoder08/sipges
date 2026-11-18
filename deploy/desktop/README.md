@@ -243,8 +243,9 @@ Variable details: [docs/deployment/local-install.md](../../docs/deployment/local
 
 ## Optional: Claude Desktop through MCP
 
-SIPGES answers MCP on `http://127.0.0.1:8000/mcp` with six read-only tools (`list_object_types`,
-`search_records`, `get_record`, `get_links`, `get_timeline`, `get_briefing`). Claude Desktop reaches it through the
+SIPGES answers MCP on `http://127.0.0.1:8000/mcp` with seven read-only tools (`list_object_types`,
+`search_records`, `get_record`, `get_links`, `get_timeline`, `count_records`, `get_briefing`). `count_records`
+answers totals and counts grouped by a closed-list field, for reports, without reading record by record. Claude Desktop reaches it through the
 `mcp-remote` bridge, which runs on this computer. Unlike semantic search, **this sends project data to Anthropic**:
 names are pseudonymised and only allowed fields leave ([ADR 0030](../../docs/adr/0030-external-ai-egress-guard.md)),
 but it is still personal data under Ley 29733, so the data owner must agree first.
