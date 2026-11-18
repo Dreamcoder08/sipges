@@ -69,7 +69,9 @@ start_launcher() {
 # A string field of a JSON file in the install root. sed reads the files the updaters write
 # (no Node needed); a value it cannot read plainly (escapes) is left to node when there is one.
 json_field() {
-  value=$(tr -d '\n\r' <"$ROOT/$1" 2>/dev/null |
+  [ -f "$ROOT/$1" ] || return 1
+  value=
+  command -v sed >/dev/null 2>&1 && value=$(tr -d '\n\r' <"$ROOT/$1" 2>/dev/null |
     sed -n "s/.*\"$2\"[[:space:]]*:[[:space:]]*\"\([^\"\\\\]*\)\"[[:space:]]*[,}].*/\1/p") || value=
   if [ -n "$value" ]; then printf '%s' "$value"; return 0; fi
   command -v node >/dev/null 2>&1 || return 1

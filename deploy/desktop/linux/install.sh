@@ -56,7 +56,9 @@ need_node() {
 # A string field of a JSON file the updaters wrote. sed reads it without Node; a value it cannot
 # read plainly (escapes) is left to node when there is one.
 json_field() {
-  value=$(tr -d '\n\r' <"$1" 2>/dev/null |
+  [ -f "$1" ] || return 1
+  value=
+  command -v sed >/dev/null 2>&1 && value=$(tr -d '\n\r' <"$1" 2>/dev/null |
     sed -n "s/.*\"$2\"[[:space:]]*:[[:space:]]*\"\([^\"\\\\]*\)\"[[:space:]]*[,}].*/\1/p") || value=
   if [ -n "$value" ]; then printf '%s\n' "$value"; return 0; fi
   command -v node >/dev/null 2>&1 || return 1
