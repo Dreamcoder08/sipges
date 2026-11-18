@@ -38,7 +38,10 @@ func dispatch(ctx context.Context, args []string, lookup config.Lookup, stdout i
 	if args[0] == "healthcheck" && len(args) == 1 {
 		return healthcheck(ctx, lookup)
 	}
-	return fmt.Errorf("unknown command %q: run with no arguments to serve, or use `migrate`, `import-report`, `inventory`, `vapid-keys` or `healthcheck`", args[0])
+	if args[0] == "reset-mfa" {
+		return resetMFA(ctx, args, lookup, stdout)
+	}
+	return fmt.Errorf("unknown command %q: run with no arguments to serve, or use `migrate`, `import-report`, `inventory`, `vapid-keys`, `healthcheck` or `reset-mfa`", args[0])
 }
 
 // runMigrate applies the pending migrations as the login the API serves with: that role owns the

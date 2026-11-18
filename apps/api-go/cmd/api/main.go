@@ -33,9 +33,14 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	if err := dispatch(ctx, os.Args[1:], os.LookupEnv, os.Stdout, net.Listen); err != nil {
+		if exit := (*exitError)(nil); errors.As(err, &exit) {
+			fmt.Fprintln(os.Stderr, exit.message)
+			stop()
+			os.Exit(exit.code) //nolint:gocritic // stop already ran; nothing else is deferred
+		}
 		fmt.Fprintln(os.Stderr, "sipges-api-go:", err)
 		stop()
-		os.Exit(1) //nolint:gocritic // stop already ran; nothing else is deferred
+		os.Exit(1)
 	}
 }
 
