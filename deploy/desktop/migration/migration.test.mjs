@@ -777,7 +777,7 @@ test('T33 follow-up: the snapshot never holds the plain SHA-256 of an upload; ch
           for (const piece of [plain, plain.slice(0, 12)])
             assert.ok(!text.includes(piece), `${label} holds the plain SHA-256 of an upload`);
       }
-    assert.equal(JSON.parse(file).version, 3);
+    assert.equal(JSON.parse(file).version, 4);
     assert.equal(compared.status, 1, compared.stdout);
     assert.match(compared.stdout, /^ {2}uploads: 1 -> 1, upload \[[0-9a-f]{8}\] content differs$/m);
   }));
@@ -1278,3 +1278,24 @@ test('rc4: snapshot names a 200 answer that is not valid JSON by its route: non-
       assert.equal(existsSync(out), false, label);
     }
   }));
+
+// Owner's decision (2026-11-18, option 2): a bigint column of the export compares by value. The
+// TypeScript API on PGlite sends size_bytes as a JSON number, the Go API (and the TypeScript API on
+// PostgreSQL) as a digit string; the visit's "before" comes from the installed TypeScript version.
+test('an exported bigint column compares by value: 1234 equals "1234", nothing else is relaxed', async () => {
+  const { exportRowHash, FORMAT_VERSION } = await import('./snapshot.mjs');
+  const { keyed } = await import('./client.mjs');
+  const h = keyed('00');
+  const row = (size, extra = {}) => ({ id: 'U-1', size_bytes: size, sha256: 'a'.repeat(64), ...extra });
+  assert.equal(exportRowHash(h, 'attachments', row(1234)), exportRowHash(h, 'attachments', row('1234')));
+  assert.notEqual(exportRowHash(h, 'attachments', row(1234)), exportRowHash(h, 'attachments', row('1235')));
+  assert.notEqual(exportRowHash(h, 'attachments', row(1234)), exportRowHash(h, 'attachments', row(1234.5)));
+  // Only the declared bigint columns: a number and a string elsewhere still differ.
+  assert.notEqual(
+    exportRowHash(h, 'attachments', row(1234, { notes: 7 })),
+    exportRowHash(h, 'attachments', row(1234, { notes: '7' })),
+  );
+  assert.notEqual(exportRowHash(h, 'record_links', { id: 1 }), exportRowHash(h, 'record_links', { id: '1' }));
+  // Snapshots hashed the old way are refused, never compared.
+  assert.equal(FORMAT_VERSION, 4);
+});
