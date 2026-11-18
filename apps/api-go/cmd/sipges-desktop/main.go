@@ -28,6 +28,12 @@ import (
 // envState names the state folder in the environment, as the desktop launcher does.
 const envState = "SIPGES_DESKTOP_STATE"
 
+// envUpdateChannel names the update channel folder, as the API reads it.
+const envUpdateChannel = "SIPGES_DESKTOP_UPDATE_DIR"
+
+// updateChannelFolder is the launcher's CHANNEL inside the install root.
+const updateChannelFolder = "update-channel"
+
 // dataFolder is the cluster's folder inside the state folder.
 const dataFolder = "pg18"
 
@@ -52,6 +58,9 @@ type settings struct {
 	apiBin     string
 	migrations string
 	port       int
+	// updateChannel is the folder the API shares with the launcher (SIPGES_DESKTOP_UPDATE_DIR);
+	// empty outside a managed install, and then the API serves no update routes.
+	updateChannel string
 }
 
 func parseSettings(args []string, lookup func(string) (string, bool), exeDir string) (settings, error) {
@@ -63,6 +72,7 @@ func parseSettings(args []string, lookup func(string) (string, bool), exeDir str
 	fs.StringVar(&s.apiBin, "api", envOr(lookup, "SIPGES_API_BIN", filepath.Join(exeDir, program("api"))), "the Go API binary (cmd/api)")
 	fs.StringVar(&s.migrations, "migrations", envOr(lookup, "SIPGES_MIGRATIONS_DIR", filepath.Join(exeDir, "migrations")), "folder with the SQL migrations")
 	fs.IntVar(&s.port, "port", 8000, "port of the API on 127.0.0.1")
+	fs.StringVar(&s.updateChannel, "update-channel", envOr(lookup, envUpdateChannel, managedChannel(exeDir)), "folder shared with the desktop launcher for the update notice")
 	if err := fs.Parse(args); err != nil {
 		return settings{}, &userError{msg: "Opciones de inicio inválidas.", err: err}
 	}
@@ -82,6 +92,25 @@ func parseSettings(args []string, lookup func(string) (string, bool), exeDir str
 		return settings{}, &userError{msg: "Opciones de inicio inválidas.", err: fmt.Errorf("port %d out of range", s.port)}
 	}
 	return s, nil
+}
+
+// managedChannel is <root>/update-channel when exeDir lies inside a managed install root (the one
+// holding current.json and install.json, with this program in versions/<version>/go), the folder
+// deploy/desktop/updater/launcher.mjs passes as SIPGES_DESKTOP_UPDATE_DIR; "" anywhere else.
+func managedChannel(exeDir string) string {
+	dir := exeDir
+	for range 3 {
+		dir = filepath.Dir(dir)
+		if isFile(filepath.Join(dir, "current.json")) && isFile(filepath.Join(dir, "install.json")) {
+			return filepath.Join(dir, updateChannelFolder)
+		}
+	}
+	return ""
+}
+
+func isFile(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && info.Mode().IsRegular()
 }
 
 // defaultState is the launcher's state folder: %LOCALAPPDATA%\SIPGES or ~/.local/share/sipges-local.
@@ -132,6 +161,15 @@ func runDesktop(ctx context.Context, args, environ []string, stdout, stderr io.W
 	}
 	if err := os.MkdirAll(filepath.Join(s.state, "uploads"), 0o700); err != nil {
 		return &userError{msg: "No se pudo crear la carpeta de archivos de SIPGES.", err: err}
+	}
+	if s.updateChannel != "" {
+		// As the launcher does: the API only writes request.json into a folder that exists.
+		if s.updateChannel, err = filepath.Abs(s.updateChannel); err != nil {
+			return err
+		}
+		if err := os.MkdirAll(s.updateChannel, 0o700); err != nil {
+			return &userError{msg: "No se pudo crear la carpeta de actualizaciones de SIPGES.", err: err}
+		}
 	}
 	server, err := localpg.Start(ctx, localpg.Options{
 		BinDir:        s.pgBin,
