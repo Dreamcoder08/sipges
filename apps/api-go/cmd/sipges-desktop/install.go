@@ -93,5 +93,5 @@ func runInstall(ctx context.Context, root string, o launcherOptions, stdout, std
 
 // releaseKey is the public key a release ships in its package (update.mjs releaseKey).
 func releaseKey(release string) ([]byte, error) {
-	return os.ReadFile(filepath.Join(release, desktoprelease.PackageDir, desktoprelease.PublicKeyName))
+	return os.ReadFile(filepath.Join(release, desktoprelease.PackageDir, desktoprelease.PublicKeyName)) //nolint:gosec // the release folder the operator named
 }
