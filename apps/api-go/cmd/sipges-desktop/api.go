@@ -29,10 +29,14 @@ func apiEnv(base []string, s settings, sec secrets, databaseURL string) []string
 		{"SIPGES_UPLOAD_DIR", filepath.Join(s.state, "uploads")},
 		{"SIPGES_MIGRATIONS_DIR", s.migrations},
 	}
+	if s.updateChannel != "" {
+		owned = append(owned, [2]string{envUpdateChannel, s.updateChannel})
+	}
 	env := make([]string, 0, len(base)+len(owned)+1)
 	for _, kv := range base {
 		key, _, _ := strings.Cut(kv, "=")
-		mine := false
+		// Without a channel the API mounts no update routes; an inherited value never reaches it.
+		mine := sameKey(key, envUpdateChannel)
 		for _, o := range owned {
 			mine = mine || sameKey(key, o[0])
 		}

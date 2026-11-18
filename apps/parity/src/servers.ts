@@ -204,6 +204,7 @@ export const startTypeScriptApi = async (
   secrets: ReturnType<typeof syntheticSecrets>,
   embedderUrl: string,
   semanticSearch = false,
+  extra: Readonly<Record<string, string>> = {},
 ) =>
   startProcess(
     'TypeScript API',
@@ -221,6 +222,7 @@ export const startTypeScriptApi = async (
       SIPGES_CRON_SECRET: CRON_SECRET,
       ...externalDoubles(embedderUrl),
       ...secondStage(semanticSearch, embedderUrl),
+      ...extra,
     },
     await freePort(),
   );
@@ -232,6 +234,7 @@ export const startGoApi = async (
   dataKey: string,
   embedderUrl: string,
   semanticSearch = false,
+  extra: Readonly<Record<string, string>> = {},
 ): Promise<Running> => {
   const binary = path.join(dir, 'api-go');
   await promisify(execFile)('go', ['build', '-o', binary, './cmd/api'], {
@@ -255,6 +258,7 @@ export const startGoApi = async (
       ...(semanticSearch
         ? { SIPGES_GO_AUTOMATION_CRON: '1', SIPGES_AUTOMATION_INTERVAL: '3600' }
         : {}),
+      ...extra,
     },
     await freePort(),
   );

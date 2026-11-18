@@ -327,6 +327,9 @@
     "command": "reports consensus",
     "summary": "Consensus report: use --output"
   },
+  { "method": "GET", "path": "/system/desktop/update", "access": "session" },
+  { "method": "POST", "path": "/system/desktop/update", "access": "session" },
+  { "method": "POST", "path": "/system/desktop/update/dismiss", "access": "session" },
   {
     "method": "POST",
     "path": "/system/document-lab/analyze",
