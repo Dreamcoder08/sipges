@@ -272,7 +272,7 @@ están solo en PGlite sigue con la API en TypeScript hasta que se trasladen (la 
   la carpeta de datos, en un clúster en marcha; la carpeta PGlite original nunca se escribe, así que
   apartar `pg18` vuelve a TypeScript. El traslado necesita una base **vacía**: `sipges-desktop
   --install <raíz> --prepare-only` crea el clúster con los roles y una base vacía (sin migraciones;
-  el lanzador Go las aplica en su primer arranque) y lo detiene; el `pg_ctl` incluido lo arranca para
+  el lanzador Go las aplica al arrancar) y lo detiene; el `pg_ctl` incluido lo arranca para
   el traslado ([la visita](../../docs/deployment/desktop-visit.es.md), G3–G4).
 - **Ensayo.** El trabajo go-mode del workflow corre `windows/go-drill.mjs` en `windows-latest` como
   el usuario estándar del runner, solo con datos inventados: el paquete con `--go` (el zip en caché

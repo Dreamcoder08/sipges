@@ -20,7 +20,7 @@
 //    database and stops it; the bundled pg_ctl starts it on a free loopback port for the move,
 //    pglite-to-postgres.mjs moves the copy into it with its table-by-table proof, pg_ctl stops it.
 // 5. start.ps1, with no switch and no Node on the PATH: the Go launcher (sipges-desktop.exe
-//    --install) migrates on its first start and serves the Go API (api.exe) on port 8000;
+//    --install) applies the migrations on start and serves the Go API (api.exe) on port 8000;
 //    compare.mjs finds no difference.
 // 6. The launcher is killed (its whole process tree, taskkill /F) while writes are in flight;
 //    start.ps1 again stops a PostgreSQL that outlived it, if any, and SIPGES reads.
@@ -333,7 +333,6 @@ async function main(args) {
     step('5. start.ps1 with no switch and no Node: the Go launcher on the moved data');
     let goStart = await startManaged('go-start-1', [], noNode);
     check(serverImage() === 'api.exe', 'start.ps1 serves from api.exe (the Go API) once the data are in pg18');
-    check((await events(launcherLog)).some((e) => e.event === 'first_start'), 'the Go launcher ran its first start (copy, rehearsal, migrations) over the moved data');
     const started = (await events(launcherLog)).filter((e) => e.event === 'started').at(-1);
     check(started?.version === options.version, `the Go launcher started ${options.version} (${JSON.stringify(started)})`);
     const health = await fetch(`${BASE}/health`);

@@ -32,7 +32,7 @@ Go API (<version>/go/api). It checks <dir> for a newer signed release at startup
 the app; updates run only after an administrator clicks «Actualizar». Without --releases no
 check is made.
 --prepare-only creates a PostgreSQL 18 cluster in the state folder with the roles and an empty
-database (no migration: the Go launcher migrates on its first start), then stops it, so the
+database (no migration: the Go launcher migrates when it starts), then stops it, so the
 one-time PGlite migrator can fill it. It is refused when <state>/pg18 already holds data.
 A first SIGINT or SIGTERM stops SIPGES gracefully; a second one kills the server at once and
 exits with code 1.
@@ -481,7 +481,7 @@ func stopOrphanClusters(rt runtimeEnv, root string) func(context.Context, []stri
 // prepareOnly makes an empty PostgreSQL 18 cluster in the state folder for the one-time PGlite
 // migrator, pglite-to-postgres.mjs: the roles and an empty database owned by the API's login, no
 // migration (the migrator only fills an empty database, and its dump carries schema_migrations;
-// the Go launcher migrates on its first start). It checks the login reaches that empty database,
+// the Go launcher migrates when it starts). It checks the login reaches that empty database,
 // then stops PostgreSQL. A pg18 folder that already holds anything is refused.
 func prepareOnly(ctx context.Context, stateDir, pgBin string, stdout io.Writer) (err error) {
 	dataDir := filepath.Join(stateDir, dataFolder)

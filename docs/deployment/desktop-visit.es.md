@@ -848,8 +848,8 @@ En los comandos, `$app` es `"$env:LOCALAPPDATA\SIPGES-app"`, `$datos` es la carp
   `Copy-Item -Recurse $datos "$env:LOCALAPPDATA\SIPGES-traslado"`.
 - [ ] **G3 — Preparar el clúster.** `& "$v\go\sipges-desktop.exe" --install $app --prepare-only`
   Tenés que ver `sipges-desktop: PostgreSQL 18 prepared in …\pg18`, código `0`, y nada escuchando en el
-  puerto 8000. Deja los roles y una base **vacía**, sin migraciones (el lanzador Go las aplica en su
-  primer arranque, G5). Se niega si `pg18` ya tiene algo.
+  puerto 8000. Deja los roles y una base **vacía**, sin migraciones (el lanzador Go aplica las que falten al
+  arrancar, G5). Se niega si `pg18` ya tiene algo.
 - [ ] **G4 — El traslado (Node, una sola vez).** Arrancá el clúster solo para el traslado, en un puerto
   libre y solo en `127.0.0.1`:
 
@@ -864,9 +864,9 @@ En los comandos, `$app` es `"$env:LOCALAPPDATA\SIPGES-app"`, `$datos` es la carp
 
   Tenés que ver `Moved: the target holds the copy, committed.` y `0`. Con `1` o `2` no se escribió nada:
   pará el clúster igual y seguí con G7.
-- [ ] **G5 — Abrir en modo Go.** Abrí SIPGES desde el acceso directo. El primer arranque copia la
-  carpeta al lado, ensaya y aplica las migraciones (puede tardar unos minutos). En `$app\launcher.log`
-  hay una línea `"event":"first_start"` y la última `"event":"started"` nombra la versión, y `Get-Process api` existe (`node` no sirve el puerto 8000).
+- [ ] **G5 — Abrir en modo Go.** Abrí SIPGES desde el acceso directo. El lanzador Go aplica las
+  migraciones que falten al arrancar y abre la API en Go. En `$app\launcher.log` la última línea
+  `"event":"started"` nombra la versión, y `Get-Process api` existe (`node` no sirve el puerto 8000).
 - [ ] **G6 — Comparar.** `compare.mjs` contra `sipges-antes-go.json` como en el paso 5:
   `RESULT: no difference`. La usuaria entra y ve sus registros.
 - [ ] **G7 — La vuelta atrás** (si G4, G5 o G6 fallan, o la usuaria lo pide en los 30 días). Cerrá

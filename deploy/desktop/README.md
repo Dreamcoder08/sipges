@@ -226,7 +226,7 @@ in PGlite keeps the TypeScript API until its data are moved (the laptop visit,
   state folder, into a running cluster; the original PGlite folder is never written, so setting
   `pg18` aside goes back to TypeScript. The move needs an **empty** database: `sipges-desktop
   --install <root> --prepare-only` makes the cluster with the roles and an empty database (no
-  migration; the Go launcher migrates on its first start) and stops it; the bundled `pg_ctl` runs it
+  migration; the Go launcher migrates when it starts) and stops it; the bundled `pg_ctl` runs it
   for the move ([the visit](../../docs/deployment/desktop-visit.es.md), G3–G4).
 - **Rehearsal.** The workflow's go-mode job runs `windows/go-drill.mjs` on `windows-latest` as the
   runner's standard user, synthetic data only: the package built with `--go` (bundle cached by its
