@@ -68,6 +68,8 @@ func TestStartInitialisesWithThePinnedLocaleOnAFreeLoopbackPort(t *testing.T) {
 		"SHOW unix_socket_directories": "",
 		"SELECT current_setting('server_version_num')::int / 10000 || ''":                              "18",
 		"SELECT datlocprovider::text || ':' || datlocale FROM pg_database WHERE datname = 'template1'": "b:C.UTF-8",
+		// libc categories stay C: Windows has no "C.UTF-8" libc locale and initdb refuses it there.
+		"SELECT datcollate || ':' || datctype FROM pg_database WHERE datname = 'template1'": "C:C",
 	} {
 		var got string
 		if err := conn.QueryRow(ctx, setting).Scan(&got); err != nil {

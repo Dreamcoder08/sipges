@@ -15,7 +15,7 @@ func TestInitdbArgsUseThePinnedLocaleAndALocalSuperuser(t *testing.T) {
 	got := initdbArgs("/data/pg18", "postgres", "/tmp/pw")
 	want := []string{
 		"-D", "/data/pg18",
-		"--locale-provider=builtin", "--locale=C.UTF-8", "-E", "UTF8",
+		"--locale-provider=builtin", "--builtin-locale=C.UTF-8", "--locale=C", "-E", "UTF8",
 		"-U", "postgres", "--auth=scram-sha-256", "--pwfile=/tmp/pw",
 	}
 	if !slices.Equal(got, want) {

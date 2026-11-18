@@ -470,11 +470,13 @@ func writePasswordFile(password string) (string, error) {
 	return f.Name(), nil
 }
 
-// initdbArgs is ADR 0036 §2: the builtin C.UTF-8 locale, UTF8, and a password on every login.
+// initdbArgs is ADR 0036 §2: the builtin C.UTF-8 locale, UTF8, and a password on every login. The
+// libc categories are C: Windows has no "C.UTF-8" libc locale, and initdb refuses --locale=C.UTF-8
+// there ("invalid locale name"), while C accepts every encoding on every platform.
 func initdbArgs(dataDir, superUser, pwfile string) []string {
 	return []string{
 		"-D", dataDir,
-		"--locale-provider=builtin", "--locale=C.UTF-8", "-E", "UTF8",
+		"--locale-provider=builtin", "--builtin-locale=C.UTF-8", "--locale=C", "-E", "UTF8",
 		"-U", superUser, "--auth=scram-sha-256", "--pwfile=" + pwfile,
 	}
 }
