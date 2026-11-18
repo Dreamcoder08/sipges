@@ -215,7 +215,7 @@ func TestAFailedPrepareOnlyRemovesTheHalfMadeCluster(t *testing.T) {
 	if _, statErr := os.Stat(filepath.Join(state, "pg18")); !errors.Is(statErr, os.ErrNotExist) {
 		t.Fatalf("the half-made cluster is still there: %v (%v)", statErr, err)
 	}
-	if msg := userMessage(err); !strings.Contains(msg, "se borró la carpeta pg18 a medio preparar") {
+	if msg := userMessage(err); !strings.Contains(msg, "se borró la carpeta pg18 a medio preparar") || !strings.Contains(msg, missingAPI) {
 		t.Fatalf("message %q", msg)
 	}
 }

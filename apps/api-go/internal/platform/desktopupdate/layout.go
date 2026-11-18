@@ -1,6 +1,7 @@
 package desktopupdate
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -10,8 +11,9 @@ import (
 	"regexp"
 	"runtime"
 	"slices"
-	"strconv"
 	"strings"
+
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/localpg"
 )
 
 const (
@@ -259,7 +261,7 @@ type Disk struct {
 // checkStateRoom refuses a state folder that cannot be copied faithfully (a link, or a link or
 // special file inside) and an update without room beside it for the copies it takes: the
 // pre-update copy, one restore and, for an adopted install, the rehearsal copy. Nothing is written.
-func checkStateRoom(stateDir string, copies uint64, statfs func(string) (Disk, error)) error {
+func checkStateRoom(ctx context.Context, stateDir string, copies uint64, statfs func(string) (Disk, error)) error {
 	info, err := os.Lstat(stateDir)
 	if errors.Is(err, fs.ErrNotExist) {
 		return refuse("The state folder does not exist: %s", stateDir)
@@ -273,7 +275,7 @@ func checkStateRoom(stateDir string, copies uint64, statfs func(string) (Disk, e
 	if !info.IsDir() {
 		return refuse("The state folder is not a folder: %s", stateDir)
 	}
-	if pid, ok := runningCluster(stateDir); ok {
+	if pid, ok := runningCluster(ctx, stateDir); ok {
 		return refuse("PostgreSQL is still running on %s (process %d): close SIPGES so it stops, then try again; a copy of a running database can be incomplete", filepath.Join(stateDir, clusterDir), pid)
 	}
 	var bytes, entries uint64 = 0, 1
@@ -345,17 +347,9 @@ func versionPath(version string) string { return fmt.Sprintf("%s/%s", versionsDi
 // clusterDir is the PostgreSQL data folder inside the state folder (ADR 0036 §3).
 const clusterDir = "pg18"
 
-// runningCluster reports the live process named on the first line of <state>/pg18/postmaster.pid.
-// A file left by a server that crashed names a process that no longer exists and does not count.
-func runningCluster(stateDir string) (int, bool) {
-	data, err := os.ReadFile(filepath.Join(stateDir, clusterDir, "postmaster.pid")) //nolint:gosec // inside the recorded state folder
-	if err != nil {
-		return 0, false
-	}
-	first, _, _ := strings.Cut(string(data), "\n")
-	pid, err := strconv.Atoi(strings.TrimSpace(first))
-	if err != nil || pid <= 0 {
-		return 0, false
-	}
-	return pid, alive(pid)
+// runningCluster reports the PostgreSQL serving <state>/pg18 and the process id its postmaster.pid
+// names (localpg.Serving). A file left by a server that crashed does not count, whether its process
+// id is free or now belongs to another program.
+func runningCluster(ctx context.Context, stateDir string) (int, bool) {
+	return localpg.Serving(ctx, filepath.Join(stateDir, clusterDir))
 }

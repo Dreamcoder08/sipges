@@ -94,7 +94,8 @@ const (
 // connections. A missing or empty DataDir gets a new cluster, built and set up in a sibling
 // folder first (see Options.Setup); a leftover of an interrupted build is removed. A running
 // instance holds the lock next to DataDir, and Start then returns ErrInUse; a server that a dead
-// instance left running is stopped first.
+// instance left running is stopped first, and a postmaster.pid naming another program is ignored
+// (see Serving).
 func Start(ctx context.Context, opts Options) (*Server, error) {
 	opts = withDefaults(opts)
 	if _, err := inspectDataDir(opts.DataDir); err != nil {
@@ -130,7 +131,7 @@ func (s *Server) startLocked(ctx context.Context) error {
 			return err
 		}
 	}
-	if err := s.stopServer(ctx); err != nil {
+	if err := s.stopLeftover(ctx); err != nil {
 		return err
 	}
 	return s.start(ctx)
@@ -282,7 +283,7 @@ func (s *Server) start(ctx context.Context) error {
 // stopAfterFailedStart stops a server a failed start left running. When pg_ctl gave up waiting,
 // it watches a moment for the server to show up in the pid file, so a timeout never leaves a
 // server running that nothing will stop; otherwise the server already exited and one look is
-// enough.
+// enough. Only the server this start launched is stopped (startedHere).
 func (s *Server) stopAfterFailedStart(ctx context.Context, gaveUp bool) error {
 	checks := 1
 	if gaveUp {
@@ -292,11 +293,19 @@ func (s *Server) stopAfterFailedStart(ctx context.Context, gaveUp bool) error {
 		if i > 0 {
 			time.Sleep(lingerPause)
 		}
-		if running, err := s.running(context.WithoutCancel(ctx)); err == nil && running {
+		if running, err := s.running(context.WithoutCancel(ctx)); err == nil && running && s.startedHere() {
 			return s.stopDetached(ctx)
 		}
 	}
 	return nil
+}
+
+// startedHere reports whether postmaster.pid was written by the server this start launched: it
+// names the port chosen for it. A file a dead server left names another port and another
+// process, possibly not PostgreSQL at all, which is never signalled.
+func (s *Server) startedHere() bool {
+	pf, ok := readPidFile(s.opts.DataDir)
+	return ok && pf.port == s.port
 }
 
 // stopDetached is Stop with its own deadline, for cleanups that must run after ctx ended.

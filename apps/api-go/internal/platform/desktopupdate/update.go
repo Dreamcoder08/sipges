@@ -263,7 +263,7 @@ func (t *transaction) run() (UpdateResult, error) {
 	if current.Adopted {
 		copies = 3
 	}
-	if err := checkStateRoom(stateDir, copies, t.Statfs); err != nil {
+	if err := checkStateRoom(t.ctx, stateDir, copies, t.Statfs); err != nil {
 		return UpdateResult{}, err
 	}
 	if err := t.step("verified"); err != nil {
