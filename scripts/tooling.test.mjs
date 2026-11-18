@@ -620,6 +620,30 @@ esac
     assert.equal(again.stdout, 'MERGED #12 abc123\nDEPLOYED #12 77\n');
     assert.doesNotMatch(again.calls, /pr merge/);
   }));
+test('ODD close accepts a nested subtask id such as T72d1', () =>
+  fixture((dir) => {
+    const file = path.join(dir, 'odd.md');
+    writeFileSync(
+      file,
+      '- T72 [ ] parent\n    - T72d1 [ ] child\n## Log\n- L1 — Start: synthetic\n',
+    );
+    const result = spawnSync(process.execPath, [
+      path.join(root, 'scripts/odd-close-task.mjs'),
+      '--task',
+      'T72d1',
+      '--label',
+      'T72d1',
+      '--text',
+      'Synthetic',
+      '--file',
+      file,
+    ]);
+    assert.equal(result.status, 0, String(result.stderr));
+    const written = readFileSync(file, 'utf8');
+    assert.match(written, /^ {4}- T72d1 \[x\] child$/m);
+    assert.match(written, /^- T72 \[ \] parent$/m);
+    assert.match(written, /^- L2 — T72d1: Synthetic$/m);
+  }));
 test('ODD close keeps the log style of the document it edits', () =>
   fixture((dir) => {
     const close = path.join(root, 'scripts/odd-close-task.mjs');
