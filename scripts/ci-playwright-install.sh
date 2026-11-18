@@ -5,7 +5,7 @@
 #      apt-get). WebKit needs ~185 packages, and the Ubuntu mirror has served them at ~30 kB/s until
 #      every attempt timed out (runs 44245469534 and 44381056971). SIPGES_APT_ARCHIVES is a folder
 #      actions/cache keeps: its .deb files are copied into apt's archive before the install, so apt
-#      skips downloading them, and the downloaded ones are copied back for the next run.
+#      skips downloading them, and the current ones are copied back for the next run.
 #   2. The browser download itself (`playwright install`); a restored ~/.cache/ms-playwright makes
 #      it a no-op.
 # Each attempt is bounded and retried with a growing pause. When an apt attempt times out,
@@ -57,7 +57,11 @@ if [ "$hosted" = true ]; then
     exit 1
   fi
   if [ -n "$apt_cache" ]; then
+    # A cache restored from an older runner image may hold superseded packages: autoclean drops
+    # them from apt's archive, and the cache is rewritten with exactly what is left.
+    sudo apt-get autoclean
     mkdir -p "$apt_cache"
+    rm -f -- "$apt_cache"/*.deb
     downloaded=("$system_archives"/*.deb)
     [ "${#downloaded[@]}" -gt 0 ] && cp -- "${downloaded[@]}" "$apt_cache/"
     echo "Kept ${#downloaded[@]} apt packages for the cache" >&2

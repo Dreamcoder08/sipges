@@ -161,14 +161,19 @@ jobs:
       - if: needs.changes.outputs.code == 'true'
         run: pnpm install --frozen-lockfile
       # Cache key parts: the runner image (the apt packages) and the installed Playwright version
-      # (the browser revision). Self-hosted runners keep both in their volume and skip the cache.
+      # (the browser revision). The image version ends the key, so a new weekly image saves a fresh
+      # cache, seeded from the previous image's through restore-keys, instead of reusing stale
+      # packages forever. Self-hosted runners keep both in their volume and skip the cache.
       - if: needs.changes.outputs.code == 'true'
         id: playwright
         run: |
           version=$(pnpm --filter @sipges/e2e exec playwright --version | tail -n 1 | awk '{print $NF}')
           test -n "$version"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "image=${ImageOS:-unknown}-$(uname -m)" >> "$GITHUB_OUTPUT"
+          {
+            echo "version=$version"
+            echo "image=${ImageOS:-unknown}-$(uname -m)"
+            echo "image_version=${ImageVersion:-unknown}"
+          } >> "$GITHUB_OUTPUT"
       - if: needs.changes.outputs.code == 'true' && runner.environment == 'github-hosted'
         name: Cache the Playwright browser and its apt packages
         uses: actions/cache@v6
@@ -176,7 +181,9 @@ jobs:
           path: |
             ~/.cache/ms-playwright
             ~/.cache/sipges-apt-archives
-          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.image }}-${{ matrix.browser }}-${{ steps.playwright.outputs.version }}
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.image }}-${{ matrix.browser }}-${{ steps.playwright.outputs.version }}-${{ steps.playwright.outputs.image_version }}
+          restore-keys: |
+            playwright-${{ runner.os }}-${{ steps.playwright.outputs.image }}-${{ matrix.browser }}-${{ steps.playwright.outputs.version }}-
       # Browser revision follows the @playwright/test version pinned in apps/e2e (lockfile).
       # The self-hosted image bakes the system dependencies and keeps the browsers in its volume, so it skips apt.
       - if: needs.changes.outputs.code == 'true'
@@ -248,14 +255,19 @@ jobs:
       - if: needs.changes.outputs.code == 'true'
         run: pnpm install --frozen-lockfile
       # Cache key parts: the runner image (the apt packages) and the installed Playwright version
-      # (the browser revision). Self-hosted runners keep both in their volume and skip the cache.
+      # (the browser revision). The image version ends the key, so a new weekly image saves a fresh
+      # cache, seeded from the previous image's through restore-keys, instead of reusing stale
+      # packages forever. Self-hosted runners keep both in their volume and skip the cache.
       - if: needs.changes.outputs.code == 'true'
         id: playwright
         run: |
           version=$(pnpm --filter @sipges/e2e exec playwright --version | tail -n 1 | awk '{print $NF}')
           test -n "$version"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "image=${ImageOS:-unknown}-$(uname -m)" >> "$GITHUB_OUTPUT"
+          {
+            echo "version=$version"
+            echo "image=${ImageOS:-unknown}-$(uname -m)"
+            echo "image_version=${ImageVersion:-unknown}"
+          } >> "$GITHUB_OUTPUT"
       - if: needs.changes.outputs.code == 'true' && runner.environment == 'github-hosted'
         name: Cache the Playwright browser and its apt packages
         uses: actions/cache@v6
@@ -263,7 +275,9 @@ jobs:
           path: |
             ~/.cache/ms-playwright
             ~/.cache/sipges-apt-archives
-          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.image }}-chromium-${{ steps.playwright.outputs.version }}
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.image }}-chromium-${{ steps.playwright.outputs.version }}-${{ steps.playwright.outputs.image_version }}
+          restore-keys: |
+            playwright-${{ runner.os }}-${{ steps.playwright.outputs.image }}-chromium-${{ steps.playwright.outputs.version }}-
       - if: needs.changes.outputs.code == 'true'
         name: Install the Playwright browser and its system packages
         run: bash scripts/ci-playwright-install.sh chromium

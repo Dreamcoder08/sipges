@@ -1121,6 +1121,7 @@ test('playwright install on GitHub-hosted runners installs apt packages, then th
     'sudo timeout 120 dpkg --configure -a',
     'sleep 15',
     `timeout 480 ${deps}`,
+    'sudo apt-get autoclean',
     `timeout 300 ${browser}`,
   ]);
 });
@@ -1161,28 +1162,35 @@ test('playwright install names the browser download when it fails three times', 
   assert.ok(!calls.some((call) => call.includes('dpkg')));
 });
 
-test('playwright install reuses the cached apt packages and keeps the downloaded ones', () => {
+test('playwright install reuses the cached apt packages and keeps only the current ones', () => {
   const { status, stderr, calls, kept } = runPlaywrightInstall({
     runner: 'github-hosted',
-    cached: ['a.deb'],
+    cached: ['a.deb', 'old.deb'],
     downloaded: ['a.deb', 'b.deb'],
   });
   assert.equal(status, 0, stderr);
-  assert.equal(calls[0], 'sudo cp -- <tmp>/apt-cache/a.deb <tmp>/system-archives/');
+  assert.equal(
+    calls[0],
+    'sudo cp -- <tmp>/apt-cache/a.deb <tmp>/apt-cache/old.deb <tmp>/system-archives/',
+  );
   assert.equal(calls[1], `timeout 480 ${deps}`);
+  // autoclean drops superseded packages from apt's archive; the cache keeps exactly what is left.
+  assert.equal(calls[2], 'sudo apt-get autoclean');
   assert.deepEqual(kept, ['a.deb', 'b.deb']);
 });
 
-test('CI installs Playwright through the script, names the runner and caches by version, browser and OS', () => {
+test('CI caches the browser by version, browser and runner image, falling back to the previous image', () => {
   const ci = readFileSync(path.join(root, '.github/workflows/ci.yml'), 'utf8');
   assert.match(ci, /run: bash scripts\/ci-playwright-install\.sh \$\{\{ matrix\.browser \}\}/);
   assert.match(ci, /SIPGES_CI_RUNNER: \$\{\{ runner\.environment \}\}/);
-  const keys = ci.match(/key: playwright-.*$/gm) ?? [];
-  assert.equal(keys.length, 2, 'e2e and e2e-go cache the browser');
-  for (const key of keys) {
-    assert.match(key, /steps\.playwright\.outputs\.image/);
-    assert.match(key, /steps\.playwright\.outputs\.version/);
-    assert.match(key, /matrix\.browser|-chromium-/);
+  assert.match(ci, /echo "image_version=\$\{ImageVersion:-unknown\}"\n/);
+  const prefix = (browser) =>
+    `playwright-\${{ runner.os }}-\${{ steps.playwright.outputs.image }}-${browser}-\${{ steps.playwright.outputs.version }}-`;
+  for (const browser of ['${{ matrix.browser }}', 'chromium']) {
+    const key = `key: ${prefix(browser)}\${{ steps.playwright.outputs.image_version }}\n`;
+    const restore = `restore-keys: |\n            ${prefix(browser)}\n`;
+    assert.ok(ci.includes(key), `missing ${key}`);
+    assert.ok(ci.includes(`${key}          ${restore}`), `missing restore-keys after ${key}`);
   }
   assert.equal((ci.match(/SIPGES_APT_ARCHIVES: ~\/\.cache\/sipges-apt-archives/g) ?? []).length, 2);
 });
