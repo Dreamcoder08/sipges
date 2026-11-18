@@ -35,10 +35,11 @@ Format: [Michael Nygard ADR](https://cognitect.com/blog/2011/11/15/documenting-a
 | [0029](0029-retire-vercel-host.md) | Retire the Vercel host: Workers is the only host | Accepted |
 | [0030](0030-external-ai-egress-guard.md) | External AI egress guard: switch, allowlists, pseudonyms and access log | Accepted |
 | [0031](0031-conflict-risk-prediction.md) | Conflict-risk prediction: transparent score calibrated on the project's history | Accepted |
-| [0032](0032-go-backend-rust-engines.md) | Go backend, Rust engines and tools, TypeScript frontend | Accepted; Rust placement amended by 0034 |
+| [0032](0032-go-backend-rust-engines.md) | Go backend, Rust engines and tools, TypeScript frontend | Accepted; Rust placement amended by 0034; TypeScript removal amended by 0036 |
 | [0033](0033-pdf-text-in-wasm.md) | PDF text through pdf.js on QuickJS in wasm | Accepted |
 | [0034](0034-rust-placement-criterion.md) | Rust placement criterion: measured need, not a fixed list | Accepted |
 | [0035](0035-local-install-two-api-replicas.md) | Local install: an optional second API behind Caddy, taken in turns with health checks | Accepted |
+| [0036](0036-desktop-go-with-bundled-postgresql.md) | Desktop install on the Go API with a bundled PostgreSQL 18 | Accepted |
 
 Behavioral baseline: [`docs/migration/behavior-contract.md`](../migration/behavior-contract.md).
 
