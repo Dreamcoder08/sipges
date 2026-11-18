@@ -184,6 +184,50 @@ laptop-kit job rehearses it (`deploy/desktop/windows/laptop-kit.mjs`): a clone i
 commit, a second clone with its own `pnpm install`, the refusals, the kit, the install from the kit
 and the comparison; the old clone stays byte-identical, and time and space are measured.
 
+### Go mode (opt-in until the laptop visit)
+
+The desktop is moving to the Go API on a bundled PostgreSQL 18 (ADR 0036, go-rust-stack T72).
+Until the laptop visit this is **opt-in**: nothing selects it by itself, the shortcuts and the
+update path keep starting the TypeScript API on PGlite, and merging it changes no existing install.
+
+- **Bundle.** `node deploy/desktop/package/builder.mjs … --go` adds `go/` (`sipges-desktop`, the Go
+  API and the SQL migrations) and, on Windows x64, `postgresql/` (`bin`, `lib`, `share` and the
+  licences). Without `--go` the package is exactly what it was.
+- **Pinned and verified.** [`postgresql/pg18.json`](postgresql/pg18.json) pins the EDB Windows x64
+  binaries zip by exact URL, size and SHA-256: PostgreSQL 18.6-2, published 2026-10-05, pinned
+  2026-11-18 (at least two weeks old, as pnpm's `minimumReleaseAge`; 18.6 is also the version PGlite
+  0.5.15 embeds). [`postgresql/bundle.mjs`](postgresql/bundle.mjs) downloads it once into
+  `.data/postgresql`, hashes it, and deletes a download that does not match; a build without network
+  and without a verified copy stops with a message saying so, never with an unverified zip. The
+  binaries are never committed. To move to another minor, check the
+  [EDB page](https://www.enterprisedb.com/download-postgresql-binaries), take a build at least two
+  weeks old, and update the version, URL, size, SHA-256 and dates together.
+- **Trimmed.** Of the 914 MB unpacked zip only `bin`, `lib`, `share` and the two command-line
+  licences stay (about 132 MB): pgAdmin 4, StackBuilder, `doc`, `include` and `symbols` go, and so do
+  `stackbuilder.exe`, the wxWidgets DLLs and the `*.lib` import libraries inside `bin`.
+- **Launchers.** `start.ps1 -Go` (the managed install's copy of `windows/start-managed.ps1`) and
+  `sipges-desktop.sh --go` (Linux, `linux/sipges-managed.sh`) start the current version's
+  `go/sipges-desktop` with `SIPGES_PG_BIN` at its `postgresql/bin` (Linux: that folder or
+  `SIPGES_PG_BIN`), on the state folder `install.json` records, serving `127.0.0.1:8000`, output in
+  `launcher.log`. The cluster lives in `<state>/pg18`. No update check runs in this mode. Both refuse,
+  starting nothing, a version built without `--go` and a state folder whose data are still only in
+  PGlite (a new cluster would open SIPGES empty). A SIPGES already running is reused only in the
+  mode asked for: `-Go` never opens the TypeScript one, and a plain start never opens the Go one.
+- **Moving the data.** The data move into `pg18` is `migration/pglite-to-postgres.mjs`
+  ([its README](migration/README.md#into-postgresql-18-for-the-go-api-adr-0036-4)) on a copy of the
+  state folder; the original PGlite folder is never written, so starting without `-Go` goes back to
+  TypeScript. The move needs an empty database in a running cluster: today only the rehearsal makes
+  one (a stand-in API that applies no migration); a supported step for the visit is go-rust-stack
+  T72d.
+- **Rehearsal.** The workflow's go-mode job runs `windows/go-drill.mjs` on `windows-latest` as the
+  runner's standard user, synthetic data only: the package built with `--go` (bundle cached by its
+  SHA-256), the TypeScript default seeded, `start.ps1 -Go` refused before the move, the move with
+  `tables.mjs`'s proof, `start.ps1 -Go` serving from `api.exe` with `compare.mjs` finding no
+  difference, the launcher killed during writes and started again over the orphaned PostgreSQL, a
+  clean Ctrl+C stop (`windows/go-console.ps1`), the original PGlite folder byte-identical, and the
+  way back to TypeScript. By hand, on another Windows computer, with Go and port 8000 free:
+  `node deploy\desktop\windows\go-drill.mjs [--work <new folder>] [--logs <folder>]`.
+
 ## Back up and restore
 
 The state folder is everything: the database is useless without `data-key`. It is

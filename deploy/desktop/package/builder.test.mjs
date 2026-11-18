@@ -57,7 +57,7 @@ test('public CLI validates options, versions, platform and paths without writes'
     const help = invoke('--help');
     assert.equal(help.status, 0);
     assert.equal(help.stderr, '');
-    assert.equal(help.stdout, 'Usage: node deploy/desktop/package/builder.mjs [--version <semver>] --out .data/desktop-packages/sipges-<version> [--platform <host>] [--arch <host>]\nThe version defaults to the root package.json version; a release version must equal it, a pre-release (1.2.3-rc.1) marks a rehearsal.\n');
+    assert.equal(help.stdout, 'Usage: node deploy/desktop/package/builder.mjs [--version <semver>] --out .data/desktop-packages/sipges-<version> [--platform <host>] [--arch <host>] [--go]\nThe version defaults to the root package.json version; a release version must equal it, a pre-release (1.2.3-rc.1) marks a rehearsal.\n--go (opt-in) adds the Go mode: sipges-desktop, the Go API and the migrations in go/, and on Windows x64 the pinned PostgreSQL 18 in postgresql/ (downloaded once, SHA-256 verified). The default entry stays the TypeScript one.\n');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
@@ -279,5 +279,56 @@ test('a finished build ends with its completion file; a failed one has the marke
     const completed = (await stat(join(full, PACKAGE_COMPLETE))).mtimeMs;
     for (const later of ['metadata.json', 'web/index.html', 'updater/updater.mjs'])
       assert.ok((await stat(join(full, later))).mtimeMs <= completed, `${later} written after the completion file`);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// T72c: the Go mode is opt-in. Without --go the package is exactly what it was (no go/, no
+// postgresql/, no `go` in metadata.json); with it the Go binaries and the migrations are added,
+// and the pinned PostgreSQL only on Windows x64 (deploy/desktop/postgresql). Skipped on Windows,
+// where --go would download the real 343 MB zip: the workflow's go-mode job builds it there.
+test('--go adds the Go binaries and migrations; without it the package is unchanged', { skip: process.platform === 'win32' && 'the go-mode job builds --go on Windows with the real bundle' }, async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'sipges-package-go-'));
+  try {
+    const { fakeCheckout } = await import('./builder-helpers.mjs');
+    const root = join(dir, 'repo');
+    const { build } = await fakeCheckout(root);
+    const plain = build('1.0.0-rc.1');
+    assert.equal(plain.status, 0, plain.stderr);
+    const plainDir = join(root, '.data/desktop-packages/sipges-1.0.0-rc.1');
+    const plainEntries = (await readdir(plainDir)).sort();
+    assert.equal(plainEntries.includes('go'), false);
+    assert.equal(plainEntries.includes('postgresql'), false);
+    assert.equal('go' in JSON.parse(await readFile(join(plainDir, 'metadata.json'), 'utf8')), false);
+
+    const go = build('1.0.0-rc.2', { args: ['--go'] });
+    assert.equal(go.status, 0, go.stderr);
+    const goDir = join(root, '.data/desktop-packages/sipges-1.0.0-rc.2');
+    assert.deepEqual((await readdir(goDir)).sort(), [...plainEntries, 'go'].sort());
+    assert.deepEqual((await readdir(join(goDir, 'go'))).sort(), ['api', 'migrations', 'sipges-desktop']);
+    assert.equal(await readFile(join(goDir, 'go/sipges-desktop'), 'utf8'), 'fake ./cmd/sipges-desktop\n');
+    assert.equal(await readFile(join(goDir, 'go/api'), 'utf8'), 'fake ./cmd/api\n');
+    assert.equal(await readFile(join(goDir, 'go/migrations/0001_synthetic.sql'), 'utf8'), 'SELECT 1;\n');
+    const metadata = JSON.parse(await readFile(join(goDir, 'metadata.json'), 'utf8'));
+    assert.deepEqual(metadata.go, { entry: 'go/sipges-desktop', api: 'go/api', migrations: 'go/migrations', postgresql: null });
+    assert.equal(metadata.entry, 'start.mjs', 'the default entry stays the TypeScript one');
+    assert.match(go.stdout, new RegExp(`No PostgreSQL bundle for ${process.platform}-${process.arch}: the Go mode there needs SIPGES_PG_BIN`));
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('--go takes no value, and a failed go build leaves no completion file', { skip: process.platform === 'win32' && 'the go-mode job builds --go on Windows' }, async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'sipges-package-go-fail-'));
+  try {
+    const { fakeCheckout } = await import('./builder-helpers.mjs');
+    const { PACKAGE_COMPLETE } = await import('./builder.mjs');
+    const root = join(dir, 'repo');
+    const { build } = await fakeCheckout(root);
+    const valued = build('1.0.0-rc.3', { args: ['--go', 'yes'] });
+    assert.equal(valued.status, 1);
+    assert.match(valued.stderr, /^Error: Invalid options; use --help\n$/);
+    const failed = build('1.0.0-rc.4', { args: ['--go'], failGo: true });
+    assert.equal(failed.status, 1);
+    assert.match(failed.stderr, /^Error: go failed: 1\n$/m);
+    const entries = await readdir(join(root, '.data/desktop-packages/sipges-1.0.0-rc.4'));
+    assert.equal(entries.includes(PACKAGE_COMPLETE), false);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

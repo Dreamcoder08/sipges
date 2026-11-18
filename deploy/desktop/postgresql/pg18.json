@@ -1,0 +1,11 @@
+{
+  "version": "18.6-2",
+  "platform": "win32",
+  "arch": "x64",
+  "url": "https://get.enterprisedb.com/postgresql/postgresql-18.6-2-windows-x64-binaries.zip",
+  "page": "https://www.enterprisedb.com/download-postgresql-binaries",
+  "sha256": "41bb1496f60666d3745ae8a855753b877d14fa9e34667f266867635b790fc323",
+  "size": 343811176,
+  "published": "2026-10-05",
+  "checked": "2026-11-18"
+}
