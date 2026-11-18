@@ -23,7 +23,7 @@ func TestFirstStartRefusesWhilePostgreSQLRunsOnTheState(t *testing.T) {
 	f := newFixtureAt(t, dir, state, false)
 	var calls []string
 	_, err := runFirstStart(f.root, migrating2(&calls), nil)
-	wantCode(t, err, CodeRefused, "first start over a running cluster")
+	_ = wantCode(t, err, CodeRefused, "first start over a running cluster")
 	if len(calls) != 0 || exists(t, filepath.Join(f.root, journalName)) {
 		t.Fatalf("something ran or was journaled: calls %v", calls)
 	}
@@ -35,7 +35,7 @@ func TestUpdateRefusesWhilePostgreSQLRunsOnTheState(t *testing.T) {
 	put(t, filepath.Join(f.state, "pg18", "PG_VERSION"), "18\n", 0)
 	put(t, filepath.Join(f.state, "pg18", "postmaster.pid"), livePid(), 0)
 	_, err := f.update(f.release("1.1.0"), noop, noop)
-	wantCode(t, err, CodeRefused, "update over a running cluster")
+	_ = wantCode(t, err, CodeRefused, "update over a running cluster")
 	if exists(t, filepath.Join(f.root, journalName)) {
 		t.Fatal("a journal was written")
 	}
@@ -67,7 +67,7 @@ func TestANullJournalIsNoJournalAndAnEmptyOneIsCorrupt(t *testing.T) {
 	}
 	put(t, filepath.Join(f.root, journalName), "{}", 0)
 	_, err = Recover(context.Background(), f.root)
-	wantCode(t, err, CodeCorrupt, "recover with an empty journal")
+	_ = wantCode(t, err, CodeCorrupt, "recover with an empty journal")
 	after, _ := os.ReadFile(pointer)
 	if string(after) != string(before) || !exists(t, filepath.Join(f.root, journalName)) {
 		t.Fatalf("pointer or journal changed: %s", after)
