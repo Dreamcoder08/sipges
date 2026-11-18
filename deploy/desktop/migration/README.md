@@ -16,6 +16,8 @@ This folder holds the proof that it does, and the scripts to check it on the rea
 | `migration.test.mjs` | Tests of the two scripts against a fake API full of recognisable synthetic values.                     |
 | `rehearse.test.mjs`  | Tests that every process the rehearsal starts is stopped and awaited, also on SIGINT and SIGTERM.      |
 | `tables.test.mjs`    | Tests of `tables.mjs` on synthetic PGlite folders: comparisons, refusals, no value ever printed.       |
+| `pglite-to-postgres.mjs` | Once, for the Go API: a copy's PGlite database into PostgreSQL 18, proved identical ([below](#into-postgresql-18-for-the-go-api-adr-0036-4)). |
+| `pglite-to-postgres.test.mjs` | Its refusals, the whole move into a throwaway PostgreSQL, rollback on a difference, Go's migrator. |
 
 The scripts need only Node.js 24 or later; nothing to install (`tables.mjs` takes PGlite from the
 managed install, `--app`, or from this checkout's `pnpm install`). They never print or store a
@@ -419,6 +421,69 @@ then the structure is not compared (`Structure: not compared (…)`): such a mig
 it. That includes 0030 and 0031, which rewrite tenant ids in every table: every clone install
 from the first installer (`6d867050`) on already has all 32 migrations, so on the laptop none
 runs. With only 0032 between the two, the structure is compared (0032 restores what it lifts).
+
+## Into PostgreSQL 18, for the Go API (ADR 0036 §4)
+
+`pglite-to-postgres.mjs` moves the database of a **copy** of the state folder into a native
+PostgreSQL 18 server, once. Go cannot open a PGlite folder (a 32-bit WebAssembly build), so the
+move is logical: a dump, never the data files.
+
+```sh
+# 1. Close SIPGES completely, then copy the state folder (never work on the original).
+# 2. A new, empty database owned by the login the Go API serves with (not a superuser).
+SIPGES_MOVE_DATABASE_URL='postgres://<login>@127.0.0.1:<port>/<database>' \
+  node deploy/desktop/migration/pglite-to-postgres.mjs --state <copy of the state folder>
+```
+
+`--to <url>` replaces the variable; the variable keeps a password out of the process list.
+`--scratch <folder>` chooses where the temporary copy of the database goes (the system temp folder
+otherwise); it is refused inside the original state folder or inside the copy. `--port` (8000) is
+where SIPGES answers when it is running. It needs `pnpm install` in this checkout: it takes `@electric-sql/pglite`,
+`@electric-sql/pglite-tools` and `postgres` from `apps/api`.
+
+| Step | What happens |
+| --- | --- |
+| Refusals, before reading anything | `--state` is a link or junction, is the original folder (`%LOCALAPPDATA%\SIPGES`, `~/.local/share/sipges-local`) or inside it, or its `pglite` is a link: the rule of `install.sh` and `install.ps1`. `--scratch` inside the original folder or the copy (the rule of `tables.mjs`). SIPGES answering on `--port`, or a `pglite/postmaster.pid` in the copy touched in the last two minutes (the copy was taken with SIPGES open): close SIPGES and copy the folder again, in Spanish for the owner. A target not on `127.0.0.1`, or with a `host` override. |
+| Pinned pair | `@electric-sql/pglite-tools` 0.4.15 needs `@electric-sql/pglite` 0.5.15 exactly; any other installed PGlite is refused. |
+| Read | The copy's `pglite` folder is hashed, copied to scratch, and only that is opened; the copy is hashed again and must be unchanged. The scratch copy is removed by the run, also after Ctrl+C: the signal only asks the run to stop at its next step, as in `tables.mjs`. |
+| Dump | `pgDump` with `--no-owner` (plain SQL, `--inserts`): the tables become the target login's, grants to `sipges_tenant` stay. |
+| Refusals on the target | Not PostgreSQL 18; a superuser or `BYPASSRLS` login (the Go API refuses it too); a database that already holds tables, functions, types or schemas. |
+| Restore | One transaction: the roles the source grants to (`sipges_tenant`) are created `NOLOGIN NOINHERIT` when missing and granted to the login as the migrations do, then the dump. |
+| Proof, same transaction | `tables.mjs`'s comparison with every table `identical`, every column, structure included; sequences equal; and by digest: functions, views, indexes (with replica identity and cluster flags), triggers, policies, grants, default privileges, each column's default, identity, generation, collation and comment, each table's persistence (unlogged), storage options, replica identity and comment, each sequence's parameters (type, start, increment, min, max, cache, cycle) and the extensions. `FORCE ROW LEVEL SECURITY` is lifted to read and restored before the structure is read. |
+| Commit | Only with `RESULT: no difference`. A signal before COMMIT rolls back; once COMMIT was sent the run waits for the server and never claims that nothing was committed. |
+
+Exit code 0: moved, no difference. 1: a difference; the transaction is rolled back and the target
+is as empty as before. 2: refused, interrupted or failed; the reason says whether anything was
+committed (a refused connection is reported as `could not connect to the target server`). Only counts, names and
+8-hex fingerprints are printed, never a value or the URL.
+
+One difference is expected and checked, not ignored: PGlite stored the `BETWEEN` of
+`media_feeds_url_check` (0026) as nested `AND`s, and the target re-parses the dumped text into a
+flat `AND`. Only for the CHECKs listed in `REPARSED_CHECKS` (today that one), when the text
+differs, the target parses the source's own definition on an empty temporary table; only an
+exact match is accepted (`… re-parsed by the target to the same definition`). A text difference
+in any other constraint is a difference.
+
+What the move does not carry: it moves the database only. `uploads/`, `data-key` and
+`admin-password` stay in the state folder and its copy; the Go API needs the **same** `data-key`
+to open the sealed values (MFA secrets) the move carried, so keep it with the install. Proving that
+the Go API answers the same as before over HTTP (an API snapshot before and after) is T72c, not
+this tool.
+
+Memory: the whole dump is held in memory as one string and sent as one simple query, so a very
+large database needs that much free memory twice over (the dump and the server's copy of the
+query). Desktop installs are small; streaming the dump is not done yet.
+
+Migrations: the TypeScript and Go migrators share one `schema_migrations (version text PRIMARY
+KEY, applied_at timestamptz)` table, the file names without `.sql` as versions and no checksum.
+The dump carries its rows, so `api migrate` (Go) against the moved database prints `Database up to
+date (<n> migrations known)` and applies nothing; a release with newer migrations applies only
+those. `pglite-to-postgres.test.mjs` runs it (`go run ./cmd/api migrate`) when `go` is installed.
+
+Tests: `node --test deploy/desktop/migration/pglite-to-postgres.test.mjs`. The PostgreSQL part
+needs `SIPGES_TEST_DATABASE_URL`, a superuser on a throwaway loopback server
+(`scripts/agents/test-pg.sh up` prints one); it creates a database and login per test and drops
+them. Without it those tests are skipped.
 
 ## Fallback if the in-place move fails
 

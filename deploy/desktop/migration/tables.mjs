@@ -38,7 +38,7 @@ import { portAnswers } from '../windows/visit-kit.mjs';
 export const NOT_COMPARED_EXIT = 2;
 const LISTED = 20;
 // Like the update lock (updater.mjs LOCK_STALE_MS): a lock touched this recently is in use.
-const FRESH_MS = 120_000;
+export const FRESH_MS = 120_000;
 const ENTRY_OVERHEAD = 4096;
 const OPEN_MARGIN = 64 * 1024 * 1024;
 const OLD_ADMIN = 'mascli-admin';
@@ -255,7 +255,7 @@ async function checkInput(label, path) {
 }
 
 /** A lock file touched in the last FRESH_MS (its heartbeat, else its file time). */
-async function freshLock(path) {
+export async function freshLock(path) {
   const info = await stat(path).catch(() => null);
   if (!info) return false;
   let beat = NaN;
