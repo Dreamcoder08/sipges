@@ -19,6 +19,13 @@ task names its source document; that document stays the place where the work is 
 - S6 — «mi idea es avanzar con todo lo necesario para despues ir donde mi prima crystell instalar la version
   definitiva , agregarle o extraer sus datos y listo , entiendes ??»
 
+- S7 — «yes ella si me autoriza asi que debo instalarle la version actualizada en su laptop de sipges + claude desktop
+  y conectar mcp , verdad ??»; «la laptop de ella es windows»
+- S8 — «asi debe ser mi proyecto sipges», pasting: «MCP para el setup. nadie quiere leer tu manual ni ver tu tutorial
+  de cómo configurar tu producto, todo va a ser por chat. - UI para ver los números. dashboards claros, limpios, y
+  custom, con las cifras grandes a la vista, y les puedes preguntar.» and adding «un MCP de lectura para el sistema ,
+  así sacan todos los reportes que se les ocurran.»
+
 ## Tasks
 
 Goal set by S6: one visit to the laptop. Everything is finished and rehearsed beforehand; on the visit the
@@ -57,6 +64,10 @@ Phase 1, desktop (the nearest real use; does not depend on the cloud):
 - T35 [x] — S6: shortcuts start the managed launcher; the halt reaches the user. Route: worker, then verifier.
   Done: PR #401 (Linux; Windows static only).
 - T34 [x] — S6: the visit, by a written runbook. Route: owner on the laptop. Done: runbook docs/deployment/desktop-visit.es.md, PR #401 (91cdbc7c).
+- T36 [ ] — S7: Claude Desktop reads the laptop's SIPGES through MCP, rehearsed and in the runbook (step 9). Route:
+  inline, then owner on the laptop. Commit: pending.
+- T37 [ ] — S8: chat-first setup, big-number dashboards and a reporting MCP, mapped onto the existing features before
+  any code. Route: owner decision on the first slice. Commit: n/a.
 
 Phase 2, cloud and backup (blocked until the Neon quota resets on Dec 1):
 
@@ -555,6 +566,24 @@ Each line needs one answer from the owner; record it in the named document.
 - Done when: the three checks run in `ci.yml` and fail the build when crossed.
 - Risk: item 5 (CI).
 
+### T36 — Claude Desktop through MCP on the laptop
+
+- Source: S7. The laptop runs the desktop install (TypeScript API on `127.0.0.1:8000`, PGlite), not the Docker
+  install, so no certificate is involved: `mcp-remote` reaches plain HTTP on loopback.
+- Already there: `POST /mcp` with six read-only tools behind an API key; the egress guard (ADR 0030) refuses every data
+  tool while «Envío a IA externa» is off and pseudonymises names when on.
+- Steps: deploy/desktop/README*.md «Claude Desktop through MCP»; runbook step 9, only after steps 1–8 and with her
+  consent.
+- Done when: on the laptop, Claude Desktop lists the tools, answers one search, and Auditoría shows the «IA externa»
+  rows. Windows is not rehearsed; the Linux rehearsal is in L36.
+
+### T37 — Chat-first setup, dashboards and reporting MCP
+
+- Source: S8. Overlaps: agentic-analyst (asking in Inicio), chat-first-ui (the shell), workspace-architecture T7
+  (cited answers). Missing: write tools for setup over MCP (identity and settings: high risk, ADR needed) and
+  aggregate read tools for reports (counts and groupings per module, period and territory).
+- Done when: the owner picks the first slice and it gets its own feature document.
+
 ## Out of scope
 
 Not chosen in S2. Each stays open in its own document.
@@ -806,6 +835,7 @@ Not chosen in S2. Each stays open in its own document.
   between 19:00 and midnight; the Inicio composer covers content at 360 px; SVG map numbers overlap; English
   «Dashboard»/«Gold Standard»; the verifier's extra date probes are not in the repository.
 - L35 — visit-rc15: after `visit-rc14`, main is f8f79ad1 with functional-10 T14 (rc14 gallery dudas, #480), T15
+- L36 — claude-desktop-mcp: Rehearsed T36 on Linux with synthetic data: the desktop TypeScript API on a scratch PGlite folder (port 8123, MFA off for the drill only), a read-only key from POST /system/integrations/api-keys, then MCP. Switch off: tools/list gives six read-only tools, list_object_types answers, search_records returns «El envío a IA externa está desactivado para este proyecto». Switch on (PUT /system/v4/settings {"external_ai":{"enabled":true}}): npx mcp-remote@0.15.2 (pinned, older than two weeks) over stdio to http://127.0.0.1:8123/mcp with --header Authorization:${SIPGES_AUTH} connected through StreamableHTTPClientTransport, answered initialize, tools/list and search_records. Not rehearsed: Claude Desktop itself and Windows. Earlier advice in this session about Docker, Caddy and WSL 2 did not apply: the laptop runs the desktop install. S8 recorded as T37, waiting on the owner for the first slice.
   (engine wording at the source, e2e on the Go API in CI, kit version check, #481) and T16 (every surface proved: CLI
   196/196, MCP, API, parity 2626/2626, Go suite, and an ego-browser walk that fixed eleven screen details, #484). CI
   and the Windows drill green on that commit. Gallery: 90 images, 68 ok / 22 duda / 0 defecto. Also on main since
