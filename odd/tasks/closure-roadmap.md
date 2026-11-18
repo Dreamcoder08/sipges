@@ -66,7 +66,7 @@ Phase 1, desktop (the nearest real use; does not depend on the cloud):
 - T34 [x] — S6: the visit, by a written runbook. Route: owner on the laptop. Done: runbook docs/deployment/desktop-visit.es.md, PR #401 (91cdbc7c).
 - T36 [ ] — S7: Claude Desktop reads the laptop's SIPGES through MCP, rehearsed and in the runbook (step 9). Route:
   inline, then owner on the laptop. Commit: pending.
-- T37 [ ] — S8: chat-first setup, big-number dashboards and a reporting MCP, mapped onto the existing features before
+- T37 [x] — S8: chat-first setup, big-number dashboards and a reporting MCP, mapped onto the existing features before
   any code. Route: owner decision on the first slice. Commit: n/a.
 
 Phase 2, cloud and backup (blocked until the Neon quota resets on Dec 1):
@@ -845,3 +845,4 @@ Not chosen in S2. Each stays open in its own document.
   and two identity dudas (an administrator can deactivate their own account; MFA sign-in shows «Código de
   autenticación inválido» before a code is typed).
 - L36 — claude-desktop-mcp: Rehearsed T36 on Linux with synthetic data: the desktop TypeScript API on a scratch PGlite folder (port 8123, MFA off for the drill only), a read-only key from POST /system/integrations/api-keys, then MCP. Switch off: tools/list gives six read-only tools, list_object_types answers, search_records returns «El envío a IA externa está desactivado para este proyecto». Switch on (PUT /system/v4/settings {"external_ai":{"enabled":true}}): npx mcp-remote@0.15.2 (pinned, older than two weeks) over stdio to http://127.0.0.1:8123/mcp with --header Authorization:${SIPGES_AUTH} connected through StreamableHTTPClientTransport, answered initialize, tools/list and search_records. Not rehearsed: Claude Desktop itself and Windows. Earlier advice in this session about Docker, Caddy and WSL 2 did not apply: the laptop runs the desktop install. S8 recorded as T37, waiting on the owner for the first slice.
+- L37 — T37: T37 first slice done: odd/tasks/reporting-mcp.md (count_records, read-only reports over MCP in both APIs, merged as 31c737af). Not yet deployed (Neon quota, T12). The rest of S8 (setup by chat, big-number dashboards) stays to be planned as its own features.
