@@ -10,7 +10,14 @@ import (
 // named by the variable, reports it with a ".held" file and keeps it until it is killed.
 const lockHolderEnv = "SIPGES_LOCALPG_TEST_LOCK_HOLDER"
 
+// sleeperEnv makes this test binary sleep until it is killed, as a process a postmaster.pid names.
+const sleeperEnv = "SIPGES_LOCALPG_TEST_SLEEPER"
+
 func TestMain(m *testing.M) {
+	if os.Getenv(sleeperEnv) != "" {
+		time.Sleep(5 * time.Minute)
+		return
+	}
 	if path := os.Getenv(lockHolderEnv); path != "" {
 		holdLock(path)
 		return

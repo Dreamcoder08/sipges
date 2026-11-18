@@ -11,8 +11,9 @@ import (
 	"time"
 )
 
-// probeTimeout bounds the protocol probe of the port a postmaster.pid names.
-const probeTimeout = 2 * time.Second
+// probeTimeout bounds the protocol probe of the port a postmaster.pid names. It is longer than
+// the two seconds Windows spends retrying a refused connection, so a closed port reads as refused.
+var probeTimeout = 5 * time.Second
 
 // sslRequest is the PostgreSQL protocol's SSLRequest: length 8, code 80877103. Any PostgreSQL
 // answers it with one byte, 'S' or 'N', before it asks for a password, and logs nothing when the
@@ -41,13 +42,16 @@ func readPidFile(dataDir string) (pidFile, bool) {
 }
 
 // Serving reports whether a PostgreSQL server serves dataDir, with the process id its
-// postmaster.pid names. The file alone proves nothing: a server that died leaves it behind, and
-// after a restart the operating system may give its process id to another program (common on
-// Windows). It counts only when that process is alive, works in dataDir where the system tells
-// (Linux), and the port the file names answers the PostgreSQL protocol on loopback.
+// postmaster.pid names. The rule is asymmetric: a live server must never be missed, since the
+// callers copy or rename the folder when it is free, and a stale file must never lock the client
+// out.
 //
-// A server that does not answer is not counted, and is never signalled: PostgreSQL's own check of
-// postmaster.pid still keeps a second server off the folder.
+// A file whose process is dead is free: a server that died leaves it behind. A live process the
+// system proves to be PostgreSQL on dataDir serves it, listening or not (frozen, starting up,
+// socket or IPv6 only); one it proves to be another program is free, since after a restart the
+// system may give a dead server's process id to anything. When the system does not tell, the port
+// the file names decides: only a refused connection or a reply that is not PostgreSQL's frees the
+// folder, and silence or a timeout counts as serving.
 func Serving(ctx context.Context, dataDir string) (int, bool) {
 	pf, ok := readPidFile(dataDir)
 	if !ok {
@@ -56,37 +60,48 @@ func Serving(ctx context.Context, dataDir string) (int, bool) {
 	if !pidAlive(pf.pid) {
 		return pf.pid, false
 	}
-	if known, in := processInDir(pf.pid, dataDir); known && !in {
+	switch processIdentity(pf.pid, dataDir) {
+	case identityPostgres:
+		return pf.pid, true
+	case identityOther:
 		return pf.pid, false
+	default:
+		return pf.pid, portServing(ctx, pf.port)
 	}
-	return pf.pid, answersPostgres(ctx, pf.port)
 }
 
-// answersPostgres sends an SSLRequest to 127.0.0.1:port and accepts only a PostgreSQL answer.
-func answersPostgres(ctx context.Context, port int) bool {
+// portServing sends an SSLRequest to 127.0.0.1:port. A PostgreSQL answer, silence or a timeout
+// count as serving; a refused connection, one closed without an answer or another answer do not.
+// A port that cannot be probed proves nothing and counts as serving.
+func portServing(ctx context.Context, port int) bool {
 	if port <= 0 || port > 65535 {
-		return false
+		return true
 	}
 	ctx, cancel := context.WithTimeout(ctx, probeTimeout)
 	defer cancel()
 	var d net.Dialer
 	conn, err := d.DialContext(ctx, "tcp", net.JoinHostPort("127.0.0.1", strconv.Itoa(port)))
 	if err != nil {
-		return false
+		return !connectionRefused(err)
 	}
 	defer func() { _ = conn.Close() }()
 	deadline, _ := ctx.Deadline()
 	if conn.SetDeadline(deadline) != nil {
-		return false
+		return true
 	}
 	if _, err := conn.Write(sslRequest); err != nil {
-		return false
+		return timedOut(err)
 	}
 	answer := make([]byte, 1)
 	if _, err := conn.Read(answer); err != nil {
-		return false
+		return timedOut(err)
 	}
 	return answer[0] == 'S' || answer[0] == 'N'
+}
+
+func timedOut(err error) bool {
+	var netErr net.Error
+	return errors.As(err, &netErr) && netErr.Timeout()
 }
 
 // StopLeftover stops a server left running on opts.DataDir, typically by a launcher that was
@@ -116,7 +131,7 @@ func (s *Server) stopLeftover(ctx context.Context) error {
 	if !ok || !pidAlive(pf.pid) {
 		return nil
 	}
-	if known, in := processInDir(pf.pid, s.opts.DataDir); known && !in {
+	if processIdentity(pf.pid, s.opts.DataDir) == identityOther {
 		if err := os.Remove(filepath.Join(s.opts.DataDir, "postmaster.pid")); err != nil && !errors.Is(err, os.ErrNotExist) {
 			return &Error{Kind: ErrStart, Path: s.opts.LogPath, Err: err}
 		}
