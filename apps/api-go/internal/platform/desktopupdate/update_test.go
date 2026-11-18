@@ -23,6 +23,10 @@ const crashHelperEnv = "SIPGES_DESKTOPUPDATE_CRASH_HELPER"
 // TestMain doubles as the crash driver: with crashHelperEnv set, the test binary runs one update
 // and exits with status 70 at the named step, as a crash would, leaving lock and journal behind.
 func TestMain(m *testing.M) {
+	if os.Getenv(sleeperEnv) != "" {
+		time.Sleep(5 * time.Minute)
+		return
+	}
 	if spec := os.Getenv(crashHelperEnv); spec != "" {
 		os.Exit(crashDriver(spec))
 	}
