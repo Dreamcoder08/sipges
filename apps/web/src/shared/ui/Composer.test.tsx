@@ -140,3 +140,24 @@ it('counts from 450 of the 500 characters and says when the limit is reached', (
   expect(screen.getByText('500/500 · Llegaste al límite')).toBeVisible();
   expect(screen.getByRole('status')).toHaveTextContent('Llegaste al límite de 500 caracteres.');
 });
+
+it('«Detener» never submits, even when stopping turns it back into the send button', async () => {
+  const user = userEvent.setup();
+  const onSubmit = vi.fn();
+  const Stopping = () => {
+    const [pending, setPending] = useState(true);
+    return (
+      <Harness
+        value="bloqueo norte"
+        onValueChange={() => {}}
+        pending={pending}
+        onStop={() => setPending(false)}
+        onSubmit={onSubmit}
+      />
+    );
+  };
+  render(<Stopping />);
+  await user.click(screen.getByRole('button', { name: 'Detener respuesta' }));
+  expect(screen.getByRole('button', { name: 'Enviar pregunta' })).toBeTruthy();
+  expect(onSubmit).not.toHaveBeenCalled();
+});
