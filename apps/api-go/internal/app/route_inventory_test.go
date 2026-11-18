@@ -60,6 +60,7 @@ func servedRoutes(t *testing.T) []string {
 	t.Setenv("SIPGES_GOOGLE_CLIENT_ID", "synthetic-client")
 	t.Setenv("SIPGES_GOOGLE_CLIENT_SECRET", "synthetic-secret")
 	t.Setenv("SIPGES_DATA_KEY", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
+	t.Setenv("SIPGES_DESKTOP_UPDATE_DIR", t.TempDir())
 	pool, err := pgxpool.New(context.Background(), "postgres://synthetic@127.0.0.1:1/synthetic")
 	if err != nil {
 		t.Fatal(err)
