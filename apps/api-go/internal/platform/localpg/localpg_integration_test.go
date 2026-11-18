@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -161,8 +162,8 @@ func TestStartRefusesWhileAnotherInstanceServesTheFolder(t *testing.T) {
 func TestStartTakesOverAServerWhoseLauncherDied(t *testing.T) {
 	opts := options(t)
 	orphan := startT(t, opts)
-	// The launcher was ended from Task Manager: its lock names a process that no longer exists,
-	// while the server it started still answers.
+	// The launcher was ended from Task Manager: the operating system dropped its lock, while the
+	// server it started still answers.
 	crash(orphan)
 	if err := orphan.Ping(context.Background()); err != nil {
 		t.Fatal(err)
@@ -173,15 +174,26 @@ func TestStartTakesOverAServerWhoseLauncherDied(t *testing.T) {
 	}
 }
 
-func TestALeftoverLockNamingAnUnrelatedLiveProcessDoesNotLockOut(t *testing.T) {
+func TestALockHeldByAnotherLiveProcessRefusesUntilThatProcessEnds(t *testing.T) {
 	opts := options(t)
-	orphan := startT(t, opts)
-	crash(orphan)
-	// After a crash and a reboot, the pid in the leftover file now belongs to something else.
-	writeFile(t, opts.DataDir+lockSuffix, strconv.Itoa(os.Getppid())+"\n")
-	next := startT(t, opts)
-	if err := next.Ping(context.Background()); err != nil {
-		t.Fatalf("Ping: %v", err)
+	// Another instance, a separate process, holds the lock the operating system keeps for it.
+	holder := exec.Command(os.Args[0], "-test.run=^$")
+	holder.Env = append(os.Environ(), lockHolderEnv+"="+opts.DataDir+lockSuffix)
+	if err := holder.Start(); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = holder.Process.Kill(); _ = holder.Wait() })
+	waitFile(t, opts.DataDir+lockSuffix+".held")
+	if _, err := Start(context.Background(), opts); !errors.Is(err, ErrInUse) {
+		t.Fatalf("Start while another process holds the lock = %v, want ErrInUse", err)
+	}
+	// It is ended from Task Manager: the operating system drops its lock with it.
+	if err := holder.Process.Kill(); err != nil {
+		t.Fatal(err)
+	}
+	_ = holder.Wait()
+	if err := startT(t, opts).Ping(context.Background()); err != nil {
+		t.Fatalf("Ping after the other process ended: %v", err)
 	}
 }
 
@@ -255,6 +267,67 @@ func TestAStartThatTimesOutLeavesNoServer(t *testing.T) {
 	}
 }
 
+func TestASetupServerWhoseStopFailsIsNotLeftRunning(t *testing.T) {
+	opts := options(t)
+	failStop := filepath.Join(t.TempDir(), "fail-stop")
+	opts.BinDir = pgbin.FailingStop(t, opts.BinDir, failStop)
+	pid := 0
+	opts.Setup = func(_ context.Context, s *Server) error {
+		pid = postmasterPID(t, s.opts.DataDir)
+		writeFile(t, failStop, "")
+		return nil
+	}
+	t.Cleanup(func() {
+		if pid > 0 && alive(pid) {
+			_ = killHard(pid)
+		}
+	})
+	_, err := Start(context.Background(), opts)
+	if !errors.Is(err, ErrStop) {
+		t.Fatalf("Start = %v, want ErrStop", err)
+	}
+	waitGone(t, pid)
+	if _, err := os.Stat(opts.DataDir + setupSuffix); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("setup folder still there: %v", err)
+	}
+}
+
+func TestAFailedFinalRenameNamesTheLog(t *testing.T) {
+	root := t.TempDir()
+	logPath := filepath.Join(root, "pg18.log")
+	err := moveIntoPlace(filepath.Join(root, "missing.setup"), filepath.Join(root, "pg18"), logPath)
+	var e *Error
+	if !errors.As(err, &e) || !errors.Is(err, ErrInit) {
+		t.Fatalf("moveIntoPlace = %v, want an ErrInit Error", err)
+	}
+	if e.Path != logPath {
+		t.Fatalf("Path = %q, want the log %q", e.Path, logPath)
+	}
+	if msg := UserMessage(err); !strings.Contains(msg, logPath) {
+		t.Fatalf("user message %q does not point at the log", msg)
+	}
+}
+
+func TestAStartThatCannotComeUpFailsWithoutWaiting(t *testing.T) {
+	opts := options(t)
+	startT(t, opts).Stop(context.Background()) //nolint:errcheck // the next Start checks the cluster
+	conf, err := os.OpenFile(filepath.Join(opts.DataDir, "postgresql.conf"), os.O_APPEND|os.O_WRONLY, 0o600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, werr := conf.WriteString("synthetic_broken_line = = =\n")
+	if err := errors.Join(werr, conf.Close()); err != nil {
+		t.Fatal(err)
+	}
+	began := time.Now()
+	if _, err := Start(context.Background(), opts); !errors.Is(err, ErrStart) {
+		t.Fatalf("Start = %v, want ErrStart", err)
+	}
+	if took, linger := time.Since(began), lingerChecks*lingerPause; took >= linger {
+		t.Fatalf("a server that exited at once was waited for: Start took %v, the linger is %v", took, linger)
+	}
+}
+
 // crash drops the instance's lock without stopping its server, as the end of a killed launcher
 // does: the kernel closes its files.
 func crash(s *Server) {
@@ -271,6 +344,17 @@ func waitGone(t *testing.T, pid int) {
 		time.Sleep(50 * time.Millisecond)
 	}
 	t.Fatalf("process %d did not exit", pid)
+}
+
+func waitFile(t *testing.T, path string) {
+	t.Helper()
+	for range 200 {
+		if _, err := os.Stat(path); err == nil {
+			return
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	t.Fatalf("%s never appeared", path)
 }
 
 func execSQL(t *testing.T, s *Server, statements ...string) {
