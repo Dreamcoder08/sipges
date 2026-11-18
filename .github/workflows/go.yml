@@ -77,6 +77,9 @@ jobs:
         run: go mod verify
       - name: go vet
         run: go vet ./...
+      # The desktop install runs the Go API on Windows (ADR 0036); Unix-only code must not reach it.
+      - name: go build for Windows
+        run: GOOS=windows GOARCH=amd64 go build ./...
       # -count=1: integration tests always hit the database, never the test cache.
       - name: go test (race detector, PostgreSQL 17)
         run: go test -race -count=1 ./...
