@@ -646,6 +646,29 @@ test('ODD close keeps the log style of the document it edits', () =>
       assert.ok(written.includes(`${expected}\n`));
     }
   }));
+test('ODD close appends after the continuation lines of a wrapped last entry', () =>
+  fixture((dir) => {
+    const file = path.join(dir, 'odd.md');
+    writeFileSync(
+      file,
+      '- T1 [ ] one\n## Log\n- L2 — Map: first line\n  second line\n  third line\n',
+    );
+    const result = spawnSync(process.execPath, [
+      path.join(root, 'scripts/odd-close-task.mjs'),
+      '--log-only',
+      '--label',
+      'Next',
+      '--text',
+      'Synthetic',
+      '--file',
+      file,
+    ]);
+    assert.equal(result.status, 0);
+    assert.equal(
+      readFileSync(file, 'utf8'),
+      '- T1 [ ] one\n## Log\n- L2 — Map: first line\n  second line\n  third line\n- L3 — Next: Synthetic\n',
+    );
+  }));
 test('ODD log-only appends an entry and touches no task', () =>
   fixture((dir) => {
     const file = path.join(dir, 'odd.md');

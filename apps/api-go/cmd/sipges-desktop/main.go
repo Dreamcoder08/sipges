@@ -106,10 +106,11 @@ func envOr(lookup func(string) (string, bool), key, fallback string) string {
 }
 
 // run is runDesktop, except that a stop requested while starting is not a failure: whatever
-// started was stopped, and the reason only goes to the log.
+// started was stopped, and the reason only goes to the log. A PostgreSQL that did not stop is
+// always a failure, requested stop or not: it may still be running.
 func run(ctx context.Context, args, environ []string, stdout, stderr io.Writer) error {
 	err := runDesktop(ctx, args, environ, stdout, stderr)
-	if err != nil && ctx.Err() != nil {
+	if err != nil && ctx.Err() != nil && !errors.Is(err, localpg.ErrStop) {
 		_, _ = fmt.Fprintln(stderr, "sipges-desktop: stopped while starting:", err)
 		return nil
 	}
@@ -201,8 +202,12 @@ type userError struct {
 func (e *userError) Error() string { return e.err.Error() }
 func (e *userError) Unwrap() error { return e.err }
 
-// userMessage is the Spanish sentence for err.
+// userMessage is the Spanish sentence for err. A PostgreSQL that did not stop comes first, before
+// whatever ended the run: the person must know it may still be running.
 func userMessage(err error) string {
+	if errors.Is(err, localpg.ErrStop) {
+		return localpg.UserMessage(err)
+	}
 	var ue *userError
 	if errors.As(err, &ue) {
 		return ue.msg

@@ -68,7 +68,10 @@ if (!logOnly) {
     .replace(/commit: pending/, `commit: see L${next}`);
   closed = lines[at];
 }
-lines.splice(last.index + 1, 0, entry);
+// A wrapped entry goes on in indented lines; the new one follows the whole entry, not its first line.
+let after = last.index + 1;
+while (after < lines.length && /^\s+\S/.test(lines[after])) after += 1;
+lines.splice(after, 0, entry);
 
 if (values['dry-run']) {
   console.log([closed, entry].filter(Boolean).join('\n'));

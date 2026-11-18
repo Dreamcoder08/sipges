@@ -285,6 +285,44 @@ Install Ollama, run `ollama pull nomic-embed-text`, then set the user environmen
 `SIPGES_OLLAMA_URL=http://127.0.0.1:11434` and `SIPGES_SEMANTIC_SEARCH=1` and restart the server.
 Variable details: [docs/deployment/local-install.md](../../docs/deployment/local-install.md).
 
+## Optional: Claude Desktop through MCP
+
+SIPGES answers MCP on `http://127.0.0.1:8000/mcp` with seven read-only tools (`list_object_types`,
+`search_records`, `get_record`, `get_links`, `get_timeline`, `count_records`, `get_briefing`). `count_records`
+answers totals and counts grouped by a closed-list field, for reports, without reading record by record. Claude Desktop reaches it through the
+`mcp-remote` bridge, which runs on this computer. Unlike semantic search, **this sends project data to Anthropic**:
+names are pseudonymised and only allowed fields leave ([ADR 0030](../../docs/adr/0030-external-ai-egress-guard.md)),
+but it is still personal data under Ley 29733, so the data owner must agree first.
+
+1. In SIPGES, as an administrator: **Integraciones › Nueva clave de API**, «Solo lectura». Copy the key; it is shown
+   once.
+2. In **Configuración**, card «IA externa», turn on «Envío a IA externa». While it is off, `list_object_types`
+   answers and every data tool returns «El envío a IA externa está desactivado para este proyecto».
+3. Install [Claude Desktop](https://claude.ai/download). Node.js is already there from the install.
+4. Claude Desktop › Settings › Developer › Edit Config opens `claude_desktop_config.json`
+   (`%APPDATA%\Claude\` on Windows). Add:
+
+   ```json
+   {
+     "mcpServers": {
+       "sipges": {
+         "command": "npx",
+         "args": ["-y", "mcp-remote@0.15.2", "http://127.0.0.1:8000/mcp", "--header", "Authorization:${SIPGES_AUTH}"],
+         "env": { "SIPGES_AUTH": "Bearer <the key>" }
+       }
+     }
+   }
+   ```
+
+   No space after `Authorization:`: Claude Desktop on Windows splits arguments on spaces, so the space lives in
+   the variable. The version is pinned on purpose; update it deliberately.
+5. Quit Claude Desktop completely (also from the tray) and open it again. Ask «¿Qué tipos de objeto tiene
+   SIPGES?».
+
+SIPGES must be running: closing its window keeps the server up, restarting Windows does not. The key is stored in
+plain text in that file; revoke it in **Integraciones** if the file or a screenshot of it leaves the computer.
+Every answer is written to **Auditoría** under «IA externa».
+
 ## Change the icon
 
 `sipges.svg` is the source. Regenerate the other two files from `deploy/desktop` (needs

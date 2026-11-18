@@ -3,7 +3,8 @@
 ## Status
 Accepted (2026-11-03). Supersedes [0005](0005-processing-ports-and-native-adapters.md). Amends
 [0028](0028-cloudflare-workers-hosting.md): Cloudflare stays in front, the backend moves off Workers. §3 amended by
-[0034](0034-rust-placement-criterion.md): Rust is placed by a criterion, not by this list.
+[0034](0034-rust-placement-criterion.md): Rust is placed by a criterion, not by this list. §6 amended by
+[0036](0036-desktop-go-with-bundled-postgresql.md): the TypeScript API goes only after the desktop install runs on Go.
 
 ## Context
 The owner set the target stack: «quiero que el proyecto usa el siguiente stack , el frontend typescript , el backend go , scripts/motor rust» and, for the backend, «quiero que el backend , APIS , agentes , colas sean en go».

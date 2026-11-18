@@ -334,6 +334,46 @@ Instala Ollama, ejecuta `ollama pull nomic-embed-text`, define las variables de 
 `SIPGES_OLLAMA_URL=http://127.0.0.1:11434` y `SIPGES_SEMANTIC_SEARCH=1`, y reinicia el servidor.
 Detalle de las variables: [docs/deployment/local-install.es.md](../../docs/deployment/local-install.es.md).
 
+## Opcional: Claude Desktop por MCP
+
+SIPGES responde MCP en `http://127.0.0.1:8000/mcp` con siete herramientas de solo lectura (`list_object_types`,
+`search_records`, `get_record`, `get_links`, `get_timeline`, `count_records`, `get_briefing`). `count_records`
+da totales y conteos agrupados por un campo de lista cerrada, para reportes, sin leer registro por registro. Claude Desktop llega a ellas mediante
+el puente `mcp-remote`, que corre en este computador. A diferencia de la búsqueda semántica, **esto envía datos del
+proyecto a Anthropic**: los nombres van seudonimizados y solo salen los campos permitidos
+([ADR 0030](../../docs/adr/0030-external-ai-egress-guard.md)), pero siguen siendo datos personales según la
+Ley 29733, así que la persona responsable de los datos debe aceptarlo antes.
+
+1. En SIPGES, como administrador: **Integraciones › Nueva clave de API**, «Solo lectura». Copia la clave; se muestra
+   una sola vez.
+2. En **Configuración**, tarjeta «IA externa», activa «Envío a IA externa». Mientras esté apagado,
+   `list_object_types` responde y todas las herramientas de datos devuelven «El envío a IA externa está desactivado
+   para este proyecto».
+3. Instala [Claude Desktop](https://claude.ai/download). Node.js ya está instalado desde la instalación de SIPGES.
+4. Claude Desktop › Settings › Developer › Edit Config abre `claude_desktop_config.json`
+   (`%APPDATA%\Claude\` en Windows). Agrega:
+
+   ```json
+   {
+     "mcpServers": {
+       "sipges": {
+         "command": "npx",
+         "args": ["-y", "mcp-remote@0.15.2", "http://127.0.0.1:8000/mcp", "--header", "Authorization:${SIPGES_AUTH}"],
+         "env": { "SIPGES_AUTH": "Bearer <la clave>" }
+       }
+     }
+   }
+   ```
+
+   Sin espacio después de `Authorization:`: en Windows, Claude Desktop separa los argumentos por espacios, así que
+   el espacio va dentro de la variable. La versión está fijada a propósito; actualízala de forma deliberada.
+5. Cierra Claude Desktop por completo (también desde la bandeja del sistema) y ábrelo de nuevo. Pregunta «¿Qué
+   tipos de objeto tiene SIPGES?».
+
+SIPGES debe estar en marcha: cerrar su ventana deja el servidor activo, reiniciar Windows no. La clave queda en
+texto plano en ese archivo; revócala en **Integraciones** si el archivo o una captura suya sale del computador.
+Cada respuesta queda en **Auditoría** bajo «IA externa».
+
 ## Cambiar el ícono
 
 `sipges.svg` es la fuente. Regenera los otros dos archivos desde `deploy/desktop` (requiere
