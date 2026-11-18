@@ -95,6 +95,14 @@ Phase 5 — Rust tools and retirement: `migrate-legacy`, `import:base-maestra`, 
 - T44 [ ] — S7: switch routes in production by exact path, measuring before and after with the owner, then retire the TypeScript API.
 - T72 [ ] — Desktop install on the Go API: an embedded or bundled PostgreSQL for Windows instead of PGlite, and the
   laptop's PGlite data carried over losslessly, rehearsed like closure-roadmap T33. Needs an ADR (0036) after research.
+  - T72a [ ] — ADR 0036 §2–3: Go package `internal/platform/localpg` (initdb with the pinned flags, start on
+    127.0.0.1 and a free port, health, stop) and a `sipges-desktop` command that starts the server, migrates and serves
+    the API. Route: Herdr tab `desktop-go`, surface `apps/api-go/cmd/sipges-desktop/**`,
+    `apps/api-go/internal/platform/localpg/**`.
+  - T72b [ ] — ADR 0036 §4: one-time migrator from a copy of a PGlite folder into PostgreSQL 18, proved with
+    `tables.mjs`. Route: Herdr tab `pglite-move`, surface `deploy/desktop/migration/**`.
+  - T72c [ ] — ADR 0036 §1, §5–6: the pinned PostgreSQL 18 bundle in the package and updater, launchers switched,
+    Windows rehearsal. Route: inline after T72a and T72b.
 - T73 [ ] — Retire the TypeScript API (`apps/api`) once T44 and T72 are done: every route served by Go in
   production and on the desktop. Until then new backend features land in both APIs with parity.
 - T45 [x] — S2, S7: integration runtime (#264). Independent verifier: one blocker fixed (the 8 KiB source limit is mounted in the real handler).
