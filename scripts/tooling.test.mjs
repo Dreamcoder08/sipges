@@ -1058,62 +1058,133 @@ test('two branches appending to a feature log merge locally without a conflict',
   }));
 
 // Runs the install script with stubs for the commands it calls; each stub logs its arguments.
-const runPlaywrightInstall = (runner, failures) => {
+// `failing` names the phase whose first `failures` attempts time out: `install-deps` (apt) or
+// `install ` (the browser download). `archives` seeds the apt cache folder actions/cache restores.
+const runPlaywrightInstall = ({
+  runner,
+  failing = 'install-deps',
+  failures = 0,
+  cached = [],
+  downloaded = [],
+}) => {
   const dir = mkdtempSync(path.join(tmpdir(), 'sipges-playwright-install-'));
+  const bin = path.join(dir, 'bin');
+  const cache = path.join(dir, 'apt-cache');
+  const system = path.join(dir, 'system-archives');
+  for (const folder of [bin, cache, system]) mkdirSync(folder);
+  for (const deb of cached) writeFileSync(path.join(cache, deb), deb);
+  for (const deb of downloaded) writeFileSync(path.join(system, deb), deb);
   const log = path.join(dir, 'calls.log');
   const counter = path.join(dir, 'attempts');
   const stub = (name, body) =>
-    writeFileSync(path.join(dir, name), `#!/usr/bin/env bash\n${body}\n`, { mode: 0o755 });
+    writeFileSync(path.join(bin, name), `#!/usr/bin/env bash\n${body}\n`, { mode: 0o755 });
   stub(
     'timeout',
     `echo "timeout $*" >> "${log}"
+case "$*" in *"${failing}"*) ;; *) exit 0 ;; esac
 n=$(($(cat "${counter}" 2>/dev/null || echo 0) + 1)); echo $n > "${counter}"
 [ "$n" -gt ${failures} ]`,
   );
   // pkill answers 1 when nothing matches, which must not stop the loop.
   stub('sudo', `echo "sudo $*" >> "${log}"\n[ "$1" != pkill ]`);
-  const result = spawnSync('bash', ['scripts/ci-playwright-install.sh', 'chromium'], {
+  stub('sleep', `echo "sleep $*" >> "${log}"`);
+  const result = spawnSync('bash', ['scripts/ci-playwright-install.sh', 'webkit'], {
     cwd: root,
-    env: { PATH: `${dir}:${process.env.PATH}`, SIPGES_CI_RUNNER: runner },
+    env: {
+      PATH: `${bin}:${process.env.PATH}`,
+      SIPGES_CI_RUNNER: runner,
+      SIPGES_APT_ARCHIVES: cache,
+      SIPGES_APT_SYSTEM_ARCHIVES: system,
+    },
     encoding: 'utf8',
   });
-  const calls = readFileSync(log, 'utf8').trim().split('\n');
+  const calls = readFileSync(log, 'utf8')
+    .trim()
+    .split('\n')
+    .map((call) => call.replaceAll(dir, '<tmp>'));
+  const kept = readdirSync(cache).sort();
   rmSync(dir, { recursive: true, force: true });
-  return { ...result, calls };
+  return { ...result, calls, kept };
 };
 
-test('playwright install frees the dpkg lock between attempts on GitHub-hosted runners', () => {
-  const { status, stderr, calls } = runPlaywrightInstall('github-hosted', 1);
+const deps = 'pnpm --filter @sipges/e2e exec playwright install-deps webkit';
+const browser = 'pnpm --filter @sipges/e2e exec playwright install webkit';
+
+test('playwright install on GitHub-hosted runners installs apt packages, then the browser, with backoff', () => {
+  const { status, stderr, calls } = runPlaywrightInstall({ runner: 'github-hosted', failures: 1 });
   assert.equal(status, 0, stderr);
+  assert.match(stderr, /System packages for webkit .*attempt 1\/3 failed/);
   assert.match(stderr, /keeps the dpkg lock/);
   assert.deepEqual(calls, [
-    'timeout 480 pnpm --filter @sipges/e2e exec playwright install --with-deps chromium',
+    `timeout 480 ${deps}`,
     'sudo pkill -x apt-get',
     'sudo timeout 120 dpkg --configure -a',
-    'timeout 480 pnpm --filter @sipges/e2e exec playwright install --with-deps chromium',
+    'sleep 15',
+    `timeout 480 ${deps}`,
+    `timeout 300 ${browser}`,
   ]);
 });
 
-test('playwright install on self-hosted runners keeps 5 minutes, no apt and no sudo', () => {
-  const { status, calls } = runPlaywrightInstall('self-hosted', 1);
-  assert.equal(status, 0);
-  assert.deepEqual(calls, [
-    'timeout 300 pnpm --filter @sipges/e2e exec playwright install chromium',
-    'timeout 300 pnpm --filter @sipges/e2e exec playwright install chromium',
-  ]);
+test('playwright install on self-hosted runners skips apt and sudo and backs off between downloads', () => {
+  const { status, stderr, calls } = runPlaywrightInstall({
+    runner: 'self-hosted',
+    failing: 'install webkit',
+    failures: 1,
+  });
+  assert.equal(status, 0, stderr);
+  assert.match(stderr, /Playwright webkit browser download: attempt 1\/3 failed/);
+  assert.deepEqual(calls, [`timeout 300 ${browser}`, 'sleep 15', `timeout 300 ${browser}`]);
 });
 
-test('playwright install fails after three attempts and repairs only between them', () => {
-  const { status, calls } = runPlaywrightInstall('github-hosted', 3);
+test('playwright install names the apt mirror when the system packages fail three times', () => {
+  const { status, stdout, calls } = runPlaywrightInstall({ runner: 'github-hosted', failures: 3 });
   assert.equal(status, 1);
-  assert.equal(calls.filter((call) => call.startsWith('timeout 480')).length, 3);
+  assert.match(stdout, /::error title=Playwright system packages::.*Ubuntu package mirror/);
+  assert.equal(calls.filter((call) => call === `timeout 480 ${deps}`).length, 3);
   assert.equal(calls.filter((call) => call.includes('dpkg')).length, 2);
+  assert.deepEqual(
+    calls.filter((call) => call.startsWith('sleep')),
+    ['sleep 15', 'sleep 45'],
+  );
+  assert.ok(!calls.includes(`timeout 300 ${browser}`));
 });
 
-test('CI installs Playwright through the script and names the runner', () => {
+test('playwright install names the browser download when it fails three times', () => {
+  const { status, stdout, calls } = runPlaywrightInstall({
+    runner: 'github-hosted',
+    failing: 'install webkit',
+    failures: 3,
+  });
+  assert.equal(status, 1);
+  assert.match(stdout, /::error title=Playwright browser download::.*webkit browser download/);
+  assert.equal(calls.filter((call) => call === `timeout 300 ${browser}`).length, 3);
+  assert.ok(!calls.some((call) => call.includes('dpkg')));
+});
+
+test('playwright install reuses the cached apt packages and keeps the downloaded ones', () => {
+  const { status, stderr, calls, kept } = runPlaywrightInstall({
+    runner: 'github-hosted',
+    cached: ['a.deb'],
+    downloaded: ['a.deb', 'b.deb'],
+  });
+  assert.equal(status, 0, stderr);
+  assert.equal(calls[0], 'sudo cp -- <tmp>/apt-cache/a.deb <tmp>/system-archives/');
+  assert.equal(calls[1], `timeout 480 ${deps}`);
+  assert.deepEqual(kept, ['a.deb', 'b.deb']);
+});
+
+test('CI installs Playwright through the script, names the runner and caches by version, browser and OS', () => {
   const ci = readFileSync(path.join(root, '.github/workflows/ci.yml'), 'utf8');
   assert.match(ci, /run: bash scripts\/ci-playwright-install\.sh \$\{\{ matrix\.browser \}\}/);
   assert.match(ci, /SIPGES_CI_RUNNER: \$\{\{ runner\.environment \}\}/);
+  const keys = ci.match(/key: playwright-.*$/gm) ?? [];
+  assert.equal(keys.length, 2, 'e2e and e2e-go cache the browser');
+  for (const key of keys) {
+    assert.match(key, /steps\.playwright\.outputs\.image/);
+    assert.match(key, /steps\.playwright\.outputs\.version/);
+    assert.match(key, /matrix\.browser|-chromium-/);
+  }
+  assert.equal((ci.match(/SIPGES_APT_ARCHIVES: ~\/\.cache\/sipges-apt-archives/g) ?? []).length, 2);
 });
 test('fork collaboration: issue forms, fork PR memory guard and the upstream flow are in place', () => {
   const forms = path.join(root, '.github/ISSUE_TEMPLATE');
