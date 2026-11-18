@@ -1,7 +1,7 @@
 // install.ps1 -Release … -State <folder> refuses a link, a junction or a path to the original
 // %LOCALAPPDATA%\SIPGES before anything is written. PowerShell does not run here: these tests read
 // the scripts, so they pin the guard's body and where it is called, not PowerShell semantics (what
-// Get-Item reports for a junction, what realpathSync.native answers). The Windows drill runs it for
+// Get-Item reports for a junction, what GetFinalPathNameByHandle answers). The Windows drill runs it for
 // real (deploy/desktop/windows/drill.mjs, .github/workflows/windows-desktop.yml).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -23,8 +23,8 @@ function functionBody(text, name) {
   return lines.slice(start + 1, end);
 }
 
-const realpath = (variable) =>
-  `(& node -p "require('fs').realpathSync.native(process.argv[1])" ${variable}) -join ''`;
+// Without Node (go-rust-stack T72d3): GetFinalPathNameByHandle, what realpathSync.native calls.
+const realpath = (variable) => `Get-RealPath ${variable}`;
 const GUARD = [
   "    $original = Join-Path $env:LOCALAPPDATA 'SIPGES'",
   '    $item = Get-Item -LiteralPath $State -Force -ErrorAction SilentlyContinue',
