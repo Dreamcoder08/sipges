@@ -135,6 +135,40 @@
   {
     "write": false,
     "descriptor": {
+      "name": "count_records",
+      "title": "Conteo de registros",
+      "description": "Cuenta los registros de un tipo de objeto, opcionalmente agrupados por un campo de lista cerrada y acotados por fechas. Úsalo para totales y reportes en lugar de leer registro por registro.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "module": {
+            "type": "string",
+            "maxLength": 40,
+            "description": "Tipo de objeto: actores, eventos, demandas, compromisos, narrativas, fuentes, alertas, acciones, directorio, intereses, dialogos, oportunidades, hechos, aarc, buzon, lecciones"
+          },
+          "group_by": {
+            "default": "",
+            "description": "Campo por el que agrupar: solo campos de lista cerrada, códigos, fechas o números; vacío = solo el total",
+            "type": "string",
+            "maxLength": 80
+          },
+          "from": {
+            "default": "",
+            "description": "AAAA, AAAA-MM o AAAA-MM-DD sobre el campo de fecha del tipo; vacío = sin límite",
+            "type": "string",
+            "maxLength": 10
+          },
+          "to": { "default": "", "type": "string", "maxLength": 10 }
+        },
+        "required": ["module"]
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    }
+  },
+  {
+    "write": false,
+    "descriptor": {
       "name": "get_briefing",
       "title": "Informe con citas",
       "description": "Informe extractivo de un registro y su entorno con citas numeradas a los registros fuente y señales de atención.",

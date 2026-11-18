@@ -5,7 +5,9 @@
 package infrastructure
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -49,6 +51,21 @@ var (
            WHERE d.day ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' AND d.day >= $3 AND d.day <= $4
            ORDER BY d.day DESC, r.module, r.id
            LIMIT $5`
+
+	// countSQL and countDatedSQL read only what a count needs, never a GROUP BY: the egress guard
+	// decides which records count. The dated rule is datedSQL's.
+	countSQL = `SELECT id, marking, payload -> $2::text
+           FROM module_records
+           WHERE module = $1
+           ORDER BY id
+           LIMIT $3`
+
+	countDatedSQL = `SELECT r.id, r.marking, r.payload -> $2::text
+           FROM module_records r
+           CROSS JOIN LATERAL (SELECT left(r.payload->>$3::text, 10) AS day) d
+           WHERE r.module = $1 AND d.day ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' AND d.day >= $4 AND d.day <= $5
+           ORDER BY r.id
+           LIMIT $6`
 
 	linksSQL = `SELECT id, link_type, source_module, source_id, target_module, target_id, note,
                   created_by, created_at, evidence_source_id
@@ -139,6 +156,35 @@ func (s Store) Dated(ctx context.Context, fields []application.DateField, from, 
 		p, err := domain.DecodePayload(payload)
 		d.Payload = p
 		return d, err
+	})
+}
+
+// Countable returns id, marking and the field's JSON value of the records a count reads, by id.
+func (s Store) Countable(ctx context.Context, q application.CountQuery, limit int) ([]application.CountRow, error) {
+	var (
+		rows pgx.Rows
+		err  error
+	)
+	if q.DateField == "" {
+		rows, err = s.Q.Query(ctx, countSQL, q.Module, q.Field, limit)
+	} else {
+		rows, err = s.Q.Query(ctx, countDatedSQL, q.Module, q.Field, q.DateField, q.From, q.To, limit)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (application.CountRow, error) {
+		var (
+			c     application.CountRow
+			value []byte
+		)
+		if err := row.Scan(&c.ID, &c.Marking, &value); err != nil || value == nil || q.Field == "" {
+			return c, err
+		}
+		dec := json.NewDecoder(bytes.NewReader(value))
+		dec.UseNumber()
+		err := dec.Decode(&c.Value)
+		return c, err
 	})
 }
 
