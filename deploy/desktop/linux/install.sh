@@ -132,6 +132,13 @@ install_managed() {
   RELEASE=$(cd "$RELEASE" && pwd)
   [ -f "$RELEASE/release.json" ] && [ -f "$RELEASE/release.sig" ] && [ -d "$RELEASE/package" ] ||
     die "not a signed release (release.json, release.sig and package/ are needed): $RELEASE"
+  # A Go release needs the kit's trusted installer, on a rerun too: checked before anything runs.
+  go_installer=
+  if [ -e "$RELEASE/package/go/sipges-desktop" ]; then
+    [ -x "$TRUSTED_INSTALLER" ] ||
+      die "this kit has no trusted sipges-desktop ($TRUSTED_INSTALLER): build it from the trusted checkout and run this script again; nothing was changed."
+    go_installer=$TRUSTED_INSTALLER
+  fi
   if curl -fsS --max-time 2 "http://127.0.0.1:$PORT/health" >/dev/null 2>&1; then
     die "SIPGES is running on this computer (port $PORT): close it, end its node process or restart, and run this script again."
   fi
@@ -175,14 +182,7 @@ install_managed() {
     # A release built with --go (package/go/sipges-desktop) is verified and installed by the kit's
     # trusted sipges-desktop, never by its own binary, which could verify itself; its key's
     # fingerprint is printed, as update.mjs does. Nothing of the release runs before that.
-    go_installer=
-    if [ -e "$RELEASE/package/go/sipges-desktop" ]; then
-      [ -x "$TRUSTED_INSTALLER" ] ||
-        die "this kit has no trusted sipges-desktop ($TRUSTED_INSTALLER): build it from the trusted checkout and run this script again; nothing was changed."
-      go_installer=$TRUSTED_INSTALLER
-    else
-      need_node
-    fi
+    [ -n "$go_installer" ] || need_node
     mkdir -p "$APP_ROOT"
     if [ -n "$go_installer" ]; then
       "$go_installer" --install "$APP_ROOT" --release "$RELEASE" --state "$STATE" --trust-release-key ||

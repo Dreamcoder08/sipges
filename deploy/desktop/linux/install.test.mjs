@@ -304,3 +304,24 @@ test('install.sh --managed asks for Node only for a release without the Go mode'
     assert.equal(result.stderr, 'SIPGES: Node.js 24 or later is required: install it and run this script again.\n');
     assert.equal(existsSync(s.appRoot), false, 'nothing was created');
   }));
+
+test('install.sh --managed refuses a Go release without the trusted sipges-desktop on a rerun too', { skip: !hasGo && 'needs the go toolchain' }, () =>
+  withTemp(async (dir) => {
+    const mark = join(dir, 'release-binary-ran');
+    const release = await releases(dir, newPair(), {
+      make: async (pkg, version) => {
+        await makePackage(pkg, version);
+        await mkdir(join(pkg, 'go'), { recursive: true });
+        await writeFile(join(pkg, 'go', 'sipges-desktop'), tattletale(mark), { mode: 0o755 });
+      },
+    })('1.0.0');
+    await mkdir(join(dir, 'a'));
+    const first = await sandbox(join(dir, 'a'), { withoutNode: true, script: kit(join(dir, 'a'), trustedBinary()) });
+    assert.equal(first.exec(['--managed', release]).status, 0);
+    // The same HOME, now from a kit without the trusted installer.
+    const bare = kit(join(dir, 'b'), null);
+    const rerun = spawnSync('sh', [bare, '--managed', release], { env: { HOME: first.home, XDG_DATA_HOME: first.data, PATH: join(dir, 'a', 'bin'), SIPGES_DESKTOP_PORT: '1' }, encoding: 'utf8' });
+    assert.equal(rerun.status, 1, rerun.stdout);
+    assert.match(rerun.stderr, /this kit has no trusted sipges-desktop/);
+    assert.equal(existsSync(mark), false);
+  }));

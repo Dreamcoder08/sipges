@@ -119,3 +119,13 @@ test('start-managed.ps1 treats a prepared cluster waiting for the move as not mo
   assert.ok(resolve.includes("if ($pending -or ($pglite -and -not (Test-Path -LiteralPath (Join-Path $state 'pg18\\PG_VERSION')))) {"));
   assert.ok(resolve.includes(`return @{ Reason = '${GO_NOT_MOVED_LINE}' }`));
 });
+
+// Point 2 of the last correction: no skipped check on a rerun. The refusal is a top-level statement
+// that runs before Install-Managed, which holds the «ya está instalado» rerun path.
+test('install.ps1 refuses a Go release without the trusted installer before Install-Managed, reruns included', async () => {
+  const lines = (await read('install.ps1')).split(/\r?\n/);
+  const guard = lines.indexOf('if ($GoRelease -and -not (Test-Path -LiteralPath $TrustedInstaller -PathType Leaf)) {');
+  const managed = lines.findIndex((line) => line.trim() === 'Install-Managed');
+  assert.ok(guard > 0 && managed > guard, `guard at ${guard}, Install-Managed at ${managed}`);
+  assert.ok(!lines[guard].startsWith(' '), 'a top-level statement, not inside a function');
+});
