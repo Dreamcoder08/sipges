@@ -249,6 +249,35 @@ it('follows the bottom only while the person is there, and offers «Ir al final�
   expect(scroll).toHaveBeenCalledWith(expect.objectContaining({ behavior: 'smooth' }));
 });
 
+it('follows an answer whose length pushes the end out of view before the page scrolls to it', async () => {
+  const atBottom = fakeObservers();
+  const scroll = vi.fn();
+  Element.prototype.scrollIntoView = scroll;
+  renderInicio();
+  await ready();
+  atBottom(true);
+  replies = [answer('Una respuesta larga', 'Larga')];
+  send('primera');
+  const log = await screen.findByRole('log', LOG);
+  await within(log).findByText('Buscando registros…');
+  scroll.mockClear();
+  // Safari lays out the longer turn, and its observer reports the end out of view, before a
+  // passive effect runs: here the report comes as soon as the answer is in the document.
+  let reported = false;
+  const watch = new MutationObserver(() => {
+    if (reported || !log.textContent?.includes('Una respuesta larga')) return;
+    reported = true;
+    atBottom(false);
+  });
+  watch.observe(log, { childList: true, subtree: true, characterData: true });
+  act(() => release());
+  await waitFor(() => expect(log).toHaveAttribute('aria-busy', 'false'));
+  watch.disconnect();
+  expect(reported).toBe(true);
+  // The person was at the end when the answer came: the page goes with it.
+  expect(scroll).toHaveBeenCalledWith(expect.objectContaining({ block: 'end' }));
+});
+
 it('jumps to the end without smooth scrolling when the person prefers reduced motion', async () => {
   const atBottom = fakeObservers();
   vi.stubGlobal('matchMedia', (query: string) => ({
