@@ -10,11 +10,12 @@
  *     SIPGES_PARITY_ADMIN_PASSWORD name its administrator, and the runner seeds the users of
  *     seed.ts through the TypeScript API.
  */
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { assistedBriefingCases, setExternalAi, unpairedNarrations } from './assisted-briefing.ts';
+import * as desktopUpdate from './contexts/desktop-update.ts';
 import { CASES, validateCases } from './cases.ts';
 import { startEmbedderDouble } from './embedder-double.ts';
 import { compareIndexes, semanticSearchCases } from './semantic-search.ts';
@@ -109,6 +110,32 @@ const compareCases = async (
   return failed === 0;
 };
 
+/** One update channel folder per API, holding the launcher's status.json. */
+const desktopChannels = async (scratch: string) => {
+  const channels = { ts: path.join(scratch, 'desktop-ts'), go: path.join(scratch, 'desktop-go') };
+  for (const dir of Object.values(channels)) {
+    await mkdir(dir, { mode: 0o700 });
+    await writeFile(path.join(dir, 'status.json'), JSON.stringify(desktopUpdate.STATUS));
+  }
+  return channels;
+};
+
+/** The desktop update cases with a valid status, then a broken one, then none. */
+const compareDesktopUpdate = async (
+  urls: Targets,
+  channels: { readonly ts: string; readonly go: string },
+  sessions: Sessions,
+  proof: Parameters<typeof compareCases>[3],
+) => {
+  const on = await compareCases(urls, desktopUpdate.switchOn, sessions, proof);
+  for (const dir of Object.values(channels))
+    await writeFile(path.join(dir, 'status.json'), '{"format":1,"installed":');
+  const broken = await compareCases(urls, desktopUpdate.brokenStatus, sessions, proof);
+  for (const dir of Object.values(channels)) await rm(path.join(dir, 'status.json'));
+  const missing = await compareCases(urls, desktopUpdate.missingStatus, sessions, proof);
+  return on && broken && missing;
+};
+
 const runCases = async (targets: Targets, proof?: Parameters<typeof compareCases>[3]) => {
   const { tsUrl, credentials } = targets;
   let sessions: Sessions | undefined;
@@ -192,11 +219,17 @@ const main = async () => {
     );
     if (!sessions) throw new Error('the cases seeded no sessions');
 
-    // Hybrid search needs both APIs restarted with it on; see semantic-search.ts.
+    // Hybrid search needs both APIs restarted with it on; see semantic-search.ts. The desktop
+    // update routes are switched on at the same restart, each API with a channel folder of its own.
     await Promise.all(running.splice(1).map((api) => api.stop()));
-    const hybridTs = await startTypeScriptApi(tsDatabase, secrets, embedder.url, true);
+    const channels = await desktopChannels(scratch);
+    const hybridTs = await startTypeScriptApi(tsDatabase, secrets, embedder.url, true, {
+      SIPGES_DESKTOP_UPDATE_DIR: channels.ts,
+    });
     running.push(hybridTs);
-    const hybridGo = await startGoApi(goDatabase, scratch, secrets.dataKey, embedder.url, true);
+    const hybridGo = await startGoApi(goDatabase, scratch, secrets.dataKey, embedder.url, true, {
+      SIPGES_DESKTOP_UPDATE_DIR: channels.go,
+    });
     running.push(hybridGo);
     const indexes = await compareIndexes(database.adminUrl, sessions.admin, {
       ts: hybridTs.url,
@@ -225,9 +258,12 @@ const main = async () => {
     console.info(
       `${narrated ? 'ok  ' : 'FAIL'}  narrated briefings: ${leaked} with the switch off, ${embedder.narrated.length} with it on, ${unpaired} unpaired`,
     );
+    const desktop = await compareDesktopUpdate(urls, channels, sessions, proof);
     const written = reportProof(routes);
     await ledger.close();
-    return passed && indexes.same && hybrid && off && on && narrated && second && written;
+    return (
+      passed && indexes.same && hybrid && off && on && narrated && second && desktop && written
+    );
   } finally {
     process.off('SIGINT', interrupted);
     process.off('SIGTERM', interrupted);
