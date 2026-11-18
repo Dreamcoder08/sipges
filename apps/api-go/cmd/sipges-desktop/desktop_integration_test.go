@@ -125,11 +125,11 @@ func assertAppRole(t *testing.T, state string) {
 		t.Fatal(err)
 	}
 	ctx := context.Background()
-	port, err := os.ReadFile(filepath.Join(state, "pg18", "postmaster.pid"))
+	pidFile, err := os.ReadFile(filepath.Join(state, "pg18", "postmaster.pid"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	pgPort := lineOf(string(port), 3)
+	pgPort := lineOf(string(pidFile), 3)
 	conn, err := pgx.Connect(ctx, "postgres://"+appRole+":"+sec.pgApp+"@127.0.0.1:"+pgPort+"/"+appDatabase+"?sslmode=disable")
 	if err != nil {
 		t.Fatalf("connect as %s: %v", appRole, err)

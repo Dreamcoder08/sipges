@@ -143,15 +143,99 @@ func TestASecondStartReusesTheData(t *testing.T) {
 	}
 }
 
-func TestStartStopsAServerLeftRunningOnTheSameFolder(t *testing.T) {
+func TestStartRefusesWhileAnotherInstanceServesTheFolder(t *testing.T) {
 	opts := options(t)
 	first := startT(t, opts)
-	// The launcher died without stopping it: a new Start must not fail on the busy folder.
+	_, err := Start(context.Background(), opts)
+	if !errors.Is(err, ErrInUse) {
+		t.Fatalf("second Start = %v, want ErrInUse", err)
+	}
+	if msg := UserMessage(err); !strings.Contains(msg, "SIPGES ya está abierto") {
+		t.Fatalf("user message %q is not the Spanish one", msg)
+	}
+	if err := first.Ping(context.Background()); err != nil {
+		t.Fatalf("the live server was disturbed: %v", err)
+	}
+}
+
+func TestStartRecoversFromAServerWhoseProcessIsGone(t *testing.T) {
+	opts := options(t)
+	first := startT(t, opts)
+	pid := postmasterPID(t, opts.DataDir)
+	if err := killHard(pid); err != nil {
+		t.Fatal(err)
+	}
+	waitGone(t, pid)
 	second := startT(t, opts)
 	if err := second.Ping(context.Background()); err != nil {
-		t.Fatalf("Ping after restart: %v", err)
+		t.Fatalf("Ping after a crash: %v", err)
 	}
 	_ = first
+}
+
+func TestFirstSetupIsAtomic(t *testing.T) {
+	opts := options(t)
+	calls := 0
+	opts.Setup = func(ctx context.Context, s *Server) error {
+		calls++
+		if calls == 1 {
+			return errors.New("synthetic setup failure")
+		}
+		return s.Ping(ctx)
+	}
+	if _, err := Start(context.Background(), opts); err == nil {
+		t.Fatal("Start succeeded although the setup failed")
+	}
+	if _, err := os.Stat(filepath.Join(opts.DataDir, "PG_VERSION")); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("a failed setup left a cluster in place: %v", err)
+	}
+	startT(t, opts).Stop(context.Background()) //nolint:errcheck // checked by the next Start
+	if calls != 2 {
+		t.Fatalf("setup ran %d times, want 2 (failed, then retried on the next start)", calls)
+	}
+	startT(t, opts)
+	if calls != 2 {
+		t.Fatalf("setup ran again on an existing cluster (%d calls)", calls)
+	}
+}
+
+func TestStartRemovesALeftoverSetupFolder(t *testing.T) {
+	opts := options(t)
+	leftover := opts.DataDir + setupSuffix
+	if err := os.MkdirAll(filepath.Join(leftover, "base"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, filepath.Join(leftover, "PG_VERSION"), "18\n")
+	startT(t, opts)
+	if _, err := os.Stat(leftover); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("leftover setup folder still there: %v", err)
+	}
+}
+
+func TestAStartThatTimesOutLeavesNoServer(t *testing.T) {
+	opts := options(t)
+	startT(t, opts).Stop(context.Background()) //nolint:errcheck // checked below through postmaster.pid
+	// pg_ctl -t 0 gives up at once while the server it launched keeps starting.
+	startWait = func(time.Duration) int { return 0 }
+	t.Cleanup(func() { startWait = seconds })
+	if _, err := Start(context.Background(), opts); !errors.Is(err, ErrStart) {
+		t.Fatalf("Start = %v, want ErrStart", err)
+	}
+	time.Sleep(2 * time.Second) // a server left starting is up by now
+	if _, err := os.Stat(filepath.Join(opts.DataDir, "postmaster.pid")); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("a server is still running after the start timed out: %v", err)
+	}
+}
+
+func waitGone(t *testing.T, pid int) {
+	t.Helper()
+	for range 100 {
+		if !alive(pid) {
+			return
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	t.Fatalf("process %d did not exit", pid)
 }
 
 func execSQL(t *testing.T, s *Server, statements ...string) {
@@ -180,10 +264,4 @@ func postmasterPID(t *testing.T, dataDir string) int {
 		t.Fatal(fmt.Errorf("postmaster.pid: %w", err))
 	}
 	return pid
-}
-
-// alive reports whether a process with this id still runs (Unix: signal 0 succeeds).
-func alive(pid int) bool {
-	_, err := os.Stat(filepath.Join("/proc", strconv.Itoa(pid)))
-	return err == nil
 }

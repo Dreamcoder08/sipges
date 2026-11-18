@@ -25,6 +25,12 @@ import (
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/localpg"
 )
 
+// envState names the state folder in the environment, as the desktop launcher does.
+const envState = "SIPGES_DESKTOP_STATE"
+
+// dataFolder is the cluster's folder inside the state folder.
+const dataFolder = "pg18"
+
 // stopTimeout bounds the PostgreSQL stop that runs after the API ended.
 const stopTimeout = 60 * time.Second
 
@@ -52,7 +58,7 @@ func parseSettings(args []string, lookup func(string) (string, bool), exeDir str
 	fs := flag.NewFlagSet("sipges-desktop", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	var s settings
-	fs.StringVar(&s.state, "state", envOr(lookup, "SIPGES_DESKTOP_STATE", defaultState(lookup)), "state folder (data-key, admin-password, uploads, pg18)")
+	fs.StringVar(&s.state, "state", envOr(lookup, envState, defaultState(lookup)), "state folder (data-key, admin-password, uploads, pg18)")
 	fs.StringVar(&s.pgBin, "pg-bin", envOr(lookup, "SIPGES_PG_BIN", ""), "folder with initdb, pg_ctl and postgres")
 	fs.StringVar(&s.apiBin, "api", envOr(lookup, "SIPGES_API_BIN", filepath.Join(exeDir, program("api"))), "the Go API binary (cmd/api)")
 	fs.StringVar(&s.migrations, "migrations", envOr(lookup, "SIPGES_MIGRATIONS_DIR", filepath.Join(exeDir, "migrations")), "folder with the SQL migrations")
@@ -70,7 +76,7 @@ func parseSettings(args []string, lookup func(string) (string, bool), exeDir str
 		}
 	}
 	if s.state == "" {
-		return settings{}, &userError{msg: "No se encontró la carpeta de datos de SIPGES.", err: errors.New("no state folder: --state or SIPGES_DESKTOP_STATE")}
+		return settings{}, &userError{msg: "No se encontró la carpeta de datos de SIPGES.", err: errors.New("no state folder: --state or " + envState)}
 	}
 	if s.port < 1 || s.port > 65535 {
 		return settings{}, &userError{msg: "Opciones de inicio inválidas.", err: fmt.Errorf("port %d out of range", s.port)}
@@ -99,7 +105,18 @@ func envOr(lookup func(string) (string, bool), key, fallback string) string {
 	return fallback
 }
 
-func run(ctx context.Context, args, environ []string, stdout, stderr io.Writer) (err error) {
+// run is runDesktop, except that a stop requested while starting is not a failure: whatever
+// started was stopped, and the reason only goes to the log.
+func run(ctx context.Context, args, environ []string, stdout, stderr io.Writer) error {
+	err := runDesktop(ctx, args, environ, stdout, stderr)
+	if err != nil && ctx.Err() != nil {
+		_, _ = fmt.Fprintln(stderr, "sipges-desktop: stopped while starting:", err)
+		return nil
+	}
+	return err
+}
+
+func runDesktop(ctx context.Context, args, environ []string, stdout, stderr io.Writer) (err error) {
 	exe, err := os.Executable()
 	if err != nil {
 		return err
@@ -117,9 +134,13 @@ func run(ctx context.Context, args, environ []string, stdout, stderr io.Writer) 
 	}
 	server, err := localpg.Start(ctx, localpg.Options{
 		BinDir:        s.pgBin,
-		DataDir:       filepath.Join(s.state, "pg18"),
-		LogPath:       filepath.Join(s.state, "pg18.log"),
+		DataDir:       filepath.Join(s.state, dataFolder),
+		LogPath:       filepath.Join(s.state, dataFolder+".log"),
 		SuperPassword: sec.pgSuper,
+		// A new cluster reaches pg18 only with its roles and database made.
+		Setup: func(ctx context.Context, staging *localpg.Server) error {
+			return provision(ctx, staging.SuperUserURL("postgres"), sec.pgApp)
+		},
 	})
 	if err != nil {
 		return err
@@ -134,6 +155,7 @@ func run(ctx context.Context, args, environ []string, stdout, stderr io.Writer) 
 		}
 		_, _ = fmt.Fprintln(stdout, "sipges-desktop: PostgreSQL stopped")
 	}()
+	// Again on every start: it converges the roles and sets the API login's password.
 	if err := provision(ctx, server.SuperUserURL("postgres"), sec.pgApp); err != nil {
 		return &userError{msg: "No se pudo preparar la base de datos local. Revise el registro de SIPGES.", err: err}
 	}

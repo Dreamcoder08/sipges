@@ -10,8 +10,9 @@ import (
 	"strings"
 )
 
-// The database passwords live next to the launcher's secrets, created once and never rewritten:
-// the cluster keeps the superuser's from initdb, and provision sets the API login's on each start.
+// The database passwords live next to the launcher's secrets. The superuser's is created only
+// before the cluster exists: initdb stores it, so a new one later would lock the database. The API
+// login's is created whenever it is missing, since provision sets it again on every start.
 const (
 	superPasswordFile = "pg18-superuser-password" //nolint:gosec // G101: a file name, not a credential
 	appPasswordFile   = "pg18-app-password"       //nolint:gosec // G101: a file name, not a credential
@@ -35,7 +36,12 @@ func readSecrets(state string) (secrets, error) {
 	if sec.adminPassword, err = readSecret(state, "admin-password"); err != nil {
 		return secrets{}, err
 	}
-	if sec.pgSuper, err = ensureSecret(state, superPasswordFile); err != nil {
+	if clusterExists(state) {
+		sec.pgSuper, err = readSuperPassword(state)
+	} else {
+		sec.pgSuper, err = ensureSecret(state, superPasswordFile)
+	}
+	if err != nil {
 		return secrets{}, err
 	}
 	if sec.pgApp, err = ensureSecret(state, appPasswordFile); err != nil {
@@ -55,6 +61,29 @@ func readSecret(state, name string) (string, error) {
 	return "", &userError{
 		msg: "Falta el archivo " + name + " en la carpeta de datos de SIPGES (" + state + "). Abra SIPGES desde su acceso directo.",
 		err: fmt.Errorf("read %s: %w", name, err),
+	}
+}
+
+// clusterExists is true once the data folder holds a cluster, whatever its state.
+func clusterExists(state string) bool {
+	_, err := os.Stat(filepath.Join(state, dataFolder, "PG_VERSION"))
+	return err == nil
+}
+
+// readSuperPassword refuses to go on without the password initdb stored: there is no other way in
+// for a password login, and trusting local connections would let every account on the computer in.
+func readSuperPassword(state string) (string, error) {
+	body, err := os.ReadFile(filepath.Join(state, superPasswordFile)) //nolint:gosec // G304: the state folder the user runs SIPGES from
+	if err == nil && strings.TrimSpace(string(body)) != "" {
+		return strings.TrimSpace(string(body)), nil
+	}
+	if err == nil {
+		err = errors.New("blank")
+	}
+	return "", &userError{
+		msg: "Falta el archivo " + superPasswordFile + " en " + state + ". La base de datos local lo necesita y no se creó " +
+			"otro para no bloquearla: restáurelo desde la copia de seguridad de la carpeta de datos de SIPGES.",
+		err: fmt.Errorf("read %s for the existing cluster: %w", superPasswordFile, err),
 	}
 }
 

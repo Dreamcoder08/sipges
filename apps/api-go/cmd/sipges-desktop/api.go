@@ -52,10 +52,10 @@ func apiEnv(base []string, s settings, sec secrets, databaseURL string) []string
 }
 
 // migrateAPI runs `api migrate`, which applies the migrations as the login the API serves with.
+// Like the API, it is asked to stop when ctx ends: each migration runs in its own transaction, so
+// a stopped run leaves the database at the last finished file.
 func migrateAPI(ctx context.Context, apiBin string, env []string, stdout, stderr io.Writer) error {
-	cmd := exec.CommandContext(ctx, apiBin, "migrate")
-	cmd.Env, cmd.Stdout, cmd.Stderr = env, stdout, stderr
-	if err := cmd.Run(); err != nil {
+	if err := child(ctx, apiBin, []string{"migrate"}, env, stdout, stderr).Run(); err != nil {
 		return fmt.Errorf("api migrate: %w", err)
 	}
 	return nil
@@ -64,12 +64,7 @@ func migrateAPI(ctx context.Context, apiBin string, env []string, stdout, stderr
 // serveAPI runs the API until ctx ends, then asks it to stop as SIGTERM would and waits for it.
 // An API that exits by itself is an error: the desktop has nothing left to serve.
 func serveAPI(ctx context.Context, apiBin string, env []string, stdout, stderr io.Writer) error {
-	cmd := exec.CommandContext(ctx, apiBin)
-	cmd.Env, cmd.Stdout, cmd.Stderr = env, stdout, stderr
-	ownProcessGroup(cmd)
-	cmd.Cancel = func() error { return interrupt(cmd.Process) }
-	cmd.WaitDelay = apiStopGrace
-	err := cmd.Run()
+	err := child(ctx, apiBin, nil, env, stdout, stderr).Run()
 	if ctx.Err() != nil {
 		if err != nil && !errors.Is(err, ctx.Err()) {
 			_, _ = fmt.Fprintln(stderr, "sipges-desktop: api stopped:", err)
@@ -80,4 +75,15 @@ func serveAPI(ctx context.Context, apiBin string, env []string, stdout, stderr i
 		err = errors.New("exited")
 	}
 	return &userError{msg: "El servidor de SIPGES se detuvo. Revise el registro de SIPGES.", err: fmt.Errorf("api: %w", err)}
+}
+
+// child runs the API binary so that the end of ctx asks it to stop (SIGTERM, or Ctrl+Break on
+// Windows) and kills it only after apiStopGrace.
+func child(ctx context.Context, apiBin string, args, env []string, stdout, stderr io.Writer) *exec.Cmd {
+	cmd := exec.CommandContext(ctx, apiBin, args...) //nolint:gosec // G204: the installed API binary, fixed arguments, no shell
+	cmd.Env, cmd.Stdout, cmd.Stderr = env, stdout, stderr
+	ownProcessGroup(cmd)
+	cmd.Cancel = func() error { return interrupt(cmd.Process) }
+	cmd.WaitDelay = apiStopGrace
+	return cmd
 }

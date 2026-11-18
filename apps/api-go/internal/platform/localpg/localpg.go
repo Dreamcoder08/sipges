@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // DefaultSuperUser is the cluster's superuser when Options.SuperUser is empty.
@@ -35,6 +36,12 @@ const (
 	// portAttempts bounds the retries when another program takes the free port between the
 	// check and the server's own bind.
 	portAttempts = 3
+	// lingerChecks × lingerPause is how long a failed start is watched for a server still coming up.
+	lingerChecks = 30
+	lingerPause  = 100 * time.Millisecond
+	// renameAttempts × renamePause bounds the retries of the final rename of a new cluster.
+	renameAttempts = 10
+	renamePause    = 200 * time.Millisecond
 )
 
 // Options locate the cluster.
@@ -54,7 +61,14 @@ type Options struct {
 	// StartTimeout and StopTimeout bound pg_ctl; zero picks 60 s and 30 s.
 	StartTimeout time.Duration
 	StopTimeout  time.Duration
+	// Setup runs once, on a new cluster, while it is still in its temporary folder: the cluster is
+	// moved into DataDir only when Setup succeeded, so an interrupted first start leaves nothing
+	// half made in DataDir.
+	Setup func(ctx context.Context, s *Server) error
 }
+
+// setupSuffix names the sibling folder a new cluster is built in.
+const setupSuffix = ".setup"
 
 // Server is a started cluster.
 type Server struct {
@@ -69,8 +83,11 @@ const (
 	dataCluster
 )
 
-// Start initialises the cluster when its folder is empty, stops a server a previous run left on
-// it, and starts it on a free loopback port, returning once it accepts connections.
+// Start starts the cluster in DataDir on a free loopback port and returns once it accepts
+// connections. A missing or empty DataDir gets a new cluster, built and set up in a sibling
+// folder first (see Options.Setup); a leftover of an interrupted build is removed. A server
+// another instance runs on DataDir is refused with ErrInUse; one whose process is gone or no
+// longer answers is stopped first.
 func Start(ctx context.Context, opts Options) (*Server, error) {
 	opts = withDefaults(opts)
 	state, err := inspectDataDir(opts.DataDir)
@@ -80,34 +97,145 @@ func Start(ctx context.Context, opts Options) (*Server, error) {
 	if err := checkBinaries(ctx, opts.BinDir); err != nil {
 		return nil, err
 	}
+	if err := os.RemoveAll(opts.DataDir + setupSuffix); err != nil {
+		return nil, &Error{Kind: ErrInit, Path: opts.LogPath, Err: fmt.Errorf("remove the leftover setup folder: %w", err)}
+	}
 	if state == dataEmpty {
-		if err := initCluster(ctx, opts); err != nil {
+		if err := buildCluster(ctx, opts); err != nil {
 			return nil, err
 		}
 	}
 	s := &Server{opts: opts}
-	if err := s.Stop(ctx); err != nil {
+	if err := s.refuseLiveOrClearStale(ctx); err != nil {
 		return nil, err
 	}
+	if err := s.start(ctx); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+// buildCluster runs initdb and Setup in the sibling setup folder, stops that server and only then
+// renames the folder to DataDir: DataDir holds either nothing or a finished cluster.
+func buildCluster(ctx context.Context, opts Options) error {
+	tmp := opts.DataDir + setupSuffix
+	build := opts
+	build.DataDir = tmp
+	err := initCluster(ctx, build)
+	if err == nil && opts.Setup != nil {
+		staging := &Server{opts: build}
+		if err = staging.start(ctx); err == nil {
+			if setupErr := opts.Setup(ctx, staging); setupErr != nil {
+				err = &Error{Kind: ErrInit, Path: opts.LogPath, Err: fmt.Errorf("setup: %w", setupErr)}
+			}
+			err = errors.Join(err, staging.stopDetached(ctx))
+		}
+	}
+	if err == nil {
+		err = moveIntoPlace(tmp, opts.DataDir)
+	}
+	if err != nil {
+		_ = os.RemoveAll(tmp)
+		return err
+	}
+	return nil
+}
+
+// moveIntoPlace renames the finished cluster to DataDir, retrying briefly: on Windows an antivirus
+// scan may still hold a file of the folder just after the server stopped.
+func moveIntoPlace(tmp, dataDir string) error {
+	if err := os.Remove(dataDir); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return &Error{Kind: ErrInit, Path: dataDir, Err: err}
+	}
+	var err error
+	for range renameAttempts {
+		if err = os.Rename(tmp, dataDir); err == nil {
+			return nil
+		}
+		time.Sleep(renamePause)
+	}
+	return &Error{Kind: ErrInit, Path: dataDir, Err: err}
+}
+
+// refuseLiveOrClearStale leaves a server that answers alone (ErrInUse) and stops one that runs
+// but does not answer. A pid file whose process is gone needs nothing: the server replaces it.
+func (s *Server) refuseLiveOrClearStale(ctx context.Context) error {
+	running, err := s.running(ctx)
+	if err != nil || !running {
+		return err
+	}
+	if port := pidFilePort(s.opts.DataDir); port > 0 && (&Server{opts: s.opts, port: port}).answers(ctx) {
+		return &Error{Kind: ErrInUse, Path: s.opts.DataDir}
+	}
+	return s.Stop(ctx)
+}
+
+// answers is true when a PostgreSQL server replies on the port, even with an error such as
+// "the database system is starting up": something else owns it.
+func (s *Server) answers(ctx context.Context) bool {
+	err := s.Ping(ctx)
+	var pgErr *pgconn.PgError
+	return err == nil || errors.As(err, &pgErr)
+}
+
+// pidFilePort reads the port, line 4 of postmaster.pid; zero when unreadable.
+func pidFilePort(dataDir string) int {
+	body, err := os.ReadFile(filepath.Join(dataDir, "postmaster.pid")) //nolint:gosec // G304: the configured data folder
+	if err != nil {
+		return 0
+	}
+	lines := strings.Split(string(body), "\n")
+	if len(lines) < 4 {
+		return 0
+	}
+	port, err := strconv.Atoi(strings.TrimSpace(lines[3]))
+	if err != nil {
+		return 0
+	}
+	return port
+}
+
+// start runs pg_ctl start on a free port. A start that fails or times out stops whatever server it
+// may have left starting before returning the error.
+func (s *Server) start(ctx context.Context) error {
 	var startErr error
 	for range portAttempts {
 		port, err := freePort(ctx)
 		if err != nil {
-			return nil, &Error{Kind: ErrStart, Path: opts.LogPath, Err: err}
+			return &Error{Kind: ErrStart, Path: s.opts.LogPath, Err: err}
 		}
 		s.port = port
-		startErr = s.pgctl(ctx, startArgs(opts.DataDir, opts.LogPath, port, seconds(opts.StartTimeout)))
+		startErr = s.pgctl(ctx, startArgs(s.opts.DataDir, s.opts.LogPath, port, startWait(s.opts.StartTimeout)))
 		if startErr == nil || portFree(ctx, port) {
 			break
 		}
 	}
+	if startErr == nil {
+		startErr = s.Ping(ctx)
+	}
 	if startErr != nil {
-		return nil, &Error{Kind: ErrStart, Path: opts.LogPath, Err: startErr}
+		return errors.Join(&Error{Kind: ErrStart, Path: s.opts.LogPath, Err: startErr}, s.stopAfterFailedStart(ctx))
 	}
-	if err := s.Ping(ctx); err != nil {
-		return nil, errors.Join(&Error{Kind: ErrStart, Path: opts.LogPath, Err: err}, s.Stop(context.WithoutCancel(ctx)))
+	return nil
+}
+
+// stopAfterFailedStart waits a moment for a server pg_ctl gave up on to show up in the pid file,
+// and stops it, so a timeout never leaves a server running that nothing will stop.
+func (s *Server) stopAfterFailedStart(ctx context.Context) error {
+	for range lingerChecks {
+		if running, err := s.running(context.WithoutCancel(ctx)); err == nil && running {
+			return s.stopDetached(ctx)
+		}
+		time.Sleep(lingerPause)
 	}
-	return s, nil
+	return nil
+}
+
+// stopDetached is Stop with its own deadline, for cleanups that must run after ctx ended.
+func (s *Server) stopDetached(ctx context.Context) error {
+	stopCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), s.opts.StopTimeout+5*time.Second)
+	defer cancel()
+	return s.Stop(stopCtx)
 }
 
 // Stop shuts the server down with a fast shutdown: open transactions roll back, nothing written
@@ -203,6 +331,9 @@ func checkBinaries(ctx context.Context, binDir string) error {
 	cmd := exec.CommandContext(ctx, program(binDir, "postgres"), "--version") //nolint:gosec // G204: the bundle's own program, arguments fixed
 	hideWindow(cmd)
 	out, err := cmd.Output()
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
 	if err != nil {
 		return &Error{Kind: ErrWrongBinaries, Path: binDir, Err: err}
 	}
@@ -343,5 +474,8 @@ func portFree(ctx context.Context, port int) bool {
 	_ = ln.Close()
 	return true
 }
+
+// startWait is the -t of pg_ctl start; a test sets it to zero to force a timeout.
+var startWait = seconds
 
 func seconds(d time.Duration) int { return max(1, int(d.Round(time.Second)/time.Second)) }

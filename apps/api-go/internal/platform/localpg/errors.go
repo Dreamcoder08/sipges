@@ -19,6 +19,8 @@ var (
 	ErrInit = errors.New("localpg: initdb failed")
 	// ErrStart is the server not accepting connections within the timeout.
 	ErrStart = errors.New("localpg: the server did not start")
+	// ErrInUse is a server another SIPGES instance runs on this data folder; it is left alone.
+	ErrInUse = errors.New("localpg: another SIPGES instance is running on this data folder")
 	// ErrStop is the server not stopping within the timeout.
 	ErrStop = errors.New("localpg: the server did not stop")
 )
@@ -64,6 +66,8 @@ func UserMessage(err error) string {
 		return "No se pudo crear la base de datos local. Revise el registro en " + path + "."
 	case errors.Is(err, ErrStart):
 		return "No se pudo iniciar la base de datos local. Revise el registro en " + path + "."
+	case errors.Is(err, ErrInUse):
+		return "SIPGES ya está abierto en esta computadora. Use la ventana que ya está abierta, o ciérrela antes de abrir otra."
 	case errors.Is(err, ErrStop):
 		return "La base de datos local no se detuvo a tiempo. Revise el registro en " + path + "."
 	}
