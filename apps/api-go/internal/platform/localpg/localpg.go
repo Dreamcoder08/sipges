@@ -6,8 +6,6 @@ package localpg
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"net"
@@ -74,12 +72,15 @@ const setupSuffix = ".setup"
 // lockSuffix names the sibling file that ties the cluster to the instance that started it.
 const lockSuffix = ".lock"
 
+// errLocked is a lock another open file holds.
+var errLocked = errors.New("locked")
+
 // Server is a started cluster.
 type Server struct {
 	opts Options
 	port int
-	// token identifies this instance in the lock file; empty for the setup server.
-	token string
+	// lock is this instance's lock file; nil for the setup server.
+	lock *os.File
 }
 
 type dataState int
@@ -92,8 +93,8 @@ const (
 // Start starts the cluster in DataDir on a free loopback port and returns once it accepts
 // connections. A missing or empty DataDir gets a new cluster, built and set up in a sibling
 // folder first (see Options.Setup); a leftover of an interrupted build is removed. A server
-// instance whose process still runs holds the lock next to DataDir and makes Start return
-// ErrInUse; a server a dead instance left running is stopped first.
+// running instance holds the lock next to DataDir and makes Start return ErrInUse; a server a
+// dead instance left running is stopped first.
 func Start(ctx context.Context, opts Options) (*Server, error) {
 	opts = withDefaults(opts)
 	if _, err := inspectDataDir(opts.DataDir); err != nil {
@@ -102,13 +103,13 @@ func Start(ctx context.Context, opts Options) (*Server, error) {
 	if err := checkBinaries(ctx, opts.BinDir); err != nil {
 		return nil, err
 	}
-	token, err := acquireLock(opts)
+	lock, err := acquireLock(opts)
 	if err != nil {
 		return nil, err
 	}
-	s := &Server{opts: opts, token: token}
+	s := &Server{opts: opts, lock: lock}
 	if err := s.startLocked(ctx); err != nil {
-		releaseLock(opts, token)
+		releaseLock(lock)
 		return nil, err
 	}
 	return s, nil
@@ -177,62 +178,34 @@ func moveIntoPlace(tmp, dataDir string) error {
 	return &Error{Kind: ErrInit, Path: dataDir, Err: err}
 }
 
-// acquireLock creates the lock file with this process id and a random token. A lock whose process
-// still runs belongs to another instance (ErrInUse); one whose process is gone is an orphan's and
-// is replaced.
-func acquireLock(opts Options) (string, error) {
-	raw := make([]byte, 16)
-	if _, err := rand.Read(raw); err != nil {
-		return "", &Error{Kind: ErrStart, Path: opts.LogPath, Err: err}
-	}
-	token := hex.EncodeToString(raw)
+// acquireLock opens the lock file and takes an exclusive lock the operating system holds for
+// this process: it ends with the process, crash included, so a leftover file never locks anyone
+// out, whatever process id it names. A lock another instance holds is ErrInUse.
+func acquireLock(opts Options) (*os.File, error) {
 	path := opts.DataDir + lockSuffix
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
-		return "", &Error{Kind: ErrStart, Path: opts.LogPath, Err: err}
+		return nil, &Error{Kind: ErrStart, Path: opts.LogPath, Err: err}
 	}
-	for range 2 {
-		f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600) //nolint:gosec // G304: next to the configured data folder
-		if err == nil {
-			_, werr := fmt.Fprintf(f, "%d\n%s\n", os.Getpid(), token)
-			if err := errors.Join(werr, f.Close()); err != nil {
-				_ = os.Remove(path)
-				return "", &Error{Kind: ErrStart, Path: opts.LogPath, Err: err}
-			}
-			return token, nil
-		}
-		if !errors.Is(err, os.ErrExist) {
-			return "", &Error{Kind: ErrStart, Path: opts.LogPath, Err: err}
-		}
-		if pid, _ := readLock(path); pid > 0 && processAlive(pid) {
-			return "", &Error{Kind: ErrInUse, Path: opts.DataDir}
-		}
-		if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
-			return "", &Error{Kind: ErrStart, Path: opts.LogPath, Err: err}
-		}
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0o600) //nolint:gosec // G304: next to the configured data folder
+	if err != nil {
+		return nil, &Error{Kind: ErrStart, Path: opts.LogPath, Err: err}
 	}
-	return "", &Error{Kind: ErrInUse, Path: opts.DataDir}
+	if err := lockFile(f); err != nil {
+		_ = f.Close()
+		if errors.Is(err, errLocked) {
+			return nil, &Error{Kind: ErrInUse, Path: opts.DataDir}
+		}
+		return nil, &Error{Kind: ErrStart, Path: opts.LogPath, Err: err}
+	}
+	return f, nil
 }
 
-// releaseLock removes the lock only while it still holds this instance's token.
-func releaseLock(opts Options, token string) {
-	path := opts.DataDir + lockSuffix
-	if _, held := readLock(path); token != "" && held == token {
-		_ = os.Remove(path)
+// releaseLock closes the lock file, which drops the lock. The file stays: removing it would let
+// two instances lock two different files.
+func releaseLock(f *os.File) {
+	if f != nil {
+		_ = f.Close()
 	}
-}
-
-// readLock returns the process id and token of a lock file; zero and "" when unreadable.
-func readLock(path string) (int, string) {
-	body, err := os.ReadFile(path) //nolint:gosec // G304: next to the configured data folder
-	if err != nil {
-		return 0, ""
-	}
-	pidLine, token, _ := strings.Cut(string(body), "\n")
-	pid, err := strconv.Atoi(strings.TrimSpace(pidLine))
-	if err != nil {
-		return 0, ""
-	}
-	return pid, strings.TrimSpace(token)
 }
 
 // start runs pg_ctl start on a free port. A start that fails or times out stops whatever server it
@@ -285,7 +258,8 @@ func (s *Server) Stop(ctx context.Context) error {
 	if err := s.stopServer(ctx); err != nil {
 		return err
 	}
-	releaseLock(s.opts, s.token)
+	releaseLock(s.lock)
+	s.lock = nil
 	return nil
 }
 

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -164,13 +163,25 @@ func TestStartTakesOverAServerWhoseLauncherDied(t *testing.T) {
 	orphan := startT(t, opts)
 	// The launcher was ended from Task Manager: its lock names a process that no longer exists,
 	// while the server it started still answers.
-	deadLauncher(t, opts)
+	crash(orphan)
 	if err := orphan.Ping(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 	next := startT(t, opts)
 	if err := next.Ping(context.Background()); err != nil {
 		t.Fatalf("Ping after taking over the orphan: %v", err)
+	}
+}
+
+func TestALeftoverLockNamingAnUnrelatedLiveProcessDoesNotLockOut(t *testing.T) {
+	opts := options(t)
+	orphan := startT(t, opts)
+	crash(orphan)
+	// After a crash and a reboot, the pid in the leftover file now belongs to something else.
+	writeFile(t, opts.DataDir+lockSuffix, strconv.Itoa(os.Getppid())+"\n")
+	next := startT(t, opts)
+	if err := next.Ping(context.Background()); err != nil {
+		t.Fatalf("Ping: %v", err)
 	}
 }
 
@@ -182,7 +193,7 @@ func TestStartRecoversFromAServerWhoseProcessIsGone(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitGone(t, pid)
-	deadLauncher(t, opts) // the whole instance crashed, not only its server
+	crash(first) // the whole instance crashed, not only its server
 	second := startT(t, opts)
 	if err := second.Ping(context.Background()); err != nil {
 		t.Fatalf("Ping after a crash: %v", err)
@@ -244,14 +255,11 @@ func TestAStartThatTimesOutLeavesNoServer(t *testing.T) {
 	}
 }
 
-// deadLauncher rewrites the lock as left by an instance whose process no longer exists.
-func deadLauncher(t *testing.T, opts Options) {
-	t.Helper()
-	gone := exec.Command(os.Args[0], "-test.run=^$")
-	if err := gone.Run(); err != nil {
-		t.Fatal(err)
-	}
-	writeFile(t, opts.DataDir+lockSuffix, strconv.Itoa(gone.Process.Pid)+"\nsynthetic-dead-launcher\n")
+// crash drops the instance's lock without stopping its server, as the end of a killed launcher
+// does: the kernel closes its files.
+func crash(s *Server) {
+	releaseLock(s.lock)
+	s.lock = nil
 }
 
 func waitGone(t *testing.T, pid int) {
