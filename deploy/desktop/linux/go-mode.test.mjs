@@ -1,11 +1,12 @@
-// The opt-in Go mode of sipges-managed.sh (go-rust-stack T72c): run for real on a scratch install
-// root whose sipges-desktop is a stand-in that records what it was given. Without --go the
-// launcher never looks at it; with --go it refuses a version without the Go mode and data not
-// moved yet, before starting anything. Synthetic folders only.
+// The Go mode of sipges-managed.sh (go-rust-stack T72c, T72d3): run for real on a scratch install
+// root whose sipges-desktop is a stand-in that records what it was given. The launcher entry
+// starts the Go launcher when the version has it and the data are in pg18 (or there are none
+// yet), and run-current.mjs while the data are only in PGlite; --go refuses, before starting
+// anything, a version without the Go mode and data not moved yet. Synthetic folders only.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -44,7 +45,7 @@ function installRoot({ go = true, bundle = true } = {}) {
     const record = join(dir, 'ran');
     writeFileSync(
       join(version, 'go', 'sipges-desktop'),
-      `#!/bin/sh\nprintf 'go %s\\nstate=%s\\npgbin=%s\\nweb=%s\\n' "$*" "$SIPGES_DESKTOP_STATE" "$SIPGES_PG_BIN" "$SIPGES_WEB_DIR" > ${JSON.stringify(record)}\nexit 1\n`,
+      `#!/bin/sh\nprintf 'go %s\\npgbin=%s\\n' "$*" "$SIPGES_PG_BIN" > ${JSON.stringify(record)}\nexit 1\n`,
       { mode: 0o755 },
     );
   }
@@ -61,9 +62,10 @@ const launch = async (root, args, extraEnv = {}) =>
     env: { PATH: process.env.PATH, HOME: process.env.HOME, SIPGES_DESKTOP_PORT: String(await freePort()), SIPGES_DESKTOP_WAIT: '5', ...extraEnv },
   });
 
-test('without --go the launcher starts run-current.mjs, as before', async () => {
-  const { dir, root, ran } = installRoot();
+test('data only in PGlite start run-current.mjs, as before', async () => {
+  const { dir, root, state, ran } = installRoot();
   try {
+    writeFileSync(join(state, 'pglite', 'PG_VERSION'), '17\n');
     const result = await launch(root, []);
     assert.equal(result.status, 1);
     assert.match(readFileSync(ran, 'utf8'), /^typescript --releases .*\/releases --port \d+$/);
@@ -72,20 +74,59 @@ test('without --go the launcher starts run-current.mjs, as before', async () => 
   }
 });
 
-test('--go starts the version\'s sipges-desktop with its bundle, state folder, web folder and port', async () => {
-  const { dir, root, state, version, ran } = installRoot();
+test('a version without the Go mode starts run-current.mjs, as before', async () => {
+  const { dir, root, ran } = installRoot({ go: false });
   try {
-    const port = await freePort();
-    const result = spawnSync('sh', [join(root, 'sipges-desktop.sh'), '--go'], {
-      encoding: 'utf8',
-      env: { PATH: process.env.PATH, HOME: process.env.HOME, SIPGES_DESKTOP_PORT: String(port), SIPGES_DESKTOP_WAIT: '5' },
-    });
-    assert.equal(result.status, 1, 'the stand-in exits 1: «stopped while starting»');
-    assert.equal(
-      readFileSync(ran, 'utf8'),
-      `go --port ${port}\nstate=${state}\npgbin=${join(version, 'postgresql', 'bin')}\nweb=${join(version, 'web')}\n`,
-    );
-    assert.ok(readFileSync(join(root, 'launcher.log'), 'utf8') === '' || existsSync(join(root, 'launcher.log')));
+    assert.equal((await launch(root, [])).status, 1);
+    assert.match(readFileSync(ran, 'utf8'), /^typescript /);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+for (const [name, setup] of [
+  ['data in pg18', (state) => {
+    writeFileSync(join(state, 'pglite', 'PG_VERSION'), '17\n');
+    mkdirSync(join(state, 'pg18'));
+    writeFileSync(join(state, 'pg18', 'PG_VERSION'), '18\n');
+  }],
+  ['a new install (no data yet)', () => {}],
+]) {
+  test(`${name}: the launcher entry starts the Go launcher of the install, with its update folder and bundle`, async () => {
+    const { dir, root, state, version, ran } = installRoot();
+    try {
+      setup(state);
+      const port = await freePort();
+      const result = spawnSync('sh', [join(root, 'sipges-desktop.sh')], {
+        encoding: 'utf8',
+        env: { PATH: process.env.PATH, HOME: process.env.HOME, SIPGES_DESKTOP_PORT: String(port), SIPGES_DESKTOP_WAIT: '5' },
+      });
+      assert.equal(result.status, 1, 'the stand-in exits 1: «stopped while starting»');
+      assert.equal(
+        readFileSync(ran, 'utf8'),
+        `go --install ${root} --releases ${join(root, 'releases')} --port ${port}\npgbin=${join(version, 'postgresql', 'bin')}\n`,
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+}
+
+test('the Go launcher starts without Node on the PATH, from indented install files', { skip: process.platform === 'win32' && 'POSIX sh' }, async () => {
+  const { dir, root, state, ran } = installRoot();
+  try {
+    writeFileSync(join(root, 'current.json'), `${JSON.stringify({ format: 1, version: '1.0.0', path: 'versions/1.0.0', adopted: false }, null, 2)}\n`);
+    writeFileSync(join(root, 'install.json'), `${JSON.stringify({ stateDir: state }, null, 2)}\n`);
+    const bin = join(dir, 'bin');
+    mkdirSync(bin);
+    for (const tool of ['sh', 'dirname', 'readlink', 'tr', 'sed', 'ls', 'curl', 'sleep', 'cat', 'head', 'basename', 'ss', 'nohup']) {
+      const found = spawnSync('sh', ['-c', `command -v ${tool}`], { encoding: 'utf8' }).stdout.trim();
+      if (found) symlinkSync(found, join(bin, tool));
+    }
+    assert.equal(existsSync(join(bin, 'node')), false);
+    const result = await launch(root, [], { PATH: bin });
+    assert.equal(result.status, 1, result.stderr);
+    assert.match(readFileSync(ran, 'utf8'), /^go --install /);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -128,7 +169,7 @@ test('--go refuses, starting nothing, a version without the Go mode and data not
     mkdirSync(join(notMoved.state, 'pg18'));
     writeFileSync(join(notMoved.state, 'pg18', 'PG_VERSION'), '18\n');
     assert.equal((await launch(notMoved.root, ['--go'])).status, 1);
-    assert.match(readFileSync(notMoved.ran, 'utf8'), /^go --port \d+$/m);
+    assert.match(readFileSync(notMoved.ran, 'utf8'), /^go --install .* --port \d+$/m);
   } finally {
     rmSync(notMoved.dir, { recursive: true, force: true });
   }
@@ -150,8 +191,8 @@ async function serving(image, dir) {
   return { port, stop: () => child.kill() };
 }
 
-test('--go refuses to reuse a TypeScript SIPGES; a plain start refuses to reuse a Go one', { skip: process.platform !== 'linux' && 'ss names the listener on Linux' }, async () => {
-  const { dir, root, ran } = installRoot();
+test('the Go mode refuses to reuse a TypeScript SIPGES; the TypeScript mode refuses to reuse a Go one', { skip: process.platform !== 'linux' && 'ss names the listener on Linux' }, async () => {
+  const { dir, root, state, ran } = installRoot();
   const env = (port) => ({ PATH: process.env.PATH, HOME: process.env.HOME, SIPGES_DESKTOP_PORT: String(port), SIPGES_DESKTOP_WAIT: '5' });
   const ts = await serving('node', dir);
   try {
@@ -162,6 +203,8 @@ test('--go refuses to reuse a TypeScript SIPGES; a plain start refuses to reuse 
   } finally {
     ts.stop();
   }
+  // Data only in PGlite: the TypeScript mode.
+  writeFileSync(join(state, 'pglite', 'PG_VERSION'), '17\n');
   const go = await serving('api', dir);
   try {
     const result = spawnSync('sh', [join(root, 'sipges-desktop.sh')], { encoding: 'utf8', env: env(go.port) });

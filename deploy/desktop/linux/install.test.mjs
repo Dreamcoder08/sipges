@@ -5,17 +5,19 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import process from 'node:process';
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync, symlinkSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { makeState, newPair, releases, snapshot, withTemp } from '../updater/verifier-helpers.mjs';
+import { keyFingerprint } from '../updater/release.mjs';
+import { makePackage, makeState, newPair, releases, snapshot, withTemp } from '../updater/verifier-helpers.mjs';
 
 const installer = join(dirname(fileURLToPath(import.meta.url)), 'install.sh');
-const REAL = ['cat', 'chmod', 'cp', 'cut', 'dirname', 'mkdir', 'openssl', 'readlink', 'sh', 'tr'];
+const REAL = ['cat', 'chmod', 'cp', 'cut', 'dirname', 'mkdir', 'openssl', 'readlink', 'sed', 'sh', 'tr'];
 
 /** A temporary HOME whose PATH has only the real tools above, the real Node and logging fakes. */
-async function sandbox(dir) {
+async function sandbox(dir, { withoutNode = false } = {}) {
   const bin = join(dir, 'bin');
   const home = join(dir, 'home');
   const calls = join(dir, 'calls');
@@ -30,7 +32,7 @@ async function sandbox(dir) {
     writeFile(join(bin, name), `#!/bin/sh\necho "${name} $*" >> '${calls}'\n${body}\n`, {
       mode: 0o755,
     });
-  await fake('node', `exec '${process.execPath}' "$@"`);
+  if (!withoutNode) await fake('node', `exec '${process.execPath}' "$@"`);
   await fake('curl', 'exit 22'); // nothing answers: no port is ever probed
   await fake('pnpm', 'echo 12.11.2');
   await fake('npm', 'exit 0');
@@ -189,4 +191,56 @@ test('install.sh --managed rerun on a recorded copy refuses a link to it and the
       assert.deepEqual([result.status, result.stdout, result.stderr], [1, '', stderr], state);
       assert.deepEqual(await snapshot(s.home), before, 'nothing in HOME changed');
     }
+  }));
+
+// go-rust-stack T72d3: a release built with --go installs itself with its own
+// go/sipges-desktop (the real one, built here), so a computer without Node can be installed.
+const repo = join(dirname(fileURLToPath(import.meta.url)), '../../..');
+const hasGo = spawnSync('go', ['version']).status === 0;
+
+test('install.sh --managed installs a Go release with its sipges-desktop, without Node', { skip: !hasGo && 'needs the go toolchain' }, () =>
+  withTemp(async (dir) => {
+    const build = mkdtempSync(join(tmpdir(), 'sipges-desktop-build-'));
+    try {
+      const exe = join(build, 'sipges-desktop');
+      const built = spawnSync('go', ['build', '-o', exe, './cmd/sipges-desktop'], { cwd: join(repo, 'apps/api-go'), encoding: 'utf8' });
+      assert.equal(built.status, 0, built.stderr);
+      const s = await sandbox(dir, { withoutNode: true });
+      const pair = newPair();
+      const release = await releases(dir, pair, {
+        make: async (pkg, version) => {
+          await makePackage(pkg, version);
+          await mkdir(join(pkg, 'go'), { recursive: true });
+          copyFileSync(exe, join(pkg, 'go', 'sipges-desktop'));
+        },
+      })('1.0.0');
+      const result = s.exec(['--managed', release]);
+      assert.equal(result.status, 0, result.stderr);
+      assert.ok(
+        result.stdout.startsWith(`Trusting the update key that signed this release (SHA-256 ${keyFingerprint(pair.publicKey)}).\nInstalled 1.0.0\n`),
+        result.stdout,
+      );
+      assert.doesNotMatch(result.log, /^node /m, 'node was never run');
+      const current = JSON.parse(readFileSync(join(s.appRoot, 'current.json'), 'utf8'));
+      assert.deepEqual([current.version, current.path], ['1.0.0', 'versions/1.0.0']);
+      assert.equal(JSON.parse(readFileSync(join(s.appRoot, 'install.json'), 'utf8')).stateDir, s.state);
+      assert.deepEqual(readdirSync(s.state).sort(), ['admin-password', 'data-key', 'pglite', 'uploads']);
+      assert.ok(existsSync(join(s.appRoot, 'sipges-desktop.sh')));
+      // A rerun reads the installed version without Node and keeps it.
+      const rerun = s.exec(['--managed', release]);
+      assert.equal(rerun.status, 0, rerun.stderr);
+      assert.match(rerun.stdout, /^SIPGES is already installed: 1\.0\.0\. /m);
+    } finally {
+      rmSync(build, { recursive: true, force: true });
+    }
+  }));
+
+test('install.sh --managed asks for Node only for a release without the Go mode', () =>
+  withTemp(async (dir) => {
+    const s = await sandbox(dir, { withoutNode: true });
+    const release = await releases(dir, newPair())('1.0.0');
+    const result = s.exec(['--managed', release]);
+    assert.equal(result.status, 1);
+    assert.equal(result.stderr, 'SIPGES: Node.js 24 or later is required: install it and run this script again.\n');
+    assert.equal(existsSync(s.appRoot), false, 'nothing was created');
   }));

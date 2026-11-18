@@ -2,17 +2,20 @@
 # Opens a managed SIPGES install (install.sh --managed) as a desktop app. install.sh copies this
 # script into the install root as sipges-desktop.sh and the launcher entry runs that copy, so it
 # keeps working after updates. It reuses the local server when it answers; otherwise it starts
-# run-current.mjs (the launcher of the current version, which checks <root>/releases for updates),
-# opens the browser in app mode and stays with the launcher: if an update cannot be rolled back
-# (exit code 3) the person gets the notice naming the copy to restore. Read deploy/desktop/README.md.
-# --go (opt-in, go-rust-stack T72c; the launcher entry never passes it) starts the current
-# version's Go mode instead: go/sipges-desktop with PostgreSQL 18 from the version's postgresql/bin
-# or SIPGES_PG_BIN, on the state folder install.json records, output appended to launcher.log. No
-# update check runs in that mode. It refuses, before starting anything, a version built without
-# --go and a state folder whose data are still only in PGlite.
+# the launcher of the install, opens the browser in app mode and stays with the launcher: if an
+# update cannot be rolled back (exit code 3) the person gets the notice naming the copy to
+# restore. Read deploy/desktop/README.md.
+# Which launcher (go-rust-stack T72d3): the current version's Go launcher, go/sipges-desktop
+# --install <root> --releases <root>/releases, when that version has it with PostgreSQL 18 (its
+# postgresql/bin, else SIPGES_PG_BIN) and the state folder install.json records is in pg18 (or
+# holds no PGlite data yet, as a new install). It checks <root>/releases for updates and needs
+# no Node. Otherwise, data still only in PGlite until the visit moves them, run-current.mjs (the
+# TypeScript launcher of the current version, with Node). Output is appended to launcher.log.
+# --go asks for the Go launcher only: it refuses, before starting anything, a version built
+# without --go and a state folder whose data are still only in PGlite.
 set -eu
-GO_MODE=
-[ "${1:-}" != --go ] || GO_MODE=1
+FORCE_GO=
+[ "${1:-}" != --go ] || FORCE_GO=1
 
 ROOT=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
 PORT=${SIPGES_DESKTOP_PORT:-8000}
@@ -63,30 +66,47 @@ start_launcher() {
   LAUNCHER_PID=$!
 }
 
-# A field of a JSON file in the install root (node is already required by the launcher).
+# A string field of a JSON file in the install root. sed reads the files the updaters write
+# (no Node needed); a value it cannot read plainly (escapes) is left to node when there is one.
 json_field() {
+  value=$(tr -d '\n\r' <"$ROOT/$1" 2>/dev/null |
+    sed -n "s/.*\"$2\"[[:space:]]*:[[:space:]]*\"\([^\"\\\\]*\)\"[[:space:]]*[,}].*/\1/p") || value=
+  if [ -n "$value" ]; then printf '%s' "$value"; return 0; fi
+  command -v node >/dev/null 2>&1 || return 1
   node -e 'const v = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"))[process.argv[2]]; if (typeof v !== "string") process.exit(1); process.stdout.write(v)' "$ROOT/$1" "$2" 2>/dev/null
 }
 
-# The Go mode's files and state folder; refuses, changing nothing, a version without it and data
-# not moved yet (something in pglite/ and no cluster in pg18/: a new one would start SIPGES empty).
-start_go() {
-  command -v node >/dev/null 2>&1 || fail 'Node.js is not installed'
+# Sets GO_EXE and PG_BIN for the Go launcher of the current version, or prints why it cannot
+# run (a version without the Go mode, data not moved yet: something in pglite/ and no cluster in
+# pg18/, where a new one would start SIPGES empty) and returns 1. Changes nothing.
+resolve_go() {
   if ! release=$(json_field current.json path) || ! state=$(json_field install.json stateDir); then
-    fail "SIPGES no está instalado correctamente en $ROOT. Vuelva a ejecutar el instalador."
+    say "SIPGES no está instalado correctamente en $ROOT. Vuelva a ejecutar el instalador."
+    return 1
   fi
   case $release in /*) ;; *) release="$ROOT/$release" ;; esac
-  [ -x "$release/go/sipges-desktop" ] ||
-    fail 'Esta versión de SIPGES no incluye el modo Go. Abra SIPGES desde su acceso directo habitual.'
-  pg_bin=${SIPGES_PG_BIN:-}
-  [ ! -x "$release/postgresql/bin/pg_ctl" ] || pg_bin="$release/postgresql/bin"
-  [ -n "$pg_bin" ] ||
-    fail 'No se encontró PostgreSQL 18 para el modo Go: indique la carpeta bin de PostgreSQL 18 en SIPGES_PG_BIN.'
-  if [ -n "$(ls -A "$state/pglite" 2>/dev/null)" ] && [ ! -f "$state/pg18/PG_VERSION" ]; then
-    fail 'SIPGES no se inició en modo Go: sus datos todavía no se movieron a PostgreSQL. No se tocó nada. Abra SIPGES desde su acceso directo habitual.'
+  if [ ! -x "$release/go/sipges-desktop" ]; then
+    say 'Esta versión de SIPGES no incluye el modo Go. Abra SIPGES desde su acceso directo habitual.'
+    return 1
   fi
-  SIPGES_DESKTOP_STATE=$state SIPGES_PG_BIN=$pg_bin SIPGES_WEB_DIR="$release/web" \
-    nohup "$release/go/sipges-desktop" --port "$PORT" >>"$LOG" 2>&1 </dev/null &
+  PG_BIN=${SIPGES_PG_BIN:-}
+  [ ! -x "$release/postgresql/bin/pg_ctl" ] || PG_BIN="$release/postgresql/bin"
+  if [ -z "$PG_BIN" ]; then
+    say 'No se encontró PostgreSQL 18 para el modo Go: indique la carpeta bin de PostgreSQL 18 en SIPGES_PG_BIN.'
+    return 1
+  fi
+  if [ -n "$(ls -A "$state/pglite" 2>/dev/null)" ] && [ ! -f "$state/pg18/PG_VERSION" ]; then
+    say 'SIPGES no se inició en modo Go: sus datos todavía no se movieron a PostgreSQL. No se tocó nada. Abra SIPGES desde su acceso directo habitual.'
+    return 1
+  fi
+  GO_EXE="$release/go/sipges-desktop"
+}
+
+# The Go launcher of the install: recovery, first start, the update check of <root>/releases and
+# the update the person accepts in the app; exit code 3 is the same halt as the TypeScript one.
+start_go() {
+  SIPGES_PG_BIN=$PG_BIN nohup "$GO_EXE" --install "$ROOT" --releases "$ROOT/releases" --port "$PORT" \
+    >>"$LOG" 2>&1 </dev/null &
   LAUNCHER_PID=$!
 }
 
@@ -136,8 +156,8 @@ server_image() {
   [ -z "$argv0" ] || basename "$argv0"
 }
 
-# A SIPGES that answers is opened only in the mode asked for: --go never reuses the TypeScript one
-# (writes would go to PGlite) and a plain start never reuses the Go one; --go refuses an unknown one.
+# A SIPGES that answers is opened only in the install's mode: the Go mode never reuses the
+# TypeScript one (writes would go to PGlite) nor an unknown one, the TypeScript mode never the Go one.
 assert_served_mode() {
   image=$(server_image)
   if [ -n "$GO_MODE" ] && [ "$image" != api ]; then
@@ -148,6 +168,13 @@ assert_served_mode() {
   fi
 }
 
+GO_MODE=
+if why=$(resolve_go); then
+  GO_MODE=1
+  resolve_go >/dev/null
+elif [ -n "$FORCE_GO" ]; then
+  fail "$why"
+fi
 if healthy; then
   assert_served_mode
   open_browser exec

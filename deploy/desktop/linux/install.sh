@@ -7,7 +7,9 @@
 #   install.sh --managed <release> managed mode: installs a signed release into an install root
 #                                  beside the state folder (which stays where it is) and points
 #                                  the launcher entry at that root, so updates arrive through the
-#                                  update notice. A rerun keeps the installed version.
+#                                  update notice. A rerun keeps the installed version. A release
+#                                  built with --go installs itself with its go/sipges-desktop and
+#                                  needs no Node; one without it is installed by update.mjs (Node).
 # Either mode stops without creating anything while an update is pending or halted
 # (update-journal.json in the install root).
 set -eu
@@ -43,9 +45,41 @@ fi
 
 command -v curl >/dev/null 2>&1 || die 'curl is required: install it with your package manager and try again.'
 command -v openssl >/dev/null 2>&1 || die 'openssl is required: install it with your package manager and try again.'
-command -v node >/dev/null 2>&1 || die 'Node.js 24 or later is required: install it and run this script again.'
-[ "$(node -p 'process.versions.node.split(".")[0]')" -ge 24 ] ||
-  die 'Node.js 24 or later is required: install it and run this script again.'
+
+# Node is needed by clone mode and by a release without the Go mode, never by a Go release.
+need_node() {
+  command -v node >/dev/null 2>&1 || die 'Node.js 24 or later is required: install it and run this script again.'
+  [ "$(node -p 'process.versions.node.split(".")[0]')" -ge 24 ] ||
+    die 'Node.js 24 or later is required: install it and run this script again.'
+}
+
+# A string field of a JSON file the updaters wrote. sed reads it without Node; a value it cannot
+# read plainly (escapes) is left to node when there is one.
+json_field() {
+  value=$(tr -d '\n\r' <"$1" 2>/dev/null |
+    sed -n "s/.*\"$2\"[[:space:]]*:[[:space:]]*\"\([^\"\\\\]*\)\"[[:space:]]*[,}].*/\1/p") || value=
+  if [ -n "$value" ]; then printf '%s\n' "$value"; return 0; fi
+  command -v node >/dev/null 2>&1 || return 1
+  node -p 'const v = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"))[process.argv[2]]; if (typeof v !== "string") process.exit(1); v' "$1" "$2"
+}
+
+# The path as given, made absolute and without . or .. parts or repeated slashes, links not
+# followed (Node's path.resolve, as update.mjs and sipges-desktop see the folder).
+resolved() {
+  case $1 in /*) path=$1 ;; *) path=$(pwd)/$1 ;; esac
+  out=
+  old_ifs=$IFS
+  IFS=/
+  for part in $path; do
+    case $part in
+      '' | .) ;;
+      ..) out=${out%/*} ;;
+      *) out=$out/$part ;;
+    esac
+  done
+  IFS=$old_ifs
+  printf '%s\n' "${out:-/}"
+}
 
 # The launcher entry and icon, pointing at the given script.
 write_entry() {
@@ -100,7 +134,7 @@ install_managed() {
   # it in place. A rerun keeps its recorded folder, compared below. The link test sees the path
   # as update.mjs does (path.resolve), so no spelling (link//, link/., link/x/..) gets past it.
   if [ -n "$STATE_GIVEN" ]; then
-    if [ -L "$(node -p 'require("path").resolve(process.argv[1])' "$STATE")" ]; then
+    if [ -L "$(resolved "$STATE")" ]; then
       die "la carpeta de datos $STATE es un enlace: pasa en SIPGES_DESKTOP_STATE la carpeta real de la copia, nunca un enlace a ella; no se cambió nada."
     fi
     if [ ! -f "$APP_ROOT/install.json" ] && [ "$(real_dir "$STATE")" = "$(real_dir "$ORIGINAL_STATE")" ]; then
@@ -110,7 +144,7 @@ install_managed() {
   # A rerun keeps the state folder the install recorded: another one would be prepared and named
   # here while SIPGES keeps opening the recorded one.
   if [ -f "$APP_ROOT/install.json" ]; then
-    recorded=$(node -p 'JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).stateDir' "$APP_ROOT/install.json") ||
+    recorded=$(json_field "$APP_ROOT/install.json" stateDir) ||
       die "no se pudo leer $APP_ROOT/install.json; no se cambió nada."
     if [ -n "$STATE_GIVEN" ] && [ "$(real_dir "$STATE")" != "$recorded" ]; then
       die "esta instalación usa la carpeta de datos $recorded, no $STATE: vuelve a ejecutar el script sin SIPGES_DESKTOP_STATE o con SIPGES_DESKTOP_STATE=$recorded; no se cambió nada."
@@ -130,11 +164,20 @@ install_managed() {
   [ ! -e "$STATE" ] || had_state=yes
   umask 077
   if [ -f "$APP_ROOT/current.json" ]; then
-    say "SIPGES is already installed: $(node -p 'JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).version' "$APP_ROOT/current.json"). Updates arrive through the update notice; only the launcher entry is refreshed."
+    say "SIPGES is already installed: $(json_field "$APP_ROOT/current.json" version). Updates arrive through the update notice; only the launcher entry is refreshed."
   else
+    # The release's own installer: it checks the signature with the key it ships (trusted here,
+    # its fingerprint printed) before anything is installed, as update.mjs does.
+    go_installer="$RELEASE/package/go/sipges-desktop"
+    [ -x "$go_installer" ] || need_node
     mkdir -p "$APP_ROOT"
-    node "$UPDATER/update.mjs" --install "$APP_ROOT" --release "$RELEASE" --state "$STATE" --trust-release-key ||
-      die 'the signed release could not be installed; the state folder was not changed.'
+    if [ -x "$go_installer" ]; then
+      "$go_installer" --install "$APP_ROOT" --release "$RELEASE" --state "$STATE" --trust-release-key ||
+        die 'the signed release could not be installed; the state folder was not changed.'
+    else
+      node "$UPDATER/update.mjs" --install "$APP_ROOT" --release "$RELEASE" --state "$STATE" --trust-release-key ||
+        die 'the signed release could not be installed; the state folder was not changed.'
+    fi
   fi
   SIPGES_DESKTOP_STATE="$STATE" "$LAUNCHER" --prepare
   mkdir -p "$APP_ROOT/releases"
@@ -146,7 +189,7 @@ install_managed() {
   say "Install root: $APP_ROOT. Copy newer signed releases into $APP_ROOT/releases to be offered them."
   say "Admin user: admin. Password: $STATE/admin-password"
   if [ "$had_state" = yes ] && [ ! -f "$APP_ROOT/first-start.json" ]; then
-    say "The existing state folder $STATE was kept as it is. Its first start copies it beside itself ($STATE.pre-update-<time>-first-start-$(node -p 'JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).version' "$APP_ROOT/current.json")), migrates a second copy and only then the folder."
+    say "The existing state folder $STATE was kept as it is. Its first start copies it beside itself ($STATE.pre-update-<time>-first-start-$(json_field "$APP_ROOT/current.json" version)), migrates a second copy and only then the folder."
     say "Back it up yourself as well before opening SIPGES."
   fi
   say "Back up the whole folder $STATE (it holds your data and its key)."
@@ -156,6 +199,8 @@ if [ -n "$RELEASE" ]; then
   install_managed
   exit 0
 fi
+
+need_node
 
 # shellcheck disable=SC2016 # the backticks name a command for the person to run
 ensure_pnpm() {
