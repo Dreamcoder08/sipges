@@ -1262,6 +1262,7 @@ test('the Windows scripts keep their accents: a UTF-8 BOM, and UTF-8 output befo
   const windows = path.join(desktop, 'windows');
   const scripts = readdirSync(windows).filter((file) => file.endsWith('.ps1'));
   assert.deepEqual(scripts.sort(), [
+    'go-console.ps1',
     'install.ps1',
     'start-managed.ps1',
     'start.ps1',
@@ -2052,7 +2053,7 @@ test('the managed Windows launcher writes its messages to stdout and opens no wi
   assert.equal((start.match(/msedge\.exe/g) ?? []).length, 1);
   assert.match(
     start,
-    /function Open-App \{\s*if \(\$NoUi\) \{ Write-Output "SIPGES: \$Url"; return \}\s*Start-Process -FilePath 'msedge\.exe' -ArgumentList "--app=\$Url"\s*\}/,
+    /function Open-App \{\s*Assert-ServedMode\s*if \(\$NoUi\) \{ Write-Output "SIPGES: \$Url"; return \}\s*Start-Process -FilePath 'msedge\.exe' -ArgumentList "--app=\$Url"\s*\}/,
   );
   assert.equal(
     (start.match(/^\s*Open-App\s*$/gm) ?? []).length,
