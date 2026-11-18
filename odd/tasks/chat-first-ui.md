@@ -146,7 +146,7 @@ Phase E — proof:
 - T21 [x] — S2: Inicio asks through `/system/analyst/ask/stream` and shows each `step` label as the pending turn's
   progress text (fallback to `/ask` when the stream is unavailable), with the same single status announcement.
   Route: worker. Commit: pending.
-- T16 [ ] — S1: Playwright specs (Chromium, mobile, WebKit) for the thread, stop, new conversation, AI off and the
+- T16 [x] — S1: Playwright specs (Chromium, mobile, WebKit) for the thread, stop, new conversation, AI off and the
   503 fallback, waiting for state rather than time; axe with 0 violations in both themes; the CSS budget kept
   (41 kB) and the Inicio usable-time budget kept. Route: inline. Commit: pending.
 - T17 [ ] — S1: walk-through on the owner's local install with a real model through the bridge, and the owner's
@@ -372,3 +372,6 @@ T18(b) → T16 → T17. Phases A, B and D change no API and no stored data.
     L32).
   - Results: WebKit in Docker 160 passed and 20 skipped over 20 repeats; the full WebKit config 43 passed and 1
     skipped; chromium and mobile 51/51; web 896/896.
+- L17 — 2026-11-17, #518 merged (edcd044c) with CI green on all jobs, WebKit included. T16 is done. The owner's local
+  install is updated to it. What remains: T17 (the owner's walk-through on https://localhost/inicio) and T18(b)(c), the
+  owner's decisions that unblock T9 and T11.
