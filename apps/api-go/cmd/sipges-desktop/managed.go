@@ -22,6 +22,7 @@ import (
 
 const launcherUsage = `Usage: sipges-desktop --install <root> [--releases <dir>] [--port <port>] [--pg-bin <dir>]
        sipges-desktop --install <root> --prepare-only [--pg-bin <dir>]
+       sipges-desktop --install <root> --release <dir> --state <dir> (--trust-key <public.pem> | --trust-release-key)
 
 Starts the current version of a managed install on 127.0.0.1 (default port 8000): its bundled
 PostgreSQL 18 (<version>/postgresql/bin, else --pg-bin or SIPGES_PG_BIN) on <state>/pg18 and its
@@ -33,6 +34,9 @@ database and the migrations, then stops it, so the one-time PGlite migrator can 
 refused when <state>/pg18 already holds data.
 A first SIGINT or SIGTERM stops SIPGES gracefully; a second one kills the server at once and
 exits with code 1.
+--release installs a signed release into an empty <root> and records <state> (its real path) in
+install.json, as update.mjs --install does; --trust-release-key trusts the key that signed this
+release and prints its SHA-256 fingerprint. It starts nothing.
 Exit codes: 0 stopped, 3 an update could not be rolled back and nothing was started (restore
 the pre-update copy named in the message), otherwise the server's own exit code or 1.`
 
@@ -542,6 +546,11 @@ type launcherOptions struct {
 	port        int
 	prepareOnly bool
 	help        bool
+	// The install form (update.mjs --install <root> --release <dir>): a first install.
+	release      string
+	state        string
+	trustKey     string
+	trustRelease bool
 }
 
 var errInvalidOptions = errors.New("Invalid options; use --help") //nolint:staticcheck // ST1005: launcher.mjs's message
@@ -565,7 +574,14 @@ func parseLauncherArgs(args []string, lookup func(string) (string, bool)) (launc
 			o.prepareOnly = true
 			continue
 		}
-		targets := map[string]*string{"--install": &o.install, "--releases": &o.releases, "--port": &port, "--pg-bin": &o.pgBin}
+		if key == "--trust-release-key" && !inline && !o.trustRelease {
+			o.trustRelease = true
+			continue
+		}
+		targets := map[string]*string{
+			"--install": &o.install, "--releases": &o.releases, "--port": &port, "--pg-bin": &o.pgBin,
+			"--release": &o.release, "--state": &o.state, "--trust-key": &o.trustKey,
+		}
 		target, ok := targets[key]
 		if !ok || seen[key] {
 			return launcherOptions{}, errInvalidOptions
@@ -584,6 +600,9 @@ func parseLauncherArgs(args []string, lookup func(string) (string, bool)) (launc
 	}
 	if o.install == "" {
 		return launcherOptions{}, errors.New("Missing --install") //nolint:staticcheck // ST1005: launcher.mjs's message
+	}
+	if err := checkInstallForm(o, seen); err != nil {
+		return launcherOptions{}, err
 	}
 	if port != "" {
 		n, err := strconv.Atoi(port)
@@ -614,6 +633,9 @@ func runLauncherCLI(ctx context.Context, args, environ []string, stdout, stderr 
 	if err != nil {
 		_, _ = fmt.Fprintln(stderr, "Error: "+err.Error())
 		return 1
+	}
+	if o.release != "" {
+		return runInstall(ctx, root, o, stdout, stderr)
 	}
 	rt := runtimeEnv{base: environ, pgBin: o.pgBin, stdout: stdout, stderr: stderr}
 	if o.prepareOnly {
