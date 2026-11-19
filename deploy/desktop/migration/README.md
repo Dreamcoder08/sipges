@@ -443,7 +443,10 @@ SIPGES_MOVE_DATABASE_URL='postgres://<login>@127.0.0.1:<port>/<database>' \
 `--to <url>` replaces the variable; the variable keeps a password out of the process list.
 `--scratch <folder>` chooses where the temporary copy of the database goes (the system temp folder
 otherwise); it is refused inside the original state folder or inside the copy. `--port` (8000) is
-where SIPGES answers when it is running. It needs `pnpm install` in this checkout: it takes `@electric-sql/pglite`,
+where SIPGES answers when it is running. `--prepared <state folder>` names the real state folder
+`sipges-desktop --install <root> --prepare-only` prepared: its `pg18.pending-move`, which keeps the
+shortcut and the Go launcher off the empty cluster, is removed only after a committed move with no
+difference (refused before reading anything when the mark is missing). It needs `pnpm install` in this checkout: it takes `@electric-sql/pglite`,
 `@electric-sql/pglite-tools` and `postgres` from `apps/api`.
 
 | Step | What happens |

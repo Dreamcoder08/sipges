@@ -14,12 +14,15 @@ name: Windows desktop drill
 # this commit with its own pnpm install, the kit's refusals (old clone, SIPGES open), the kit,
 # then the managed install from it; the old clone stays byte-identical. It also measures the time
 # and disk space the runbook quotes.
-# The go-mode job rehearses the opt-in Go mode (go-rust-stack T72c, docs/adr/0036 §6) with
+# The go-mode job rehearses the Go launcher (go-rust-stack T72c, T72d3, docs/adr/0036 §5-6) with
 # deploy/desktop/windows/go-drill.mjs: a package built with --go (the pinned PostgreSQL 18 from
-# deploy/desktop/postgresql, cached by its SHA-256 and verified again before use), the TypeScript
-# default seeded, the PGlite data moved by pglite-to-postgres.mjs, start.ps1 -Go, the launcher
-# killed during writes and started again over the orphaned PostgreSQL, a clean Ctrl+C stop, the
-# original PGlite folder byte-identical and the way back to TypeScript.
+# deploy/desktop/postgresql, cached by its SHA-256 and verified again before use) installed from
+# the kit's scripts zip (visit-kit.mjs) by its trusted sipges-desktop, with no Node on the PATH,
+# an install still on PGlite kept on the TypeScript launcher, the data moved by
+# pglite-to-postgres.mjs, start.ps1 then running the Go launcher
+# without Node, the launcher killed during writes and started again, a signed update offered and
+# applied by the Go launcher, a clean Ctrl+C stop, the original PGlite folder byte-identical and
+# the way back to TypeScript.
 # No secrets: every signing key is made inside its job, used for throwaway releases and deleted
 # with the runner.
 on:
@@ -33,6 +36,10 @@ on:
   pull_request:
     paths:
       - 'deploy/desktop/**'
+      - 'apps/api-go/cmd/sipges-desktop/**'
+      - 'apps/api-go/internal/platform/desktoprelease/**'
+      - 'apps/api-go/internal/platform/desktopupdate/**'
+      - 'apps/api-go/internal/platform/localpg/**'
       - 'apps/api/**'
       - 'apps/web/**'
       - 'packages/**'
@@ -41,6 +48,10 @@ on:
     branches: [main]
     paths:
       - 'deploy/desktop/**'
+      - 'apps/api-go/cmd/sipges-desktop/**'
+      - 'apps/api-go/internal/platform/desktoprelease/**'
+      - 'apps/api-go/internal/platform/desktopupdate/**'
+      - 'apps/api-go/internal/platform/localpg/**'
       - 'apps/api/**'
       - 'apps/web/**'
       - 'packages/**'
@@ -140,6 +151,11 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
+      # The kit carries the trusted sipges-desktop.exe it builds from this checkout (review B1).
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.27.4'
+          cache-dependency-path: apps/api-go/go.sum
       - name: Install this checkout
         run: pnpm install --frozen-lockfile
       - name: Visit kit unit tests
@@ -197,6 +213,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      # The kit carries the trusted sipges-desktop.exe it builds from this checkout (review B1).
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.27.4'
+          cache: false
       - name: Laptop-kit unit tests
         run: node --test deploy/desktop/windows/laptop-kit.test.mjs
       - name: Kit built on the laptop (synthetic data only)
@@ -214,10 +235,10 @@ jobs:
           retention-days: 14
 
   go-mode:
-    name: Go mode (bundled PostgreSQL 18, data move, kill and restart, clean stop, way back)
+    name: Go mode (Go installer and launcher without Node, data move, kill and restart, update, clean stop, way back)
     runs-on: windows-latest
     # The hard cap only stops a hung run.
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
         with:

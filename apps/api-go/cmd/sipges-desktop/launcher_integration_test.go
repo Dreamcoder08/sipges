@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database/dbtest"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/localpg/pgbin"
 )
@@ -78,7 +80,8 @@ func TestManagedLauncherPreparesStartsUpdatesAndRestartsOnPostgres18(t *testing.
 	if err != nil {
 		t.Fatal(err)
 	}
-	assertAppRole(t, f.state)
+	// What pglite-to-postgres.mjs fills: the roles and an empty database, no migration applied.
+	assertEmptyAppDatabase(t, f.state)
 	if err := stopCluster(ctx, pg); err != nil {
 		t.Fatal(err)
 	}
@@ -87,6 +90,10 @@ func TestManagedLauncherPreparesStartsUpdatesAndRestartsOnPostgres18(t *testing.
 	if code := runLauncherCLI(ctx, []string{"--install", f.root, "--prepare-only", "--pg-bin", bin}, env, &out, &errOut, nil); code != 1 ||
 		!strings.Contains(errOut.String(), "ya tiene una base de datos PostgreSQL 18") {
 		t.Fatalf("a second --prepare-only: exit %d\n%s", code, errOut.String())
+	}
+	// What a committed move (pglite-to-postgres.mjs --prepared) does last.
+	if err := os.Remove(filepath.Join(f.state, pendingMoveName)); err != nil {
+		t.Fatalf("--prepare-only left no pending-move mark: %v", err)
 	}
 
 	f.release("1.1.0", releaseOptions{notes: strp("Sintético.")})
@@ -206,16 +213,78 @@ func TestAFailedPrepareOnlyRemovesTheHalfMadeCluster(t *testing.T) {
 	state := t.TempDir()
 	put(t, filepath.Join(state, "data-key"), "c3ludGhldGljLWRhdGEta2V5LTMyLWJ5dGVzLXh4eHg=\n")
 	put(t, filepath.Join(state, "admin-password"), "SyntheticAdmin-2026\n")
-	missingAPI := filepath.Join(t.TempDir(), program("api"))
-	err := run(context.Background(), []string{"--state", state, "--pg-bin", bin, "--api", missingAPI,
-		"--migrations", dbtest.MigrationsDir(), "--prepare-only"}, []string{"PATH=" + os.Getenv("PATH")}, io.Discard, io.Discard)
-	if err == nil {
-		t.Fatal("--prepare-only without its API binary succeeded")
+	failing := errors.New("synthetic check failure after the cluster was made")
+	saved := prepareCheck
+	prepareCheck = func(context.Context, string) error { return failing }
+	t.Cleanup(func() { prepareCheck = saved })
+	err := run(context.Background(), []string{"--state", state, "--pg-bin", bin, "--prepare-only"},
+		[]string{"PATH=" + os.Getenv("PATH")}, io.Discard, io.Discard)
+	if !errors.Is(err, failing) {
+		t.Fatalf("--prepare-only with a failing check: %v", err)
 	}
 	if _, statErr := os.Stat(filepath.Join(state, "pg18")); !errors.Is(statErr, os.ErrNotExist) {
 		t.Fatalf("the half-made cluster is still there: %v (%v)", statErr, err)
 	}
-	if msg := userMessage(err); !strings.Contains(msg, "se borró la carpeta pg18 a medio preparar") || !strings.Contains(msg, missingAPI) {
+	if msg := userMessage(err); !strings.Contains(msg, "se borró la carpeta pg18 a medio preparar") || !strings.Contains(msg, failing.Error()) {
 		t.Fatalf("message %q", msg)
+	}
+}
+
+// --prepare-only runs no `api migrate`: an API binary that is missing changes nothing.
+func TestPrepareOnlyLeavesAnEmptyDatabaseWithoutTheAPI(t *testing.T) {
+	bin := pgbin.ForTest(t)
+	state := t.TempDir()
+	put(t, filepath.Join(state, "data-key"), "c3ludGhldGljLWRhdGEta2V5LTMyLWJ5dGVzLXh4eHg=\n")
+	put(t, filepath.Join(state, "admin-password"), "SyntheticAdmin-2026\n")
+	var out bytes.Buffer
+	if err := run(context.Background(), []string{"--state", state, "--pg-bin", bin, "--api", filepath.Join(t.TempDir(), program("api")), "--prepare-only"},
+		[]string{"PATH=" + os.Getenv("PATH")}, &out, io.Discard); err != nil {
+		t.Fatalf("--prepare-only: %v", err)
+	}
+	if !strings.Contains(out.String(), "sipges-desktop: PostgreSQL 18 prepared in "+filepath.Join(state, "pg18")) {
+		t.Fatalf("stdout %q", out.String())
+	}
+	if _, err := os.Stat(filepath.Join(state, "pg18", "postmaster.pid")); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("PostgreSQL still running after --prepare-only: %v", err)
+	}
+	sec, err := readSecrets(state)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pg, err := startCluster(context.Background(), bin, state, sec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = stopCluster(context.Background(), pg) }()
+	assertEmptyAppDatabase(t, state)
+}
+
+// assertEmptyAppDatabase: the non-privileged login owns the application database, which holds no
+// table (no schema_migrations either): what the one-time PGlite move accepts.
+func assertEmptyAppDatabase(t *testing.T, state string) {
+	t.Helper()
+	sec, err := readSecrets(state)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	pidFile, err := os.ReadFile(filepath.Join(state, "pg18", "postmaster.pid"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	conn, err := pgx.Connect(ctx, "postgres://"+appRole+":"+sec.pgApp+"@127.0.0.1:"+lineOf(string(pidFile), 3)+"/"+appDatabase+"?sslmode=disable")
+	if err != nil {
+		t.Fatalf("connect as %s: %v", appRole, err)
+	}
+	defer func() { _ = conn.Close(ctx) }()
+	var owner string
+	var super, tables, migrations int
+	if err := conn.QueryRow(ctx, `SELECT pg_get_userbyid(datdba), (SELECT count(*) FROM pg_roles WHERE rolname = current_user AND (rolsuper OR rolbypassrls)),
+		(SELECT count(*) FROM pg_tables WHERE schemaname = 'public'), (SELECT count(*) FROM pg_class WHERE relname = 'schema_migrations')
+		FROM pg_database WHERE datname = current_database()`).Scan(&owner, &super, &tables, &migrations); err != nil {
+		t.Fatal(err)
+	}
+	if owner != appRole || super != 0 || tables != 0 || migrations != 0 {
+		t.Fatalf("owner %s, privileged %d, public tables %d, schema_migrations %d", owner, super, tables, migrations)
 	}
 }

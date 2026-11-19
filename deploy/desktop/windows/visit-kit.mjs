@@ -19,8 +19,10 @@
 //   (c) signs the release with deploy/desktop/updater/release.mjs (notes «Versión definitiva de
 //       la visita»);
 //   (d) writes <out>\SIPGES-visita\: release-<version>\, sipges-scripts.zip (deploy/desktop of
-//       HEAD, as the runbook packs it), fingerprint.txt (the key's SHA-256, the same the
-//       installer prints) and LEEME.txt (the runbook's commands with this kit's paths);
+//       HEAD, as the runbook packs it, plus the trusted installer deploy/desktop/bin/
+//       sipges-desktop.exe built from this checkout for windows/amd64: it needs Go),
+//       fingerprint.txt (the key's SHA-256, the same the installer prints) and LEEME.txt (the
+//       runbook's commands with this kit's paths);
 //   (e) prints the final checklist.
 // The key never goes into the repository, into %LOCALAPPDATA%\SIPGES* or into the visit folder.
 // --out is the visit USB or, with a single USB (the key's), a laptop folder outside the
@@ -44,7 +46,8 @@ import {
 } from 'node:fs';
 import { connect } from 'node:net';
 import { Buffer } from 'node:buffer';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { constants, copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import path, { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import process from 'node:process';
@@ -504,11 +507,59 @@ async function signingKey(key) {
 }
 
 /**
+ * The kit's trusted installer: sipges-desktop.exe for windows/amd64 built from this checkout, as
+ * builder.mjs builds the Go programs (-trimpath). install.ps1 -Release verifies and installs a Go
+ * release with it, never with the release's own binary (review B1); without Go there is no kit.
+ */
+export async function buildTrustedInstaller(out, { checkout = repo, env = process.env } = {}) {
+  const result = spawnSync('go', ['build', '-trimpath', '-o', out, './cmd/sipges-desktop'], {
+    cwd: join(checkout, 'apps', 'api-go'),
+    env: { ...env, GOOS: 'windows', GOARCH: 'amd64', CGO_ENABLED: '0' },
+    encoding: 'utf8',
+  });
+  if (result.error || result.status !== 0 || !existsSync(out)) {
+    const why = result.error
+      ? (result.error.code ?? result.error.message)
+      : (result.stderr ?? '').trim().split('\n').at(-1) || `exit code ${result.status}`;
+    throw new Error(
+      `No se pudo construir el sipges-desktop.exe de confianza del kit (go build): ${why}. Instalá Go y repetí el comando.`,
+    );
+  }
+}
+
+/**
+ * The kit's scripts zip: deploy/desktop of HEAD plus the trusted installer in deploy/desktop/bin,
+ * built in a temporary folder that is removed afterwards. go-drill.mjs installs from this zip.
+ */
+export async function kitScripts(zip, { checkout = repo, buildInstaller = (out) => buildTrustedInstaller(out, { checkout }) } = {}) {
+  const dir = await mkdtemp(join(tmpdir(), 'sipges-kit-installer-'));
+  try {
+    const trusted = join(dir, 'sipges-desktop.exe');
+    await buildInstaller(trusted);
+    packScripts(zip, checkout, trusted);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
+/**
  * Steps (b)–(d) for a built package: the key, the signed release and the rest of the visit
  * folder, which must not exist yet. Returns what the checklist names.
  */
-export async function writeKit({ packageDir, key, visit, version, commit, now = new Date() }) {
+export async function writeKit({ packageDir, key, visit, version, commit, now = new Date(), buildInstaller }) {
   if (existsSync(visit)) throw new Error(`${visit} already exists; move it away first`);
+  // The trusted installer first: without it there is no kit, and nothing else is written.
+  const scratch = await mkdtemp(join(tmpdir(), 'sipges-kit-scripts-'));
+  const scripts = join(scratch, SCRIPTS_ZIP);
+  try {
+    await kitScripts(scripts, buildInstaller ? { buildInstaller } : {});
+    return await writeSigned({ packageDir, key, visit, version, commit, now, scripts });
+  } finally {
+    await rm(scratch, { recursive: true, force: true });
+  }
+}
+
+async function writeSigned({ packageDir, key, visit, version, commit, now, scripts }) {
   const { pem, created } = await signingKey(key);
   await mkdir(visit);
   const release = join(visit, `release-${version}`);
@@ -520,7 +571,7 @@ export async function writeKit({ packageDir, key, visit, version, commit, now = 
   if (manifest.version !== version || keyFingerprint(embedded) !== fingerprint)
     throw new Error('the signed release does not carry this version and key');
   console.log(`Release ${version} signed: ${release}`);
-  packScripts(join(visit, SCRIPTS_ZIP));
+  await copyFile(scripts, join(visit, SCRIPTS_ZIP), constants.COPYFILE_EXCL);
   await writeFile(join(visit, 'fingerprint.txt'), `${fingerprint}\r\n`, { flag: 'wx' });
   const built = now.toISOString().replace(/\.\d+Z$/, 'Z');
   await writeFile(

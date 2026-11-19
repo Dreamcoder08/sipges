@@ -31,6 +31,10 @@ func TestALauncherKilledDuringTheFirstStartLeavesNoPostgresBehind(t *testing.T) 
 	if code := runLauncherCLI(context.Background(), []string{"--install", f.root, "--prepare-only", "--pg-bin", bin}, env, os.Stderr, os.Stderr, nil); code != 0 {
 		t.Fatalf("--prepare-only: exit %d", code)
 	}
+	// What a committed move (pglite-to-postgres.mjs --prepared) does last.
+	if err := os.Remove(filepath.Join(f.state, pendingMoveName)); err != nil {
+		t.Fatal(err)
+	}
 
 	port := freePort(t)
 	args := strings.Join([]string{"--install", f.root, "--port", strconv.Itoa(port), "--pg-bin", bin}, "\x1f")

@@ -276,6 +276,10 @@ func (l *launcher) run(ctx context.Context) (int, error) {
 	}
 	// PGlite data moves to PostgreSQL 18 only through the one-time migrator (ADR 0036 §4): a first
 	// start here would build an empty pg18 beside it and serve an empty SIPGES.
+	if stateDir, err := desktopupdate.ReadStateDir(root); err == nil && pendingMove(stateDir) {
+		log.event("start_refused", field{"code", nil}, field{"reason", errPendingMove.Error()}, field{"action", pendingMoveNotice})
+		return 0, &userError{msg: pendingMoveNotice, err: errPendingMove}
+	}
 	if err := refuseUnmovedPGlite(root); err != nil {
 		log.event("start_refused", field{"code", nil}, field{"reason", err.Error()}, field{"action", firstStartNotice(err)})
 		return 0, &firstStartError{err}
