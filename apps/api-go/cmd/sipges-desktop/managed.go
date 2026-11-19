@@ -37,8 +37,9 @@ Go API (<version>/go/api). It checks <dir> for a newer signed release at startup
 the app; updates run only after an administrator clicks «Actualizar». Without --releases no
 check is made.
 --prepare-only creates a PostgreSQL 18 cluster in the state folder with the roles and an empty
-database (no migration: the Go launcher migrates when it starts), then stops it, so the
-one-time PGlite migrator can fill it. It is refused when <state>/pg18 already holds data.
+database (no migration: the Go launcher migrates when it starts), then stops it, so the one-time
+PGlite move (--move-pglite --prepared) can fill it. It is refused when <state>/pg18 already holds
+data.
 A first SIGINT or SIGTERM stops SIPGES gracefully; a second one kills the server at once and
 exits with code 1.
 --release installs a signed release into an empty <root> and records <state> (its real path) in
@@ -498,7 +499,7 @@ func stopOrphanClusters(rt runtimeEnv, root string) func(context.Context, []stri
 }
 
 // prepareOnly makes an empty PostgreSQL 18 cluster in the state folder for the one-time PGlite
-// migrator, pglite-to-postgres.mjs: the roles and an empty database owned by the API's login, no
+// move, sipges-desktop --move-pglite (or its Node fallback, pglite-to-postgres.mjs): the roles and an empty database owned by the API's login, no
 // migration (the migrator only fills an empty database, and its dump carries schema_migrations;
 // the Go launcher migrates when it starts). It checks the login reaches that empty database,
 // then stops PostgreSQL. A pg18 folder that already holds anything is refused.
@@ -517,7 +518,7 @@ func prepareOnly(ctx context.Context, stateDir, pgBin string, stdout io.Writer) 
 		return err
 	}
 	// The mark goes first: from here until the move commits, nothing starts SIPGES on this cluster.
-	if err := os.WriteFile(filepath.Join(stateDir, pendingMoveName), []byte("pglite-to-postgres.mjs --prepared removes this after the move\n"), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(stateDir, pendingMoveName), []byte("sipges-desktop --move-pglite --prepared removes this after the move\n"), 0o600); err != nil {
 		return &userError{msg: "No se pudo preparar la base de datos local. Revise el registro de SIPGES.", err: err}
 	}
 	pg, err := startCluster(ctx, pgBin, stateDir, sec)

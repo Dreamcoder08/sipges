@@ -40,7 +40,7 @@ inventados. Lo marcado con ⚠ no está en ningún README: lo agrega este runboo
 | ⚠ `tables.mjs` (paso 5b): que Ctrl+C a mitad de la copia borre sus copias, termine con `RESULT: not compared (interrupted)` y `2` y deje las entradas iguales byte a byte | Lo ejecuta el drill de Windows en la fila `main` (paso «tables.mjs interrupted by a console Ctrl+C»: `tables-interrupt.ps1` manda un Ctrl+C de consola real con `GenerateConsoleCtrlEvent`); probado en Windows solo si esa ejecución del CI pasó (anotá el resultado). En Linux el mismo ensayo manda SIGINT |
 | ⚠ `tables.mjs` (paso 5b): cerrar la ventana a mitad de camino, la negativa por falta de espacio, una copia `.pre-update-…` real contra su carpeta migrada | No probado en Windows: `GenerateConsoleCtrlEvent` no puede mandar el aviso de ventana cerrada (`CTRL_CLOSE_EVENT`) y Windows termina el proceso unos segundos después; la falta de espacio y una copia real no se ensayan. En Linux el ensayo de `rehearse.mjs` lo corre completo |
 | ⚠ `install.ps1` se niega con un `-State` que lleva a la carpeta de datos original (la original misma, sin instalación gestionada) | Lo ejecuta el drill de Windows (paso 3 de `drill.mjs`); probado en Windows solo si esa ejecución del CI pasó (anotá el resultado) |
-| ⚠ Modo Go ([sección 6](#6-pasar-los-datos-a-postgresql-18-modo-go)): `install.ps1 -Release` con el `sipges-desktop.exe` de confianza del kit (`deploy\desktop\bin`) y sin Node en el PATH, el acceso directo que deja en TypeScript una instalación con datos solo en PGlite o con `pg18.pending-move`, el traslado con `--prepare-only`, `pg_ctl` y `pglite-to-postgres.mjs --prepared` (G3–G4), el lanzador Go con los datos en `pg18`, una actualización firmada ofrecida y aplicada por el lanzador Go, la vuelta atrás con `pg18` apartado | Job «go-mode» (`go-drill.mjs`); probado en Windows solo si esa ejecución del CI pasó (anotá el resultado) |
+| ⚠ Modo Go ([sección 6](#6-pasar-los-datos-a-postgresql-18-modo-go)): `install.ps1 -Release` con el `sipges-desktop.exe` de confianza del kit (`deploy\desktop\bin`) y sin Node en el PATH, el acceso directo que deja en TypeScript una instalación con datos solo en PGlite o con `pg18.pending-move`, el traslado con `--prepare-only`, `pg_ctl` y `sipges-desktop.exe --move-pglite --prepared` sin Node (G3–G4), el lanzador Go con los datos en `pg18`, una actualización firmada ofrecida y aplicada por el lanzador Go, la vuelta atrás con `pg18` apartado | Job «go-mode» (`go-drill.mjs`); probado en Windows solo si esa ejecución del CI pasó (anotá el resultado) |
 
 El ensayo automático (`deploy\desktop\windows\drill.mjs`) corre ahora una vez por cada commit que la
 laptop pudo haber instalado (sección 1). Lo que vale para la visita es la ejecución sobre el commit de
@@ -908,14 +908,15 @@ Códigos de salida de `sipges-desktop.exe` y de `update.mjs` (`$LASTEXITCODE`): 
 go-rust-stack T72d3, [ADR 0036](../adr/0036-desktop-go-with-bundled-postgresql.md) §5–6. Se hace una sola
 vez, en la laptop, después de que la versión instalada incluya el modo Go. Hasta este paso la laptop sigue
 en TypeScript sobre PGlite: el acceso directo elige solo el lanzador Go cuando los datos ya están en `pg18`
-(o la instalación es nueva). Node hace falta en G1, G4, G6 y para la vuelta atrás (G7); ni el instalador
-ni el acceso directo lo usan con una versión Go.
+(o la instalación es nueva). Node hace falta en G1, G6 y para la vuelta atrás (G7); ni el instalador, ni
+el acceso directo, ni el traslado (G4) lo usan con una versión Go.
 
 En los comandos, `$app` es `"$env:LOCALAPPDATA\SIPGES-app"`, `$datos` es la carpeta de datos que registra
 `$app\install.json` (`stateDir`) y `$v` es la carpeta de la versión actual (`path` en `$app\current.json`).
 
 - [ ] **G0 — La versión tiene el modo Go y el acceso directo es el nuevo.** `Test-Path "$v\go\sipges-desktop.exe"`,
-  `Test-Path "$v\postgresql\bin\pg_ctl.exe"`: las dos `True`. Y `Test-Path "$datos\pg18"`: `False`.
+  `Test-Path "$v\postgresql\bin\pg_ctl.exe"`, `Test-Path "$v\go\pglite\pglite.wasm"`: las tres `True`
+  (la tercera es el PGlite fijado con el que G4 traslada sin Node). Y `Test-Path "$datos\pg18"`: `False`.
   Renová `start.ps1` con el kit de esta versión (su `sipges-scripts.zip` trae
   `deploy\desktop\bin\sipges-desktop.exe`, construido desde el checkout de confianza): volvé a ejecutar
   `install.ps1 -Release <la versión firmada instalada>` desde ese kit; con SIPGES ya instalado solo renueva
@@ -935,21 +936,24 @@ En los comandos, `$app` es `"$env:LOCALAPPDATA\SIPGES-app"`, `$datos` es la carp
   en TypeScript y el lanzador Go se niega a abrir ese clúster vacío. Se niega si `pg18` ya tiene algo. Si
   alguien abre SIPGES entre G3 y G4, puede cargar datos en `pglite` que la copia de G2 no tiene: cerralo y
   volvé a G1 (foto y copia nuevas) antes de G4.
-- [ ] **G4 — El traslado (Node, una sola vez).** Arrancá el clúster solo para el traslado, en un puerto
-  libre y solo en `127.0.0.1`:
+- [ ] **G4 — El traslado (sin Node, una sola vez).** Arrancá el clúster solo para el traslado, en un puerto
+  libre y solo en `127.0.0.1`. `sipges-desktop.exe --move-pglite` corre el PGlite fijado de la versión
+  (`$v\go\pglite`, comprobado por SHA-256) dentro de Go y toma `pg_dump` de `$v\postgresql\bin`:
 
   ```powershell
   & "$v\postgresql\bin\pg_ctl.exe" start -D "$datos\pg18" -l "$datos\pg18.log" -w -o "-p 54329 -c listen_addresses=127.0.0.1 -c unix_socket_directories="
   $env:SIPGES_MOVE_DATABASE_URL = "postgres://sipges_app:$([uri]::EscapeDataString((Get-Content "$datos\pg18-app-password" -Raw).Trim()))@127.0.0.1:54329/sipges"
-  node <kit>\deploy\desktop\migration\pglite-to-postgres.mjs --state "$env:LOCALAPPDATA\SIPGES-traslado" --prepared $datos
+  & "$v\go\sipges-desktop.exe" --move-pglite --state "$env:LOCALAPPDATA\SIPGES-traslado" --prepared $datos
   $LASTEXITCODE
   Remove-Item Env:SIPGES_MOVE_DATABASE_URL
   & "$v\postgresql\bin\pg_ctl.exe" stop -D "$datos\pg18" -m fast -w
   ```
 
   Tenés que ver `Moved: the target holds the copy, committed.`,
-  `The prepared cluster is ready: removed pg18.pending-move.` y `0`. Con `1` o `2` no se escribió nada y la
-  marca sigue: pará el clúster igual y seguí con G7.
+  `The prepared cluster is ready: removed pg18.pending-move.` y `0`; la primera línea dice
+  `(WebAssembly in Go)`. Con `1` o `2` no se escribió nada y la marca sigue: pará el clúster igual y seguí
+  con G7. Si G0 dio `False` en `go\pglite` (una versión anterior), el mismo traslado con Node 24 y las mismas
+  opciones es `node <kit>\deploy\desktop\migration\pglite-to-postgres.mjs --state … --prepared $datos`.
 - [ ] **G5 — Abrir en modo Go.** Abrí SIPGES desde el acceso directo. El lanzador Go aplica las
   migraciones que falten al arrancar y abre la API en Go. En `$app\launcher.log` la última línea
   `"event":"started"` nombra la versión, y `Get-Process api` existe (`node` no sirve el puerto 8000).
