@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -16,9 +17,21 @@ import (
 // pool_min_conns overrides it.
 const DefaultMinConns = 2
 
+// DefaultQueryExecMode keeps every statement on the unnamed prepared statement, so the API works
+// behind a transaction-mode pooler (Cloudflare Hyperdrive, PlanetScale's PgBouncer), where each
+// transaction may run on another server connection. pgx's own default prepares named statements
+// per connection, which such a pooler shares between clients: "prepared statement already
+// exists" or "does not exist" (docs/deployment/planetscale-move.md). Statement descriptions are
+// cached on the client, so a query still costs one round trip and keeps binary formats. The
+// URL's default_query_exec_mode overrides it.
+const DefaultQueryExecMode = pgx.QueryExecModeCacheDescribe
+
 // minConnsParam finds pool_min_conns as a URL query or keyword/value parameter, not as text
 // elsewhere (a password, a database name).
 var minConnsParam = regexp.MustCompile(`(^|[?&\s])pool_min_conns=`)
+
+// execModeParam finds default_query_exec_mode the same way.
+var execModeParam = regexp.MustCompile(`(^|[?&\s])default_query_exec_mode=`)
 
 // Open parses url and returns a pool that never blocks the start: the warm connections open in
 // the background, so a database outage shows in readiness instead of stopping the process. Pool
@@ -49,6 +62,9 @@ func open(ctx context.Context, url string, cfg *pgxpool.Config) (*pgxpool.Pool, 
 	}
 	if !minConnsParam.MatchString(url) {
 		cfg.MinConns = min(DefaultMinConns, cfg.MaxConns)
+	}
+	if !execModeParam.MatchString(url) {
+		cfg.ConnConfig.DefaultQueryExecMode = DefaultQueryExecMode
 	}
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {

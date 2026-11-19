@@ -9,6 +9,10 @@ moves to the Go API only while the same request gives the same status, media typ
 # Starts both APIs on a throwaway database of this synthetic server and drops it at the end.
 SIPGES_PARITY_DATABASE_URL=postgres://sipges_test@127.0.0.1:55439/sipges_test pnpm parity
 
+# Pooled mode: both APIs reach that database through a transaction-mode PgBouncer, as production does
+# through Hyperdrive or PlanetScale (docs/deployment/planetscale-move.md); fixtures stay direct.
+SIPGES_PARITY_DATABASE_URL=… SIPGES_PARITY_POOLER_ADDR=$(scripts/agents/test-pgbouncer.sh addr) pnpm parity
+
 # Or targets two APIs already running on the same synthetic database.
 SIPGES_PARITY_TS_URL=http://127.0.0.1:8000 SIPGES_PARITY_GO_URL=http://127.0.0.1:8001 \
 SIPGES_PARITY_ADMIN_USERNAME=… SIPGES_PARITY_ADMIN_PASSWORD=… pnpm parity
