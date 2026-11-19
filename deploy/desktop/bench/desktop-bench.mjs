@@ -37,7 +37,9 @@ import console from 'node:console';
 import { freePort } from '../updater/boot.mjs';
 import {
   aggregate,
+  bestEffort,
   classify,
+  describeFailure,
   folderBytes,
   insertBatches,
   keepWorkFolder,
@@ -45,6 +47,7 @@ import {
   memoryMetricRows,
   memoryMetrics,
   parseOptions,
+  progressLine,
   parseProcStatus,
   parseSmapsRollup,
   renderMarkdown,
@@ -377,7 +380,10 @@ async function prepare(stack, state, records, tag) {
   } finally {
     await stopProcess(child);
     if (stack === 'go') stopCluster(join(state, 'pg18'));
-    await writeFile(join(logsDir, `prepare-${tag}.txt`), Buffer.concat(log));
+    await bestEffort(
+      () => writeFile(join(logsDir, `prepare-${tag}.txt`), Buffer.concat(log)),
+      (error) => say(`could not write the prepare log of ${tag}: ${error.message}`),
+    );
   }
   if (stack === 'ts') await seedTs(state, records);
   const data = join(state, STACK[stack].dataFolder);
@@ -488,7 +494,10 @@ async function measure(stack, template, work, tag) {
   } finally {
     await stopProcess(child);
     if (stack === 'go') stopCluster(dataDir);
-    await writeFile(join(logsDir, `run-${tag}.txt`), Buffer.concat(log));
+    await bestEffort(
+      () => writeFile(join(logsDir, `run-${tag}.txt`), Buffer.concat(log)),
+      (error) => say(`could not write the log of ${tag}: ${error.message}`),
+    );
   }
   result.dataBytesAfter = await folderBytes(dataDir);
   if (stack === 'go') result.walBytesAfter = await folderBytes(join(dataDir, 'pg_wal'));
@@ -605,8 +614,7 @@ try {
           seededWalMb: seeded.walBytes === null ? null : +(seeded.walBytes / 2 ** 20).toFixed(1),
         };
         report.runs.push({ size, stack, rep, metrics, result });
-        const top = options.steps.at(-1);
-        say(`  ready ${metrics.coldStartMs} ms; ${top} screen(s) ${metrics[`rps${top}`]} req/s`);
+        say(`  ${progressLine(metrics, options.steps)}`);
       }
     for (const stack of options.stacks) await rm(templates[stack], { recursive: true, force: true });
   }
@@ -620,10 +628,10 @@ try {
 if (failed) {
   // What finished is kept: the runs so far go to --out (or the logs folder), never discarded.
   report.failedAt = new Date().toISOString();
-  report.error = String(failed?.message ?? failed);
+  Object.assign(report, describeFailure(failed));
   const partial = options.out ?? join(logsDir, 'partial-result.json');
   await writeFile(partial, `${JSON.stringify(report, null, 2)}\n`);
-  say(`\nThe benchmark failed: ${report.error}`);
+  say(`\nThe benchmark failed: ${report.stack ?? report.error}`);
   say(`${report.runs.length} finished run(s) in ${partial}; server logs in ${logsDir}`);
   if (ownWork) say(`Work folder kept for inspection: ${work}`);
   process.exit(1);
