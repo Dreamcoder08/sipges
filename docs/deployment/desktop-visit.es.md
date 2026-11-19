@@ -100,9 +100,10 @@ comando.
   - El disco externo `E:` del respaldo (más abajo). La clave nunca va en él.
   - **Red** en la casa para `git clone`, `pnpm install` y el Go portable (Wi-Fi, o tu teléfono como
     punto de acceso; no el de la usuaria, que hace falta para el MFA). En la laptop **no se instala
-    Go**: el paso K descarga el zip oficial `go1.27.0.windows-amd64.zip` de `go.dev` (unos **80 MB**;
-    el kit lo comprueba con el SHA-256 fijado en el repositorio), lo descomprime en `C:\SIPGES-go` y
-    lo borra al terminar el paso K. Con datos móviles, contá esa descarga además de las dependencias.
+    Go**: el paso K descarga el zip oficial de Go para Windows de `go.dev` (decenas de MB; versión,
+    tamaño y SHA-256 fijados en `deploy\desktop\windows\portable-go.json`, y el comando del paso K
+    imprime el tamaño al descargar), lo descomprime en `C:\SIPGES-go` y lo borra al terminar el
+    paso K. Con datos móviles, contá esa descarga además de las dependencias.
   - **Tiempo**: el job «laptop-kit» de Actions mide el clon, la instalación de dependencias y el kit
     (`measures.txt` en sus registros y el resumen del job); anotalo en «Datos de esta visita». En
     `windows-latest`, con caché, `pnpm install` tardó 10 s y el kit 22 s (PR #420); en la laptop,
@@ -266,19 +267,21 @@ niega a escribir ahí. Con la red de la casa.
   go version
   ```
 
-  Tenés que ver `Descargando Go 1.27.0 (79 MB) de https://go.dev/dl/go1.27.0.windows-amd64.zip`,
-  `Go 1.27.0 portable listo en C:\SIPGES-go\go (SHA-256 … verificado). No se instaló nada en el
+  Tenés que ver `Descargando Go <versión> (<tamaño> MB) de https://go.dev/dl/…`,
+  `Go <versión> portable listo en C:\SIPGES-go\go (SHA-256 … verificado). No se instaló nada en el
   sistema.`, `C:\SIPGES-go\go\bin`, `0`, `C:\SIPGES-go\go\bin\go.exe` y
-  `go version go1.27.0 windows/amd64`. `GOTOOLCHAIN`, `GOPATH` y `GOCACHE` hacen que Go no baje otra
+  `go version go<versión> windows/amd64`, con la misma `<versión>` que imprimió la descarga. Si lo
+  cortás con Ctrl+C o cerrás la ventana mientras descarga o descomprime, borra lo que escribió y no
+  queda nada a medias. `GOTOOLCHAIN`, `GOPATH` y `GOCACHE` hacen que Go no baje otra
   versión y deje lo que descarga dentro de `C:\SIPGES-go`.
 
   Antes de descomprimir, se niega con `Error: …` y `1`:
 
   | Empieza con | Qué hacer |
   | --- | --- |
-  | `C:\SIPGES-go ya existe` | Quedó de un intento anterior: `cmd /c rmdir /s /q C:\SIPGES-go` y repetí. Nada se descargó. |
-  | `No se pudo descargar Go 1.27.0 …` | La red: reintentá una vez; si vuelve a fallar, regla de corte del kit. No queda nada a medias. |
-  | `La descarga de … no es el Go 1.27.0 fijado …` | Lo descargado no es el zip oficial: se borró y no se usó. Regla de corte del kit; anotá el mensaje. |
+  | `C:\SIPGES-go ya existe` | Quedó de un intento anterior: hacé «Quitar el Go portable» (al final del paso K) y repetí. Nada se descargó. |
+  | `No se pudo descargar Go …` | La red: reintentá una vez; si vuelve a fallar, regla de corte del kit. No queda nada a medias. |
+  | `La descarga de … no es el Go … fijado …` | Lo descargado no es el zip oficial: se borró y no se usó. Regla de corte del kit; anotá el mensaje. |
   | `El Go fijado es para Windows x64 …` | La laptop no es x64: regla de corte del kit. |
 
   Si `visit-kit.mjs` dice `Go no está en el PATH`, esta terminal no tiene el `$env:Path` de arriba:
@@ -339,12 +342,12 @@ niega a escribir ahí. Con la red de la casa.
   que imprimen el kit y, en el paso 3, el instalador).
 - [ ] El clon viejo **después** del kit: los dos comandos de antes dan exactamente lo mismo que
   anotaste. Si no, regla de corte del kit.
-- [ ] **Quitar el Go portable**, en la misma terminal (`go clean -modcache` borra la caché de módulos,
-  que Go deja de solo lectura y `rmdir` no puede borrar):
+- [ ] **Quitar el Go portable.** Cerrá la terminal del kit y abrí una nueva (sirve cualquiera: estos
+  comandos usan rutas completas y no dependen de las líneas `$env:` de antes). El primero borra con
+  el mismo Go la caché de módulos, que Go deja de solo lectura y `rmdir` no puede borrar:
 
   ```powershell
-  go clean -modcache
-  $env:Path = ($env:Path -split ';' | Where-Object { $_ -ne 'C:\SIPGES-go\go\bin' }) -join ';'
+  cmd /c "set GOPATH=C:\SIPGES-go\gopath&& C:\SIPGES-go\go\bin\go.exe clean -modcache"
   cmd /c rmdir /s /q C:\SIPGES-go
   Test-Path C:\SIPGES-go
   ```

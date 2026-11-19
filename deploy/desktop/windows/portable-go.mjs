@@ -8,11 +8,12 @@
 // It refuses an existing --out before downloading anything, downloads the zip into a staging folder
 // beside --out, and unpacks it only when size and SHA-256 match the pin: a mismatching download is
 // deleted and nothing is unpacked. The result is <out>\go (GOROOT); the last line printed is
-// <out>\go\bin, which the runbook puts on the PATH of that PowerShell session only. Never Program
+// <out>\go\bin, which the runbook puts on the PATH of that PowerShell session only. A failure, a
+// Ctrl+C or a closed console window removes the staging folder (and --out, if this run made it). Never Program
 // Files, never the system PATH, never the registry; deleting <out> removes it. Needs Node only.
 import { spawnSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
-import { createWriteStream, existsSync } from 'node:fs';
+import { createWriteStream, existsSync, rmSync } from 'node:fs';
 import { mkdir, readFile, rename, rm } from 'node:fs/promises';
 import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
@@ -70,6 +71,7 @@ export async function installPortableGo({
   platform = process.platform,
   arch = process.arch,
   requireWindows = false,
+  handleSignals = false,
   say = () => {},
 }) {
   pin = checkPin(pin ?? (await readPin()));
@@ -78,8 +80,18 @@ export async function installPortableGo({
   if (existsSync(out))
     throw new Error(`${out} ya existe. El Go portable va a una carpeta nueva: si quedó de un intento anterior, borrala y repetí. Nada se descargó.`);
   const staging = `${out}.${randomUUID()}.partial`;
-  await mkdir(staging, { recursive: true });
   let created = false;
+  // Ctrl+C (SIGINT) or closing the console window (SIGHUP on Windows) during the download or the
+  // unzip: remove what this run wrote, synchronously, and exit 130 as a Ctrl+C does.
+  const interrupted = () => {
+    rmSync(staging, { recursive: true, force: true });
+    if (created) rmSync(out, { recursive: true, force: true });
+    console.error('Interrumpido: se borró lo descargado; no quedó nada a medias.');
+    process.exit(130);
+  };
+  const signals = handleSignals ? ['SIGINT', 'SIGHUP'] : [];
+  for (const signal of signals) process.on(signal, interrupted);
+  await mkdir(staging, { recursive: true });
   try {
     const zip = join(staging, pin.file);
     say(`Descargando Go ${pin.version} (${Math.round(pin.size / 1e6)} MB) de ${pin.url}`);
@@ -134,6 +146,7 @@ export async function installPortableGo({
     throw error;
   } finally {
     await rm(staging, { recursive: true, force: true });
+    for (const signal of signals) process.off(signal, interrupted);
   }
   say(`Go ${pin.version} portable listo en ${join(out, 'go')} (SHA-256 ${pin.sha256} verificado). No se instaló nada en el sistema.`);
   return binPath(out);
@@ -142,7 +155,7 @@ export async function installPortableGo({
 async function main(args) {
   const { out, help } = parseArgs(args);
   if (help) return console.log(USAGE);
-  const bin = await installPortableGo({ out: resolve(out), requireWindows: true, say: console.log });
+  const bin = await installPortableGo({ out: resolve(out), requireWindows: true, handleSignals: true, say: console.log });
   console.log(bin);
 }
 

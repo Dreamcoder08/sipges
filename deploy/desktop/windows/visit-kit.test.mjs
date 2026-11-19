@@ -331,6 +331,21 @@ test('without Go the trusted installer is not built and the kit stops, loudly, w
     assert.equal(existsSync(visit), false, 'no visit folder was written');
   }));
 
+test('a checkout without apps/api-go gets its own message, never the portable Go one', () =>
+  withTemp(async (dir) => {
+    await assert.rejects(buildTrustedInstaller(join(dir, 'sipges-desktop.exe'), { checkout: dir, env: { PATH: join(dir, 'no-go') } }), (error) => {
+      assert.ok(
+        error.message.startsWith(
+          `No se pudo construir el sipges-desktop.exe de confianza del kit (go build): falta la carpeta ${join(dir, 'apps', 'api-go')}.`,
+        ),
+        error.message,
+      );
+      assert.equal(error.message.includes('PATH'), false, error.message);
+      assert.equal(error.message.includes('portable-go.mjs'), false, error.message);
+      return true;
+    });
+  }));
+
 test('a go build that fails with Go on the PATH keeps its own reason and does not send to the portable Go', { skip: !hasGo && 'needs the go toolchain' }, () =>
   withTemp(async (dir) => {
     await mkdir(join(dir, 'apps', 'api-go'), { recursive: true });

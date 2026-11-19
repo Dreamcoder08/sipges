@@ -6,14 +6,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import process from 'node:process';
-import { fileURLToPath } from 'node:url';
+import { URL, fileURLToPath } from 'node:url';
 import { crc32 } from 'node:zlib';
 import { PIN_FILE, binPath, installPortableGo, parseArgs, readPin } from './portable-go.mjs';
 
@@ -90,10 +90,20 @@ async function withTemp(run) {
 
 const hasUnzip = process.platform === 'win32' || spawnSync('unzip', ['-v']).status === 0;
 
-test('the pinned Go is the go line of apps/api-go/go.mod, from go.dev, with a 64-hex SHA-256', async () => {
+test('the pinned Go is on go.mod\'s go line (same major.minor, not below it) and is the Go every other job sets up', async () => {
   const pin = await readPin();
   const goLine = (await readFile(join(repo, 'apps', 'api-go', 'go.mod'), 'utf8')).match(/^go (\S+)$/m)?.[1];
-  assert.equal(pin.version, goLine, `portable-go.json pins ${pin.version}; go.mod says go ${goLine}: pin the same version`);
+  const parts = (version) => version.split('.').map(Number);
+  const [major, minor, patch] = parts(pin.version);
+  const [goMajor, goMinor, goPatch = 0] = parts(goLine);
+  assert.deepEqual([major, minor], [goMajor, goMinor], `portable-go.json pins ${pin.version}; go.mod says go ${goLine}: same major.minor`);
+  assert.ok(patch >= goPatch, `portable-go.json pins ${pin.version}, below go.mod's go ${goLine}`);
+  // The other windows-desktop.yml jobs set up Go with actions/setup-go: the same version, so the
+  // kit's trusted binary gets the same security patches and the two cannot drift apart.
+  const workflow = await readFile(join(repo, '.github', 'workflows', 'windows-desktop.yml'), 'utf8');
+  const setUp = [...workflow.matchAll(/go-version: '([^']+)'/g)].map((match) => match[1]);
+  assert.ok(setUp.length >= 2, 'the visit-kit and go-mode jobs set up Go');
+  assert.deepEqual([...new Set(setUp)], [pin.version], `windows-desktop.yml sets up ${setUp.join(', ')}; the portable Go is ${pin.version}`);
   assert.equal(pin.file, `go${pin.version}.windows-amd64.zip`);
   assert.equal(pin.url, `https://go.dev/dl/${pin.file}`);
   assert.match(pin.sha256, /^[0-9a-f]{64}$/);
@@ -195,4 +205,30 @@ test('outside Windows x64 the command refuses: the pinned zip is the Windows amd
     );
     assert.equal(calls.length, 0);
     assert.equal(existsSync(join(dir, 'SIPGES-go')), false);
+  }));
+
+const signalsWork = process.platform !== 'win32';
+
+test('Ctrl+C during the download removes the .partial folder and exits 130', { skip: !signalsWork && 'child.kill delivers no signal on Windows' }, () =>
+  withTemp(async (dir) => {
+    const out = join(dir, 'SIPGES-go');
+    // A child that installs with a download that never ends, and says when it has started.
+    const script = [
+      `import { installPortableGo } from ${JSON.stringify(new URL('./portable-go.mjs', import.meta.url).href)};`,
+      "const stalled = new ReadableStream({ start() {} });",
+      "const fetchImpl = async () => { console.log('DOWNLOADING'); return new Response(stalled, { status: 200 }); };",
+      `await installPortableGo({ out: ${JSON.stringify(out)}, pin: ${JSON.stringify(pinOf(GO_ZIP))}, fetchImpl, handleSignals: true });`,
+    ].join('\n');
+    const child = spawn(process.execPath, ['--input-type=module', '-e', script], { stdio: ['ignore', 'pipe', 'pipe'] });
+    let stderr = '';
+    child.stderr.on('data', (chunk) => (stderr += chunk));
+    await new Promise((resolveStarted, reject) => {
+      child.stdout.on('data', (chunk) => chunk.toString().includes('DOWNLOADING') && resolveStarted());
+      child.on('exit', (code) => reject(new Error(`exited ${code} before downloading: ${stderr}`)));
+    });
+    assert.equal((await readdir(dir)).filter((name) => name.endsWith('.partial')).length, 1, 'the staging folder exists while downloading');
+    const exited = new Promise((resolveExit) => child.on('exit', (code, signal) => resolveExit({ code, signal })));
+    child.kill('SIGINT');
+    assert.deepEqual(await exited, { code: 130, signal: null }, stderr);
+    assert.deepEqual(await readdir(dir), [], 'neither the .partial folder nor --out remain');
   }));

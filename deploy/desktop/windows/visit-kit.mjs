@@ -513,8 +513,15 @@ async function signingKey(key) {
  * Without go on the PATH the error names portable-go.mjs: Go is never installed on the laptop.
  */
 export async function buildTrustedInstaller(out, { checkout = repo, env = process.env } = {}) {
+  const goModule = join(checkout, 'apps', 'api-go');
+  // spawnSync also says ENOENT for a missing cwd: check the folder first, so ENOENT below means go.
+  if (!existsSync(goModule))
+    throw new Error(
+      `No se pudo construir el sipges-desktop.exe de confianza del kit (go build): falta la carpeta ${goModule}. ` +
+        'Corré el kit desde la raíz de un clon completo del repositorio (C:\\SIPGES-kit en el paso K).',
+    );
   const result = spawnSync('go', ['build', '-trimpath', '-o', out, './cmd/sipges-desktop'], {
-    cwd: join(checkout, 'apps', 'api-go'),
+    cwd: goModule,
     env: { ...env, GOOS: 'windows', GOARCH: 'amd64', CGO_ENABLED: '0' },
     encoding: 'utf8',
   });
