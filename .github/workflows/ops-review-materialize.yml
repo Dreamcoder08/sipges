@@ -35,6 +35,17 @@ jobs:
       # as the TypeScript tool; no Node needed. Installs the toolchain pinned in rust-toolchain.toml.
       - working-directory: engines
         run: rustup toolchain install && rustc --version
+      # Release builds keyed by the toolchain channel and the lock file. This job runs only on main,
+      # so it restores caches written from main, never from a pull request branch.
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            engines/target
+          key: cargo-ops-release-${{ runner.os }}-${{ hashFiles('engines/rust-toolchain.toml', 'engines/Cargo.lock') }}
+          restore-keys: cargo-ops-release-${{ runner.os }}-
       - working-directory: engines
         run: cargo build --release --locked -p sipges-review-materialize
       - name: Run review-materialize

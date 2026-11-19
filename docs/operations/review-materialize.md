@@ -109,7 +109,8 @@ until it is retired (T73); only that one still opens a local PGlite (`SIPGES_PGL
 only `SIPGES_PGLITE_DIR` set, the script stops before compiling and points at
 `review:materialize:ts`, which a PGlite install uses until it moves to pg18. The
 workflow `Ops - review approvals into records` (`ops-review-materialize.yml`) builds and runs the
-same Rust binary with the same flags.
+same Rust binary with the same flags. The first production run is a dry run, the default (no
+`--apply`, `apply` unticked in the workflow).
 
 1. Dry run, every project (writes nothing):
 

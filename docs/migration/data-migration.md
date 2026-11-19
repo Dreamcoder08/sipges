@@ -226,7 +226,7 @@ reachable as `migrate:legacy:ts` until it is retired (T73). Unlike that tool, th
 `SIPGES_DATABASE_URL` and never opens a local PGlite: with only `SIPGES_PGLITE_DIR` set, the script
 stops before compiling and points at `migrate:legacy:ts`, which a PGlite install uses until it
 moves to pg18. A real run needs the owner's word whichever
-one is used.
+one is used, and the first production run is a dry run, the default (no `--apply`).
 
 ```sh
 cd engines && cargo build --release --locked -p sipges-migrate-legacy
