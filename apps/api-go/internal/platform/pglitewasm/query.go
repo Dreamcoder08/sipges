@@ -16,12 +16,11 @@ type Result struct {
 
 // SimpleQuery sends one Query ('Q') message and decodes the reply.
 func (b *Backend) SimpleQuery(ctx context.Context, sql string) (*Result, error) {
-	msg := make([]byte, 0, len(sql)+6)
-	msg = append(msg, 'Q', 0, 0, 0, 0)
-	msg = append(msg, sql...)
-	msg = append(msg, 0)
-	binary.BigEndian.PutUint32(msg[1:], n32(len(msg)-1))
-	out, err := b.Exchange(ctx, msg)
+	return runSimple(ctx, b, sql)
+}
+
+func runSimple(ctx context.Context, ex exchanger, sql string) (*Result, error) {
+	out, err := ex.Exchange(ctx, frontendMessage('Q', append([]byte(sql), 0)))
 	if err != nil {
 		return nil, err
 	}
