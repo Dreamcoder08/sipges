@@ -47,9 +47,21 @@ func openServed(t *testing.T) (*Server, string, string) {
 }
 
 // pgliteURL leaves sslmode at its default (prefer), so clients first send SSLRequest and must
-// fall back on the server's 'N'.
+// fall back on the server's 'N'. It holds no password: pgx gets it from connect, pg_dump
+// through PGPASSWORD, as the move passes it.
 func pgliteURL(srv *Server) string {
 	return fmt.Sprintf("postgres://postgres@%s/postgres", srv.Addr())
+}
+
+// connect is pgx.Connect to the served copy with the run's password.
+func connect(ctx context.Context, t *testing.T, srv *Server) (*pgx.Conn, error) {
+	t.Helper()
+	cfg, err := pgx.ParseConfig(pgliteURL(srv))
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.Password = srv.Password()
+	return pgx.ConnectConfig(ctx, cfg)
 }
 
 func TestServerAnswersPgxAndRefusesASecondConnection(t *testing.T) {
@@ -60,7 +72,7 @@ func TestServerAnswersPgxAndRefusesASecondConnection(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
-	conn, err := pgx.Connect(ctx, pgliteURL(srv))
+	conn, err := connect(ctx, t, srv)
 	if err != nil {
 		t.Fatalf("pgx connect: %v", err)
 	}
@@ -73,7 +85,7 @@ func TestServerAnswersPgxAndRefusesASecondConnection(t *testing.T) {
 		t.Fatalf("count/sum = %d/%v, want 2000/3001500", count, sum)
 	}
 
-	second, err := pgx.Connect(ctx, pgliteURL(srv))
+	second, err := connect(ctx, t, srv)
 	if err == nil {
 		_ = second.Close(ctx)
 		t.Fatal("a second simultaneous connection was accepted")
@@ -90,7 +102,7 @@ func TestServerAnswersPgxAndRefusesASecondConnection(t *testing.T) {
 	}
 
 	// Once the first one leaves, a new connection gets a clean session (pgx reuses statement names).
-	again, err := pgx.Connect(ctx, pgliteURL(srv))
+	again, err := connect(ctx, t, srv)
 	if err != nil {
 		t.Fatalf("reconnect: %v", err)
 	}
@@ -136,7 +148,7 @@ func TestNativePgDumpRestoresIntoPostgres18(t *testing.T) {
 			dump := filepath.Join(work, mode.name+".sql")
 			args := append([]string{"--no-owner", "--file", dump, "--dbname", pgliteURL(srv)}, mode.args...)
 			cmd := exec.CommandContext(ctx, pgDump, args...)
-			cmd.Env = append(os.Environ(), "PGCONNECT_TIMEOUT=30")
+			cmd.Env = append(os.Environ(), "PGCONNECT_TIMEOUT=30", "PGPASSWORD="+srv.Password())
 			if out, err := cmd.CombinedOutput(); err != nil {
 				t.Fatalf("pg_dump %s: %v\n%s", mode.name, err, out)
 			}

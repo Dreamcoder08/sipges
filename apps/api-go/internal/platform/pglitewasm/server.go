@@ -3,12 +3,16 @@ package pglitewasm
 import (
 	"bufio"
 	"context"
+	"crypto/rand"
+	"crypto/subtle"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
 	"net"
 	"sync"
+	"time"
 )
 
 // Startup codes of the PostgreSQL frontend protocol (src/include/libpq/pqcomm.h).
@@ -24,6 +28,13 @@ const (
 	sqlstateTooMany  = "53300" // too_many_connections
 	sqlstateFailed   = "58000" // system_error
 	sqlstateProtocol = "08P01" // protocol_violation
+	sqlstateAuth     = "28P01" // invalid_password
+	authCleartext    = 3       // AuthenticationCleartextPassword
+	maxPasswordBytes = 1024
+	// handoverGrace is how long a new client waits for the connected one to leave before it is
+	// refused: a client that disconnects and connects at once (pg_dump, then the move) may be
+	// accepted before the server has read the first one's Terminate.
+	handoverGrace = 5 * time.Second
 )
 
 // ErrOneConnection is the message a second simultaneous client receives.
@@ -35,12 +46,14 @@ type exchanger interface {
 }
 
 // Server is a loopback PostgreSQL wire-protocol endpoint over one Backend, so native clients
-// (pg_dump, pgx) can read the PGlite copy. It trusts every client: it listens on 127.0.0.1 only,
-// serves one connection at a time and never logs what passes through it.
+// (pg_dump, pgx) can read the PGlite copy. It listens on 127.0.0.1 only, which every local user
+// reaches, so a client must first send the server's random per-run password (Password); it serves
+// one connection at a time and never logs what passes through it.
 type Server struct {
-	ex  exchanger
-	ln  net.Listener
-	ctx context.Context
+	ex       exchanger
+	ln       net.Listener
+	ctx      context.Context
+	password string
 
 	mu     sync.Mutex
 	freed  *sync.Cond // signalled when active is released or the server closes
@@ -64,7 +77,12 @@ func serve(ctx context.Context, ex exchanger) (*Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("pglitewasm: listen on loopback: %w", err)
 	}
-	s := &Server{ex: ex, ln: ln, ctx: context.WithoutCancel(ctx), conns: map[net.Conn]struct{}{}}
+	secret := make([]byte, 32)
+	if _, err := rand.Read(secret); err != nil {
+		_ = ln.Close()
+		return nil, fmt.Errorf("pglitewasm: random password: %w", err)
+	}
+	s := &Server{ex: ex, ln: ln, ctx: context.WithoutCancel(ctx), password: hex.EncodeToString(secret), conns: map[net.Conn]struct{}{}}
 	s.freed = sync.NewCond(&s.mu)
 	s.wg.Add(1)
 	go s.acceptLoop()
@@ -76,6 +94,11 @@ func (s *Server) Addr() *net.TCPAddr { return s.ln.Addr().(*net.TCPAddr) }
 
 // Port is Addr's port.
 func (s *Server) Port() int { return s.Addr().Port }
+
+// Password is the random per-run password every client must send (cleartext, over loopback only).
+// Pass it only to the clients this run starts, never on a command line: PGPASSWORD in a child's
+// environment, or the pgx config's Password.
+func (s *Server) Password() string { return s.password }
 
 // Err reports the backend failure that stopped the server from serving, if any. It never holds
 // row values: only the transport error of the failed call.
@@ -135,6 +158,10 @@ func (s *Server) handle(c net.Conn) {
 	startup, err := readStartup(r, c)
 	if err != nil || startup == nil {
 		return // gone, a cancel request (ignored: one statement runs at a time anyway) or garbage
+	}
+	if !s.authenticate(r, c) {
+		_, _ = c.Write(errorResponse(sqlstateAuth, "pglitewasm: password authentication failed"))
+		return
 	}
 	if !s.acquire(c) {
 		_, _ = c.Write(errorResponse(sqlstateTooMany, ErrOneConnection))
@@ -215,10 +242,41 @@ func (s *Server) fail(err error) {
 	}
 }
 
+// authenticate asks for the password in cleartext (loopback only) and compares it in constant
+// time. Nothing reaches the backend, and the one connection is not taken, before it matches.
+func (s *Server) authenticate(r *bufio.Reader, c net.Conn) bool {
+	if _, err := c.Write(frontendMessage('R', binary.BigEndian.AppendUint32(nil, authCleartext))); err != nil {
+		return false
+	}
+	var head [5]byte
+	if _, err := io.ReadFull(r, head[:]); err != nil || head[0] != 'p' {
+		return false
+	}
+	n := binary.BigEndian.Uint32(head[1:])
+	if n < 5 || n > maxPasswordBytes {
+		return false
+	}
+	body := make([]byte, n-4)
+	if _, err := io.ReadFull(r, body); err != nil || body[len(body)-1] != 0 {
+		return false
+	}
+	return subtle.ConstantTimeCompare(body[:len(body)-1], []byte(s.password)) == 1
+}
+
+// acquire takes the one connection. A client arriving while another is connected waits for it to
+// leave, at most handoverGrace (and always through a session reset), then is refused.
 func (s *Server) acquire(c net.Conn) bool {
+	expired := false
+	timer := time.AfterFunc(handoverGrace, func() {
+		s.mu.Lock()
+		expired = true
+		s.freed.Broadcast()
+		s.mu.Unlock()
+	})
+	defer timer.Stop()
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	for s.active != nil && s.resetting && !s.closed {
+	for s.active != nil && !s.closed && (s.resetting || !expired) {
 		s.freed.Wait()
 	}
 	if s.active != nil || s.closed {
