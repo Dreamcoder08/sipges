@@ -142,3 +142,19 @@ Inicio's «this week» line called `eventsThisWeek(events.data, new Date())`, so
 Lima midnight until the events changed. It now reads the day from `useLimaDay()` (`apps/web/src/shared/lib/lima-day.ts`),
 which re-renders at Lima midnight; `lima-day.test.tsx` pins this through a component compiled with `'use memo'`.
 Avoid `new Date()` during render in compiled components.
+
+## Registros after the trial
+
+The Todos table rendered every row's `TypeChip`, `DateText`, `ValidationChip` and `VerificationChip` (320 each) on
+each density change and each move of the sheet. `TodosRow` is now a `memo` component taking `selected` and
+`tabbable` as booleans, because React Compiler does not cache the elements a `.map` builds. Same spec, one run each,
+deterministic counts:
+
+| Build | Registros |
+| --- | ---: |
+| Before | 1,691 |
+| `TodosRow` memoised | 571 (−66%) |
+
+The 160 `TodosRow` renders left are the arrow-key moves: `RegistrosHub`'s `setOpen` compares with the open record,
+so `onOpen` changes with each move. Making it stable would move the URL update out of the handler; the gain did not
+justify that change.
