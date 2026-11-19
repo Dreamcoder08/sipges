@@ -202,7 +202,7 @@ in PGlite keeps the TypeScript API until its data are moved (the laptop visit,
 [docs/deployment/desktop-visit.es.md](../../docs/deployment/desktop-visit.es.md) section 6).
 
 - **Bundle.** `node deploy/desktop/package/builder.mjs … --go` adds `go/` (`sipges-desktop`, the Go
-  API and the SQL migrations) and, on Windows x64, `postgresql/` (`bin`, `lib`, `share` and the
+  API, the SQL migrations and `pglite/`, the pinned PGlite 0.5.15 files of the data move) and, on Windows x64, `postgresql/` (`bin`, `lib`, `share` and the
   licences). Without `--go` the package is exactly what it was.
 - **Pinned and verified.** [`postgresql/pg18.json`](postgresql/pg18.json) pins the EDB Windows x64
   binaries zip by exact URL, size and SHA-256: PostgreSQL 18.6-2, published 2026-10-05, pinned
@@ -234,9 +234,11 @@ in PGlite keeps the TypeScript API until its data are moved (the laptop visit,
   `run-current.mjs` (TypeScript, Node), and so does a cluster `--prepare-only` made that the move has not filled yet (`pg18.pending-move`), which the Go launcher also refuses. `-Go` / `--go` asks for the Go launcher only: it refuses,
   starting nothing, a version without `--go` and data not moved yet. A SIPGES already running is
   reused only in the install's mode.
-- **Moving the data.** The data move into `pg18` is `migration/pglite-to-postgres.mjs`
-  ([its README](migration/README.md#into-postgresql-18-for-the-go-api-adr-0036-4)) on a copy of the
-  state folder, into a running cluster; the original PGlite folder is never written, so setting
+- **Moving the data.** The data move into `pg18` is `<version>/go/sipges-desktop --move-pglite`
+  ([the migration README](migration/README.md#into-postgresql-18-for-the-go-api-adr-0036-4)), with
+  no Node: it runs the pinned PGlite 0.5.15 WebAssembly the `--go` package ships in `go/pglite`
+  (SHA-256 checked) inside Go, on a copy of the state folder, into a running cluster
+  (`migration/pglite-to-postgres.mjs` is the same move in Node, for a release without `go/pglite`); the original PGlite folder is never written, so setting
   `pg18` aside goes back to TypeScript. The move needs an **empty** database: `sipges-desktop
   --install <root> --prepare-only` makes the cluster with the roles and an empty database (no
   migration; the Go launcher migrates when it starts) and stops it; the bundled `pg_ctl` runs it
@@ -245,7 +247,7 @@ in PGlite keeps the TypeScript API until its data are moved (the laptop visit,
   runner's standard user, synthetic data only: the package built with `--go` (bundle cached by its
   SHA-256) and a second release one version newer, `install.ps1 -Release` with no Node on the PATH,
   an install still on PGlite kept on TypeScript by `start.ps1`, `start.ps1 -Go` refused before the
-  move, the move (`--prepare-only`, `pg_ctl`, `pglite-to-postgres.mjs` with `tables.mjs`'s proof), `start.ps1` (no Node) running the Go launcher with
+  move, the move (`--prepare-only`, `pg_ctl`, `sipges-desktop --move-pglite` with no Node and its table-by-table proof), `start.ps1` (no Node) running the Go launcher with
   `compare.mjs` finding no difference, the launcher killed during writes and started again, the
   update offered and applied by the Go launcher, a clean Ctrl+C stop (`windows/go-console.ps1`), the
   original PGlite folder byte-identical, and the way back to TypeScript with `pg18` set aside. By

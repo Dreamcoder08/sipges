@@ -8,7 +8,8 @@
 // runs it on windows-latest as the runner's standard user. LOCALAPPDATA points at a scratch folder.
 //
 // 1. A package built with `builder.mjs --go` (sipges-desktop, the Go API, the migrations and the
-//    pinned PostgreSQL 18 from deploy/desktop/postgresql), signed with a throwaway key, and a
+//    pinned PostgreSQL 18 from deploy/desktop/postgresql, the pinned PGlite files of the move),
+//    signed with a throwaway key, and a
 //    second release of the same package one version newer. install.ps1 -Release installs the
 //    first one from the kit's scripts zip (visit-kit.mjs kitScripts, unpacked as the runbook
 //    does), with no Node on the PATH, with the trusted sipges-desktop.exe the zip carries in
@@ -21,8 +22,9 @@
 //    --prepare-only` (no Node) creates the cluster in <state>\pg18 with the roles and an empty
 //    database and stops it, leaving pg18.pending-move. Opened before the move, start.ps1 stays on
 //    TypeScript and the Go launcher refuses the cluster. The bundled pg_ctl starts it on a free
-//    loopback port, pglite-to-postgres.mjs --prepared moves the copy into it with its
-//    table-by-table proof and removes the mark, pg_ctl stops it.
+//    loopback port, `sipges-desktop.exe --move-pglite --prepared` (no Node: the release's
+//    pinned PGlite WebAssembly in go\pglite) moves the copy into it with its table-by-table
+//    proof and removes the mark, pg_ctl stops it.
 // 5. start.ps1, with no switch and no Node on the PATH: the Go launcher (sipges-desktop.exe
 //    --install) applies the migrations on start and serves the Go API (api.exe) on port 8000;
 //    compare.mjs finds no difference.
@@ -319,7 +321,7 @@ async function main(args) {
     check(!existsSync(join(state, 'pg18')) && !(await healthy()), 'no cluster was made and nothing answers');
     check(digest(await tree(pglite)) === pgliteDigest, 'the PGlite folder is byte-identical');
 
-    step('4. The move: sipges-desktop --prepare-only, pglite-to-postgres.mjs into it');
+    step('4. The move: sipges-desktop --prepare-only, then sipges-desktop --move-pglite into it');
     const copy = join(work, 'state-copy');
     cpSync(state, copy, { recursive: true });
     check(digest(await tree(join(copy, 'pglite'))) === pgliteDigest, 'the copy of the state folder holds the same PGlite');
@@ -349,11 +351,16 @@ async function main(args) {
     check(startedPg.status === 0, `pg_ctl started the cluster for the move on 127.0.0.1:${port}`);
     const appPassword = (await readFile(join(state, 'pg18-app-password'), 'utf8')).trim();
     mkdirSync(join(work, 'move-scratch'));
-    const moved = await node([join(repo, 'deploy', 'desktop', 'migration', 'pglite-to-postgres.mjs'), '--state', copy, '--prepared', state, '--scratch', join(work, 'move-scratch')], {
-      env: { ...env, SIPGES_MOVE_DATABASE_URL: `postgres://sipges_app:${encodeURIComponent(appPassword)}@127.0.0.1:${port}/sipges` },
+    check(existsSync(join(version, 'go', 'pglite', 'pglite.wasm')), 'the release ships the pinned PGlite files of the move in go\\pglite');
+    // The release's own sipges-desktop.exe, with no Node on the PATH: it finds go\pglite and
+    // postgresql\bin (pg_dump) of the current version by itself.
+    const moved = await run(desktop, ['--move-pglite', '--state', copy, '--prepared', state, '--scratch', join(work, 'move-scratch')], {
+      env: { ...noNode, SIPGES_MOVE_DATABASE_URL: `postgres://sipges_app:${encodeURIComponent(appPassword)}@127.0.0.1:${port}/sipges` },
       log: out('move'),
+      seconds: 900,
     });
-    check(moved.status === 0 && moved.output.includes('Moved: the target holds the copy, committed.'), 'pglite-to-postgres.mjs filled the prepared database with no difference (tables.mjs inside the transaction)');
+    check(moved.output.includes('(WebAssembly in Go)'), 'the move ran PGlite as WebAssembly in Go, without Node');
+    check(moved.status === 0 && moved.output.includes('Moved: the target holds the copy, committed.'), 'sipges-desktop --move-pglite filled the prepared database with no difference (the table comparison inside the transaction)');
     check(moved.output.includes('The prepared cluster is ready: removed pg18.pending-move.') && !existsSync(join(state, 'pg18.pending-move')), 'the committed move removed pg18.pending-move');
     const stoppedPg = await run(pgCtl, ['stop', '-D', join(state, 'pg18'), '-m', 'fast', '-w', '-t', '120'], { env, log: out('pg-stop-after-move') });
     check(stoppedPg.status === 0 && !postgresRunning(), 'pg_ctl stopped the cluster: no postgres.exe left');

@@ -7,6 +7,8 @@ import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 const cli = resolve('deploy/desktop/package/builder.mjs');
+// The pinned @electric-sql/pglite the API depends on, which --go ships for the Go move.
+const PGLITE_DIST = resolve('apps/api/node_modules/@electric-sql/pglite/dist');
 const run = (...args) => spawnSync(process.execPath, [cli, ...args], { encoding: 'utf8' });
 
 test('CLI refuses invalid and existing destinations without changing them', async () => {
@@ -57,7 +59,7 @@ test('public CLI validates options, versions, platform and paths without writes'
     const help = invoke('--help');
     assert.equal(help.status, 0);
     assert.equal(help.stderr, '');
-    assert.equal(help.stdout, 'Usage: node deploy/desktop/package/builder.mjs [--version <semver>] --out .data/desktop-packages/sipges-<version> [--platform <host>] [--arch <host>] [--go]\nThe version defaults to the root package.json version; a release version must equal it, a pre-release (1.2.3-rc.1) marks a rehearsal.\n--go (opt-in) adds the Go mode: sipges-desktop, the Go API and the migrations in go/, and on Windows x64 the pinned PostgreSQL 18 in postgresql/ (downloaded once, SHA-256 verified). The default entry stays the TypeScript one.\n');
+    assert.equal(help.stdout, 'Usage: node deploy/desktop/package/builder.mjs [--version <semver>] --out .data/desktop-packages/sipges-<version> [--platform <host>] [--arch <host>] [--go]\nThe version defaults to the root package.json version; a release version must equal it, a pre-release (1.2.3-rc.1) marks a rehearsal.\n--go (opt-in) adds the Go mode: sipges-desktop, the Go API, the migrations and the pinned PGlite files of the move in go/, and on Windows x64 the pinned PostgreSQL 18 in postgresql/ (downloaded once, SHA-256 verified). The default entry stays the TypeScript one.\n');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
@@ -283,7 +285,8 @@ test('a finished build ends with its completion file; a failed one has the marke
 });
 
 // T72c: the Go mode is opt-in. Without --go the package is exactly what it was (no go/, no
-// postgresql/, no `go` in metadata.json); with it the Go binaries and the migrations are added,
+// postgresql/, no `go` in metadata.json); with it the Go binaries, the migrations and the pinned
+// PGlite 0.5.15 dist files of the move (pglite-move-go T4, go/pglite) are added,
 // and the pinned PostgreSQL only on Windows x64 (deploy/desktop/postgresql). Skipped on Windows,
 // where --go would download the real 343 MB zip: the workflow's go-mode job builds it there.
 test('--go adds the Go binaries and migrations; without it the package is unchanged', { skip: process.platform === 'win32' && 'the go-mode job builds --go on Windows with the real bundle' }, async () => {
@@ -304,7 +307,12 @@ test('--go adds the Go binaries and migrations; without it the package is unchan
     assert.equal(go.status, 0, go.stderr);
     const goDir = join(root, '.data/desktop-packages/sipges-1.0.0-rc.2');
     assert.deepEqual((await readdir(goDir)).sort(), [...plainEntries, 'go'].sort());
-    assert.deepEqual((await readdir(join(goDir, 'go'))).sort(), ['api', 'migrations', 'sipges-desktop']);
+    assert.deepEqual((await readdir(join(goDir, 'go'))).sort(), ['api', 'migrations', 'pglite', 'sipges-desktop']);
+    // What sipges-desktop --move-pglite reads by default (<version>/go/pglite): the pinned files only.
+    assert.deepEqual((await readdir(join(goDir, 'go/pglite'))).sort(), ['pglite.data', 'pglite.js', 'pglite.wasm']);
+    for (const name of ['pglite.data', 'pglite.js', 'pglite.wasm'])
+      assert.ok((await readFile(join(goDir, 'go/pglite', name))).equals(await readFile(join(PGLITE_DIST, name))), `go/pglite/${name} is the pinned file`);
+    assert.match(go.stdout, /PGlite 0\.5\.15 dist files for sipges-desktop --move-pglite: go\/pglite/);
     assert.equal(await readFile(join(goDir, 'go/sipges-desktop'), 'utf8'), 'fake ./cmd/sipges-desktop\n');
     assert.equal(await readFile(join(goDir, 'go/api'), 'utf8'), 'fake ./cmd/api\n');
     assert.equal(await readFile(join(goDir, 'go/migrations/0001_synthetic.sql'), 'utf8'), 'SELECT 1;\n');
@@ -331,4 +339,33 @@ test('--go takes no value, and a failed go build leaves no completion file', { s
     const entries = await readdir(join(root, '.data/desktop-packages/sipges-1.0.0-rc.4'));
     assert.equal(entries.includes(PACKAGE_COMPLETE), false);
   } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// pglite-move-go T4: --go refuses PGlite files that are not the pinned 0.5.15 ones, and leaves no
+// completion file; the builder's pins are the ones apps/api-go verifies before every move.
+test('--go refuses a PGlite dist that is not the pinned 0.5.15, with no completion file', { skip: process.platform === 'win32' && 'the go-mode job builds --go on Windows' }, async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'sipges-package-go-pglite-'));
+  try {
+    const { fakeCheckout } = await import('./builder-helpers.mjs');
+    const { PACKAGE_COMPLETE } = await import('./builder.mjs');
+    const root = join(dir, 'repo');
+    const { build } = await fakeCheckout(root);
+    const dist = join(root, 'apps/api/node_modules/@electric-sql/pglite');
+    await rm(dist, { recursive: true, force: true });
+    await mkdir(join(dist, 'dist'), { recursive: true });
+    for (const name of ['pglite.data', 'pglite.js', 'pglite.wasm']) await copyFile(join(PGLITE_DIST, name), join(dist, 'dist', name));
+    await writeFile(join(dist, 'dist/pglite.js'), '\n', { flag: 'a' });
+    const failed = build('1.0.0-rc.5', { args: ['--go'] });
+    assert.equal(failed.status, 1);
+    assert.match(failed.stderr, /^Error: apps\/api's @electric-sql\/pglite dist\/pglite\.js is not the pinned PGlite 0\.5\.15 \(sha256 [0-9a-f]{64}\)\n$/m);
+    const entries = await readdir(join(root, '.data/desktop-packages/sipges-1.0.0-rc.5'));
+    assert.equal(entries.includes(PACKAGE_COMPLETE), false);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('the PGlite pins of the builder are the ones apps/api-go verifies', async () => {
+  const { PGLITE_PINS } = await import('./builder.mjs');
+  const go = await readFile(resolve('apps/api-go/internal/platform/pglitewasm/dist.go'), 'utf8');
+  const pinned = (name) => go.match(new RegExp(`${name}SHA256 = "([0-9a-f]{64})"`))[1];
+  assert.deepEqual(PGLITE_PINS, { 'pglite.wasm': pinned('wasm'), 'pglite.data': pinned('data'), 'pglite.js': pinned('glue') });
 });

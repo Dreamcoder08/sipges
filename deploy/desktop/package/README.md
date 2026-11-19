@@ -18,7 +18,10 @@ The generated marker (`.sipges-desktop-package`, written first) identifies a bui
 ## Go mode (opt-in)
 
 `--go` adds the Go mode beside the TypeScript runtime: `go/sipges-desktop`, `go/api` (built from
-`apps/api-go` with the Go toolchain of the build computer) and `go/migrations`, and on Windows x64
+`apps/api-go` with the Go toolchain of the build computer), `go/migrations` and `go/pglite` (the
+`pglite.wasm`, `pglite.data` and `pglite.js` of `apps/api`'s pinned `@electric-sql/pglite` 0.5.15,
+copied only when their SHA-256 match the pins apps/api-go also checks; `sipges-desktop --move-pglite`
+reads them there, so the data move needs no Node), and on Windows x64
 `postgresql/`: the pinned PostgreSQL 18 from [`../postgresql`](../postgresql/pg18.json), downloaded
 once into `.data/postgresql`, used only when its SHA-256 matches the pin, and trimmed to `bin`, `lib`,
 `share` and the licences. `metadata.json` then records `go` (entry, API, migrations and the

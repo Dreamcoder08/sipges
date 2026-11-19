@@ -19,8 +19,8 @@ name: Windows desktop drill
 # deploy/desktop/windows/go-drill.mjs: a package built with --go (the pinned PostgreSQL 18 from
 # deploy/desktop/postgresql, cached by its SHA-256 and verified again before use) installed from
 # the kit's scripts zip (visit-kit.mjs) by its trusted sipges-desktop, with no Node on the PATH,
-# an install still on PGlite kept on the TypeScript launcher, the data moved by
-# pglite-to-postgres.mjs, start.ps1 then running the Go launcher
+# an install still on PGlite kept on the TypeScript launcher, the data moved by the release's
+# sipges-desktop --move-pglite (PGlite's WebAssembly in Go, no Node), start.ps1 then running the Go launcher
 # without Node, the launcher killed during writes and started again, a signed update offered and
 # applied by the Go launcher, a clean Ctrl+C stop, the original PGlite folder byte-identical and
 # the way back to TypeScript.
@@ -41,6 +41,8 @@ on:
       - 'apps/api-go/internal/platform/desktoprelease/**'
       - 'apps/api-go/internal/platform/desktopupdate/**'
       - 'apps/api-go/internal/platform/localpg/**'
+      - 'apps/api-go/internal/platform/pglitemove/**'
+      - 'apps/api-go/internal/platform/pglitewasm/**'
       - 'apps/api/**'
       - 'apps/web/**'
       - 'packages/**'
@@ -53,6 +55,8 @@ on:
       - 'apps/api-go/internal/platform/desktoprelease/**'
       - 'apps/api-go/internal/platform/desktopupdate/**'
       - 'apps/api-go/internal/platform/localpg/**'
+      - 'apps/api-go/internal/platform/pglitemove/**'
+      - 'apps/api-go/internal/platform/pglitewasm/**'
       - 'apps/api/**'
       - 'apps/web/**'
       - 'packages/**'
