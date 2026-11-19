@@ -110,12 +110,17 @@ versión de SIPGES», «Actualizar»).
   carpeta y puede moverla mientras SIPGES corre.
 - SIPGES nunca borra las copias al lado de la carpeta de estado (`.pre-update-…`, `.rehearsal-…`,
   `.failed-…`). Cada arranque anota en `launcher.log` cuántas hay y cuánto ocupan
-  (`"stateCopies":{"count":…,"bytes":…}` en la línea `started`). Para verlas:
-  `node <raíz>/versions/<versión>/updater/update.mjs --install <raíz> --copies`. Para borrar las
-  de más de 30 días (cualquier número entero de días):
-  `node <raíz>/versions/<versión>/updater/update.mjs --install <raíz> --remove-copies-older-than 30`.
-  Nunca borra la copia previa a la actualización más reciente (lo dice con `Kept …`) y se niega
-  mientras una actualización quedó a medias (abajo). Respalda antes: lo borrado no vuelve.
+  (`"stateCopies":{"count":…,"bytes":…}` en la línea `started`). Para verlas en una instalación
+  Go (su versión trae `go/sipges-desktop`; `.exe` en Windows):
+  `<raíz>/versions/<versión>/go/sipges-desktop --install <raíz> --copies`. Para borrar las de más
+  de 30 días (cualquier número entero de días), con SIPGES cerrado:
+  `<raíz>/versions/<versión>/go/sipges-desktop --install <raíz> --remove-copies-older-than 30`.
+  En una instalación que sigue en TypeScript, las mismas opciones van a
+  `node <raíz>/versions/<versión>/updater/update.mjs`. Nunca borra la copia previa a la
+  actualización más reciente (lo dice con `Kept …`) y se niega mientras una actualización quedó a
+  medias (abajo). El comando Go también se niega mientras SIPGES corre en esa instalación y antes
+  detiene un PostgreSQL que dejó en marcha un lanzador cerrado a la fuerza, como hace el arranque.
+  Respalda antes: lo borrado no vuelve.
 - Cerrar SIPGES (Ctrl+C o SIGTERM) espera hasta 15 s a que el servidor se detenga bien; un segundo
   Ctrl+C o SIGTERM lo detiene en el acto (código de salida 1, `stop_forced` en `launcher.log`).
 
@@ -124,11 +129,17 @@ versión de SIPGES», «Actualizar»).
 Si una actualización falla y ni siquiera su vuelta atrás termina, SIPGES no arranca sobre esos
 datos. La persona ve «SIPGES no se inició: … Restaure la copia de seguridad <copia> o contacte con
 soporte.» en un cuadro de mensaje (Windows) o en una notificación y la terminal (Linux). Abajo,
-`<versión>` es la que dice `current.json` en la raíz.
+`<versión>` es la que dice `current.json` en la raíz, y `<cli>` es
+`<raíz>/versions/<versión>/go/sipges-desktop` (`.exe` en Windows) en una instalación Go, cuya
+versión trae `go/`; en una instalación que sigue en TypeScript es
+`node <raíz>/versions/<versión>/updater/update.mjs`. Los dos aceptan las mismas opciones, imprimen
+las mismas líneas y terminan con los mismos códigos de salida; el Go se niega mientras SIPGES corre
+en esa instalación y antes detiene un PostgreSQL que dejó en marcha un lanzador cerrado a la fuerza
+(`--pg-bin <carpeta>` indica PostgreSQL 18 si la versión no lo trae).
 
 1. No borres nada.
 2. Reintenta la vuelta atrás (termina cuando la causa, por ejemplo un disco lleno, está resuelta):
-   `node <raíz>/versions/<versión>/updater/update.mjs --install <raíz> --recover`.
+   `<cli> --install <raíz> --recover`.
    Si imprime `Recovered`, abre SIPGES.
    Si se niega con código 3 porque la carpeta de estado fue creada de nuevo (SIPGES u otra cosa la
    recreó vacía o distinta), no borres nada: renombra esa carpeta recién creada (por ejemplo,
@@ -138,7 +149,7 @@ soporte.» en un cuadro de mensaje (Windows) o en una notificación y la termina
    pendiente o detenida…») y no cambia nada.
 3. Si no, restaura tú la carpeta de estado: renombra la carpeta dañada (por ejemplo, agrégale
    `.danada`) y copia en la ruta original la copia que nombra el mensaje, o tu propio respaldo.
-4. Ejecuta `node <raíz>/versions/<versión>/updater/update.mjs --install <raíz> --recover --accept-restored-state`.
+4. Ejecuta `<cli> --install <raíz> --recover --accept-restored-state`.
    Se niega mientras la carpeta de estado falta o está vacía; si no, la versión de antes de la
    actualización vuelve a ser la actual y no se toca nada dentro ni al lado de la carpeta de estado.
 5. Abre SIPGES.

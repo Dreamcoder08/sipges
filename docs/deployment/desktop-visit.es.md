@@ -761,22 +761,33 @@ visita: se lleva los registros (sección 4) y se resuelve en casa.
 | `%LOCALAPPDATA%\SIPGES\api.log` | El servidor de la versión vieja |
 
 **La salida documentada de una detención** (después de la visita, si una actualización se detiene; no en
-la visita, donde se aplica la regla de corte). `<versión>` es la que dice `current.json`:
+la visita, donde se aplica la regla de corte). `<versión>` es la que dice `current.json`. Con SIPGES
+cerrado, en PowerShell, `$cli` es el lanzador Go de esa versión (la instalación de la visita es Go: su
+versión trae la carpeta `go`):
+
+```powershell
+$cli = "$env:LOCALAPPDATA\SIPGES-app\versions\<versión>\go\sipges-desktop.exe"
+```
+
+En una instalación que sigue en TypeScript (sin `go\sipges-desktop.exe`), cambiá `& $cli` por
+`node "$env:LOCALAPPDATA\SIPGES-app\versions\<versión>\updater\update.mjs"`: mismas opciones, mismas
+líneas y mismos códigos de salida. El lanzador Go además se niega mientras SIPGES está abierto y antes
+detiene un PostgreSQL que haya quedado en marcha de un inicio anterior.
 
 1. No borres nada.
-2. `node "$env:LOCALAPPDATA\SIPGES-app\versions\<versión>\updater\update.mjs" --install "$env:LOCALAPPDATA\SIPGES-app" --recover`
+2. `& $cli --install "$env:LOCALAPPDATA\SIPGES-app" --recover`
    — si imprime `Recovered: rolled back to …`, abrí SIPGES. Si en cambio se niega con `Error: …` y
    `3` porque la carpeta de datos se volvió a crear después de la detención, el mensaje pide apartar
    esa carpeta recreada: renombrala (por ejemplo `SIPGES-datos` → `SIPGES-datos.recreada`, sin
    borrarla) y repetí este mismo paso 2.
 3. Si no: renombrá la carpeta dañada (`%LOCALAPPDATA%\SIPGES-datos` → `SIPGES-datos.danada`) y copiá en su
    lugar la copia que nombra el mensaje, o tu propio respaldo.
-4. `node "$env:LOCALAPPDATA\SIPGES-app\versions\<versión>\updater\update.mjs" --install "$env:LOCALAPPDATA\SIPGES-app" --recover --accept-restored-state`
+4. `& $cli --install "$env:LOCALAPPDATA\SIPGES-app" --recover --accept-restored-state`
    — imprime `Accepted the restored state folder; current version …`. Se niega mientras la carpeta falta o
    está vacía.
 5. Abrí SIPGES.
 
-Códigos de salida de `update.mjs` (`$LASTEXITCODE`): 0 hecho, 1 rechazado, 2 falló y volvió atrás,
+Códigos de salida de `sipges-desktop.exe` y de `update.mjs` (`$LASTEXITCODE`): 0 hecho, 1 rechazado, 2 falló y volvió atrás,
 3 vuelta atrás incompleta. Detalle: [Si una actualización se detiene a medias](../../deploy/desktop/README.es.md#si-una-actualización-se-detiene-a-medias).
 
 **Qué llevarse para revisar en casa**
@@ -803,11 +814,14 @@ Códigos de salida de `update.mjs` (`$LASTEXITCODE`): 0 hecho, 1 rechazado, 2 fa
   qué guardar. Todas contienen los datos y la clave: se tratan como un respaldo. Cada arranque anota en
   `SIPGES-app\launcher.log` cuántas copias hay y cuánto ocupan (`"stateCopies"` en la línea `started`).
   Para verlas y, después de un respaldo, borrar las de más de 30 días (nunca borra la copia previa a la
-  actualización más reciente, y se niega si una actualización quedó a medias):
+  actualización más reciente, y se niega si una actualización quedó a medias o si SIPGES está abierto);
+  en una instalación que sigue en TypeScript, cambiá `& $cli` por `node` con su `update.mjs`, como en la
+  salida de una detención:
 
   ```powershell
-  node "$env:LOCALAPPDATA\SIPGES-app\versions\<versión>\updater\update.mjs" --install "$env:LOCALAPPDATA\SIPGES-app" --copies
-  node "$env:LOCALAPPDATA\SIPGES-app\versions\<versión>\updater\update.mjs" --install "$env:LOCALAPPDATA\SIPGES-app" --remove-copies-older-than 30
+  $cli = "$env:LOCALAPPDATA\SIPGES-app\versions\<versión>\go\sipges-desktop.exe"
+  & $cli --install "$env:LOCALAPPDATA\SIPGES-app" --copies
+  & $cli --install "$env:LOCALAPPDATA\SIPGES-app" --remove-copies-older-than 30
   ```
 - **Cómo llegan las actualizaciones**: se construye y firma en Windows una versión mayor con **la misma
   clave** y sus propias notas, y su carpeta se copia dentro de `%LOCALAPPDATA%\SIPGES-app\releases`. En el siguiente arranque la usuaria (administradora) ve

@@ -111,12 +111,16 @@ newer release is offered inside SIPGES («Nueva versión de SIPGES», «Actualiz
   folder and may move it while SIPGES runs.
 - Copies beside the state folder (`.pre-update-…`, `.rehearsal-…`, `.failed-…`) are never deleted
   by SIPGES. Each start writes how many there are and their total size in `launcher.log`
-  (`"stateCopies":{"count":…,"bytes":…}` on the `started` line). To list them:
-  `node <root>/versions/<version>/updater/update.mjs --install <root> --copies`. To remove those
-  older than 30 days (any number of whole days):
-  `node <root>/versions/<version>/updater/update.mjs --install <root> --remove-copies-older-than 30`.
-  It never removes the newest pre-update copy (it says `Kept …`), and it refuses while an update is
-  halfway (below). Back up first: removed copies are gone.
+  (`"stateCopies":{"count":…,"bytes":…}` on the `started` line). To list them on a Go install
+  (its version holds `go/sipges-desktop`; `.exe` on Windows):
+  `<root>/versions/<version>/go/sipges-desktop --install <root> --copies`. To remove those older
+  than 30 days (any number of whole days), with SIPGES closed:
+  `<root>/versions/<version>/go/sipges-desktop --install <root> --remove-copies-older-than 30`.
+  On an install still on TypeScript the same options go to
+  `node <root>/versions/<version>/updater/update.mjs`. It never removes the newest pre-update copy
+  (it says `Kept …`), and it refuses while an update is halfway (below). The Go command also
+  refuses while SIPGES runs on the install and first stops a PostgreSQL a killed launcher left
+  running, as the start does. Back up first: removed copies are gone.
 - Closing SIPGES (Ctrl+C or SIGTERM) waits up to 15 s for the server to stop cleanly; a second
   Ctrl+C or SIGTERM kills it at once (exit code 1, `stop_forced` in `launcher.log`).
 
@@ -125,11 +129,17 @@ newer release is offered inside SIPGES («Nueva versión de SIPGES», «Actualiz
 If an update fails and even its rollback cannot finish, SIPGES does not start on that data. The
 person sees «SIPGES no se inició: … Restaure la copia de seguridad <copy> o contacte con soporte.»
 in a message box (Windows) or a notification and the terminal (Linux). `<version>` below is the one
-in `current.json` of the install root.
+in `current.json` of the install root. `<cli>` is
+`<root>/versions/<version>/go/sipges-desktop` (`.exe` on Windows) on a Go install, whose version
+holds `go/`; on an install still on TypeScript it is
+`node <root>/versions/<version>/updater/update.mjs`. Both take the same options, print the same
+lines and end with the same exit codes; the Go one refuses while SIPGES runs on the install and
+first stops a PostgreSQL a killed launcher left running (`--pg-bin <dir>` names PostgreSQL 18 when
+the version bundles none).
 
 1. Delete nothing.
 2. Retry the rollback (it finishes once the cause, such as a full disk, is fixed):
-   `node <root>/versions/<version>/updater/update.mjs --install <root> --recover`.
+   `<cli> --install <root> --recover`.
    If it prints `Recovered`, open SIPGES. If it says the state folder «was created again while its
    restore was pending», something (an installer run, a person) made a new folder at that path
    after the update moved the old one aside: move that new folder aside too (do not delete it),
@@ -137,7 +147,7 @@ in `current.json` of the install root.
    folder «cannot be proven restored» or that the pre-update copy is missing, go to step 3.
 3. Otherwise restore the state folder yourself: rename the damaged folder aside (for example add
    `.damaged`), then copy the copy named in the message, or your own backup, to the original path.
-4. Run `node <root>/versions/<version>/updater/update.mjs --install <root> --recover --accept-restored-state`.
+4. Run `<cli> --install <root> --recover --accept-restored-state`.
    It refuses while the state folder is missing or empty; otherwise the version from before the
    update becomes current again and nothing in or beside the state folder is touched.
 5. Open SIPGES.
