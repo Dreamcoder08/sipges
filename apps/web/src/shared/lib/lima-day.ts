@@ -17,7 +17,17 @@ const untilNextLimaDay = (now: number): number =>
 export const useLimaDay = (): string => {
   const [day, setDay] = useState(() => limaToday());
   useEffect(() => {
-    const timer = setTimeout(() => setDay(limaToday()), untilNextLimaDay(Date.now()));
+    let timer: ReturnType<typeof setTimeout>;
+    // A timer can fire before the day turns (clock resync, throttled tab); then it arms again
+    // instead of waiting for a render that a same-day value would never cause.
+    const arm = () => {
+      timer = setTimeout(() => {
+        const now = limaToday();
+        if (now === day) arm();
+        else setDay(now);
+      }, untilNextLimaDay(Date.now()));
+    };
+    arm();
     return () => clearTimeout(timer);
   }, [day]);
   return day;

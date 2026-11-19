@@ -26,6 +26,23 @@ describe('useLimaDay', () => {
     expect(screen.getByText('2026-11-20')).toBeInTheDocument();
   });
 
+  it('arms again when its timer fires early and the day has not turned yet', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-20T04:59:30Z'));
+    render(<Day />);
+    // The clock goes back 5 s once the timer is armed, as a resync or a throttled tab can do,
+    // so the first timeout fires while it is still 2026-11-19 in Lima.
+    vi.setSystemTime(new Date('2026-11-20T04:59:25Z'));
+    act(() => {
+      vi.advanceTimersByTime(31_000);
+    });
+    expect(screen.getByText('2026-11-19')).toBeInTheDocument();
+    act(() => {
+      vi.advanceTimersByTime(10_000);
+    });
+    expect(screen.getByText('2026-11-20')).toBeInTheDocument();
+  });
+
   it('stops its timer when the component unmounts', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-11-20T04:59:30Z'));
