@@ -9,14 +9,14 @@ import { spawn, spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { once } from 'node:events';
 import { existsSync, mkdirSync, rmSync, watch } from 'node:fs';
-import { cp, mkdir, mkdtemp, readdir, rm, stat, symlink, writeFile } from 'node:fs/promises';
+import { chmod, cp, mkdir, mkdtemp, readdir, rm, stat, symlink, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { URL, fileURLToPath, pathToFileURL } from 'node:url';
-import { onSignal, originalState, runMove, strictRules } from './pglite-to-postgres.mjs';
+import { onSignal, originalState, removeCommand, runMove, strictRules } from './pglite-to-postgres.mjs';
 import { treeDigest } from './tables.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -483,10 +483,18 @@ test('a refused connection is reported as a connection error', async () => {
 // Review C1: sipges-desktop --prepare-only leaves <state>/pg18.pending-move so nothing starts
 // SIPGES on the empty cluster; --prepared <state> removes it only after a committed move with no
 // difference. The prepared state folder is the real one (the copy is what --state reads).
-async function prepared(name) {
+async function prepared(name, pg18) {
   const dir = join(scratch, name);
-  await mkdir(join(dir, 'pg18'), { recursive: true });
+  await mkdir(dir, { recursive: true });
+  if (pg18) await symlink(pg18, join(dir, 'pg18'), 'dir');
+  else await mkdir(join(dir, 'pg18'), { recursive: true });
   await writeFile(join(dir, 'pg18.pending-move'), 'synthetic\n');
+  return dir;
+}
+
+/** The data folder of the throwaway server: what a prepared <state>/pg18 is to the target. */
+async function served() {
+  const [{ data_directory: dir }] = await admin`SHOW data_directory`;
   return dir;
 }
 
@@ -500,7 +508,7 @@ test('refuses --prepared without the pending-move mark, before reading anything'
 });
 
 test('a committed move with no difference removes the pending-move mark of --prepared', { skip: pgSkip }, async () => {
-  const state = await prepared('prepared-ok');
+  const state = await prepared('prepared-ok', await served());
   const { code, out } = await run(['--state', await copyOf('copy-prepared-ok'), '--prepared', state], { SIPGES_MOVE_DATABASE_URL: await target() });
   assert.equal(code, 0, out);
   assert.match(out, /Moved: the target holds the copy, committed\.\nThe prepared cluster is ready: removed pg18\.pending-move\./);
@@ -508,11 +516,72 @@ test('a committed move with no difference removes the pending-move mark of --pre
 });
 
 test('a move with a difference keeps the pending-move mark', { skip: pgSkip }, async () => {
-  const state = await prepared('prepared-different');
+  const state = await prepared('prepared-different', await served());
   const { code, out } = await move(
     { state: await copyOf('copy-prepared-different'), to: await target(), prepared: state },
     { afterRestore: (tx) => tx`UPDATE tenants SET label = label || ' cambiado'` },
   );
   assert.equal(code, 1, out);
   assert.equal(existsSync(join(state, 'pg18.pending-move')), true, 'the mark was removed after a difference');
+});
+
+// Review of #539: --prepared must name the folder whose pg18 the target serves; any other folder's
+// mark stays, and nothing is read or written. The API's login reads no data_directory, so the
+// cluster is told by its system identifier (global/pg_control) and the port in its postmaster.pid.
+test('refuses --prepared whose pg18 is not the cluster the target serves, in Spanish, writing nothing', { skip: pgSkip }, async () => {
+  const empty = await prepared('prepared-other-empty');
+  const forged = await prepared('prepared-other-forged');
+  await mkdir(join(forged, 'pg18', 'global'), { recursive: true });
+  await writeFile(join(forged, 'pg18', 'global', 'pg_control'), randomBytes(8192));
+  await cp(join(await served(), 'postmaster.pid'), join(forged, 'pg18', 'postmaster.pid'));
+  for (const state of [empty, forged]) {
+    const url = await target();
+    const scratchDir = await mkdtemp(join(scratch, 'bind-scratch-'));
+    const { code, out } = await move({ state: await copyOf(`copy-${state.split(/[\\/]/).pop()}`), to: url, prepared: state, scratch: scratchDir });
+    assert.equal(code, 2, out);
+    assert.match(out, /RESULT: not moved: el servidor de destino no sirve la carpeta .*pg18 de --prepared/);
+    assert.match(out, /no se escribió nada/);
+    assert.equal(existsSync(join(state, 'pg18.pending-move')), true, 'another folder lost its mark');
+    assert.equal(await counts(url), 0, 'the target was written');
+    assert.deepEqual(await readdir(scratchDir), [], 'the scratch folder was written');
+  }
+});
+
+test('with data_directory readable, a copy of the served pg18 elsewhere is still refused', { skip: pgSkip }, async () => {
+  const live = await served();
+  const state = await prepared('prepared-copied-identity');
+  await mkdir(join(state, 'pg18', 'global'), { recursive: true });
+  await cp(join(live, 'global', 'pg_control'), join(state, 'pg18', 'global', 'pg_control'));
+  await cp(join(live, 'postmaster.pid'), join(state, 'pg18', 'postmaster.pid'));
+  const url = await target();
+  await admin.unsafe(`GRANT pg_read_all_settings TO ${new URL(url).username}`);
+  const { code, out } = await move({ state: await copyOf('copy-prepared-copied-identity'), to: url, prepared: state });
+  assert.equal(code, 2, out);
+  assert.match(out, /el servidor de destino no sirve la carpeta .*pg18 de --prepared/);
+  assert.equal(existsSync(join(state, 'pg18.pending-move')), true);
+  assert.equal(await counts(url), 0);
+  // The folder the server does serve, through a link: data_directory resolves to it.
+  const servedState = await prepared('prepared-data-directory', live);
+  const moved = await move({ state: await copyOf('copy-prepared-data-directory'), to: url, prepared: servedState });
+  assert.equal(moved.code, 0, moved.out);
+  assert.equal(existsSync(join(servedState, 'pg18.pending-move')), false);
+});
+
+test('the removal command quotes the mark for PowerShell on Windows and for sh elsewhere', () => {
+  assert.equal(removeCommand("C:\\Users\\O'Neil\\SIPGES\\pg18.pending-move", 'win32'), "Remove-Item -LiteralPath 'C:\\Users\\O''Neil\\SIPGES\\pg18.pending-move'");
+  assert.equal(removeCommand("/home/o'neil/pg18.pending-move", 'linux'), "rm -- '/home/o'\\''neil/pg18.pending-move'");
+});
+
+test('a mark that cannot be removed after the commit exits 2 and prints the command that removes it', { skip: pgSkip, concurrency: false }, async (t) => {
+  const state = await prepared('prepared-locked', await served());
+  await chmod(state, 0o555);
+  t.after(() => chmod(state, 0o755));
+  const url = await target();
+  const { code, out } = await move({ state: await copyOf('copy-prepared-locked'), to: url, prepared: state });
+  assert.equal(code, 2, out);
+  assert.match(out, /Moved: the target holds the copy, committed\./);
+  const mark = join(state, 'pg18.pending-move');
+  assert.ok(out.includes(`rm -- '${mark}'`), out);
+  assert.ok((await counts(url)) > 0, 'the move did not commit');
+  assert.equal(existsSync(mark), true);
 });
