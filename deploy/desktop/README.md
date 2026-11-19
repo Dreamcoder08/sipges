@@ -248,7 +248,8 @@ in PGlite keeps the TypeScript API until its data are moved (the laptop visit,
   SHA-256) and a second release one version newer, `install.ps1 -Release` with no Node on the PATH,
   an install still on PGlite kept on TypeScript by `start.ps1`, `start.ps1 -Go` refused before the
   move, the move (`--prepare-only`, `pg_ctl`, `sipges-desktop --move-pglite` with no Node and its table-by-table proof), `start.ps1` (no Node) running the Go launcher with
-  `compare.mjs` finding no difference, the launcher killed during writes and started again, the
+  `sipges-desktop --compare` (no Node) finding no difference against its own `--snapshot`, and
+  `compare.mjs` against it as the one Node cross check, the launcher killed during writes and started again, the
   update offered and applied by the Go launcher, a clean Ctrl+C stop (`windows/go-console.ps1`), the
   original PGlite folder byte-identical, and the way back to TypeScript with `pg18` set aside. By
   hand, on another Windows computer, with Go and port 8000 free:
@@ -299,6 +300,8 @@ Restore:
 8. Open SIPGES, sign in with the password and an MFA code, and open a few records and uploads.
    To check everything, run `deploy/desktop/migration/snapshot.mjs` before step 1 and
    `compare.mjs` after this step, as the drill did: it must print `RESULT: no difference`.
+   A version with the Go mode does the same without Node: `sipges-desktop --snapshot` and
+   `sipges-desktop --compare` take the same options and write and read the same file.
    `compare.mjs` only compares against a managed install; against a clone install it refuses
    with `RESULT: not compared (…)` and exit code 2.
 
