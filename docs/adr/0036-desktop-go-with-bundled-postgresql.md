@@ -47,6 +47,30 @@ Facts read on 2026-11-17 (go-rust-stack L74):
 5. Node remains only inside that one-time migrator. The installed app needs no Node at run time.
 6. Before the laptop, one rehearsal on Windows 11 as a standard user with Defender on: install, migrate a synthetic
    copy, compare, kill the app during a write, restart, and roll back.
+7. Amended 2026-11-18, minor updates: a new PostgreSQL 18 minor reaches an existing install as a plain binary swap,
+   with no step of its own. Each installed version carries its own `postgresql/bin`, and the launcher starts the
+   shared `<state>/pg18` cluster with the current version's binaries (`resolveBins` and `startCluster` in
+   `apps/api-go/cmd/sipges-desktop/managed.go`). `localpg` checks only the major version, both `PG_VERSION` and
+   `postgres --version` (`inspectDataDir`, `checkBinaries`; `TestMajorVersionReadsPostgresVersionOutput` covers
+   `18.7`). The cluster records no binary path. A rollback to the previous version works the same way:
+   [minor releases](https://www.postgresql.org/docs/18/upgrading.html) "never change the internal storage format
+   and are always compatible with earlier and later minor releases of the same major version number". The 18.7 pin
+   waits until 2026-11-26. EDB's `postgresql-18.7-1-windows-x64-binaries.zip` was published on 2026-11-12, and
+   `readPin` refuses anything less than 14 days old. Checked against the
+   [18.7 release notes](https://www.postgresql.org/docs/18/release-18-7.html):
+   - GIN: the only GIN index is `module_records_search` (`0012_record_search.sql`, a `tsvector` expression). The
+     two GIN corruption fixes (VACUUM missing dead entries when one VACUUM needs several index passes, and posting
+     tree deletion after an incomplete page split) say "REINDEX is recommended if you suspect this has happened".
+     A desktop's tables are far too small to need several index passes. The parallel GIN build fix needs keys over
+     65,535 bytes, but a `tsvector` lexeme is at most 2,047. No REINDEX is scheduled. If a search misses a record,
+     check the index with `amcheck`'s `gin_index_check`, then run `REINDEX INDEX CONCURRENTLY module_records_search`.
+   - No `bpchar` column (no unbounded `char` type) and no `gist_trgm_ops`/pg_trgm index, so those two REINDEX
+     items do not apply. The desktop takes no incremental backups.
+   - CVE-2026-16237 (`INSERT … ON CONFLICT` through views): the migrations create no views, so it does not apply.
+     CVE-2026-120154 (ON CONFLICT target rows read by leaky quals before RLS): SIPGES upserts into tables with RLS
+     (`module_records`, `notifications`, `project_settings`, `irsa_configs` and `source_import_settings` forced;
+     `automation_cursors` enabled). None of these upserts has a `DO UPDATE … WHERE`, and the API runs no SQL written by
+     users. The fix is still worth taking, which is why the pin moves on the first allowed day.
 
 ## Consequences
 
