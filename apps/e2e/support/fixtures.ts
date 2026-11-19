@@ -5,6 +5,7 @@ import {
   expect,
   request as requestFactory,
 } from '@playwright/test';
+import { watchUnload } from './unload.ts';
 
 const required = (name: string): string => {
   const value = process.env[name];
@@ -151,7 +152,11 @@ export const test = base.extend<Fixtures>({
           );
         });
       });
-      page.on('pageerror', (error) => problems.push(`pageerror: ${error.message}`));
+      // WebKit reports the loads a navigation cancels as blocked; they belong to neither page.
+      const unloadReport = watchUnload(page);
+      page.on('pageerror', (error) => {
+        if (!unloadReport(error)) problems.push(`pageerror: ${error.message}`);
+      });
       page.on('console', (message) => {
         const text = message.text();
         if (/Content Security Policy|CSP violation/i.test(text)) problems.push(`csp: ${text}`);

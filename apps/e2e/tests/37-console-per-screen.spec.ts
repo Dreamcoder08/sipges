@@ -7,6 +7,7 @@ import {
 } from '../../web/src/features/situations/sections.ts';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
 import { watchNetwork } from '../support/network.ts';
+import { watchUnload } from '../support/unload.ts';
 
 /**
  * Console errors per screen (functional-10 T10, F27). Every route of the menu (navigation.ts),
@@ -57,7 +58,11 @@ const offline = (url: string) => {
 /** Collects what goes wrong on the page; `take` returns it and starts the next screen clean. */
 const watchProblems = (page: Page, origin: string) => {
   let problems: string[] = [];
-  page.on('pageerror', (error) => problems.push(`pageerror: ${error.message}`));
+  // The loads the previous screen still had pending when page.goto replaced it (WebKit).
+  const unloadReport = watchUnload(page);
+  page.on('pageerror', (error) => {
+    if (!unloadReport(error)) problems.push(`pageerror: ${error.message}`);
+  });
   page.on('console', (message: ConsoleMessage) => {
     if (message.type() !== 'error') return;
     const text = message.text();
