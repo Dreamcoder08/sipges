@@ -1522,3 +1522,46 @@ test('T72d3: Go refuses what compare.mjs refuses before signing in, with the sam
     assert.equal(snap.stderr, 'Error: --url and --out are required\n');
   });
 });
+
+test('T72d3 follow-up: an edited --before shape gets the exit code compare.mjs gives it', async (t) => {
+  const bin = await goDesktop();
+  if (!bin) return t.skip('go is not on PATH');
+  await withTemp(async (dir) => {
+    const login = await credentials(dir);
+    const file = join(dir, 'before.json');
+    const api = await fakeApi(fixture());
+    try {
+      assert.equal((await run(snapshotCli, ['--url', api.url, ...login, '--out', file])).status, 0);
+      const original = JSON.parse(await readFile(file, 'utf8'));
+      const firstRecord = (s) => {
+        const rows = Object.values(s.projects[0].modules).find((r) => Object.keys(r).length);
+        return [rows, Object.keys(rows)[0]];
+      };
+      // JavaScript's default parameters read a missing map as empty (a difference, exit 1);
+      // a null or a missing list it must iterate stops the comparison (not compared, exit 2).
+      const edits = [
+        ['a record that is a number', 1, (s) => { const [rows, k] = firstRecord(s); rows[k] = 5; }],
+        ['a record without fields', 1, (s) => { const [rows, k] = firstRecord(s); delete rows[k].fields; }],
+        ['a project without links', 1, (s) => { delete s.projects[0].links; }],
+        ['the only upload a number (its content has no slice)', 2, (s) => { const u = s.projects[0].uploads; u[Object.keys(u)[0]] = 5; }],
+        ['a project without uploads', 2, (s) => { delete s.projects[0].uploads; }],
+        ['an audit without entries', 2, (s) => { delete s.projects[0].audit.entries; }],
+        ['a record whose fields are null', 2, (s) => { const [rows, k] = firstRecord(s); rows[k].fields = null; }],
+      ];
+      for (const [label, status, edit] of edits) {
+        const edited = structuredClone(original);
+        edit(edited);
+        const path = join(dir, `${label.replaceAll(' ', '-')}.json`);
+        await writeFile(path, JSON.stringify(edited));
+        const node = await run(compareCli, ['--before', path, '--url', api.url, ...login]);
+        const go = await runGo(bin, '--compare', ['--before', path, '--url', api.url, ...login]);
+        assert.equal(node.status, status, `${label}: compare.mjs ${node.stdout}${node.stderr}`);
+        assert.equal(go.status, status, `${label}: --compare ${go.stdout}${go.stderr}`);
+        if (status === 1) assert.equal(go.stdout, node.stdout, `${label}: the same lines`);
+        else assert.match(go.stdout, /^RESULT: not compared \(error: /m, label);
+      }
+    } finally {
+      api.close();
+    }
+  });
+});

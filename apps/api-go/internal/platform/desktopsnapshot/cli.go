@@ -7,6 +7,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 )
 
@@ -63,17 +64,56 @@ func (e Env) now() time.Time {
 
 func (e Env) out(format string, a ...any) { _, _ = fmt.Fprintf(e.Stdout, format+"\n", a...) }
 
-// writeNew is writeFile(path, text, { mode: 0o600, flag: 'wx' }): never over an existing file.
+// writeText writes the file's text; a test replaces it to fail half-way.
+var writeText = func(w io.Writer, text string) error {
+	_, err := io.WriteString(w, text)
+	return err
+}
+
+// writeNew is writeFile(path, text, { mode: 0o600, flag: 'wx' }), never over an existing file,
+// and never a partial one: the text goes to a scratch file beside it, which is linked into place
+// only once complete (a link, unlike a rename, refuses an existing file).
 func writeNew(path, text string) error {
-	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600) //nolint:gosec // the person names the file
+	if _, err := os.Lstat(path); err == nil {
+		return &os.PathError{Op: "open", Path: path, Err: os.ErrExist}
+	}
+	scratch, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".*.partial")
 	if err != nil {
 		return err
 	}
-	if _, err := f.WriteString(text); err != nil {
-		_ = f.Close()
+	name := scratch.Name()
+	defer func() { _ = os.Remove(name) }()
+	if err := scratch.Chmod(0o600); err != nil && runtime.GOOS != "windows" {
+		_ = scratch.Close()
 		return err
 	}
-	return f.Close()
+	if err := writeText(scratch, text); err != nil {
+		_ = scratch.Close()
+		return err
+	}
+	if err := scratch.Sync(); err != nil {
+		_ = scratch.Close()
+		return err
+	}
+	if err := scratch.Close(); err != nil {
+		return err
+	}
+	if err := os.Link(name, path); err != nil {
+		if errors.Is(err, os.ErrExist) {
+			return err
+		}
+		// No hard links here (a FAT32 stick): reserve the name, then put the whole file over it.
+		reserved, rerr := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600) //nolint:gosec // the person names the file
+		if rerr != nil {
+			return rerr
+		}
+		_ = reserved.Close()
+		if err := os.Rename(name, path); err != nil {
+			_ = os.Remove(path)
+			return err
+		}
+	}
+	return nil
 }
 
 func snapshotText(snapshot *Object) string {

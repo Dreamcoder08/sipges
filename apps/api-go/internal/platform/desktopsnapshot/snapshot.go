@@ -324,7 +324,7 @@ func uploadIDsOf(s *Session, scope string, exported *Object) ([]string, bool, er
 	if status != http.StatusOK {
 		return nil, false, failed("/system/uploads", status)
 	}
-	listed, ok := body.([]any)
+	uploadList, ok := body.([]any)
 	if !ok {
 		return nil, false, errShape("/system/uploads")
 	}
@@ -336,7 +336,7 @@ func uploadIDsOf(s *Session, scope string, exported *Object) ([]string, bool, er
 			ids = append(ids, id)
 		}
 	}
-	for _, u := range listed {
+	for _, u := range uploadList {
 		add(ToString(fieldOf(u, "id")))
 	}
 	if rows, isList := exported.Get("attachments").([]any); exported != nil && isList {
@@ -347,7 +347,7 @@ func uploadIDsOf(s *Session, scope string, exported *Object) ([]string, bool, er
 		return ids, true, nil
 	}
 	SortStrings(ids)
-	return ids, len(listed) < uploadListCap, nil
+	return ids, len(uploadList) < uploadListCap, nil
 }
 
 // NewSalt is a random 16-byte salt in hex, as snapshot.mjs makes one.
