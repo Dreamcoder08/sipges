@@ -98,14 +98,19 @@ comando.
     uno FAT32 o exFAT (los pendrives suelen venir así): el paquete tiene enlaces de carpeta, y esos
     formatos no los guardan. Ante la duda, `C:\SIPGES-kit-salida`.
   - El disco externo `E:` del respaldo (más abajo). La clave nunca va en él.
-  - **Red** en la casa para `git clone` y `pnpm install` (Wi-Fi, o tu teléfono como punto de acceso;
-    no el de la usuaria, que hace falta para el MFA).
+  - **Red** en la casa para `git clone`, `pnpm install` y el Go portable (Wi-Fi, o tu teléfono como
+    punto de acceso; no el de la usuaria, que hace falta para el MFA). En la laptop **no se instala
+    Go**: el paso K descarga el zip oficial `go1.27.0.windows-amd64.zip` de `go.dev` (unos **80 MB**;
+    el kit lo comprueba con el SHA-256 fijado en el repositorio), lo descomprime en `C:\SIPGES-go` y
+    lo borra al terminar el paso K. Con datos móviles, contá esa descarga además de las dependencias.
   - **Tiempo**: el job «laptop-kit» de Actions mide el clon, la instalación de dependencias y el kit
     (`measures.txt` en sus registros y el resumen del job); anotalo en «Datos de esta visita». En
     `windows-latest`, con caché, `pnpm install` tardó 10 s y el kit 22 s (PR #420); en la laptop,
     que descarga las dependencias y es más lenta, reservá **una hora** para el respaldo y el paso K
     (estimación, no medida en la laptop).
   - **Espacio**: el paso K pide **5 GB libres** en `C:` antes de clonar, además de lo que pide el paso 0.
+    Esos 5 GB incluyen el Go portable (alrededor de 1 GB con sus cachés mientras se arma el kit,
+    estimación; se borra al final del paso K).
 - [ ] **Job «laptop-kit»** del commit definitivo en verde: termina en `LAPTOP KIT REHEARSAL PASSED`.
   Ensaya el paso K al lado de una instalación por clon, con datos inventados: el kit se niega con
   `--out` dentro del clon viejo y con SIPGES abierto, se arma con SIPGES cerrado, el clon viejo queda
@@ -210,15 +215,16 @@ niega a escribir ahí. Con la red de la casa.
   node --version
   pnpm --version
   git --version
-  go version
   Get-PSDrive C | Format-List Free
   Test-Path C:\SIPGES-kit
+  Test-Path C:\SIPGES-go
   ```
 
-  Node `v24` o más; pnpm `12.…`; git y Go responden (sin Go el kit se detiene: construye desde este clon
-  el `deploy\desktop\bin\sipges-desktop.exe` de confianza con el que `install.ps1` instala una versión Go);
-  `Free` con al menos 5 GB libres más lo que pide el
-  paso 0 (cuatro veces `%LOCALAPPDATA%\SIPGES` más 2 GB); `Test-Path` dice `False`. Con Node menor que
+  Node `v24` o más; pnpm `12.…`; git responde; `Free` con al menos 5 GB libres más lo que pide el
+  paso 0 (cuatro veces `%LOCALAPPDATA%\SIPGES` más 2 GB); los dos `Test-Path` dicen `False`. Go no
+  hace falta ni se instala: el kit lo necesita (construye desde este clon el
+  `deploy\desktop\bin\sipges-desktop.exe` de confianza con el que `install.ps1` instala una versión
+  Go), y lo trae el paso «Go portable», más abajo, solo para esta terminal. Con Node menor que
   24 no hay visita (sección 1): **no instales ni actualices Node en la laptop**, la versión vieja de
   SIPGES corre con ese Node; parás acá y la laptop queda como está. Sin pnpm 12:
   `npm install -g pnpm@12.11.2` y una terminal nueva.
@@ -244,6 +250,39 @@ niega a escribir ahí. Con la red de la casa.
   `git status --short` no imprime nada y `git log` muestra el commit definitivo. Si `git clone` o
   `pnpm install` fallan por la red, reintentá una vez; si vuelven a fallar, regla de corte del kit
   (abajo).
+- [ ] **Go portable**, en la misma terminal, todavía en `C:\SIPGES-kit`. No va a «Archivos de
+  programa» ni al PATH del sistema, no toca el registro: queda en `C:\SIPGES-go` y solo esta ventana
+  de PowerShell lo ve. Si cerrás la terminal, abrí otra, `cd C:\SIPGES-kit` y repetí desde
+  `$env:Path` (la descarga ya está hecha).
+
+  ```powershell
+  node deploy\desktop\windows\portable-go.mjs --out C:\SIPGES-go
+  $LASTEXITCODE
+  $env:Path = "C:\SIPGES-go\go\bin;$env:Path"
+  $env:GOTOOLCHAIN = 'local'
+  $env:GOPATH = 'C:\SIPGES-go\gopath'
+  $env:GOCACHE = 'C:\SIPGES-go\cache'
+  (Get-Command go).Source
+  go version
+  ```
+
+  Tenés que ver `Descargando Go 1.27.0 (79 MB) de https://go.dev/dl/go1.27.0.windows-amd64.zip`,
+  `Go 1.27.0 portable listo en C:\SIPGES-go\go (SHA-256 … verificado). No se instaló nada en el
+  sistema.`, `C:\SIPGES-go\go\bin`, `0`, `C:\SIPGES-go\go\bin\go.exe` y
+  `go version go1.27.0 windows/amd64`. `GOTOOLCHAIN`, `GOPATH` y `GOCACHE` hacen que Go no baje otra
+  versión y deje lo que descarga dentro de `C:\SIPGES-go`.
+
+  Antes de descomprimir, se niega con `Error: …` y `1`:
+
+  | Empieza con | Qué hacer |
+  | --- | --- |
+  | `C:\SIPGES-go ya existe` | Quedó de un intento anterior: `cmd /c rmdir /s /q C:\SIPGES-go` y repetí. Nada se descargó. |
+  | `No se pudo descargar Go 1.27.0 …` | La red: reintentá una vez; si vuelve a fallar, regla de corte del kit. No queda nada a medias. |
+  | `La descarga de … no es el Go 1.27.0 fijado …` | Lo descargado no es el zip oficial: se borró y no se usó. Regla de corte del kit; anotá el mensaje. |
+  | `El Go fijado es para Windows x64 …` | La laptop no es x64: regla de corte del kit. |
+
+  Si `visit-kit.mjs` dice `Go no está en el PATH`, esta terminal no tiene el `$env:Path` de arriba:
+  repetí esas líneas desde `$env:Path` y el comando del kit.
 - [ ] Conectá el USB de la clave `K:` y armá el kit, todavía en `C:\SIPGES-kit`. El kit va a una
   carpeta aparte de la laptop:
 
@@ -300,6 +339,17 @@ niega a escribir ahí. Con la red de la casa.
   que imprimen el kit y, en el paso 3, el instalador).
 - [ ] El clon viejo **después** del kit: los dos comandos de antes dan exactamente lo mismo que
   anotaste. Si no, regla de corte del kit.
+- [ ] **Quitar el Go portable**, en la misma terminal (`go clean -modcache` borra la caché de módulos,
+  que Go deja de solo lectura y `rmdir` no puede borrar):
+
+  ```powershell
+  go clean -modcache
+  $env:Path = ($env:Path -split ';' | Where-Object { $_ -ne 'C:\SIPGES-go\go\bin' }) -join ';'
+  cmd /c rmdir /s /q C:\SIPGES-go
+  Test-Path C:\SIPGES-go
+  ```
+
+  `Test-Path` dice `False`. En la laptop no queda Go: lo que hizo falta ya está en el kit.
 - [ ] El kit no tiene datos ni secretos. Los pasos 0, 2, 3, 4 y 5 usan sus rutas (`LEEME.txt` las trae
   con la carpeta real); `snapshot.mjs` y `compare.mjs` salen de su `sipges-scripts.zip`. El paquete
   puede tener enlaces de carpeta: la versión se instala desde `release-<versión>` donde quedó, sin
@@ -309,7 +359,8 @@ niega a escribir ahí. Con la red de la casa.
 `pnpm install` fallan dos veces, si el clon viejo cambió, o si una hora después de empezar el paso K
 no viste `Kit listo`: **hoy no se instala nada**. La versión vieja sigue en uso tal como estaba (el
 kit no tocó `<clon>` ni `%LOCALAPPDATA%\SIPGES`); el respaldo de `E:` queda guardado. `C:\SIPGES-kit`
-y `C:\SIPGES-kit-salida` no tienen datos: pueden quedar y se borran en otra visita. Llevate la salida
+y `C:\SIPGES-kit-salida` no tienen datos: pueden quedar y se borran en otra visita. `C:\SIPGES-go`
+sí se quita hoy, como dice «Quitar el Go portable». Llevate la salida
 del comando que falló (sección 4).
 
 ### Paso 0 — Preparar (no toca datos)

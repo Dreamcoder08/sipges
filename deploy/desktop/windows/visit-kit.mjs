@@ -510,6 +510,7 @@ async function signingKey(key) {
  * The kit's trusted installer: sipges-desktop.exe for windows/amd64 built from this checkout, as
  * builder.mjs builds the Go programs (-trimpath). install.ps1 -Release verifies and installs a Go
  * release with it, never with the release's own binary (review B1); without Go there is no kit.
+ * Without go on the PATH the error names portable-go.mjs: Go is never installed on the laptop.
  */
 export async function buildTrustedInstaller(out, { checkout = repo, env = process.env } = {}) {
   const result = spawnSync('go', ['build', '-trimpath', '-o', out, './cmd/sipges-desktop'], {
@@ -517,6 +518,13 @@ export async function buildTrustedInstaller(out, { checkout = repo, env = proces
     env: { ...env, GOOS: 'windows', GOARCH: 'amd64', CGO_ENABLED: '0' },
     encoding: 'utf8',
   });
+  if (result.error?.code === 'ENOENT')
+    throw new Error(
+      'No se pudo construir el sipges-desktop.exe de confianza del kit (go build): Go no está en el PATH. ' +
+        'No instales Go en la laptop: usá el Go portable del paso K de docs/deployment/desktop-visit.es.md ' +
+        '(«Go portable»), en esta misma terminal: node deploy\\desktop\\windows\\portable-go.mjs --out C:\\SIPGES-go ' +
+        'y las líneas $env: que siguen ($env:Path = "C:\\SIPGES-go\\go\\bin;$env:Path" y las demás); después repetí el comando.',
+    );
   if (result.error || result.status !== 0 || !existsSync(out)) {
     const why = result.error
       ? (result.error.code ?? result.error.message)
