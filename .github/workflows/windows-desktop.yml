@@ -12,8 +12,9 @@ name: Windows desktop drill
 # laptop-kit job rehearses building the kit on the laptop itself
 # (deploy/desktop/windows/laptop-kit.mjs): a clone install of an old commit, a second clone of
 # this commit with its own pnpm install, the kit's refusals (old clone, SIPGES open), the kit,
-# then the managed install from it; the old clone stays byte-identical. It also measures the time
-# and disk space the runbook quotes.
+# then the managed install from it; the old clone stays byte-identical. It builds the kit with the
+# portable Go of step K (deploy/desktop/windows/portable-go.mjs), never setup-go. It also measures
+# the time and disk space the runbook quotes.
 # The go-mode job rehearses the Go launcher (go-rust-stack T72c, T72d3, docs/adr/0036 §5-6) with
 # deploy/desktop/windows/go-drill.mjs: a package built with --go (the pinned PostgreSQL 18 from
 # deploy/desktop/postgresql, cached by its SHA-256 and verified again before use) installed from
@@ -214,10 +215,35 @@ jobs:
         with:
           node-version: 24
       # The kit carries the trusted sipges-desktop.exe it builds from this checkout (review B1).
-      - uses: actions/setup-go@v7
-        with:
-          go-version: '1.27.4'
-          cache: false
+      # No setup-go here: the laptop gets no Go installed, so this job takes the runbook's path
+      # (step K): portable-go.mjs downloads the pinned go<version>.windows-amd64.zip, checks its
+      # SHA-256 and unzips it into a new folder; only this job's PATH gets its bin. GOTOOLCHAIN=local
+      # keeps go from fetching another toolchain; GOPATH and GOCACHE stay inside that folder.
+      - name: Portable Go (the laptop's path, nothing installed)
+        run: |
+          node --test deploy/desktop/windows/portable-go.test.mjs
+          if ($LASTEXITCODE -ne 0) { throw "portable-go.test.mjs exit $LASTEXITCODE" }
+          if (Get-Command go -ErrorAction SilentlyContinue) { "go on the runner image PATH: $((Get-Command go).Source); the portable bin goes first" }
+          $out = Join-Path $env:RUNNER_TEMP 'SIPGES-go'
+          $lines = @(node deploy/desktop/windows/portable-go.mjs --out $out)
+          if ($LASTEXITCODE -ne 0) { throw "portable-go.mjs exit $LASTEXITCODE" }
+          $lines
+          $bin = $lines[-1]
+          if ($bin -ne (Join-Path $out 'go\bin')) { throw "portable-go.mjs printed $bin" }
+          $again = (node deploy/desktop/windows/portable-go.mjs --out $out 2>&1) -join "`n"
+          if ($LASTEXITCODE -ne 1 -or -not $again.Contains('ya existe')) { throw "an existing folder was not refused: $again" }
+          $bin | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
+          "GOTOOLCHAIN=local", "GOPATH=$out\gopath", "GOCACHE=$out\cache" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+          # The refusal above left exit code 1; the step itself passed.
+          $global:LASTEXITCODE = 0
+      - name: Go is the portable one
+        run: |
+          $go = (Get-Command go).Source
+          if ($go -ne (Join-Path $env:RUNNER_TEMP 'SIPGES-go\go\bin\go.exe')) { throw "go resolves to $go" }
+          $pinned = (Get-Content -Raw deploy/desktop/windows/portable-go.json | ConvertFrom-Json).version
+          $version = (go version)
+          $version
+          if (-not $version.StartsWith("go version go$pinned windows/amd64")) { throw "expected go$pinned" }
       - name: Laptop-kit unit tests
         run: node --test deploy/desktop/windows/laptop-kit.test.mjs
       - name: Kit built on the laptop (synthetic data only)

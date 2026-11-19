@@ -1,0 +1,9 @@
+{
+  "version": "1.27.4",
+  "file": "go1.27.4.windows-amd64.zip",
+  "url": "https://go.dev/dl/go1.27.4.windows-amd64.zip",
+  "source": "https://go.dev/dl/?mode=json&include=all",
+  "sha256": "178ab98950ac69ab25069307dc6ade79f3816e414cce95b4da166a115cde1e7e",
+  "size": 79077744,
+  "checked": "2026-11-18"
+}
