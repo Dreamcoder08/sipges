@@ -9,7 +9,7 @@ import { Buffer } from 'node:buffer';
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { mkdir, mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import { chmod, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import process from 'node:process';
@@ -207,28 +207,87 @@ test('outside Windows x64 the command refuses: the pinned zip is the Windows amd
     assert.equal(existsSync(join(dir, 'SIPGES-go')), false);
   }));
 
-const signalsWork = process.platform !== 'win32';
+// child.kill cannot deliver SIGINT to a Node child on Windows, so these run elsewhere; the
+// handler itself is the same code on the laptop.
+const canSendSignals = process.platform !== 'win32';
+const isRoot = typeof process.getuid === 'function' && process.getuid() === 0;
 
-test('Ctrl+C during the download removes the .partial folder and exits 130', { skip: !signalsWork && 'child.kill delivers no signal on Windows' }, () =>
+/**
+ * Starts a child that installs with a download that never ends, waits until it is downloading,
+ * runs `beforeSignal`, sends SIGINT and resolves with its exit and output. The child keeps a timer
+ * so it cannot exit on its own (an unsettled top-level await) before the signal arrives.
+ */
+async function interruptDownload(out, beforeSignal = async () => {}) {
+  const script = [
+    `import { installPortableGo } from ${JSON.stringify(new URL('./portable-go.mjs', import.meta.url).href)};`,
+    'setInterval(() => {}, 60_000);',
+    'const stalled = new ReadableStream({ start() {} });',
+    "const fetchImpl = async () => { console.log('DOWNLOADING'); return new Response(stalled, { status: 200 }); };",
+    `await installPortableGo({ out: ${JSON.stringify(out)}, pin: ${JSON.stringify(pinOf(GO_ZIP))}, fetchImpl, handleSignals: true });`,
+  ].join('\n');
+  const child = spawn(process.execPath, ['--input-type=module', '-e', script], { stdio: ['ignore', 'pipe', 'pipe'] });
+  let stderr = '';
+  child.stderr.on('data', (chunk) => (stderr += chunk));
+  const exited = new Promise((resolveExit) => child.on('exit', (code, signal) => resolveExit({ code, signal })));
+  await Promise.race([
+    new Promise((resolveStarted) => child.stdout.on('data', (chunk) => chunk.toString().includes('DOWNLOADING') && resolveStarted())),
+    exited.then(({ code }) => {
+      throw new Error(`exited ${code} before downloading: ${stderr}`);
+    }),
+  ]);
+  await beforeSignal();
+  child.kill('SIGINT');
+  return { ...(await exited), stderr: () => stderr };
+}
+
+test('Ctrl+C during the download removes the .partial folder and exits 130', { skip: !canSendSignals && 'child.kill delivers no signal on Windows' }, () =>
   withTemp(async (dir) => {
     const out = join(dir, 'SIPGES-go');
-    // A child that installs with a download that never ends, and says when it has started.
-    const script = [
-      `import { installPortableGo } from ${JSON.stringify(new URL('./portable-go.mjs', import.meta.url).href)};`,
-      "const stalled = new ReadableStream({ start() {} });",
-      "const fetchImpl = async () => { console.log('DOWNLOADING'); return new Response(stalled, { status: 200 }); };",
-      `await installPortableGo({ out: ${JSON.stringify(out)}, pin: ${JSON.stringify(pinOf(GO_ZIP))}, fetchImpl, handleSignals: true });`,
-    ].join('\n');
-    const child = spawn(process.execPath, ['--input-type=module', '-e', script], { stdio: ['ignore', 'pipe', 'pipe'] });
-    let stderr = '';
-    child.stderr.on('data', (chunk) => (stderr += chunk));
-    await new Promise((resolveStarted, reject) => {
-      child.stdout.on('data', (chunk) => chunk.toString().includes('DOWNLOADING') && resolveStarted());
-      child.on('exit', (code) => reject(new Error(`exited ${code} before downloading: ${stderr}`)));
+    const result = await interruptDownload(out, async () => {
+      assert.equal((await readdir(dir)).filter((name) => name.endsWith('.partial')).length, 1, 'the staging folder exists while downloading');
     });
-    assert.equal((await readdir(dir)).filter((name) => name.endsWith('.partial')).length, 1, 'the staging folder exists while downloading');
-    const exited = new Promise((resolveExit) => child.on('exit', (code, signal) => resolveExit({ code, signal })));
-    child.kill('SIGINT');
-    assert.deepEqual(await exited, { code: 130, signal: null }, stderr);
+    assert.deepEqual([result.code, result.signal], [130, null], result.stderr());
+    assert.ok(result.stderr().includes('Interrumpido: se borró lo descargado; no quedó nada a medias.'), result.stderr());
     assert.deepEqual(await readdir(dir), [], 'neither the .partial folder nor --out remain');
+  }));
+
+test('Ctrl+C when the .partial folder cannot be removed still exits 130 and names the folder to delete', { skip: (!canSendSignals && 'child.kill delivers no signal on Windows') || (isRoot && 'root removes read-only folders') }, () =>
+  withTemp(async (dir) => {
+    const parent = join(dir, 'locked');
+    await mkdir(parent);
+    const out = join(parent, 'SIPGES-go');
+    let staging;
+    try {
+      const result = await interruptDownload(out, async () => {
+        staging = join(parent, (await readdir(parent)).find((name) => name.endsWith('.partial')));
+        // A folder whose entries cannot be removed: what an open file or an antivirus does on Windows.
+        await chmod(parent, 0o555);
+      });
+      assert.deepEqual([result.code, result.signal], [130, null], result.stderr());
+      assert.ok(result.stderr().includes(`Interrumpido, pero no se pudo borrar ${staging}: borralo a mano`), result.stderr());
+    } finally {
+      await chmod(parent, 0o755);
+    }
+  }));
+
+test('the Ctrl+C handlers are attached only while downloading, and never left behind', { skip: !hasUnzip && 'needs unzip' }, () =>
+  withTemp(async (dir) => {
+    const before = ['SIGINT', 'SIGHUP'].map((signal) => process.listenerCount(signal));
+    const counts = () => ['SIGINT', 'SIGHUP'].map((signal) => process.listenerCount(signal));
+    const seen = {};
+    const fetchImpl = async () => {
+      seen.downloading = counts();
+      return new Response(GO_ZIP, { status: 200 });
+    };
+    const say = (line) => {
+      if (line.startsWith('Descomprimiendo')) seen.unzipping = counts();
+    };
+    await installPortableGo({ out: join(dir, 'SIPGES-go'), pin: pinOf(GO_ZIP), fetchImpl, handleSignals: true, say });
+    assert.deepEqual(seen.downloading, before.map((count) => count + 1), 'attached during the download');
+    assert.deepEqual(seen.unzipping, before, 'detached before the unzip, which blocks the event loop');
+    assert.deepEqual(counts(), before, 'detached after a success');
+    // A staging folder that cannot be made (its parent is a file) leaves no handler either.
+    await writeFile(join(dir, 'file'), 'x');
+    await assert.rejects(installPortableGo({ out: join(dir, 'file', 'SIPGES-go'), pin: pinOf(GO_ZIP), fetchImpl, handleSignals: true }));
+    assert.deepEqual(counts(), before, 'detached after a failure');
   }));

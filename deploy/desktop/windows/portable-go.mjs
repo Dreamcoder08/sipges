@@ -4,17 +4,20 @@
 //   node deploy\desktop\windows\portable-go.mjs --out C:\SIPGES-go
 //
 // portable-go.json pins the official go<version>.windows-amd64.zip from https://go.dev/dl/ by URL,
-// size and SHA-256; its version is the go line of apps/api-go/go.mod (a test keeps them equal).
+// size and SHA-256; its version is on the go line of apps/api-go/go.mod and equals the Go the other
+// windows-desktop.yml jobs set up (a test keeps them so).
 // It refuses an existing --out before downloading anything, downloads the zip into a staging folder
 // beside --out, and unpacks it only when size and SHA-256 match the pin: a mismatching download is
 // deleted and nothing is unpacked. The result is <out>\go (GOROOT); the last line printed is
-// <out>\go\bin, which the runbook puts on the PATH of that PowerShell session only. A failure, a
-// Ctrl+C or a closed console window removes the staging folder (and --out, if this run made it). Never Program
-// Files, never the system PATH, never the registry; deleting <out> removes it. Needs Node only.
+// <out>\go\bin, which the runbook puts on the PATH of that PowerShell session only. A failure
+// removes the staging folder (and --out, if this run made it); so does a Ctrl+C or a closed console
+// window during the download. The unzip blocks the event loop, so no handler runs during it: a cut
+// there can leave the staging folder, and the next run uses a new one. Never Program Files, never
+// the system PATH, never the registry; deleting <out> removes it. Needs Node only.
 import { spawnSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
-import { createWriteStream, existsSync, rmSync } from 'node:fs';
-import { mkdir, readFile, rename, rm } from 'node:fs/promises';
+import { closeSync, createWriteStream, existsSync, openSync, rmSync } from 'node:fs';
+import { mkdir, readFile, rename } from 'node:fs/promises';
 import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { dirname, join, resolve } from 'node:path';
@@ -60,6 +63,20 @@ function extractCommand(zip, dir, platform) {
 }
 
 /**
+ * Removes `path` and what it holds; true when it is gone. On Windows a file still held open (the
+ * download being closed, an antivirus scan) fails with EBUSY or EPERM for a moment: retried a few
+ * times, never thrown, so a Ctrl+C handler always reaches its exit.
+ */
+export function removeQuietly(path) {
+  try {
+    rmSync(path, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+    return true;
+  } catch {
+    return !existsSync(path);
+  }
+}
+
+/**
  * Downloads, verifies and unpacks the pinned Go into `out` (a new folder). Returns the bin path.
  * A failure leaves neither `out` nor the download behind. `fetchImpl` is for tests (a web
  * Response); the real run uses node:https through bundle.mjs's nodeGet.
@@ -81,19 +98,40 @@ export async function installPortableGo({
     throw new Error(`${out} ya existe. El Go portable va a una carpeta nueva: si quedó de un intento anterior, borrala y repetí. Nada se descargó.`);
   const staging = `${out}.${randomUUID()}.partial`;
   let created = false;
-  // Ctrl+C (SIGINT) or closing the console window (SIGHUP on Windows) during the download or the
-  // unzip: remove what this run wrote, synchronously, and exit 130 as a Ctrl+C does.
+  let zipFd;
+  /** The one cleanup of this run, for failures and interruptions alike: the folders left behind. */
+  const cleanUp = ({ keepOut }) => {
+    if (zipFd !== undefined) {
+      try {
+        closeSync(zipFd);
+      } catch {
+        // Already closed by the write stream.
+      }
+      zipFd = undefined;
+    }
+    const left = [staging, ...(created && !keepOut ? [out] : [])];
+    return left.filter((path) => !removeQuietly(path));
+  };
+  // Ctrl+C (SIGINT) or closing the console window (SIGHUP on Windows) during the download: remove
+  // what this run wrote, synchronously, and exit 130 as a Ctrl+C does. Attached only around the
+  // download; the unzip below blocks the event loop, so a handler could not run then anyway.
+  const signals = handleSignals ? ['SIGINT', 'SIGHUP'] : [];
   const interrupted = () => {
-    rmSync(staging, { recursive: true, force: true });
-    if (created) rmSync(out, { recursive: true, force: true });
-    console.error('Interrumpido: se borró lo descargado; no quedó nada a medias.');
+    const left = cleanUp({ keepOut: false });
+    console.error(
+      left.length
+        ? `Interrumpido, pero no se pudo borrar ${left.join(' ni ')}: borralo a mano (cmd /c rmdir /s /q "<carpeta>").`
+        : 'Interrumpido: se borró lo descargado; no quedó nada a medias.',
+    );
     process.exit(130);
   };
-  const signals = handleSignals ? ['SIGINT', 'SIGHUP'] : [];
-  for (const signal of signals) process.on(signal, interrupted);
-  await mkdir(staging, { recursive: true });
+  const detach = () => {
+    for (const signal of signals) process.off(signal, interrupted);
+  };
   try {
+    await mkdir(staging, { recursive: true });
     const zip = join(staging, pin.file);
+    for (const signal of signals) process.on(signal, interrupted);
     say(`Descargando Go ${pin.version} (${Math.round(pin.size / 1e6)} MB) de ${pin.url}`);
     const offline = (cause) =>
       new Error(`No se pudo descargar Go ${pin.version} de ${pin.url} (${cause}). Revisá la red y repetí el comando. Nada se descomprimió.`);
@@ -119,11 +157,18 @@ export async function installPortableGo({
         done(null, chunk);
       },
     });
+    // Opened here, so the Ctrl+C handler can close it before removing the folder (Windows does not
+    // remove a file that is still open).
+    zipFd = openSync(zip, 'wx');
     try {
-      await pipeline(body, tap, createWriteStream(zip, { flags: 'wx' }));
+      await pipeline(body, tap, createWriteStream(zip, { fd: zipFd }));
+      zipFd = undefined;
     } catch (error) {
+      // The write stream closes its fd when it is destroyed: never close that number again.
+      zipFd = undefined;
       throw offline(`interrumpida: ${error.cause?.code ?? error.message}`);
     }
+    detach();
     const actual = hash.digest('hex');
     if (bytes !== pin.size || actual !== pin.sha256)
       throw new Error(
@@ -132,6 +177,7 @@ export async function installPortableGo({
       );
     const unpacked = join(staging, 'unpacked');
     await mkdir(unpacked);
+    say(`Descomprimiendo en ${staging} (no lo cortes)`);
     const { file, args } = extractCommand(zip, unpacked, platform);
     const result = spawnSync(file, args, { encoding: 'utf8' });
     if (result.error || result.status !== 0)
@@ -142,12 +188,12 @@ export async function installPortableGo({
     created = true;
     await rename(join(unpacked, 'go'), join(out, 'go'));
   } catch (error) {
-    if (created) await rm(out, { recursive: true, force: true }).catch(() => {});
+    detach();
+    const left = cleanUp({ keepOut: false });
+    if (left.length) error.message += ` No se pudo borrar ${left.join(' ni ')}: borralo a mano.`;
     throw error;
-  } finally {
-    await rm(staging, { recursive: true, force: true });
-    for (const signal of signals) process.off(signal, interrupted);
   }
+  cleanUp({ keepOut: true });
   say(`Go ${pin.version} portable listo en ${join(out, 'go')} (SHA-256 ${pin.sha256} verificado). No se instaló nada en el sistema.`);
   return binPath(out);
 }
