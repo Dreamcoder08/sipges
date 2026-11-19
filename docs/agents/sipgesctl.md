@@ -109,6 +109,17 @@ and `--attach`.
 printf '%s' '{"question":"¿Qué alertas rojas siguen abiertas?"}' | ./sipgesctl analyst ask --body - --steps
 ```
 
+A follow-up question carries the earlier turns as `history`: at most 6 turns and 8,000 characters,
+each `{"question": …, "answer": …}`, oldest first. `--follow-up FILE` adds them from a JSON list in
+a file; a body that already has a `history` is refused. The API scrubs them like the question and
+logs them in the same release, drops their `[n]` markers, and stores none of them; a record they
+name must be read again to be cited. A history past its limits answers 422.
+
+```sh
+printf '%s' '[{"question":"¿Qué alertas rojas siguen abiertas?","answer":"Dos, en el norte [1][2]."}]' > history.json
+printf '%s' '{"question":"¿Cuál es la más antigua?"}' | ./sipgesctl analyst ask --body - --follow-up history.json
+```
+
 The stream sends `event: step` `{"label": …}` per tool call, then one `event: answer` with the body
 `/ask` answers or one `event: error` `{"status": …, "detail": …}` (409, 422, 502, 503 or 504), then
 `event: done`, with a `: ping` comment after 15 s of quiet. The answer text is never streamed as

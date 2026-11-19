@@ -14,9 +14,13 @@ import (
 	privacy "github.com/Dreamcoder08/sipges/apps/api-go/internal/privacy/application"
 )
 
-// sealed stands in for the egress guard: it marks the question so a test can see it was sealed.
-func sealed(_ context.Context, question string) (privacy.Sanitised[string], error) {
-	return privacy.ExemptPayload("sealed:"+question, privacy.ExemptConstant), nil
+// sealed stands in for the egress guard: it marks each text so a test can see it was sealed.
+func sealed(_ context.Context, texts []string) ([]privacy.Sanitised[string], error) {
+	out := make([]privacy.Sanitised[string], 0, len(texts))
+	for _, text := range texts {
+		out = append(out, privacy.ExemptPayload("sealed:"+text, privacy.ExemptConstant))
+	}
+	return out, nil
 }
 
 // scriptedModel answers each Next with the next step of its script and records what it was shown.
@@ -159,8 +163,8 @@ func TestAskSendsNothingWithoutASeal(t *testing.T) {
 func TestAskStopsWhenTheGuardRefusesTheQuestion(t *testing.T) {
 	t.Parallel()
 	model := &scriptedModel{steps: []application.Step{{Text: "No encontré registros."}}}
-	refuse := func(context.Context, string) (privacy.Sanitised[string], error) {
-		return privacy.Sanitised[string]{}, privacy.ErrDisabled
+	refuse := func(context.Context, []string) ([]privacy.Sanitised[string], error) {
+		return nil, privacy.ErrDisabled
 	}
 	_, err := application.Ask{Model: model, Tools: &fakeTools{}, Seal: refuse}.Answer(t.Context(), "¿Algo?")
 	if !errors.Is(err, privacy.ErrDisabled) || len(model.seen) != 0 {

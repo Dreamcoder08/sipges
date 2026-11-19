@@ -222,3 +222,74 @@ func TestAnalystBlocksShowOnlyRecordsTheSessionRead(t *testing.T) {
 		t.Fatalf("blocks = %+v, want the card of north alone", answer.Blocks)
 	}
 }
+
+// followUpAs is askAs with the earlier turns of a follow-up (odd/tasks/chat-first-ui.md T9).
+func followUpAs(t *testing.T, s *server, question string, history []map[string]string) reply {
+	t.Helper()
+	body, _ := json.Marshal(map[string]any{"question": question, "history": history})
+	return s.do(t, req{method: http.MethodPost, path: "/system/analyst/ask", user: "reader", sameOrigin: true,
+		headers: map[string]string{"X-SIPGES-Scope": "ACME/NORTE", "Content-Type": "application/json"},
+		body:    string(body)})
+}
+
+// The history passes the egress guard like the question (owner decision L18): contact data is
+// scrubbed from earlier questions and answers, and the question and history are one release.
+func TestAnalystScrubsTheHistoryAndLogsItWithTheQuestionAsOneRelease(t *testing.T) {
+	model := analystSetup(t, true)
+	t.Setenv("SIPGES_DATA_KEY", dataKey)
+	conn, err := pgx.Connect(t.Context(), scratch.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = conn.Close(context.Background()) }()
+	releases := func() int {
+		var n int
+		if err := conn.QueryRow(t.Context(), `SELECT count(*) FROM audit WHERE tenant_id = 'ACME/NORTE'
+			AND action = 'EGRESS' AND detail LIKE '%analyst%' AND detail LIKE '%ask%'`).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		return n
+	}
+	before := releases()
+	history := []map[string]string{
+		{"question": "¿quién escribió desde ana@example.org?", "answer": "Lo escribió luis@example.org [1]."},
+	}
+	got := followUpAs(t, start(t, false), "¿y después?", history)
+	if got.status != http.StatusOK {
+		t.Fatalf("status %d, body %s", got.status, got.body)
+	}
+	bodies := model.requests()
+	if len(bodies) != 1 {
+		t.Fatalf("the model saw %d requests, want 1", len(bodies))
+	}
+	var sent struct {
+		Messages []struct {
+			Role    string `json:"role"`
+			Content string `json:"content"`
+		} `json:"messages"`
+	}
+	if err := json.Unmarshal([]byte(bodies[0]), &sent); err != nil {
+		t.Fatal(err)
+	}
+	var turns []string
+	for _, m := range sent.Messages[1:] {
+		turns = append(turns, m.Role+":"+m.Content)
+	}
+	want := "user:¿quién escribió desde [correo]?|assistant:Lo escribió [correo].|user:¿y después?"
+	if strings.Join(turns, "|") != want {
+		t.Fatalf("the model saw %q, want %q", strings.Join(turns, "|"), want)
+	}
+	if added := releases() - before; added != 1 {
+		t.Fatalf("%d releases logged for the question and its history, want 1", added)
+	}
+}
+
+func TestAnalystSendsNoHistoryWhileExternalAIIsOff(t *testing.T) {
+	model := analystSetup(t, false)
+	t.Setenv("SIPGES_DATA_KEY", dataKey)
+	history := []map[string]string{{"question": "¿qué pasó?", "answer": "Hubo una reunión."}}
+	got := followUpAs(t, start(t, false), "¿y después?", history)
+	if got.status != http.StatusConflict || len(model.requests()) != 0 {
+		t.Fatalf("status %d, model requests %d", got.status, len(model.requests()))
+	}
+}

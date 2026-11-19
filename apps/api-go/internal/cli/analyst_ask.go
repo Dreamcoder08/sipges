@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"unicode"
 )
@@ -23,8 +24,12 @@ const (
 func (a *app) analystAsk(ctx context.Context, o *options, args []string) (int, error) {
 	flags := o.addRequestFlags()
 	steps := o.flags.Bool("steps", false, "print the analyst's steps on stderr as they happen")
+	followUp := o.flags.String("follow-up", "", "a JSON file of earlier turns, [{\"question\": …, \"answer\": …}], sent as the body's history")
 	if err := o.parseNone(args); err != nil {
 		return 0, err
+	}
+	if *followUp != "" && flags.body == "" {
+		return 0, usageError("--follow-up needs --body with the question")
 	}
 	path := askPath
 	if *steps {
@@ -34,15 +39,25 @@ func (a *app) analystAsk(ctx context.Context, o *options, args []string) (int, e
 	if !found {
 		return 0, usageError("POST %s is not in the route inventory", path)
 	}
-	if !*steps {
-		return o.send(ctx, route, route.Path, flags)
-	}
-	// An answer of events is read here, never saved or sent as a form.
-	if err := o.refuse("output", "form", "field", "attach"); err != nil {
-		return 0, err
+	if *followUp != "" {
+		if err := o.refuse("form"); err != nil {
+			return 0, err
+		}
 	}
 	out, err := o.prepare(route, route.Path, flags)
 	if err != nil {
+		return 0, err
+	}
+	if *followUp != "" {
+		if out.body, err = withHistory(out.body, *followUp); err != nil {
+			return 0, err
+		}
+	}
+	if !*steps {
+		return o.deliver(ctx, route, out, flags)
+	}
+	// An answer of events is read here, never saved or sent as a form.
+	if err := o.refuse("output", "form", "field", "attach"); err != nil {
 		return 0, err
 	}
 	out.accept = "text/event-stream"
@@ -144,4 +159,30 @@ func printable(label string) string {
 		}
 		return r
 	}, label)
+}
+
+// withHistory adds the earlier turns of file to body as its "history" (odd/tasks/chat-first-ui.md
+// T9). Their limits are the API's to check; here only the shapes are.
+func withHistory(body []byte, file string) ([]byte, error) {
+	var fields map[string]json.RawMessage
+	if json.Unmarshal(body, &fields) != nil || fields == nil {
+		return nil, usageError("--follow-up needs the body to be a JSON object with the question")
+	}
+	if _, ok := fields["history"]; ok {
+		return nil, usageError("the body already has a history; pass it there or with --follow-up, not both")
+	}
+	raw, err := os.ReadFile(file) //nolint:gosec // the caller names their own file
+	if err != nil {
+		return nil, localError("read the history: %v", err)
+	}
+	var turns []json.RawMessage
+	if json.Unmarshal(raw, &turns) != nil {
+		return nil, usageError("--follow-up needs a JSON list of earlier turns, [{\"question\": …, \"answer\": …}]")
+	}
+	fields["history"] = json.RawMessage(raw)
+	merged, err := json.Marshal(fields)
+	if err != nil {
+		return nil, localError("build the body: %v", err)
+	}
+	return merged, nil
 }

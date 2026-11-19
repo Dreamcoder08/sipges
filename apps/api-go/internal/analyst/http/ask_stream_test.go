@@ -184,9 +184,7 @@ func (f failingModel) Next(context.Context, []application.ToolSpec, []applicatio
 
 func analystWith(model application.ToolModel, timeout time.Duration) func(context.Context, string) (*application.Ask, error) {
 	return func(context.Context, string) (*application.Ask, error) {
-		return &application.Ask{Model: model, Tools: &recordingTools{}, Timeout: timeout, Seal: func(_ context.Context, q string) (privacy.Sanitised[string], error) {
-			return privacy.ExemptPayload(q, privacy.ExemptConstant), nil
-		}}, nil
+		return &application.Ask{Model: model, Tools: &recordingTools{}, Timeout: timeout, Seal: exempt}, nil
 	}
 }
 

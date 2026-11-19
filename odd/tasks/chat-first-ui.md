@@ -375,3 +375,8 @@ T18(b) → T16 → T17. Phases A, B and D change no API and no stored data.
 - L17 — 2026-11-17, #518 merged (edcd044c) with CI green on all jobs, WebKit included. T16 is done. The owner's local
   install is updated to it. What remains: T17 (the owner's walk-through on https://localhost/inicio) and T18(b)(c), the
   owner's decisions that unblock T9 and T11.
+- L18 — 2026-11-19, owner decision T18(c), answering «¿Puede la conversación de Inicio permitir preguntas de seguimiento
+  …? … se reenvían al modelo externo las preguntas y respuestas anteriores (hasta 6 turnos, 8.000 caracteres), pasando
+  por el mismo guard de privacidad …»: «Sí, con el guard (Recomendado)». T9 is unblocked: history is held in the tab
+  only, nothing is stored on the server, and the history passes the egress guard. T18(b), saving conversations (T11),
+  stays open.
