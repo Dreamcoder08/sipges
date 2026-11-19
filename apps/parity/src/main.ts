@@ -9,6 +9,8 @@
  *     targets two running APIs on a fresh synthetic database; SIPGES_PARITY_ADMIN_USERNAME and
  *     SIPGES_PARITY_ADMIN_PASSWORD name its administrator, and the runner seeds the users of
  *     seed.ts through the TypeScript API.
+ *   SIPGES_PARITY_POOLER_ADDR=host:port (with SIPGES_PARITY_DATABASE_URL)
+ *     both APIs reach the database through that transaction-mode pooler (pooler.ts).
  */
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -21,6 +23,7 @@ import { startEmbedderDouble } from './embedder-double.ts';
 import { compareIndexes, semanticSearchCases } from './semantic-search.ts';
 import { type Mismatch, checkText, compare } from './diff.ts';
 import { nodeVersionProblem } from './node-version.ts';
+import { throughPooler } from './pooler.ts';
 import { seedDatabase } from './fixtures.ts';
 import { REQUEST_TIMEOUT_MS, send } from './request.ts';
 import { type Sessions, seed } from './seed.ts';
@@ -198,8 +201,9 @@ const main = async () => {
     // TypeScript first: it applies the migrations the Go API expects.
     const embedder = await startEmbedderDouble();
     running.push(embedder);
-    const tsDatabase = withApplicationName(database.url, 'ts');
-    const goDatabase = withApplicationName(database.url, 'go');
+    const pooler = process.env.SIPGES_PARITY_POOLER_ADDR;
+    const tsDatabase = throughPooler(withApplicationName(database.url, 'ts'), pooler);
+    const goDatabase = throughPooler(withApplicationName(database.url, 'go'), pooler);
     const ts = await startTypeScriptApi(tsDatabase, secrets, embedder.url);
     running.push(ts);
     await database.migrated();

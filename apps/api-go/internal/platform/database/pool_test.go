@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 )
 
@@ -101,5 +103,29 @@ func TestOpenIgnoresTheWordPoolMinConnsOutsideAParameter(t *testing.T) {
 	defer pool.Close()
 	if got := pool.Config().MinConns; got != 2 {
 		t.Fatalf("MinConns = %d, want 2", got)
+	}
+}
+
+func TestOpenUsesNoNamedPreparedStatementsByDefault(t *testing.T) {
+	t.Parallel()
+	pool, err := database.Open(context.Background(), unreachable)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pool.Close()
+	if got := pool.Config().ConnConfig.DefaultQueryExecMode; got != pgx.QueryExecModeCacheDescribe {
+		t.Fatalf("DefaultQueryExecMode = %v", got)
+	}
+}
+
+func TestOpenLetsTheURLSetTheQueryExecMode(t *testing.T) {
+	t.Parallel()
+	pool, err := database.Open(context.Background(), unreachable+"&default_query_exec_mode=exec")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pool.Close()
+	if got := pool.Config().ConnConfig.DefaultQueryExecMode; got != pgx.QueryExecModeExec {
+		t.Fatalf("DefaultQueryExecMode = %v", got)
 	}
 }
