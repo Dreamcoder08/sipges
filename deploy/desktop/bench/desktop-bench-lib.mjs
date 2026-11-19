@@ -1,8 +1,10 @@
 // Pure parts of the desktop stack benchmark (desktop-bench.mjs): options, run order, process
 // classification, memory peaks, folder sizes, seed batches and the summary. No process is started
 // here, so everything runs in node --test without a server.
+/* global AbortSignal */
 import { lstat, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
+import { performance } from 'node:perf_hooks';
 import { parseArgs } from 'node:util';
 
 export const STACKS = Object.freeze(['ts', 'go']);
@@ -34,6 +36,7 @@ export function parseOptions(argv) {
       'bin-dir': { type: 'string' },
       work: { type: 'string' },
       out: { type: 'string' },
+      logs: { type: 'string' },
       label: { type: 'string', default: 'run' },
     },
   });
@@ -59,6 +62,7 @@ export function parseOptions(argv) {
     binDir: values['bin-dir'],
     work: values.work,
     out: values.out,
+    logs: values.logs,
     label: values.label,
   };
 }
@@ -220,3 +224,83 @@ export function renderMarkdown(agg, metrics) {
   }
   return lines.join('\n');
 }
+
+/** A work folder the run made is removed after success only; a named one is never removed. */
+export const keepWorkFolder = ({ ownWork, failed }) => !ownWork || failed;
+
+/**
+ * The processes to end, children before their parents and the root last: the fallback when
+ * Windows `taskkill /T` fails, so the API never outlives its launcher.
+ */
+export function killOrder(procs, rootPid) {
+  const children = new Map();
+  for (const p of procs) children.set(p.ppid, [...(children.get(p.ppid) ?? []), p.pid]);
+  const order = [];
+  const visit = (pid) => {
+    for (const child of children.get(pid) ?? []) visit(child);
+    order.push(pid);
+  };
+  visit(rootPid);
+  return order;
+}
+
+/** The PostgreSQL binaries folder, looked up only when the Go stack runs. */
+export function resolvePgBin({ stacks, pgBin, env, find }) {
+  if (!stacks.includes('go')) return null;
+  return pgBin ?? env.SIPGES_PG_BIN ?? find();
+}
+
+/**
+ * One request with a deadline. The status is the HTTP status, `timeout`, or `neterr:<code>`; the
+ * body is drained and discarded.
+ */
+export async function timedRequest(fetcher, url, init, timeoutMs) {
+  const started = performance.now();
+  const signal = AbortSignal.timeout(timeoutMs);
+  try {
+    const response = await fetcher(url, { ...init, signal });
+    await response.arrayBuffer();
+    return { ok: response.status >= 200 && response.status < 300, status: response.status, ms: performance.now() - started };
+  } catch (error) {
+    const status = signal.aborted ? 'timeout' : `neterr:${error?.cause?.code ?? error?.name ?? 'unknown'}`;
+    return { ok: false, status, ms: performance.now() - started };
+  }
+}
+
+const toMb = (kbValue) => (kbValue === null || kbValue === undefined ? null : Math.round(kbValue / 1024));
+const hwmSum = (list) => list.reduce((sum, p) => sum + (p.hwmKb ?? 0), 0);
+
+/**
+ * Memory, one measure per key. Linux: the API's peak RSS (VmHWM) and the peaks of sampled Pss
+ * sums. Windows: peak working sets, summed per role (a page shared between processes counts in
+ * each). TypeScript has no database process: PGlite lives inside the API.
+ */
+export function memoryMetrics({ windows, stack, roles, peaks }) {
+  if (windows)
+    return {
+      apiPeakWorkingSetMb: toMb(hwmSum(roles.api)),
+      databasePeakWorkingSetMb: stack === 'ts' ? null : toMb(hwmSum(roles.database)),
+      totalPeakWorkingSetMb: toMb(hwmSum(roles.api) + hwmSum(roles.database) + hwmSum(roles.launcher)),
+    };
+  return {
+    apiPeakRssMb: toMb(hwmSum(roles.api)),
+    apiPssPeakMb: toMb(peaks.api),
+    databasePssPeakMb: stack === 'ts' ? null : toMb(peaks.database),
+    totalPssPeakMb: toMb(peaks.total),
+  };
+}
+
+/** The summary rows of memoryMetrics, in the same order. */
+export const memoryMetricRows = (windows) =>
+  windows
+    ? [
+        { key: 'apiPeakWorkingSetMb', label: 'API process peak working set (MB)' },
+        { key: 'databasePeakWorkingSetMb', label: 'PostgreSQL processes peak working set, summed (MB)' },
+        { key: 'totalPeakWorkingSetMb', label: 'All processes peak working set, summed (MB)' },
+      ]
+    : [
+        { key: 'apiPeakRssMb', label: 'API process peak RSS (MB)' },
+        { key: 'apiPssPeakMb', label: 'API process peak Pss (MB)' },
+        { key: 'databasePssPeakMb', label: 'PostgreSQL processes peak Pss, summed (MB)' },
+        { key: 'totalPssPeakMb', label: 'All processes peak Pss, summed (MB)' },
+      ];

@@ -4,7 +4,8 @@ name: Desktop stack benchmark
 # Windows runner: the TypeScript API on PGlite against the Go launcher with the pinned PostgreSQL 18
 # of deploy/desktop/postgresql, same synthetic data, alternating runs. Manual only: a shared runner
 # is noisy, so its numbers compare the two stacks on one machine, not against another run.
-# No secrets; synthetic data only. The result JSON and the run's logs are uploaded.
+# No secrets; synthetic data only. The result JSON (or, after a failure, the runs that finished),
+# the summary and the server logs of every start and run are uploaded, also when the run fails.
 on:
   workflow_dispatch:
     inputs:
@@ -61,6 +62,7 @@ jobs:
           node deploy/desktop/bench/desktop-bench.mjs --label windows-latest
           --reps "$env:REPS" --step-seconds "$env:STEP_SECONDS"
           --pg-bin "$env:RUNNER_TEMP\pg18\bin" --out "$env:RUNNER_TEMP\desktop-bench\result.json"
+          --logs "$env:RUNNER_TEMP\desktop-bench\logs"
           2> "$env:RUNNER_TEMP\desktop-bench\summary.md"
       - name: Show the summary
         if: always()
