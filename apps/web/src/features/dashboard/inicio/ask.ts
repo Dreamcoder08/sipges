@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import type { Exchange } from './history.ts';
 import { requestJson } from '../../../shared/api/client.ts';
 
 /**
@@ -47,6 +46,9 @@ export const AnalystAnswer = z.object({
   blocks: knownBlocks,
 });
 export type AnalystAnswer = z.infer<typeof AnalystAnswer>;
+
+/** One earlier question and its answer, sent with a follow-up (chat-first-ui T9, `historyOf`). */
+export type Exchange = { readonly question: string; readonly answer: string };
 
 /** The body of a question: `history` only for a follow-up (chat-first-ui T9). */
 export const askBody = (question: string, history: readonly Exchange[] = []) =>

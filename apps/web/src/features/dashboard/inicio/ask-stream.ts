@@ -1,8 +1,7 @@
 import { z } from 'zod';
 import { ApiError, isApiError, request } from '../../../shared/api/client.ts';
 import { readServerSentEvents } from '../../../shared/api/sse.ts';
-import { AnalystAnswer, askAnalyst, askBody } from './ask.ts';
-import type { Exchange } from './history.ts';
+import { AnalystAnswer, type Exchange, askAnalyst, askBody } from './ask.ts';
 
 /** What the turn says when the stream ended with no answer and no error (T21). */
 export const NO_ANSWER = 'El analista no llegó a una respuesta; vuelve a preguntar';

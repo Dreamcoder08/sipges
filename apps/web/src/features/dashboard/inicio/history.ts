@@ -1,3 +1,4 @@
+import type { Exchange } from './ask.ts';
 import type { Turn } from './turn.ts';
 
 /**
@@ -11,8 +12,6 @@ import type { Turn } from './turn.ts';
 export const HISTORY_TURNS = 6;
 /** At most this many characters of earlier questions and answers together, the API's limit. */
 export const HISTORY_CHARS = 8_000;
-
-export type Exchange = { readonly question: string; readonly answer: string };
 
 /** An answer of citation markers alone: blank once the API drops its markers, so never sent. */
 const markersOnly = (text: string) => text.replace(/\[[0-9]{1,4}\]/g, '').trim() === '';
