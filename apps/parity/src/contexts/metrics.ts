@@ -4,11 +4,13 @@ import type { ParityCase } from '../types.ts';
  * GET /system/metrics (administrators only, as the role gate decides). Each process counts its
  * own requests, so only the metric families and their types can match: `compareLines` keeps those.
  * The API's identity in the labels is never compared, only that both print the same schema.
+ * The Go API alone memoizes the indicators engine, so its `sipges_engine_memo_*` counters are
+ * left out of the comparison (internal/app/metrics_test.go checks Go prints them).
  */
 export const seed = '';
 
 const path = '/system/metrics';
-const compareLines = '^# TYPE ';
+const compareLines = '^# TYPE (?!sipges_engine_memo_)';
 
 export const cases: readonly ParityCase[] = [
   {

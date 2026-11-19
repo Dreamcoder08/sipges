@@ -57,6 +57,11 @@ CPU profile of 15 s under that load: 3.72 s of samples, 24.8 % of a core, so sat
    `{...payload, _id, _updated_at}` without cloning each payload.
 6. The metrics route label `strings.Replacer` is built once instead of per request.
 
+Concurrent callers of one request wait for the first and share its answer or engine error; if the
+first caller's own client leaves, one waiter computes instead. `/system/metrics` counts the memo as
+`sipges_engine_memo_hits_total`, `_misses_total` and `_evictions_total` (Go only, so the parity
+runner leaves those families out); a falling hit rate is the first thing to check if CPU rises again.
+
 ## Benchmarks
 
 `go test -bench` on one pinned core (`-test.cpu 1`), base and new test binaries alternated 10

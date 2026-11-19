@@ -163,3 +163,21 @@ func TestAHandlerWithoutMetricsServesNoMetricsRoute(t *testing.T) {
 		t.Fatalf("status %d", status)
 	}
 }
+
+func TestMetricsRenderRegisteredCounters(t *testing.T) {
+	m := NewMetrics(time.Now)
+	n := int64(0)
+	m.AddCounter("sipges_b_total", "Second.", func() int64 { return n })
+	m.AddCounter("sipges_a_total", "First.", func() int64 { return 7 })
+	n = 3
+	got := m.Render()
+	want := "# HELP sipges_b_total Second.\n# TYPE sipges_b_total counter\nsipges_b_total 3\n" +
+		"# HELP sipges_a_total First.\n# TYPE sipges_a_total counter\nsipges_a_total 7\n"
+	if !strings.HasSuffix(got, want) {
+		t.Fatalf("got\n%s\nwant suffix\n%s", got, want)
+	}
+	// Registered counters come last, so the families TypeScript also prints keep their order.
+	if strings.Index(got, "sipges_process_heap_used_bytes") > strings.Index(got, "sipges_b_total") {
+		t.Fatal("counters before the process gauges")
+	}
+}

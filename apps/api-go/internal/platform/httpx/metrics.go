@@ -35,6 +35,22 @@ type Metrics struct {
 	durations map[durationSeries]*durations
 	now       func() time.Time
 	started   time.Time
+	counters  []counter
+}
+
+// counter is a counter another package reads, such as the engine memo's hits.
+type counter struct {
+	name, help string
+	read       func() int64
+}
+
+// AddCounter prints a counter named name, read when the metrics are rendered. Such counters
+// come last, in the order added: the TypeScript API has none, and the families both print
+// keep their order (the parity runner compares them).
+func (m *Metrics) AddCounter(name, help string, read func() int64) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.counters = append(m.counters, counter{name, help, read})
 }
 
 // NewMetrics starts counting; now is the clock of the uptime.
@@ -119,6 +135,9 @@ func (m *Metrics) Render() string {
 	b.WriteString("# HELP sipges_process_heap_used_bytes Go heap in use.\n")
 	b.WriteString("# TYPE sipges_process_heap_used_bytes gauge\n")
 	fmt.Fprintf(&b, "sipges_process_heap_used_bytes %d\n", memory.HeapAlloc)
+	for _, c := range m.counters {
+		fmt.Fprintf(&b, "# HELP %s %s\n# TYPE %s counter\n%s %d\n", c.name, c.help, c.name, c.name, c.read())
+	}
 	return b.String()
 }
 

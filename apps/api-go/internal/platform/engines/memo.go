@@ -33,6 +33,10 @@ var ErrEnginePanicked = errors.New("engines: the engine panicked on this request
 // outside the request reaches it. The IRSA of a project is the same request on every screen
 // until a record changes, and computing it was most of the Go API's CPU (docs/benchmarks/
 // go-cpu-profile.md). Only successful answers are kept; requests are keyed by their SHA-256.
+//
+// Concurrent callers of one request wait for the first: they share its answer or its engine
+// error. When the first caller's own context ends (its client left), one waiter computes
+// instead and the rest wait for that one.
 type Memo struct {
 	engine Caller
 
@@ -41,6 +45,24 @@ type Memo struct {
 	order    *list.List // most recently used first; values are *memoEntry
 	bytes    int
 	inFlight map[[sha256.Size]byte]*memoCall
+	stats    MemoStats
+}
+
+// MemoStats counts what Memo did since it was made.
+type MemoStats struct {
+	// Hits are answers given without running the engine: kept, or computed for another caller.
+	Hits int64
+	// Misses are engine runs.
+	Misses int64
+	// Evictions are answers dropped to stay within the limits.
+	Evictions int64
+}
+
+// Stats returns the counts so far.
+func (m *Memo) Stats() MemoStats {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.stats
 }
 
 type memoEntry struct {
@@ -54,6 +76,8 @@ type memoCall struct {
 	value   json.RawMessage
 	err     error
 	waiters int // callers waiting for it; m.mu guards it
+	// callerGone is a failure of the computing caller's context, not of the request.
+	callerGone bool
 }
 
 // NewMemo wraps engine, which must be pure (see Memo).
@@ -71,6 +95,7 @@ func (m *Memo) Call(ctx context.Context, request []byte) (json.RawMessage, error
 	key := sha256.Sum256(request)
 	m.mu.Lock()
 	if e, ok := m.entries[key]; ok {
+		m.stats.Hits++
 		m.order.MoveToFront(e)
 		value := bytes.Clone(e.Value.(*memoEntry).value)
 		m.mu.Unlock()
@@ -86,15 +111,20 @@ func (m *Memo) Call(ctx context.Context, request []byte) (json.RawMessage, error
 		}
 		switch {
 		case c.err == nil:
+			m.mu.Lock()
+			m.stats.Hits++
+			m.mu.Unlock()
 			return bytes.Clone(c.value), nil
-		case errors.Is(c.err, ErrEnginePanicked):
-			return nil, c.err
+		case c.callerGone:
+			// Only the first caller's context ended (its client left): ask again, so one
+			// waiter computes and the others wait for it.
+			return m.Call(ctx, request)
 		}
-		// The first caller failed, perhaps only its context: run the request again.
-		return m.engine.Call(ctx, request)
+		return nil, c.err // the engine's own failure, or ErrEnginePanicked
 	}
 	c := &memoCall{done: make(chan struct{}), err: ErrEnginePanicked}
 	m.inFlight[key] = c
+	m.stats.Misses++
 	m.mu.Unlock()
 	// Deferred, so a panicking engine still frees the key and wakes the waiters, with
 	// ErrEnginePanicked, while the panic goes on to this caller.
@@ -109,7 +139,7 @@ func (m *Memo) Call(ctx context.Context, request []byte) (json.RawMessage, error
 	}()
 
 	value, err := m.engine.Call(ctx, request)
-	c.value, c.err = value, err
+	c.value, c.err, c.callerGone = value, err, err != nil && ctx.Err() != nil
 	if err != nil {
 		return nil, err
 	}
@@ -129,5 +159,6 @@ func (m *Memo) store(key [sha256.Size]byte, value json.RawMessage) {
 		e := m.order.Remove(oldest).(*memoEntry)
 		delete(m.entries, e.key)
 		m.bytes -= len(e.value)
+		m.stats.Evictions++
 	}
 }

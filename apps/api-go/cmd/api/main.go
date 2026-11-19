@@ -57,9 +57,11 @@ func run(ctx context.Context, lookup config.Lookup, stdout io.Writer, listen lis
 		return err
 	}
 	log := logging.New(stdout, slog.LevelInfo)
-	if err := startPprof(ctx, pprofAddr, listen, log); err != nil {
+	stopPprof, err := startPprof(ctx, pprofAddr, listen, log)
+	if err != nil {
 		return err
 	}
+	defer stopPprof() // also when the startup below fails
 	pool, err := database.OpenForServing(ctx, cfg.DatabaseURL, cfg.AllowPrivilegedRole)
 	if err != nil {
 		return err
