@@ -12,11 +12,27 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// prepared is a state folder as sipges-desktop --prepare-only leaves it: pg18 and its mark.
+// prepared is a state folder as sipges-desktop --prepare-only leaves it, whose pg18 is the cluster
+// the test server serves (a link to its data folder), and its mark.
 func prepared(t *testing.T) string {
 	t.Helper()
+	server(t)
+	return preparedWith(t, filepath.Join(shared.dir, "pg18"))
+}
+
+// preparedWith is a prepared state folder whose pg18 links to cluster, or is a new empty folder.
+func preparedWith(t *testing.T, cluster string) string {
+	t.Helper()
 	dir := filepath.Join(t.TempDir(), "prepared-state")
-	if err := os.MkdirAll(filepath.Join(dir, "pg18"), 0o700); err != nil {
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	pg18 := filepath.Join(dir, "pg18")
+	if cluster != "" {
+		if err := os.Symlink(cluster, pg18); err != nil {
+			t.Fatal(err)
+		}
+	} else if err := os.Mkdir(pg18, 0o700); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(dir, PendingMoveName), []byte("synthetic\n"), 0o600); err != nil {

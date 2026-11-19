@@ -103,19 +103,16 @@ func TestServerFramesWholeMessagesAndNegotiatesEncryption(t *testing.T) {
 			t.Fatalf("encryption request %d answered %q %v, want N", code, b, err)
 		}
 	}
-	if _, err := c.Write(startupPacket(3<<16, []byte("user\x00postgres\x00\x00"))); err != nil {
-		t.Fatal(err)
-	}
+	startup(t, c, r, s.Password())
 	if typ, _ := readMessage(t, r); typ != 'Z' {
 		t.Fatalf("startup reply %q", typ)
 	}
 
 	// A second client is refused while the first is connected.
 	sc := dial(t, s)
-	if _, err := sc.Write(startupPacket(3<<16, []byte("user\x00postgres\x00\x00"))); err != nil {
-		t.Fatal(err)
-	}
-	if typ, body := readMessage(t, bufio.NewReader(sc)); typ != 'E' || !strings.Contains(string(body), ErrOneConnection) || !strings.Contains(string(body), "53300") {
+	scr := bufio.NewReader(sc)
+	startup(t, sc, scr, s.Password())
+	if typ, body := readMessage(t, scr); typ != 'E' || !strings.Contains(string(body), ErrOneConnection) || !strings.Contains(string(body), "53300") {
 		t.Fatalf("second client got %q %q", typ, body)
 	}
 

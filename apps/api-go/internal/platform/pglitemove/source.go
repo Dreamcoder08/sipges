@@ -129,7 +129,7 @@ func readCopy(ctx context.Context, t tools, db, dir string, stop *Stop) (*source
 
 	src := &source{}
 	// Inside the scratch folder, which readSource removes with the copy.
-	if src.dump, err = pgDump(ctx, t.pgDump, url, filepath.Join(filepath.Dir(dir), "dump.sql")); err != nil {
+	if src.dump, err = pgDump(ctx, t.pgDump, url, srv.Password(), filepath.Join(filepath.Dir(dir), "dump.sql")); err != nil {
 		return nil, err
 	}
 	if err := stop.checkpoint(); err != nil {
@@ -140,6 +140,7 @@ func readCopy(ctx context.Context, t tools, db, dir string, stop *Stop) (*source
 		return nil, err
 	}
 	cfg.DefaultQueryExecMode = pgx.QueryExecModeDescribeExec
+	cfg.Password = srv.Password()
 	conn, err := pgx.ConnectConfig(ctx, cfg)
 	if err != nil {
 		return nil, refusef("the scratch copy could not be read over loopback")
@@ -170,10 +171,11 @@ func readCopy(ctx context.Context, t tools, db, dir string, stop *Stop) (*source
 // login, the one the Go API serves with; grants are kept. pg_dump writes file (-f, never stdout:
 // on Windows stdout is in text mode and LF would become CRLF, changing values), which is read
 // and removed at once. pg_dump's own messages are never printed (they may quote the database).
-func pgDump(ctx context.Context, pgDumpPath, url, file string) (string, error) {
+func pgDump(ctx context.Context, pgDumpPath, url, password, file string) (string, error) {
 	var out, errOut bytes.Buffer
 	cmd := exec.CommandContext(ctx, pgDumpPath, "--no-owner", "--inserts", "-U", "postgres", "-f", file, "--dbname", url) //nolint:gosec // the checked pg_dump, against our loopback server
-	cmd.Env = dumpEnv()
+	// The loopback server's password goes in pg_dump's environment only, never on its command line.
+	cmd.Env = append(dumpEnv(), "PGPASSWORD="+password)
 	cmd.Stdout, cmd.Stderr = &out, &errOut
 	err := cmd.Run()
 	data, readErr := os.ReadFile(file) //nolint:gosec // our own file in the scratch folder

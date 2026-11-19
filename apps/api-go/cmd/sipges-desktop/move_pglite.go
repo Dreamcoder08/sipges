@@ -29,7 +29,8 @@ const moveUsage = `Usage: SIPGES_MOVE_DATABASE_URL=postgres://<login>@127.0.0.1:
   [--scratch <folder>] [--port 8000] [--pglite-dist <dir>] [--pg-bin <dir>]
 Moves the PGlite database of a COPY of the state folder into an empty PostgreSQL 18 database, once,
 without Node. --to <url> may replace the variable; --port is where SIPGES would answer if it were
-running. --prepared names the state folder sipges-desktop --prepare-only prepared: its
+running. --prepared names the state folder sipges-desktop --prepare-only prepared, whose pg18
+the target server must serve (else it refuses before anything is read or written): its
 pg18.pending-move is removed only after a committed move with no difference. The copy's pglite
 folder is copied to --scratch (the temp folder by default) and only that copy is opened; it is
 dumped with pg_dump 18, restored and compared in one transaction, which any difference rolls back.

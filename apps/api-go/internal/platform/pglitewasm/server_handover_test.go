@@ -27,13 +27,9 @@ func TestServerHandsTheSessionToTheNextClientAfterItsReset(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() { _ = s.Close() }()
-	startup := startupPacket(3<<16, []byte("user\x00postgres\x00\x00"))
-
 	first := dial(t, s)
 	r := bufio.NewReader(first)
-	if _, err := first.Write(startup); err != nil {
-		t.Fatal(err)
-	}
+	startup(t, first, r, s.Password())
 	if typ, _ := readMessage(t, r); typ != 'Z' {
 		t.Fatalf("first startup reply %q", typ)
 	}
@@ -43,10 +39,9 @@ func TestServerHandsTheSessionToTheNextClientAfterItsReset(t *testing.T) {
 	_ = first.Close()
 
 	next := dial(t, s)
-	if _, err := next.Write(startup); err != nil {
-		t.Fatal(err)
-	}
-	if typ, body := readMessage(t, bufio.NewReader(next)); typ != 'Z' {
+	nr := bufio.NewReader(next)
+	startup(t, next, nr, s.Password())
+	if typ, body := readMessage(t, nr); typ != 'Z' {
 		t.Fatalf("the next client got %q %q, want the session once reset", typ, body)
 	}
 }

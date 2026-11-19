@@ -15,14 +15,17 @@ import (
 func TestPgDumpReadsTheDumpFromItsFileNotStdout(t *testing.T) {
 	dir := t.TempDir()
 	fake := filepath.Join(dir, "pg_dump")
-	script := "#!/bin/sh\nout=\nwhile [ $# -gt 0 ]; do [ \"$1\" = -f ] && out=$2; shift; done\n" +
+	// The loopback password reaches pg_dump only through its environment, never its arguments.
+	script := "#!/bin/sh\n[ \"$PGPASSWORD\" = run-secret ] || exit 9\n" +
+		"case \"$*\" in *run-secret*) exit 8;; esac\n" +
+		"out=\nwhile [ $# -gt 0 ]; do [ \"$1\" = -f ] && out=$2; shift; done\n" +
 		"echo 'stdout is not the dump'\n" +
 		"[ -n \"$out\" ] && printf '%s\\n' '\\restrict k1' 'CREATE TABLE t (a int);' '\\unrestrict k1' > \"$out\"\n"
 	if err := os.WriteFile(fake, []byte(script), 0o700); err != nil {
 		t.Fatal(err)
 	}
 	file := filepath.Join(dir, "dump.sql")
-	dump, err := pgDump(context.Background(), fake, "postgres://x", file)
+	dump, err := pgDump(context.Background(), fake, "postgres://x", "run-secret", file)
 	if err != nil {
 		t.Fatal(err)
 	}

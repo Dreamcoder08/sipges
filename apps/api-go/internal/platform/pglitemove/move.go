@@ -24,6 +24,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 )
 
@@ -151,6 +152,9 @@ func run(ctx context.Context, o Options, say func(string), h Hooks) (int, error)
 		if pending, err = checkPrepared(o.Prepared); err != nil {
 			return 0, err
 		}
+		if err := checkServed(ctx, target.String(), filepath.Dir(pending)); err != nil {
+			return 0, err
+		}
 	}
 	if o.Scratch == "" {
 		o.Scratch = os.TempDir()
@@ -191,7 +195,8 @@ func run(ctx context.Context, o Options, say func(string), h Hooks) (int, error)
 	say("Moved: the target holds the copy, committed.")
 	if pending != "" {
 		if err := os.Remove(pending); err != nil {
-			say(fmt.Sprintf("The move committed, but %s could not be removed (%s): remove it from the prepared state folder by hand before opening SIPGES.", PendingMoveName, errnoName(err)))
+			say(fmt.Sprintf("The move committed, but %s could not be removed (%s): remove it by hand before opening SIPGES:", PendingMoveName, errnoName(err)))
+			say("  " + removeCommand(pending, runtime.GOOS))
 			return ExitNotMoved, nil
 		}
 		say("The prepared cluster is ready: removed " + PendingMoveName + ".")

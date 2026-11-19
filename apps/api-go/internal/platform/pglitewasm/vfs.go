@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -112,11 +113,12 @@ type vfs struct {
 	stdout     func([]byte)
 	stderr     func([]byte)
 	nextIno    uint64
+	goos       string // runtime.GOOS; tests set "windows"
 }
 
 func newVFS(d *dist, mountPoint, hostRoot string, stdout, stderr func([]byte)) *vfs {
 	v := &vfs{mountPoint: mountPoint, hostRoot: hostRoot, cwd: "/", fds: map[int32]*vfile{}, umask: 0o022,
-		stdout: stdout, stderr: stderr, nextIno: 1}
+		stdout: stdout, stderr: stderr, nextIno: 1, goos: runtime.GOOS}
 	v.root = v.newDir()
 	for _, dir := range []string{"/tmp", "/home/web_user", "/dev", "/dev/shm"} {
 		v.mkdirAll(dir)
@@ -189,20 +191,44 @@ func (v *vfs) abs(dirfd int32, p string) (string, errno) {
 		}
 		p = base + "/" + p
 	}
-	return path.Clean(p), 0
+	p = path.Clean(p)
+	if _, ok := v.mountRel(p); !ok && v.inMount(p) {
+		return "", eINVAL
+	}
+	return p, 0
+}
+
+func (v *vfs) inMount(p string) bool {
+	return p == v.mountPoint || strings.HasPrefix(p, v.mountPoint+"/")
+}
+
+// mountRel is the part of a clean guest path below the mount, refused (false) outside the mount
+// and, on Windows, when a component holds a backslash or a colon: a separator, a drive or a data
+// stream there would let the host path leave hostRoot.
+func (v *vfs) mountRel(p string) (string, bool) {
+	if p == v.mountPoint {
+		return "", true
+	}
+	rel, ok := strings.CutPrefix(p, v.mountPoint+"/")
+	if !ok || (v.goos == "windows" && strings.ContainsAny(rel, `\:`)) {
+		return "", false
+	}
+	return rel, true
 }
 
 const atFDCWD = -100
 
 // host maps a clean absolute guest path inside the mount to a host path.
+// abs already refused a component the host would read as a separator, drive or stream.
 func (v *vfs) host(p string) (string, bool) {
-	if p == v.mountPoint {
+	rel, ok := v.mountRel(p)
+	switch {
+	case !ok:
+		return "", false
+	case rel == "":
 		return v.hostRoot, true
 	}
-	if strings.HasPrefix(p, v.mountPoint+"/") {
-		return filepath.Join(v.hostRoot, filepath.FromSlash(strings.TrimPrefix(p, v.mountPoint+"/"))), true
-	}
-	return "", false
+	return filepath.Join(v.hostRoot, filepath.FromSlash(rel)), true
 }
 
 func (v *vfs) lookup(p string) (*vnode, errno) {
