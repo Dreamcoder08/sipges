@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/pprof"
+	"sync"
 	"time"
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/config"
@@ -18,7 +19,7 @@ import (
 const pprofEnv = "SIPGES_GO_PPROF_ADDR"
 
 // errPprofAddr is returned for a profiling address that is not host:port on loopback.
-var errPprofAddr = errors.New(pprofEnv + " must be a loopback host:port, such as 127.0.0.1:6061")
+var errPprofAddr = errors.New(pprofEnv + " must be a loopback IP and port, such as 127.0.0.1:6061")
 
 // pprofAddress reads pprofEnv: "" when it is unset or empty, an error when it is not loopback.
 func pprofAddress(lookup config.Lookup) (string, error) {
@@ -30,7 +31,9 @@ func pprofAddress(lookup config.Lookup) (string, error) {
 	if err != nil || port == "" {
 		return "", errPprofAddr
 	}
-	if ip := net.ParseIP(host); host != "localhost" && (ip == nil || !ip.IsLoopback()) {
+	// A literal IP only: a name such as localhost resolves through the host's configuration,
+	// which could point it elsewhere.
+	if ip := net.ParseIP(host); ip == nil || !ip.IsLoopback() {
 		return "", errPprofAddr
 	}
 	return addr, nil
@@ -47,21 +50,28 @@ func pprofHandler() http.Handler {
 	return mux
 }
 
-// startPprof serves the profiles on addr until ctx ends; addr "" starts nothing.
-func startPprof(ctx context.Context, addr string, listen listenFunc, log *slog.Logger) error {
+// startPprof serves the profiles on addr until ctx ends or stop is called; addr "" starts
+// nothing. An error that ends the server other than stopping it is logged.
+func startPprof(ctx context.Context, addr string, listen listenFunc, log *slog.Logger) (stop func(), err error) {
 	if addr == "" {
-		return nil
+		return func() {}, nil
 	}
 	ln, err := listen("tcp", addr)
 	if err != nil {
-		return fmt.Errorf("pprof listen: %w", err)
+		return nil, fmt.Errorf("pprof listen: %w", err)
 	}
 	srv := &http.Server{Handler: pprofHandler(), ReadHeaderTimeout: 5 * time.Second}
 	log.Warn("pprof_listening", slog.String("address", ln.Addr().String()))
-	go func() { _ = srv.Serve(ln) }()
 	go func() {
-		<-ctx.Done()
-		_ = srv.Close()
+		if err := srv.Serve(ln); !errors.Is(err, http.ErrServerClosed) {
+			log.Error("pprof_failed", slog.String("error", err.Error()))
+		}
 	}()
-	return nil
+	var once sync.Once
+	closeServer := func() { once.Do(func() { _ = srv.Close() }) }
+	unregister := context.AfterFunc(ctx, closeServer) // no goroutine left waiting on ctx
+	return func() {
+		unregister()
+		closeServer()
+	}, nil
 }
