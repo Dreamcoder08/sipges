@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"sync"
 )
 
@@ -20,6 +21,9 @@ const (
 	memoBytes    = 16 << 20
 	memoMaxValue = 4 << 20
 )
+
+// ErrEnginePanicked is what callers waiting on a request get when the engine panicked on it.
+var ErrEnginePanicked = errors.New("engines: the engine panicked on this request")
 
 // Memo answers a request it answered before with the same bytes, without running the engine.
 //
@@ -46,9 +50,10 @@ type memoEntry struct {
 
 // memoCall is a request being computed; others with the same key wait for it.
 type memoCall struct {
-	done  chan struct{}
-	value json.RawMessage
-	err   error
+	done    chan struct{}
+	value   json.RawMessage
+	err     error
+	waiters int // callers waiting for it; m.mu guards it
 }
 
 // NewMemo wraps engine, which must be pure (see Memo).
@@ -72,34 +77,43 @@ func (m *Memo) Call(ctx context.Context, request []byte) (json.RawMessage, error
 		return value, nil
 	}
 	if c, ok := m.inFlight[key]; ok {
+		c.waiters++
 		m.mu.Unlock()
 		select {
 		case <-c.done:
 		case <-ctx.Done():
 			return nil, context.Cause(ctx)
 		}
-		if c.err == nil {
+		switch {
+		case c.err == nil:
 			return bytes.Clone(c.value), nil
+		case errors.Is(c.err, ErrEnginePanicked):
+			return nil, c.err
 		}
 		// The first caller failed, perhaps only its context: run the request again.
 		return m.engine.Call(ctx, request)
 	}
-	c := &memoCall{done: make(chan struct{})}
+	c := &memoCall{done: make(chan struct{}), err: ErrEnginePanicked}
 	m.inFlight[key] = c
 	m.mu.Unlock()
+	// Deferred, so a panicking engine still frees the key and wakes the waiters, with
+	// ErrEnginePanicked, while the panic goes on to this caller.
+	defer func() {
+		m.mu.Lock()
+		delete(m.inFlight, key)
+		if c.err == nil {
+			m.store(key, c.value)
+		}
+		m.mu.Unlock()
+		close(c.done)
+	}()
 
-	c.value, c.err = m.engine.Call(ctx, request)
-	m.mu.Lock()
-	delete(m.inFlight, key)
-	if c.err == nil {
-		m.store(key, c.value)
+	value, err := m.engine.Call(ctx, request)
+	c.value, c.err = value, err
+	if err != nil {
+		return nil, err
 	}
-	m.mu.Unlock()
-	close(c.done)
-	if c.err != nil {
-		return nil, c.err
-	}
-	return bytes.Clone(c.value), nil
+	return bytes.Clone(value), nil
 }
 
 // store keeps value under key, dropping the least recently used answers past the limits.

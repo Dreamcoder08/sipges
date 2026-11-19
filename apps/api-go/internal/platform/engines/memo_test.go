@@ -3,6 +3,7 @@ package engines
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/tetratelabs/wazero"
 )
@@ -189,5 +191,68 @@ func TestIndicatorsEngineIsPure(t *testing.T) {
 	}
 	if !slices.Equal(imports, want) {
 		t.Fatalf("indicators engine imports %v, want %v", imports, want)
+	}
+}
+
+// panickingEngine panics on its first call, after waiting for release, then answers normally.
+type panickingEngine struct {
+	calls   atomic.Int64
+	release chan struct{}
+}
+
+func (e *panickingEngine) Call(_ context.Context, request []byte) (json.RawMessage, error) {
+	if e.calls.Add(1) == 1 {
+		<-e.release
+		panic("engine panicked")
+	}
+	return append(bytes.Clone(request), '!'), nil
+}
+
+func TestMemoSurvivesAPanickingEngine(t *testing.T) {
+	t.Parallel()
+	engine := &panickingEngine{release: make(chan struct{})}
+	m := NewMemo(engine)
+	panicked := make(chan any, 1)
+	go func() {
+		defer func() { panicked <- recover() }()
+		_, _ = m.Call(context.Background(), []byte("p"))
+	}()
+	for engine.calls.Load() == 0 {
+		// wait until the first caller is inside the engine
+	}
+	waiter := make(chan error, 1)
+	go func() {
+		_, err := m.Call(context.Background(), []byte("p"))
+		waiter <- err
+	}()
+	for {
+		m.mu.Lock()
+		joined := len(m.inFlight) == 1 && m.inFlight[sha256.Sum256([]byte("p"))].waiters == 1
+		m.mu.Unlock()
+		if joined {
+			break
+		}
+	}
+	close(engine.release)
+	if r := <-panicked; r == nil {
+		t.Fatal("the panic did not reach the first caller")
+	}
+	// The waiter is woken with an error, not left until its context ends.
+	select {
+	case err := <-waiter:
+		if !errors.Is(err, ErrEnginePanicked) {
+			t.Fatalf("waiter: %v, want ErrEnginePanicked", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("waiter still blocked after the engine panicked")
+	}
+	m.mu.Lock()
+	left := len(m.inFlight)
+	m.mu.Unlock()
+	if left != 0 {
+		t.Fatalf("%d in-flight entries left", left)
+	}
+	if got, err := m.Call(context.Background(), []byte("p")); err != nil || string(got) != "p!" {
+		t.Fatalf("later call: %q, %v", got, err)
 	}
 }
