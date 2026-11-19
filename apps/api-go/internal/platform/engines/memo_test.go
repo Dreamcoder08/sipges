@@ -355,3 +355,27 @@ func TestMemoWaitersShareAnEngineError(t *testing.T) {
 		t.Fatalf("engine ran %d times for one failing request, want 1", c)
 	}
 }
+
+func TestMemoCountsHitsMissesAndEvictions(t *testing.T) {
+	t.Parallel()
+	m := NewMemo(&countingEngine{})
+	call := func(r string) {
+		if _, err := m.Call(context.Background(), []byte(r)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	call("a")
+	call("a")
+	call("a")
+	if _, err := m.Call(context.Background(), []byte("fail")); err == nil {
+		t.Fatal("no error")
+	}
+	for i := range memoEntries + 2 {
+		call(fmt.Sprintf("e%d", i)) // pushes "a" and one more out
+	}
+	got := m.Stats()
+	want := MemoStats{Hits: 2, Misses: 1 + 1 + memoEntries + 2, Evictions: 3}
+	if got != want {
+		t.Fatalf("stats %+v, want %+v", got, want)
+	}
+}

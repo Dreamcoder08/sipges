@@ -45,6 +45,24 @@ type Memo struct {
 	order    *list.List // most recently used first; values are *memoEntry
 	bytes    int
 	inFlight map[[sha256.Size]byte]*memoCall
+	stats    MemoStats
+}
+
+// MemoStats counts what Memo did since it was made.
+type MemoStats struct {
+	// Hits are answers given without running the engine: kept, or computed for another caller.
+	Hits int64
+	// Misses are engine runs.
+	Misses int64
+	// Evictions are answers dropped to stay within the limits.
+	Evictions int64
+}
+
+// Stats returns the counts so far.
+func (m *Memo) Stats() MemoStats {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.stats
 }
 
 type memoEntry struct {
@@ -77,6 +95,7 @@ func (m *Memo) Call(ctx context.Context, request []byte) (json.RawMessage, error
 	key := sha256.Sum256(request)
 	m.mu.Lock()
 	if e, ok := m.entries[key]; ok {
+		m.stats.Hits++
 		m.order.MoveToFront(e)
 		value := bytes.Clone(e.Value.(*memoEntry).value)
 		m.mu.Unlock()
@@ -92,6 +111,9 @@ func (m *Memo) Call(ctx context.Context, request []byte) (json.RawMessage, error
 		}
 		switch {
 		case c.err == nil:
+			m.mu.Lock()
+			m.stats.Hits++
+			m.mu.Unlock()
 			return bytes.Clone(c.value), nil
 		case c.callerGone:
 			// Only the first caller's context ended (its client left): ask again, so one
@@ -102,6 +124,7 @@ func (m *Memo) Call(ctx context.Context, request []byte) (json.RawMessage, error
 	}
 	c := &memoCall{done: make(chan struct{}), err: ErrEnginePanicked}
 	m.inFlight[key] = c
+	m.stats.Misses++
 	m.mu.Unlock()
 	// Deferred, so a panicking engine still frees the key and wakes the waiters, with
 	// ErrEnginePanicked, while the panic goes on to this caller.
@@ -136,5 +159,6 @@ func (m *Memo) store(key [sha256.Size]byte, value json.RawMessage) {
 		e := m.order.Remove(oldest).(*memoEntry)
 		delete(m.entries, e.key)
 		m.bytes -= len(e.value)
+		m.stats.Evictions++
 	}
 }

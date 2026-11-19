@@ -82,7 +82,7 @@ func NewHandler(pool *pgxpool.Pool, opts Options) (http.Handler, error) {
 		Ready:        readiness(opts.ReadyGate, database.Ping(pool)),
 		AllowedHosts: opts.AllowedHosts,
 		AccessLog:    opts.AccessLog,
-		Metrics:      httpx.NewMetrics(time.Now),
+		Metrics:      newMetrics(opts.Engines),
 		Auth: append([]httpx.Middleware{
 			identityhttp.Session(identityhttp.SessionOptions{
 				Sessions:   sessions,
@@ -122,4 +122,17 @@ func readiness(gate, ping httpx.ReadyFunc) httpx.ReadyFunc {
 		}
 		return ping(ctx)
 	}
+}
+
+// newMetrics is the /system/metrics registry, with the indicators engine memo's counters.
+func newMetrics(set *engines.Set) *httpx.Metrics {
+	m := httpx.NewMetrics(time.Now)
+	memo := set.IndicatorsMemo()
+	m.AddCounter("sipges_engine_memo_hits_total", "Indicators engine answers given without running it.",
+		func() int64 { return memo.Stats().Hits })
+	m.AddCounter("sipges_engine_memo_misses_total", "Indicators engine runs.",
+		func() int64 { return memo.Stats().Misses })
+	m.AddCounter("sipges_engine_memo_evictions_total", "Indicators engine answers dropped to stay within the memo limits.",
+		func() int64 { return memo.Stats().Evictions })
+	return m
 }
