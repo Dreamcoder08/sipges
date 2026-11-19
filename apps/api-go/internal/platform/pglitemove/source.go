@@ -3,6 +3,7 @@ package pglitemove
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -127,7 +128,8 @@ func readCopy(ctx context.Context, t tools, db, dir string, stop *Stop) (*source
 	url := fmt.Sprintf("postgres://postgres@%s/postgres?sslmode=disable", srv.Addr())
 
 	src := &source{}
-	if src.dump, err = pgDump(ctx, t.pgDump, url); err != nil {
+	// Inside the scratch folder, which readSource removes with the copy.
+	if src.dump, err = pgDump(ctx, t.pgDump, url, filepath.Join(filepath.Dir(dir), "dump.sql")); err != nil {
 		return nil, err
 	}
 	if err := stop.checkpoint(); err != nil {
@@ -165,21 +167,30 @@ func readCopy(ctx context.Context, t tools, db, dir string, stop *Stop) (*source
 
 // pgDump runs the native pg_dump 18 against the served copy, as pgDump of pglite-tools does
 // (plain SQL, --inserts, -U postgres) with --no-owner: the tables must belong to the target
-// login, the one the Go API serves with; grants are kept. The dump stays in memory; pg_dump's
-// own messages are never printed (they may quote the database).
-func pgDump(ctx context.Context, pgDumpPath, url string) (string, error) {
+// login, the one the Go API serves with; grants are kept. pg_dump writes file (-f, never stdout:
+// on Windows stdout is in text mode and LF would become CRLF, changing values), which is read
+// and removed at once. pg_dump's own messages are never printed (they may quote the database).
+func pgDump(ctx context.Context, pgDumpPath, url, file string) (string, error) {
 	var out, errOut bytes.Buffer
-	cmd := exec.CommandContext(ctx, pgDumpPath, "--no-owner", "--inserts", "-U", "postgres", "--dbname", url) //nolint:gosec // the checked pg_dump, against our loopback server
+	cmd := exec.CommandContext(ctx, pgDumpPath, "--no-owner", "--inserts", "-U", "postgres", "-f", file, "--dbname", url) //nolint:gosec // the checked pg_dump, against our loopback server
 	cmd.Env = dumpEnv()
 	cmd.Stdout, cmd.Stderr = &out, &errOut
-	if err := cmd.Run(); err != nil {
+	err := cmd.Run()
+	data, readErr := os.ReadFile(file) //nolint:gosec // our own file in the scratch folder
+	if rmErr := os.Remove(file); rmErr != nil && !errors.Is(rmErr, os.ErrNotExist) {
+		return "", refusef("the dump %s could not be removed: delete that file", file)
+	}
+	if err != nil {
 		code := -1
 		if cmd.ProcessState != nil {
 			code = cmd.ProcessState.ExitCode()
 		}
 		return "", refusef("pg_dump could not dump the scratch copy (exit code %d)", code)
 	}
-	return stripRestrict(out.String())
+	if readErr != nil {
+		return "", refusef("pg_dump wrote no dump of the scratch copy")
+	}
+	return stripRestrict(string(data))
 }
 
 var (
