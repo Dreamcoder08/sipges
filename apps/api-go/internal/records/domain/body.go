@@ -101,6 +101,54 @@ func ParseBody(data []byte) (any, error) {
 	return v, nil
 }
 
+// ParseStored is Parse for text PostgreSQL wrote (a jsonb value, or a json_agg of rows holding
+// them), at a fraction of encoding/json's cost: that parse was most of what a records page spent.
+// The two parsers read valid UTF-8 without surrogate escapes the same way; any other text, and
+// any text the fast parser refuses, goes through Parse, so the result is always Parse's.
+func ParseStored(text string) (any, error) {
+	if !hasSurrogateEscape(text) {
+		if utf8.ValidString(text) {
+			p := parser{s: text}
+			p.space()
+			if v, err := p.value(); err == nil {
+				if p.space(); p.i == len(p.s) {
+					return v, nil
+				}
+			}
+		}
+	}
+	return Parse([]byte(text))
+}
+
+// ParseStoredObject is ParseStored for a payload, which the schema keeps an object.
+func ParseStoredObject(text string) (*Object, error) {
+	v, err := ParseStored(text)
+	if err != nil {
+		return nil, err
+	}
+	o, ok := v.(*Object)
+	if !ok {
+		return nil, ErrNotObject
+	}
+	return o, nil
+}
+
+// hasSurrogateEscape reports whether text holds a \uD800-\uDFFF escape, which encoding/json
+// reads as U+FFFD when lone and the fast parser keeps as WTF-8.
+func hasSurrogateEscape(text string) bool {
+	for i := strings.Index(text, `\u`); i >= 0 && i+3 < len(text); {
+		if c, d := text[i+2], text[i+3]; (c == 'd' || c == 'D') && (d >= '8' && d <= '9' || d >= 'a' && d <= 'f' || d >= 'A' && d <= 'F') {
+			return true
+		}
+		next := strings.Index(text[i+2:], `\u`)
+		if next < 0 {
+			return false
+		}
+		i += 2 + next
+	}
+	return false
+}
+
 type parser struct {
 	s     string
 	i     int
@@ -296,7 +344,16 @@ func appendUnit(b []byte, u rune) []byte {
 // string reads a JSON string; escapes of surrogate pairs join, lone ones stay as WTF-8.
 func (p *parser) string() (any, error) {
 	p.i++ // "
-	var b []byte
+	// Most strings hold no escape: take them from the text as they are, without a copy.
+	start := p.i
+	for p.i < len(p.s) && p.s[p.i] != '"' && p.s[p.i] != '\\' && p.s[p.i] >= 0x20 {
+		p.i++
+	}
+	if p.i < len(p.s) && p.s[p.i] == '"' {
+		p.i++
+		return p.s[start : p.i-1], nil
+	}
+	b := []byte(p.s[start:p.i])
 	for {
 		if p.i >= len(p.s) {
 			return nil, ErrJSONSyntax

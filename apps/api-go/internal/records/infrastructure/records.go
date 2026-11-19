@@ -60,8 +60,13 @@ func scanRecord(row pgx.CollectableRow) (application.StoredRecord, error) {
 		return r, err
 	}
 	var err error
-	r.Payload, err = domain.ParseObject([]byte(payload))
+	r.Payload, err = payloadObject(payload)
 	return r, err
+}
+
+// payloadObject reads a payload column (jsonb::text) as JSON.parse does.
+func payloadObject(text string) (*domain.Object, error) {
+	return domain.ParseStoredObject(text)
 }
 
 // List returns one page of a module's records, newest first.
@@ -112,7 +117,7 @@ func (s Records) History(ctx context.Context, tenantID, module, id string) ([]ap
 				return v, nil
 			}
 			var err error
-			v.Payload, err = domain.ParseObject([]byte(*payload))
+			v.Payload, err = payloadObject(*payload)
 			return v, err
 		})
 	})
@@ -141,7 +146,7 @@ func (s Records) Summary(ctx context.Context, tenantID string, modules []string,
 
 // summaryRows reads the json_agg page as JSON.parse does (payload key order included).
 func summaryRows(text string) ([]application.TypedRecord, error) {
-	v, err := domain.Parse([]byte(text))
+	v, err := domain.ParseStored(text)
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +177,7 @@ func summaryRows(text string) ([]application.TypedRecord, error) {
 }
 
 func summaryCounts(text string) (map[string]int64, error) {
-	totals, err := domain.ParseObject([]byte(text))
+	totals, err := domain.ParseStoredObject(text)
 	if err != nil {
 		return nil, err
 	}

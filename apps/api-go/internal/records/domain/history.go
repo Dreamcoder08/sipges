@@ -114,3 +114,45 @@ func AppendString(b []byte, s string) []byte { return appendString(b, s) }
 
 // AppendJSON writes a decoded value as JSON.stringify does.
 func AppendJSON(b []byte, v any) []byte { return appendJSON(b, v) }
+
+// AppendSpread writes `{ ...o, [keys[0]]: values[0], ... }` as JSON.stringify does, without
+// copying o. keys must be distinct; a key o already has keeps its place, the others follow in
+// order. An array-index key would move, so that case takes the copy.
+func AppendSpread(b []byte, o *Object, keys, values []string) []byte {
+	for _, k := range keys {
+		if _, isIndex := arrayIndex(k); isIndex {
+			c := o.Clone()
+			for i, k := range keys {
+				c.Set(k, values[i])
+			}
+			return appendJSON(b, c)
+		}
+	}
+	b = append(b, '{')
+	for i, k := range o.keys {
+		if i > 0 {
+			b = append(b, ',')
+		}
+		b = appendString(b, k)
+		b = append(b, ':')
+		if j := slices.Index(keys, k); j >= 0 {
+			b = appendString(b, values[j])
+		} else {
+			b = appendJSON(b, o.values[i])
+		}
+	}
+	members := len(o.keys)
+	for j, k := range keys {
+		if o.find(k) >= 0 {
+			continue
+		}
+		if members > 0 {
+			b = append(b, ',')
+		}
+		members++
+		b = appendString(b, k)
+		b = append(b, ':')
+		b = appendString(b, values[j])
+	}
+	return append(b, '}')
+}

@@ -166,8 +166,10 @@ func routeLabel(pattern string) string {
 	if pattern == "" || pattern == "/" {
 		return unmatchedRoute
 	}
-	return strings.NewReplacer("{", ":", "}", "").Replace(pattern)
+	return routeParams.Replace(pattern)
 }
+
+var routeParams = strings.NewReplacer("{", ":", "}", "")
 
 // ObserveRequests times every request. The route is resolved before the gates run, so a request
 // they stop keeps its route's label, as in TypeScript.

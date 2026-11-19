@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"math"
 	"slices"
 	"strconv"
@@ -23,51 +24,97 @@ import (
 
 // Object is a JSON object with the key order JSON.parse gives it: array-index keys ("0" to
 // "4294967294", canonical) ascending, then every other key in source order.
+//
+// Keys and values are parallel slices: most objects are record payloads of a few dozen keys at
+// most, read once and written once, where a map per object cost more than the scan. Past
+// linearKeys an index map finds the key instead.
 type Object struct {
 	keys   []string
-	values map[string]any
+	values []any // values[i] belongs to keys[i]
+	index  map[string]int
 }
 
+// linearKeys is the most keys Get scans before Object keeps an index.
+const linearKeys = 16
+
 // NewObject returns an empty object.
-func NewObject() *Object { return &Object{values: map[string]any{}} }
+func NewObject() *Object { return &Object{} }
 
 // Keys returns the keys in JavaScript property order.
 func (o *Object) Keys() []string { return o.keys }
 
+// find returns the position of key, or -1.
+func (o *Object) find(key string) int {
+	if o.index != nil {
+		if i, ok := o.index[key]; ok {
+			return i
+		}
+		return -1
+	}
+	for i, k := range o.keys {
+		if k == key {
+			return i
+		}
+	}
+	return -1
+}
+
 // Get returns an own property.
 func (o *Object) Get(key string) (any, bool) {
-	v, ok := o.values[key]
-	return v, ok
+	if i := o.find(key); i >= 0 {
+		return o.values[i], true
+	}
+	return nil, false
 }
 
 // Set is ordinary property assignment: a new key takes its place in the property order, an
 // existing one keeps its place and gets the new value (as `{...payload, _id}` does).
 func (o *Object) Set(key string, v any) {
-	if _, ok := o.values[key]; !ok {
-		if index, isIndex := arrayIndex(key); isIndex {
-			at, _ := slices.BinarySearchFunc(o.keys, index, func(k string, target uint64) int {
-				n, kIsIndex := arrayIndex(k)
-				if !kIsIndex || n > target {
-					return 1
-				}
-				if n < target {
-					return -1
-				}
-				return 0
-			})
-			o.keys = slices.Insert(o.keys, at, key)
-		} else {
-			o.keys = append(o.keys, key)
-		}
+	if i := o.find(key); i >= 0 {
+		o.values[i] = v
+		return
 	}
-	o.values[key] = v
+	index, isIndex := arrayIndex(key)
+	if !isIndex {
+		o.keys = append(o.keys, key)
+		o.values = append(o.values, v)
+		if o.index != nil {
+			o.index[key] = len(o.keys) - 1
+		} else if len(o.keys) > linearKeys {
+			o.reindex()
+		}
+		return
+	}
+	at, _ := slices.BinarySearchFunc(o.keys, index, func(k string, target uint64) int {
+		n, kIsIndex := arrayIndex(k)
+		if !kIsIndex || n > target {
+			return 1
+		}
+		if n < target {
+			return -1
+		}
+		return 0
+	})
+	o.keys = slices.Insert(o.keys, at, key)
+	o.values = slices.Insert(o.values, at, v)
+	if o.index != nil || len(o.keys) > linearKeys {
+		o.reindex() // the keys after at moved
+	}
+}
+
+// reindex builds the index of every key's position.
+func (o *Object) reindex() {
+	o.index = make(map[string]int, len(o.keys))
+	for i, k := range o.keys {
+		o.index[k] = i
+	}
 }
 
 // Clone is `{ ...o }`.
 func (o *Object) Clone() *Object {
-	c := &Object{keys: slices.Clone(o.keys), values: make(map[string]any, len(o.values))}
-	for k, v := range o.values {
-		c.values[k] = v
+	c := &Object{keys: slices.Clone(o.keys), values: slices.Clone(o.values)}
+	if o.index != nil {
+		c.index = maps.Clone(o.index)
 	}
 	return c
 }
@@ -75,8 +122,8 @@ func (o *Object) Clone() *Object {
 // arrayIndex reports whether key is a canonical array index (ECMA-262: an integer below 2³²−1
 // whose decimal spelling is the key).
 func arrayIndex(key string) (uint64, bool) {
-	if key == "" || len(key) > 10 || (key[0] == '0' && key != "0") {
-		return 0, false
+	if key == "" || len(key) > 10 || key[0] < '0' || key[0] > '9' || (key[0] == '0' && key != "0") {
+		return 0, false // most keys stop here, before ParseUint allocates its error
 	}
 	n, err := strconv.ParseUint(key, 10, 64)
 	if err != nil || n >= math.MaxUint32 {
@@ -196,7 +243,7 @@ func appendJSON(b []byte, v any) []byte {
 			}
 			b = appendString(b, k)
 			b = append(b, ':')
-			b = appendJSON(b, x.values[k])
+			b = appendJSON(b, x.values[i])
 		}
 		return append(b, '}')
 	}
@@ -206,6 +253,11 @@ func appendJSON(b []byte, v any) []byte {
 // appendString is JSON.stringify for a string: only '"', '\\', control characters and lone
 // surrogates (held as WTF-8, see body.go) escape.
 func appendString(b []byte, s string) []byte {
+	if plainString(s) {
+		b = append(b, '"')
+		b = append(b, s...)
+		return append(b, '"')
+	}
 	b = append(b, '"')
 	for i, r := range s {
 		if r == utf8.RuneError {
@@ -248,6 +300,21 @@ func appendString(b []byte, s string) []byte {
 		}
 	}
 	return append(b, '"')
+}
+
+// plainString reports whether JSON.stringify writes s as it is: valid UTF-8 (so no WTF-8
+// surrogate) without '"', '\\' or a control character.
+func plainString(s string) bool {
+	ascii := true
+	for i := 0; i < len(s); i++ {
+		switch c := s[i]; {
+		case c < 0x20 || c == '"' || c == '\\':
+			return false
+		case c >= 0x80:
+			ascii = false
+		}
+	}
+	return ascii || utf8.ValidString(s)
 }
 
 // NumberString is Number.prototype.toString.

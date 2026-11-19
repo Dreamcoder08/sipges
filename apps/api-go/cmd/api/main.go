@@ -52,7 +52,14 @@ func run(ctx context.Context, lookup config.Lookup, stdout io.Writer, listen lis
 	if err != nil {
 		return err
 	}
+	pprofAddr, err := pprofAddress(lookup)
+	if err != nil {
+		return err
+	}
 	log := logging.New(stdout, slog.LevelInfo)
+	if err := startPprof(ctx, pprofAddr, listen, log); err != nil {
+		return err
+	}
 	pool, err := database.OpenForServing(ctx, cfg.DatabaseURL, cfg.AllowPrivilegedRole)
 	if err != nil {
 		return err
