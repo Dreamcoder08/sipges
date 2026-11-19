@@ -213,12 +213,15 @@ SELECT DISTINCT r.rolname FROM pg_roles r WHERE r.oid IN (
 
 # sipges_app and sipges_tenant must hold none of the attributes that reach beyond the database's
 # own rows: one line naming each role that does, and which.
-PRIVILEGED_ROLES="SELECT string_agg(rolname || ' exists with ' || concat_ws(', ',
-    CASE WHEN rolsuper THEN 'SUPERUSER' END, CASE WHEN rolbypassrls THEN 'BYPASSRLS' END,
-    CASE WHEN rolcreatedb THEN 'CREATEDB' END, CASE WHEN rolcreaterole THEN 'CREATEROLE' END,
-    CASE WHEN rolreplication THEN 'REPLICATION' END), '; ' ORDER BY rolname)
-  FROM pg_roles WHERE rolname IN ('sipges_app', 'sipges_tenant')
-    AND (rolsuper OR rolbypassrls OR rolcreatedb OR rolcreaterole OR rolreplication);"
+# The one list of those attributes, used by the move's refusal and by verify's audit: the names a
+# role holds, and whether it holds any. Both read pg_roles under the alias s.
+ROLE_ATTRIBUTES="concat_ws(', ',
+    CASE WHEN s.rolsuper THEN 'SUPERUSER' END, CASE WHEN s.rolbypassrls THEN 'BYPASSRLS' END,
+    CASE WHEN s.rolcreatedb THEN 'CREATEDB' END, CASE WHEN s.rolcreaterole THEN 'CREATEROLE' END,
+    CASE WHEN s.rolreplication THEN 'REPLICATION' END)"
+HAS_ROLE_ATTRIBUTE="(s.rolsuper OR s.rolbypassrls OR s.rolcreatedb OR s.rolcreaterole OR s.rolreplication)"
+PRIVILEGED_ROLES="SELECT string_agg(s.rolname || ' exists with ' || $ROLE_ATTRIBUTES, '; ' ORDER BY s.rolname)
+  FROM pg_roles s WHERE s.rolname IN ('sipges_app', 'sipges_tenant') AND $HAS_ROLE_ATTRIBUTE;"
 
 LOGIN="SELECT current_user || ' super=' || rolsuper || ' bypassrls=' || rolbypassrls || ' createrole=' || rolcreaterole
   || ' server=' || current_setting('server_version_num') FROM pg_roles WHERE rolname = current_user;"
@@ -415,23 +418,21 @@ SELECT problem FROM (
     AND NOT (a.grantee = 0 AND a.privilege_type = 'USAGE')
   UNION ALL
   SELECT format('default privileges of %s grant %s on %s to PUBLIC', pg_get_userbyid(d.defaclrole),
-    a.privilege_type, d.defaclobjtype)
+    a.privilege_type, CASE d.defaclobjtype WHEN 'r' THEN 'tables' WHEN 'S' THEN 'sequences' WHEN 'f' THEN 'functions'
+      WHEN 'T' THEN 'types' WHEN 'n' THEN 'schemas' WHEN 'L' THEN 'large objects' ELSE d.defaclobjtype::text END)
   FROM pg_default_acl d, aclexplode(d.defaclacl) a
   WHERE a.grantee = 0
     AND NOT (d.defaclobjtype = 'f' AND a.privilege_type = 'EXECUTE')
     AND NOT (d.defaclobjtype = 'T' AND a.privilege_type = 'USAGE')
   UNION ALL
   SELECT format('default privileges of %s grant %s on %s to %s', pg_get_userbyid(d.defaclrole),
-    a.privilege_type, d.defaclobjtype, r.rolname)
+    a.privilege_type, CASE d.defaclobjtype WHEN 'r' THEN 'tables' WHEN 'S' THEN 'sequences' WHEN 'f' THEN 'functions'
+      WHEN 'T' THEN 'types' WHEN 'n' THEN 'schemas' WHEN 'L' THEN 'large objects' ELSE d.defaclobjtype::text END, r.rolname)
   FROM pg_default_acl d, aclexplode(d.defaclacl) a JOIN pg_roles r ON r.oid = a.grantee
   WHERE a.grantee <> d.defaclrole AND r.rolname NOT IN ('sipges_app', 'sipges_tenant')
   UNION ALL
-  SELECT format('%s has %s', s.rolname, concat_ws(', ',
-    CASE WHEN s.rolsuper THEN 'SUPERUSER' END, CASE WHEN s.rolbypassrls THEN 'BYPASSRLS' END,
-    CASE WHEN s.rolcreatedb THEN 'CREATEDB' END, CASE WHEN s.rolcreaterole THEN 'CREATEROLE' END,
-    CASE WHEN s.rolreplication THEN 'REPLICATION' END))
-  FROM pg_roles s WHERE s.rolname IN ('sipges_app', 'sipges_tenant')
-    AND (s.rolsuper OR s.rolbypassrls OR s.rolcreatedb OR s.rolcreaterole OR s.rolreplication)
+  SELECT format('%s has %s', s.rolname, $ROLE_ATTRIBUTES)
+  FROM pg_roles s WHERE s.rolname IN ('sipges_app', 'sipges_tenant') AND $HAS_ROLE_ATTRIBUTE
   UNION ALL
   SELECT format('%s is a member of %s, which %s', s.rolname, r.rolname,
     CASE WHEN r.rolsuper THEN 'is a superuser' ELSE 'bypasses RLS' END)

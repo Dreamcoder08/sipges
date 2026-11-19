@@ -25,6 +25,15 @@ if (!value) fail(`${name ?? 'the variable'} is empty`);
 // A password file field: backslash and colon are escaped (libpq, "The Password File").
 const field = (text) => text.replaceAll('\\', '\\\\').replaceAll(':', '\\:');
 
+// decodeURIComponent throws on a stray `%`; that would print a stack trace instead of one line.
+const decode = (text) => {
+  try {
+    return decodeURIComponent(text);
+  } catch {
+    return fail(`${name} has a malformed percent escape`); // never echo the value
+  }
+};
+
 if (command === 'strip') {
   if (!passfile) fail('strip needs a password file');
   let url;
@@ -41,12 +50,12 @@ if (command === 'strip') {
   // libpq does not decode), so only the raw `password` segment is taken out.
   const query = value.includes('?') ? value.slice(value.indexOf('?') + 1).replace(/#.*$/, '') : '';
   const kept = [];
-  let password = decodeURIComponent(url.password);
+  let password = decode(url.password);
   for (const segment of query.split('&').filter(Boolean)) {
     const [key, ...rest] = segment.split('=');
-    const decodedKey = decodeURIComponent(key);
+    const decodedKey = decode(key);
     if (decodedKey === 'passfile') fail(`${name} must not set passfile`);
-    if (decodedKey === 'password') password = decodeURIComponent(rest.join('='));
+    if (decodedKey === 'password') password = decode(rest.join('='));
     else kept.push(segment);
   }
   url.password = '';
@@ -54,7 +63,7 @@ if (command === 'strip') {
   url.hash = '';
   if (password !== '') {
     const host = url.hostname.replace(/^\[(.*)\]$/, '$1');
-    const user = decodeURIComponent(url.username);
+    const user = decode(url.username);
     if (user === '') fail(`${name} has a password but no user`);
     const line = [host, url.port || '5432', '*', user, password].map(field).join(':');
     appendFileSync(passfile, `${line}\n`, { mode: 0o600 });
