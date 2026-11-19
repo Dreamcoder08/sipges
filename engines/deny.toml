@@ -1,0 +1,43 @@
+# cargo-deny policy for the engines workspace (CI: the `cargo-deny` job of .github/workflows/rust.yml).
+# Run locally with `cargo deny check` from engines/.
+
+[graph]
+all-features = true
+
+[advisories]
+version = 2
+# Every RustSec advisory fails the check, and so does a yanked version. Fix by upgrading; an ignore
+# needs its advisory ID and a reason here, never a blanket rule.
+yanked = "deny"
+ignore = []
+
+[licenses]
+version = 2
+# The workspace is UNLICENSED (proprietary, publish = false), so only permissive licences that allow
+# closed-source redistribution are accepted; copyleft is rejected. Add a licence here only after
+# checking the crate that needs it.
+allow = [
+  "Apache-2.0",
+  "BSD-3-Clause",
+  "CDLA-Permissive-2.0", # webpki-roots (Mozilla root certificates)
+  "ISC",
+  "MIT",
+  "Unicode-3.0",
+  "Zlib",
+]
+confidence-threshold = 0.9
+# Our own crates are unpublished and UNLICENSED.
+private = { ignore = true }
+
+[bans]
+# Duplicates come from upstream crates moving at different speeds; they warn, not fail.
+multiple-versions = "warn"
+# Version wildcards are rejected; path dependencies between our unpublished crates are allowed.
+wildcards = "deny"
+allow-wildcard-paths = true
+
+[sources]
+# crates.io only: no other registry and no git dependencies.
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

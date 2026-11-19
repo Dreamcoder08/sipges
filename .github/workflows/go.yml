@@ -91,6 +91,32 @@ jobs:
           install-mode: goinstall
           working-directory: apps/api-go
 
+  govulncheck:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    name: Go vulnerabilities (govulncheck)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.27.4'
+          cache-dependency-path: |
+            apps/api-go/go.sum
+            engines/go/go.sum
+      # Pinned; built with the Go above so it reads this module's Go version. It fails only when the
+      # code calls a vulnerable symbol, including the standard library of the pinned Go; modules that
+      # are required but never called are reported without failing.
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
+      - name: govulncheck apps/api-go
+        working-directory: apps/api-go
+        run: govulncheck ./...
+      - name: govulncheck engines/go
+        working-directory: engines/go
+        run: govulncheck ./...
+
   parity:
     needs: changes
     if: needs.changes.outputs.code == 'true'

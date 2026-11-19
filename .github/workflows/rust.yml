@@ -105,6 +105,28 @@ jobs:
           go vet ./...
           go test -race -count=1 ./...
 
+  cargo-deny:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    name: Rust dependencies (cargo-deny advisories, licences, bans, sources)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: engines
+    steps:
+      - uses: actions/checkout@v4
+      # Pinned release, checked against the hash published with it. Policy: engines/deny.toml.
+      - name: Install cargo-deny 0.20.2
+        run: |
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/cargo-deny.tar.gz" \
+            https://github.com/EmbarkStudios/cargo-deny/releases/download/0.20.2/cargo-deny-0.20.2-x86_64-unknown-linux-musl.tar.gz
+          echo "9f12ed4c49936e09b48bf862b595cde2fe64fcbd9d74dfacac6131ca824c8d5f  $RUNNER_TEMP/cargo-deny.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/cargo-deny.tar.gz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/cargo-deny-0.20.2-x86_64-unknown-linux-musl" >> "$GITHUB_PATH"
+      - run: rustup toolchain install && cargo --version
+      - run: cargo deny --locked check
+
   fixtures:
     needs: changes
     if: needs.changes.outputs.code == 'true'
