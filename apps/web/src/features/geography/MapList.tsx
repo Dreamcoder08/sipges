@@ -1,4 +1,4 @@
-import { type CSSProperties, useEffect, useId, useLayoutEffect, useRef } from 'react';
+import { type CSSProperties, memo, useEffect, useId, useLayoutEffect, useRef } from 'react';
 import { InternalLink } from '../../shared/lib/navigation.tsx';
 import { LAYER_SLUGS, type Layer, type MapPoint, type Unplaced } from './territorial-model.ts';
 import styles from './TerritorialMap.module.css';
@@ -49,6 +49,49 @@ const wholeRows = (box: HTMLOListElement | null) => {
 };
 
 /**
+ * One row of the map list, memoised: React Compiler does not cache the elements a `.map` builds,
+ * so without `memo` every row would render again. It takes `selected` rather than the selected id,
+ * so a new selection re-renders the two rows it changes, not the whole list.
+ */
+const MapRow = memo(function MapRow({
+  point,
+  n,
+  selected,
+  onSelect,
+}: {
+  point: MapPoint;
+  n: number;
+  selected: boolean;
+  onSelect: (point: MapPoint) => void;
+}) {
+  'use memo';
+  return (
+    <li>
+      <button
+        type="button"
+        className={styles.listRow}
+        data-point={point.id}
+        aria-pressed={selected}
+        onClick={() => onSelect(point)}
+      >
+        <span
+          className={styles.pin}
+          style={{ '--pin': `var(--dim-${point.dimension.toLowerCase()})` } as CSSProperties}
+        >
+          {n}
+        </span>
+        <span className={styles.rowText}>
+          <span>{point.title}</span>
+          <small>
+            {point.layer} · <DateText value={point.date} fallback="Sin fecha" /> · {point.locality}
+          </small>
+        </span>
+      </button>
+    </li>
+  );
+});
+
+/**
  * The records on the map, each row with the number of its marker (closure-roadmap T31,
  * direction 03 inside Territorio). Picking a row selects its marker; a marker picked on the map
  * marks its row and scrolls the list, never the page, to it.
@@ -81,29 +124,13 @@ export const MapList = ({
   return (
     <ol ref={list} className={styles.mapList} aria-label="Registros en el mapa">
       {items.map(({ point, n }) => (
-        <li key={`${point.layer}-${point.id}`}>
-          <button
-            type="button"
-            className={styles.listRow}
-            data-point={point.id}
-            aria-pressed={point.id === selectedId}
-            onClick={() => onSelect(point)}
-          >
-            <span
-              className={styles.pin}
-              style={{ '--pin': `var(--dim-${point.dimension.toLowerCase()})` } as CSSProperties}
-            >
-              {n}
-            </span>
-            <span className={styles.rowText}>
-              <span>{point.title}</span>
-              <small>
-                {point.layer} · <DateText value={point.date} fallback="Sin fecha" /> ·{' '}
-                {point.locality}
-              </small>
-            </span>
-          </button>
-        </li>
+        <MapRow
+          key={`${point.layer}-${point.id}`}
+          point={point}
+          n={n}
+          selected={point.id === selectedId}
+          onSelect={onSelect}
+        />
       ))}
     </ol>
   );

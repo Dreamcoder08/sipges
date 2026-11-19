@@ -84,9 +84,12 @@ export const useMapView = ({
     setState((s) => panned(resolved(s), dLon, dLat));
   }, []);
   const reset = useCallback(() => setState({ center: null, zoom: 1 }), []);
-  /** Centres on a place; `zoom` is absolute, or kept when omitted. */
-  const focus = useCallback((at: LonLat | null, zoom?: number) => {
-    setState((s) => ({ center: at, zoom: clamp(zoom ?? s.zoom) }));
+  /**
+   * Centres on a place; `zoom` is absolute, or kept when omitted, and never below `minZoom`.
+   * `minZoom` reads the current zoom inside the update, so a caller needs no render-time zoom.
+   */
+  const focus = useCallback((at: LonLat | null, zoom?: number, minZoom = 1) => {
+    setState((s) => ({ center: at, zoom: clamp(Math.max(zoom ?? s.zoom, minZoom)) }));
   }, []);
 
   // Gesture bookkeeping lives in refs: pointer moves arrive faster than renders.

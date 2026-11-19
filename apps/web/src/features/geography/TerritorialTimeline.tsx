@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from 'react';
+import { memo, useEffect, useId, useRef } from 'react';
 import { monthLabel } from '../../shared/lib/text.ts';
 import { DimensionBadge } from '../../shared/ui/Badges.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
@@ -13,6 +13,45 @@ import { DateText } from '../../shared/ui/DateText.tsx';
 export const LIST_LIMIT = 150;
 /** Time each month stays on screen while the evolution plays. */
 export const STEP_MS = 1100;
+
+/**
+ * One record of the period list, memoised like the map list's rows (MapList.tsx). It takes
+ * `selected` and `current` rather than the selected id and the cursor, so a new selection or
+ * month re-renders only the rows it changes.
+ */
+const TimelineRow = memo(function TimelineRow({
+  point,
+  selected,
+  current,
+  onSelect,
+}: {
+  point: MapPoint;
+  selected: boolean;
+  current: boolean;
+  onSelect: (point: MapPoint) => void;
+}) {
+  'use memo';
+  return (
+    <li data-id={point.id} data-selected={selected} data-current={current}>
+      <span className={`${styles.dot} ${styles[point.dimension] ?? ''}`} aria-hidden="true" />
+      <small>
+        <DateText value={point.date} fallback="Sin fecha" /> · {point.locality} · {point.layer}
+      </small>
+      <button
+        type="button"
+        className={styles.linkButton}
+        aria-pressed={selected}
+        onClick={() => onSelect(point)}
+      >
+        <DimensionBadge code={point.dimension} /> {point.title}
+      </button>
+      <small>
+        <EvidenceTag state={point.evidence} /> ·{' '}
+        {point.source ? `Fuente ${point.source}` : 'Sin fuente'}
+      </small>
+    </li>
+  );
+});
 
 /**
  * Evolution panel synchronised with the map (ODD geospatial-timeline T5): the histogram sets
@@ -152,29 +191,13 @@ export const TerritorialTimeline = ({
       {shown.length ? (
         <ol ref={list} className={styles.timeline} aria-label="Registros del periodo">
           {shown.map((p) => (
-            <li
+            <TimelineRow
               key={`${p.layer}-${p.id}`}
-              data-id={p.id}
-              data-selected={p.id === selectedId}
-              data-current={Boolean(cursor) && monthOf(p) === cursor}
-            >
-              <span className={`${styles.dot} ${styles[p.dimension] ?? ''}`} aria-hidden="true" />
-              <small>
-                <DateText value={p.date} fallback="Sin fecha" /> · {p.locality} · {p.layer}
-              </small>
-              <button
-                type="button"
-                className={styles.linkButton}
-                aria-pressed={p.id === selectedId}
-                onClick={() => onSelect(p)}
-              >
-                <DimensionBadge code={p.dimension} /> {p.title}
-              </button>
-              <small>
-                <EvidenceTag state={p.evidence} /> ·{' '}
-                {p.source ? `Fuente ${p.source}` : 'Sin fuente'}
-              </small>
-            </li>
+              point={p}
+              selected={p.id === selectedId}
+              current={Boolean(cursor) && monthOf(p) === cursor}
+              onSelect={onSelect}
+            />
           ))}
         </ol>
       ) : (

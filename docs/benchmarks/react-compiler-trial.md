@@ -1,8 +1,8 @@
 # React Compiler trial (2026-11-19)
 
-**Decision: keep.** React Compiler v1 (stable, Babel) runs in annotation mode on 19 annotated components, 18 of which compile: `TerritorialWorkspace` bails out on its local `select` helper (`[hoisting] EnterSSA`), so it stays uncompiled, which is why Territorio is neutral. It cuts the
+**Decision: keep.** React Compiler v1 (stable, Babel) runs in annotation mode on 21 annotated components, all of which compile (see [Territorio](#territorio-after-the-trial) for the two added later and the bailout fixed). It cuts the
 components React renders during the measured interactions by 46% on Inicio, 70% on IRSA and 17% on Registros, and
-main-thread script time by 26%, 20% and 5%. Territorio is neutral. The entry chunk grows 2.3 kB gzip and stays
+main-thread script time by 26%, 20% and 5%. Territorio was neutral in the trial and renders 88% less since. The entry chunk grows 2.3 kB gzip and stays
 inside its budget. Compiling every component (infer mode) renders less but crosses the entry budget, so it was
 rejected.
 
@@ -91,6 +91,30 @@ Annotating only the six screen components did not help IRSA or Registros. The re
 Territorio stays near baseline in every mode, infer included. `TerritorialTimeline` and the map list give every row
 a prop that depends on the selected id, so a selection re-renders all rows. Splitting the row into its own
 component is the next step if Territorio needs it.
+
+### Territorio after the trial
+
+Three changes, measured with the same spec (render counts, one run each, deterministic):
+
+| Build | Territorio |
+| --- | ---: |
+| Trial (`TerritorialWorkspace` uncompiled) | 1,157 |
+| Helper renamed, `TerritorialWorkspace` compiles | 1,080 |
+| Rows as their own components | 600 |
+| Rows wrapped in `memo`, stable `onSelect` | 142 (−88%) |
+
+- The bailout came from a local helper named `select` whose JSX used the `<select>` tag: the compiler resolved the
+  tag as the helper, used before its own definition. Renamed `filterField`. `src/react-compiler.test.ts` now
+  compiles every annotated file with the build's options and fails on any bailout, so one never goes unnoticed.
+- The compiler does not cache the elements a `.map` callback builds, so a compiled list still renders every row.
+  `MapRow` and `TimelineRow` are `memo` components that take `selected` (and `current`) as booleans.
+- `memo` needs a stable `onSelect`. `focusPoint` called `map.focus(…)`, which made it depend on the whole `map`,
+  new on every render; it calls `focusMap` instead, and `map.focus` takes a `minZoom` so it needs no render-time
+  zoom. Compiling `TerritorialWorkspace` also turned the `?registro=` effect into a lint error
+  (`react-hooks/set-state-in-effect`); the record is now resolved in the `useState` initialisers, since the layers
+  are loaded when the workspace mounts.
+
+Registros shows the same pattern (`Icon` and the row chips at 320 each), so the same change is its next step.
 
 ### Main-thread busy time (5 alternated runs each, ms, CPU 4× slower)
 
