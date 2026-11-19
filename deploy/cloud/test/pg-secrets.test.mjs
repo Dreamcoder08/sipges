@@ -63,16 +63,35 @@ describe('pg-secrets strip', () => {
     assert.equal(lines, '');
   });
 
+  it('refuses an invalid percent escape with one line that does not echo the value', () => {
+    for (const url of [
+      'postgres://reader:s3cr%zzt@host.example/sipges',
+      'postgres://reader@host.example/sipges?password=s3cr%zzt',
+      'postgres://reader@host.example/sipges?password=a%e9b',
+    ]) {
+      const result = spawnSync(process.execPath, [helper, 'strip', 'URL', path.join(scratch, 'malformed')], {
+        env: { ...process.env, URL: url },
+        encoding: 'utf8',
+      });
+      assert.equal(result.status, 1);
+      assert.equal(result.stdout, '');
+      assert.equal(result.stderr, 'pg-secrets: URL has an invalid percent escape\n');
+    }
+  });
+
   it('applies the options through libpq after stripping', { skip: !process.env.SIPGES_TEST_DATABASE_URL }, () => {
     const server = new URL(process.env.SIPGES_TEST_DATABASE_URL);
     const url =
-      `postgres://${server.username}:unused@${server.host}${server.pathname}` +
+      `postgres://${server.username}:${server.password || 'unused'}@${server.host}${server.pathname}` +
       '?options=-c%20statement_timeout%3D4321%20-c%20search%5Fpath%3Dpg%5Fsecrets';
-    const { stripped } = strip(url);
+    const { stripped, passfile } = strip(url);
+    // Only the password file the helper wrote: never the caller's ~/.pgpass or PGPASSWORD.
+    const env = { ...process.env, PGPASSFILE: passfile };
+    delete env.PGPASSWORD;
     const result = spawnSync(
       'psql',
       [stripped, '-X', '-At', '-c', "SELECT current_setting('statement_timeout'), current_setting('search_path')"],
-      { encoding: 'utf8' },
+      { encoding: 'utf8', env },
     );
     assert.equal(result.status, 0, result.stderr);
     assert.equal(result.stdout.trim(), '4321ms|pg_secrets');
