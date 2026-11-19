@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { territorialAlertsQuery } from '../../../shared/api/territorial-alerts.ts';
 import { formatLongDay } from '../../../shared/lib/format.ts';
+import { limaNoon, useLimaDay } from '../../../shared/lib/lima-day.ts';
 import { useMediaQuery } from '../../../shared/lib/media.ts';
 import { Composer, type ComposerMode } from '../../../shared/ui/Composer.tsx';
 import { Icon } from '../../../shared/ui/Icon.tsx';
@@ -64,6 +65,7 @@ export const InicioPage = ({
   /** The destination's tabs («Inicio | Panel | Centro gerencial»), at the start of the top bar. */
   tabs?: ReactNode;
 }) => {
+  'use memo';
   const [question, setQuestion] = useState('');
   const [choice, setChoice] = useState<ComposerMode>('preguntar');
   const fieldId = useId();
@@ -245,7 +247,8 @@ export const InicioPage = ({
     isFetching: failed.some((query) => query.isFetching),
     refetch: () => Promise.all(failed.map((query) => query.refetch())),
   };
-  const week = events.data ? eventsThisWeek(events.data, new Date()) : null;
+  const limaDay = useLimaDay();
+  const week = events.data ? eventsThisWeek(events.data, limaNoon(limaDay)) : null;
   // A chip sends at once, in the mode the switch shows (T4); the box shows what was sent.
   const starters = starterQuestions({ openAlerts });
   // A chip that the project's state adds goes first once the alerts load. The phone strip snaps,

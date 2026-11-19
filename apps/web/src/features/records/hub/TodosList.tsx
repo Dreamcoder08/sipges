@@ -63,6 +63,7 @@ export const TodosList = ({
   letter: VerificationLetter | null;
   onLetter: (letter: VerificationLetter | null) => void;
 }) => {
+  'use memo';
   const captionId = useId();
   const [focused, setFocused] = useState<string | null>(null);
   const [query, setQuery] = useState('');

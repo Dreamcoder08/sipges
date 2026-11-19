@@ -6,8 +6,9 @@ import { VERIFICATION_WORDS, type VerificationLetter } from './summary.ts';
  * A = most confident, E = least; the letter always carries the meaning, colour only helps.
  * The word beside it («Corroborada») shows wherever there is room: the desktop table and the sheet.
  */
-export const VerificationChip = ({ letter }: { letter: VerificationLetter | null }) =>
-  letter ? (
+export const VerificationChip = ({ letter }: { letter: VerificationLetter | null }) => {
+  'use memo';
+  return letter ? (
     <span className={styles.verification}>
       <span
         className={styles.ver}
@@ -21,6 +22,7 @@ export const VerificationChip = ({ letter }: { letter: VerificationLetter | null
   ) : (
     <span className={styles.muted}>—</span>
   );
+};
 
 const VALIDATION_TONES: Readonly<Record<string, StatusTone>> = {
   Validado: 'positive',
@@ -28,9 +30,11 @@ const VALIDATION_TONES: Readonly<Record<string, StatusTone>> = {
 };
 
 /** The status text is the meaning; the tone only helps. Unknown wordings stay neutral. */
-export const ValidationChip = ({ state }: { state: string }) =>
-  state ? (
+export const ValidationChip = ({ state }: { state: string }) => {
+  'use memo';
+  return state ? (
     <StatusBadge tone={VALIDATION_TONES[state]}>{state}</StatusBadge>
   ) : (
     <span className={styles.muted}>—</span>
   );
+};

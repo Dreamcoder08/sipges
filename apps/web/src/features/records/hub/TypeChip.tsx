@@ -5,9 +5,12 @@ import { typeLabel } from './types.ts';
 import styles from './Hub.module.css';
 
 /** The record type as a small chip with the same icon its screen had in the menu. */
-export const TypeChip = ({ module }: { module: RecordModule }) => (
-  <span className={styles.typeChip} data-type-chip>
-    <Icon name={SCREEN_ICONS[`/${module}` as ScreenPath] ?? 'layers'} />
-    {typeLabel(module)}
-  </span>
-);
+export const TypeChip = ({ module }: { module: RecordModule }) => {
+  'use memo';
+  return (
+    <span className={styles.typeChip} data-type-chip>
+      <Icon name={SCREEN_ICONS[`/${module}` as ScreenPath] ?? 'layers'} />
+      {typeLabel(module)}
+    </span>
+  );
+};

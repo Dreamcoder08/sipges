@@ -14,6 +14,7 @@ export const DateText = ({
   time?: boolean;
   fallback?: string;
 }) => {
+  'use memo';
   const stored = (value ?? '').trim();
   if (!stored) return <>{fallback}</>;
   if (!limaDay(stored)) return <>{stored}</>;

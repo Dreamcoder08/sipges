@@ -70,6 +70,7 @@ export const OperationsPanel = ({
   /** More records were in scope than the dossier takes. */
   capped: boolean;
 }) => {
+  'use memo';
   const key = seeds.map((s) => `${s.module}:${s.id}`).join('|');
   const query = useQuery({
     queryKey: ['territorial-operations', scope, key],
