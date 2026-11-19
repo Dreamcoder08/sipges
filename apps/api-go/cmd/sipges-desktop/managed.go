@@ -28,6 +28,8 @@ const launcherUsage = `Usage: sipges-desktop --install <root> [--releases <dir>]
        sipges-desktop --install <root> --recover [--accept-restored-state] [--pg-bin <dir>]
        sipges-desktop --install <root> --copies
        sipges-desktop --install <root> --remove-copies-older-than <days> [--pg-bin <dir>]
+       sipges-desktop --move-pglite --state <copy of the state folder> [--to <url>] [--prepared <state>]
+                      [--scratch <dir>] [--port 8000] [--pglite-dist <dir>] [--pg-bin <dir>]
 
 Starts the current version of a managed install on 127.0.0.1 (default port 8000): its bundled
 PostgreSQL 18 (<version>/postgresql/bin, else --pg-bin or SIPGES_PG_BIN) on <state>/pg18 and its
@@ -53,6 +55,8 @@ removed; it is refused while an update is pending or halted.
 --recover and --remove-copies-older-than are refused while SIPGES runs on this install; they
 first stop a PostgreSQL that a stopped launcher left running, as the start does (its pg_ctl is
 the current version's, else --pg-bin or SIPGES_PG_BIN). They start nothing.
+--move-pglite moves the PGlite database of a copy of the state folder into an empty PostgreSQL 18
+database once, without Node (sipges-desktop --move-pglite --help); it needs no --install.
 Exit codes: 0 stopped, 3 an update could not be rolled back and nothing was started (restore
 the pre-update copy named in the message), otherwise the server's own exit code or 1.
 For --release, --recover and the copies: 0 done, 1 refused or invalid, 3 rollback incomplete.`

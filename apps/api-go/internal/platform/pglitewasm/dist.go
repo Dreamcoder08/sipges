@@ -95,3 +95,10 @@ func loadDist(dir string) (*dist, error) {
 	}
 	return d, nil
 }
+
+// CheckDist verifies that dir holds the pinned PGlite 0.5.15 dist files, as Open does first. Its
+// errors name only files, sizes and hashes, never anything a database holds.
+func CheckDist(dir string) error {
+	_, err := loadDist(dir)
+	return err
+}
