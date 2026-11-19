@@ -952,7 +952,9 @@ En los comandos, `$app` es `"$env:LOCALAPPDATA\SIPGES-app"`, `$datos` es la carp
   Tenés que ver `Moved: the target holds the copy, committed.`,
   `The prepared cluster is ready: removed pg18.pending-move.` y `0`; la primera línea dice
   `(WebAssembly in Go)`. Con `1` o `2` no se escribió nada y la marca sigue: pará el clúster igual y seguí
-  con G7. Si G0 dio `False` en `go\pglite` (una versión anterior), el mismo traslado con Node 24 y las mismas
+  con G7. Si `--prepared` no es la carpeta cuyo `pg18` sirve el clúster arrancado, el traslado en Go se
+  niega como el de Node, antes de leer o escribir nada: `el servidor de destino no sirve la carpeta … de
+  --prepared: … no se escribió nada` y `2`; revisá `$datos` y el clúster arrancado antes de reintentar. Si G0 dio `False` en `go\pglite` (una versión anterior), el mismo traslado con Node 24 y las mismas
   opciones es `node <kit>\deploy\desktop\migration\pglite-to-postgres.mjs --state … --prepared $datos`.
 - [ ] **G5 — Abrir en modo Go.** Abrí SIPGES desde el acceso directo. El lanzador Go aplica las
   migraciones que falten al arrancar y abre la API en Go. En `$app\launcher.log` la última línea
