@@ -305,7 +305,13 @@ test('without Go the trusted installer is not built and the kit stops, loudly, w
   withTemp(async (dir) => {
     await assert.rejects(
       buildTrustedInstaller(join(dir, 'sipges-desktop.exe'), { checkout: repo, env: { PATH: join(dir, 'no-go') } }),
-      /^Error: No se pudo construir el sipges-desktop\.exe de confianza del kit \(go build\): .*Instalá Go y repetí el comando\.$/,
+      (error) => {
+        assert.match(error.message, /^No se pudo construir el sipges-desktop\.exe de confianza del kit \(go build\): Go no está en el PATH\./);
+        // The fix is the portable Go of step K, never a Go installed on the laptop.
+        assert.ok(error.message.includes('node deploy\\desktop\\windows\\portable-go.mjs --out C:\\SIPGES-go'), error.message);
+        assert.ok(error.message.includes('desktop-visit.es.md'), error.message);
+        return true;
+      },
     );
     const pkg = join(dir, 'package');
     await makePackage(pkg, '1.0.0');
@@ -323,6 +329,31 @@ test('without Go the trusted installer is not built and the kit stops, loudly, w
       /No se pudo construir el sipges-desktop\.exe de confianza/,
     );
     assert.equal(existsSync(visit), false, 'no visit folder was written');
+  }));
+
+test('a checkout without apps/api-go gets its own message, never the portable Go one', () =>
+  withTemp(async (dir) => {
+    await assert.rejects(buildTrustedInstaller(join(dir, 'sipges-desktop.exe'), { checkout: dir, env: { PATH: join(dir, 'no-go') } }), (error) => {
+      assert.ok(
+        error.message.startsWith(
+          `No se pudo construir el sipges-desktop.exe de confianza del kit (go build): falta la carpeta ${join(dir, 'apps', 'api-go')}.`,
+        ),
+        error.message,
+      );
+      assert.equal(error.message.includes('PATH'), false, error.message);
+      assert.equal(error.message.includes('portable-go.mjs'), false, error.message);
+      return true;
+    });
+  }));
+
+test('a go build that fails with Go on the PATH keeps its own reason and does not send to the portable Go', { skip: !hasGo && 'needs the go toolchain' }, () =>
+  withTemp(async (dir) => {
+    await mkdir(join(dir, 'apps', 'api-go'), { recursive: true });
+    await assert.rejects(buildTrustedInstaller(join(dir, 'sipges-desktop.exe'), { checkout: dir }), (error) => {
+      assert.match(error.message, /^No se pudo construir el sipges-desktop\.exe de confianza del kit \(go build\): /);
+      assert.equal(error.message.includes('portable-go.mjs'), false, error.message);
+      return true;
+    });
   }));
 
 test('a key that is not Ed25519 is refused before the visit folder is written', () =>

@@ -446,7 +446,13 @@ otherwise); it is refused inside the original state folder or inside the copy. `
 where SIPGES answers when it is running. `--prepared <state folder>` names the real state folder
 `sipges-desktop --install <root> --prepare-only` prepared: its `pg18.pending-move`, which keeps the
 shortcut and the Go launcher off the empty cluster, is removed only after a committed move with no
-difference (refused before reading anything when the mark is missing). It needs `pnpm install` in this checkout: it takes `@electric-sql/pglite`,
+difference (refused before reading anything when the mark is missing). The target must serve that
+folder's `pg18`, checked before anything is read or written: the server's `data_directory` must
+resolve to `<state folder>/pg18` when the login may read it (`pg_read_all_settings`); otherwise, as
+for the API's login, the server's system identifier (`pg_control_system()`) must equal the one in
+`pg18/global/pg_control` and the port it answers on the one in `pg18/postmaster.pid`. Any other
+folder is refused in Spanish with exit 2, and its mark stays. If the mark cannot be removed after
+the move committed, the exit is 2 and the exact command that removes it is printed. It needs `pnpm install` in this checkout: it takes `@electric-sql/pglite`,
 `@electric-sql/pglite-tools` and `postgres` from `apps/api`.
 
 | Step | What happens |

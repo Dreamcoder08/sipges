@@ -40,7 +40,8 @@ The script runs the Rust port, `engines/crates/rotate-data-key` (ADR 0032, T43),
 and exit codes are those of the TypeScript tool, which stays reachable as `rotate:data-key:ts`
 until it is retired (T73). Unlike that tool, it requires `SIPGES_DATABASE_URL` and never opens a
 local PGlite: with only `SIPGES_PGLITE_DIR` set, the script stops before compiling and points at
-`rotate:data-key:ts`, which a PGlite install uses until it moves to pg18.
+`rotate:data-key:ts`, which a PGlite install uses until it moves to pg18. The first production run
+is a dry run, the default (no `--apply`), and its counts are read before anything is applied.
 
 | Variable | Value |
 | --- | --- |

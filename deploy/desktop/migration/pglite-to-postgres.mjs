@@ -19,11 +19,11 @@
 //
 // --prepared <state folder>: the folder `sipges-desktop --prepare-only` prepared (the real one, not
 // the copy); its pg18.pending-move, which keeps SIPGES off the empty cluster, is removed only
-// after a committed move with no difference.
+// after a committed move with no difference, and only when the target serves that folder's pg18.
 import { randomBytes } from 'node:crypto';
 import { cp, lstat, mkdtemp, readFile, realpath, rm, unlink } from 'node:fs/promises';
 import { createRequire } from 'node:module';
-import { homedir, tmpdir } from 'node:os';
+import { endianness, homedir, tmpdir } from 'node:os';
 import path from 'node:path';
 import { URL, fileURLToPath, pathToFileURL } from 'node:url';
 import process from 'node:process';
@@ -671,6 +671,66 @@ async function checkPrepared(folder) {
   return mark;
 }
 
+// Fields of the cluster folder that identify the server running on it: the system identifier is
+// the first field of global/pg_control (a uint64 in the host's byte order, as PostgreSQL writes
+// it), and the fourth line of postmaster.pid is the port the postmaster listens on.
+async function clusterIdentity(dir) {
+  const control = await readFile(path.join(dir, 'global', 'pg_control')).catch(() => null);
+  const pid = await readFile(path.join(dir, 'postmaster.pid'), 'utf8').catch(() => null);
+  return {
+    id: control && control.length >= 8 ? String(endianness() === 'LE' ? control.readBigUInt64LE(0) : control.readBigUInt64BE(0)) : null,
+    port: pid ? Number(pid.split(/\r?\n/)[3]) : null,
+  };
+}
+
+/**
+ * Refuses a --prepared folder whose pg18 the target does not serve, before anything is read or
+ * written: a wrong folder would lose its mark while the right cluster stays empty. The server's
+ * data_directory decides when the login may read it (pg_read_all_settings); the API's login may
+ * not, so then the cluster must match by system identifier (pg_control_system(), readable by any
+ * login) and by the port its postmaster.pid names, which is the port the target answered on.
+ */
+export async function checkServed(postgres, url, stateDir, platform = process.platform) {
+  const cluster = path.join(stateDir, 'pg18');
+  const wrong = () =>
+    refuse(
+      `el servidor de destino no sirve la carpeta ${cluster} de --prepared: indique la carpeta de datos que preparó sipges-desktop --prepare-only y arranque su clúster; no se escribió nada`,
+    );
+  const real = await realpath(cluster).catch(() => null);
+  if (!real) wrong();
+  const same = (a, b) => (platform === 'win32' ? a.toLowerCase() === b.toLowerCase() : a === b);
+  const sql = postgres(url.toString(), { max: 1, onnotice: () => {}, connection: { application_name: 'sipges-pglite-move' } });
+  try {
+    let served = null;
+    try {
+      [{ data_directory: served }] = await sql`SHOW data_directory`;
+    } catch (error) {
+      if (error?.code !== '42501') throw error;
+    }
+    if (served !== null) {
+      if (!same(await realpath(served).catch(() => path.resolve(served)), real)) wrong();
+      return;
+    }
+    const [{ id, port }] = await sql`SELECT system_identifier::text AS id, inet_server_port() AS port FROM pg_control_system()`;
+    const local = await clusterIdentity(real);
+    if (local.id !== id || local.port !== port) wrong();
+  } catch (error) {
+    if (error instanceof Refusal) throw error;
+    if (connectionError(error))
+      refuse(`could not connect to the target server (${error.code}): start it and check --to; nothing was written`);
+    throw error;
+  } finally {
+    await sql.end({ timeout: 5 }).catch(() => {});
+  }
+}
+
+/** The command that removes the mark by hand, for the shell the install uses. */
+export function removeCommand(mark, platform = process.platform) {
+  return platform === 'win32'
+    ? `Remove-Item -LiteralPath '${mark.replaceAll("'", "''")}'`
+    : `rm -- '${mark.replaceAll("'", "'\\''")}'`;
+}
+
 /**
  * The whole move. Returns the exit code. Hooks (tests): `afterRestore(tx)`, `answers(port)`, the
  * stop flag.
@@ -692,10 +752,11 @@ export async function runMove(
     const url = checkTarget(options.to);
     const db = await checkCopy(options.state, original);
     const pending = options.prepared ? await checkPrepared(options.prepared) : null;
+    const tools = await loadTools();
+    if (pending) await checkServed(tools.postgres, url, path.dirname(pending));
     const scratch = await checkScratch(options.scratch ?? tmpdir(), path.dirname(db), original);
     await checkStopped(db, port, answers);
     const before = await treeDigest(db);
-    const tools = await loadTools();
     say(`Source: a copy of the state folder; ${PGLITE} ${tools.pglite}, ${TOOLS} ${tools.tools}`);
     const source = await readSource(tools, db, scratch, stop);
     if ((await treeDigest(db)) !== before)
@@ -708,8 +769,9 @@ export async function runMove(
         await unlink(pending);
       } catch (error) {
         say(
-          `The move committed, but ${PENDING_MOVE} could not be removed (${error.code ?? 'error'}): remove it from the prepared state folder by hand before opening SIPGES.`,
+          `The move committed, but ${PENDING_MOVE} could not be removed (${error.code ?? 'error'}): remove it by hand before opening SIPGES:`,
         );
+        say(`  ${removeCommand(pending)}`);
         return NOT_COMPARED_EXIT;
       }
       say(`The prepared cluster is ready: removed ${PENDING_MOVE}.`);
@@ -728,8 +790,8 @@ export async function runMove(
 const USAGE = `Usage: SIPGES_MOVE_DATABASE_URL=postgres://<login>@127.0.0.1:<port>/<database> \\
   node deploy/desktop/migration/pglite-to-postgres.mjs --state <copy of the state folder> [--prepared <state folder>] [--scratch <folder>] [--port 8000]
 --to <url> may replace the variable; --port is where SIPGES would answer if it were running.
---prepared names the state folder sipges-desktop --prepare-only prepared: its pg18.pending-move is
-removed only after a committed move with no difference. Read deploy/desktop/migration/README.md.`;
+--prepared names the state folder sipges-desktop --prepare-only prepared, whose pg18 the target must
+serve: its pg18.pending-move is removed only after a committed move with no difference. Read deploy/desktop/migration/README.md.`;
 
 async function main(args) {
   let parsed;
