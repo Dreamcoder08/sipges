@@ -84,7 +84,7 @@ Phase B — the thread, client side (no backend change):
 
 Phase C — backend (CLI first):
 
-- T9 [ ] — S1, S3: follow-up questions:
+- T9 [x] — S1, S3: follow-up questions:
   - `POST /system/analyst/ask` accepts an optional `history` of earlier turns (at most 6 turns and 8,000 characters,
     question and answer text only, no blocks);
   - the history passes the egress guard like tool results;
@@ -380,3 +380,4 @@ T18(b) → T16 → T17. Phases A, B and D change no API and no stored data.
   por el mismo guard de privacidad …»: «Sí, con el guard (Recomendado)». T9 is unblocked: history is held in the tab
   only, nothing is stored on the server, and the history passes the egress guard. T18(b), saving conversations (T11),
   stays open.
+- L19 — T9 closed: Commits 0d48ebbb, 07870880 and 215893e6 (owner decision L18). POST /system/analyst/ask and /ask/stream take an optional history (6 turns, 8,000 runes; 422 otherwise, before any release); the question and history are scrubbed and released as one logged release (integration test on PostgreSQL: one EGRESS row, emails scrubbed; switch off or no data key: 409 and no model call); history answers lose their [n] markers and a record named only there cannot be cited. Claude and OpenAI-compatible adapters send earlier turns as alternating user/assistant text. sipgesctl analyst ask --follow-up FILE. Inicio sends the answered turns of the open thread. Independent verifier: V2, V3 passed; three blockers (marker-only answer, --steps refusal order, null file) fixed in one batch and rechecked as passed. Web suite 923/923.
