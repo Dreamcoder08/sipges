@@ -44,7 +44,9 @@ disponible como `import:base-maestra:ts` hasta su retiro (T73). A diferencia de 
 `SIPGES_DATABASE_URL` y `SIPGES_DATA_KEY`, y no abre un PGlite local: con solo `SIPGES_PGLITE_DIR`,
 el script se detiene antes de compilar e indica usar `import:base-maestra:ts`, la variante de una
 instalación con PGlite hasta que se migre a pg18. En una instalación local,
-`./sipges import base-maestra` ya usa este mismo binario.
+`./sipges import base-maestra` ya usa este mismo binario. La primera ejecución en producción es
+una simulación, el modo por defecto (sin `--apply`): se lee su informe antes de aplicar, y solo con
+la palabra del dueño.
 
 Para revertir: los registros importados se identifican por la entrada de auditoría y sus
 códigos; se eliminan desde la aplicación (cada borrado queda auditado y en el historial).
