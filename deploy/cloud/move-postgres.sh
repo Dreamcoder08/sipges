@@ -5,20 +5,26 @@
 #      constraints, indexes, policies, triggers, functions, grants) and pg_dump of that snapshot;
 #   3. on the target, as its admin: the roles, pg_restore in one transaction (all or nothing), the
 #      objects handed to sipges_app, the login with no BYPASSRLS that the APIs use;
-#   4. proof: the same hashes and shape on the target, and row-level security as sipges_app.
+#   4. proof: the same hashes and shape on the target, no privilege beyond what SIPGES grants, and
+#      row-level security as sipges_app.
 # The source is only read: every source session runs with default_transaction_read_only=on.
+# Passwords never reach a process argument: they go from the URLs into a private password file,
+# and sipges_app's password reaches the server only as a SCRAM-SHA-256 verifier.
 #
 # Usage: deploy/cloud/move-postgres.sh preflight|move|verify <work dir>
 #   preflight  checks only, writes nothing anywhere
 #   move       preflight, dump, restore, hand over, verify
 #   verify     the proof again, against the source as it is now (source must be quiescent)
-# Environment (never printed; see the guide for how to keep them off the screen):
-#   SIPGES_MOVE_SOURCE_URL    direct (not pooled) URL of the source, as a login that bypasses RLS
+# Environment (never printed; postgres:// URLs, each with its password):
+#   SIPGES_MOVE_SOURCE_URL    direct (not pooled) URL of the source, as a login whose own
+#                             attributes include BYPASSRLS (membership never passes it on)
 #   SIPGES_MOVE_TARGET_URL    direct URL of the EMPTY target database, as its owner with
 #                             BYPASSRLS and CREATEROLE (PlanetScale's default role) or a superuser
-#   SIPGES_MOVE_APP_PASSWORD  password of sipges_app on the target (move only; created if missing)
+#   SIPGES_MOVE_APP_PASSWORD  password of sipges_app (move only; printable ASCII; the role is
+#                             created if missing, and refused if it bypasses RLS)
 #   SIPGES_MOVE_APP_URL       direct URL of the target as sipges_app (move and verify)
 #   SIPGES_MOVE_SCHEMA        schema to move (default public)
+# Needs psql, pg_dump and pg_restore at least as new as the source server, and Node 22.
 set -euo pipefail
 umask 077
 
@@ -28,7 +34,7 @@ die() {
 }
 
 usage() {
-  sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//'
+  awk 'NR == 1 { next } /^#/ { sub(/^# ?/, ""); print; next } { exit }' "$0"
 }
 
 [ $# -eq 2 ] || {
@@ -53,12 +59,62 @@ mkdir -p "$work"
 [ -z "$(find "$work" -mindepth 1 -maxdepth 1 -name '*.dump' -print -quit)" ] || [ "$command" != move ] ||
   die "$work already holds a dump: use a new work directory for each move"
 
+here="$(cd "$(dirname "$0")" && pwd)"
+secrets="$(mktemp -d)"
+restoring=0
+# Marks the roles this tool creates as stand-ins, so a retry and `verify` can recognise them.
+STAND_IN='sipges-move stand-in'
+on_exit() {
+  local status=$?
+  # A move that failed after creating stand-ins drops them, with any grant they received.
+  if [ "$status" != 0 ] && [ "$restoring" = 1 ]; then
+    drop_stand_ins || echo "move-postgres: could not drop the stand-in roles; the next move drops them" >&2
+  fi
+  rm -rf -- "$secrets"
+  exit "$status"
+}
+trap on_exit EXIT
+# Every client reads passwords from this file, never from its arguments or PGPASSWORD.
+unset PGPASSWORD
+export PGPASSFILE="$secrets/pgpass"
+: >"$PGPASSFILE"
+strip() { node "$here/pg-secrets.mjs" strip "$1" "$PGPASSFILE"; }
+SOURCE_URL="$(strip SIPGES_MOVE_SOURCE_URL)" || die "SIPGES_MOVE_SOURCE_URL is not usable"
+TARGET_URL="$(strip SIPGES_MOVE_TARGET_URL)" || die "SIPGES_MOVE_TARGET_URL is not usable"
+APP_URL=
+if [ "$command" != preflight ]; then
+  APP_URL="$(strip SIPGES_MOVE_APP_URL)" || die "SIPGES_MOVE_APP_URL is not usable"
+fi
+
 # Every source session: read only, whatever the statement.
 export PGOPTIONS="-c default_transaction_read_only=on ${PGOPTIONS:-}"
-src() { PGOPTIONS="$PGOPTIONS" psql "$SIPGES_MOVE_SOURCE_URL" -X -q -v ON_ERROR_STOP=1 -v schema="$schema" "$@"; }
+src() { PGOPTIONS="$PGOPTIONS" psql "$SOURCE_URL" -X -q -v ON_ERROR_STOP=1 -v schema="$schema" "$@"; }
 # Target sessions must not inherit the read-only option.
-tgt() { PGOPTIONS='' psql "$SIPGES_MOVE_TARGET_URL" -X -q -v ON_ERROR_STOP=1 -v schema="$schema" "$@"; }
-app() { PGOPTIONS='' psql "$SIPGES_MOVE_APP_URL" -X -q -v ON_ERROR_STOP=1 -v schema="$schema" "$@"; }
+tgt() { PGOPTIONS='' psql "$TARGET_URL" -X -q -v ON_ERROR_STOP=1 -v schema="$schema" "$@"; }
+app() { PGOPTIONS='' psql "$APP_URL" -X -q -v ON_ERROR_STOP=1 -v schema="$schema" "$@"; }
+# A path as one quoted psql argument: a quote inside it is doubled.
+quoted() { printf "'%s'" "${1//\'/\'\'}"; }
+
+# The same cluster and database on both sides would restore a database into itself.
+refuse_same() {
+  local identity="SELECT system_identifier || '/' || current_database() FROM pg_control_system()"
+  local source target
+  source="$(src -At <<<"$identity")" || die "cannot reach the source"
+  target="$(tgt -At <<<"$identity")" || die "cannot reach the target"
+  [ "$source" != "$target" ] || die "the target is the source database ($target): refusing"
+}
+
+# Drops every role marked as a stand-in, with what it was granted in this database.
+drop_stand_ins() {
+  local role
+  while IFS= read -r role; do
+    [ -n "$role" ] || continue
+    # DROP OWNED needs the privileges of the role, which its creator may take.
+    tgt -v r="$role" <<<'GRANT :"r" TO CURRENT_USER WITH INHERIT TRUE; DROP OWNED BY :"r"; DROP ROLE :"r";' || return 1
+    echo "dropped stand-in role: $role"
+  done < <(tgt -At -v marker="$STAND_IN" <<<"SELECT rolname FROM pg_roles
+    WHERE shobj_description(oid, 'pg_authid') = :'marker' ORDER BY 1")
+}
 
 # Text output that is the same on any server: the hashes compare row text.
 STABLE="SET TimeZone = 'UTC'; SET DateStyle = 'ISO, MDY'; SET IntervalStyle = 'postgres';
@@ -170,6 +226,13 @@ preflight() {
   [[ "$target" == *"super=t"* || "$target" == *"createrole=t"* ]] ||
     die "the target admin must be able to create roles"
   [ "$(src -At -c 'SHOW transaction_read_only')" = on ] || die "the source session is not read only"
+  refuse_same
+  # An existing sipges_app or sipges_tenant is reused only if it cannot bypass RLS. A
+  # non-superuser admin may not even name SUPERUSER in ALTER ROLE, so the tool never alters it.
+  local privileged
+  privileged="$(tgt -At <<<"SELECT string_agg(rolname, ', ' ORDER BY rolname) FROM pg_roles
+    WHERE rolname IN ('sipges_app', 'sipges_tenant') AND (rolsuper OR rolbypassrls)")"
+  [ -z "$privileged" ] || die "$privileged exists with SUPERUSER or BYPASSRLS: refusing to reuse it"
   tables="$(tgt -At <<<"SELECT count(*) FROM pg_class WHERE relnamespace = to_regnamespace(:'schema') AND relkind IN ('r','p','S','v','m')")"
   [ "$command" != move ] || [ "$tables" = 0 ] ||
     die "the target schema $schema is not empty ($tables relations): move only into an empty database"
@@ -179,17 +242,17 @@ preflight() {
 # On the source, one REPEATABLE READ transaction exports a snapshot; the hashes, the shape and
 # pg_dump all read that same snapshot, so they agree even if something writes meanwhile.
 dump_source() {
-  coproc SNAP { PGOPTIONS="$PGOPTIONS" psql "$SIPGES_MOVE_SOURCE_URL" -X -q -At -v ON_ERROR_STOP=1 -v schema="$schema" 2>&1; }
+  coproc SNAP { PGOPTIONS="$PGOPTIONS" psql "$SOURCE_URL" -X -q -At -v ON_ERROR_STOP=1 -v schema="$schema" 2>&1; }
   local snapshot line
   echo "BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY; SELECT pg_export_snapshot();" >&"${SNAP[1]}"
   read -r -t 60 snapshot <&"${SNAP[0]}" || die "the source did not export a snapshot"
   [[ "$snapshot" =~ ^[0-9A-F-]+$ ]] || die "the source did not export a snapshot: $snapshot"
   {
-    echo "\\o $work/source.hashes"
+    echo "\\o $(quoted "$work/source.hashes")"
     echo "$HASHES"
-    echo "\\o $work/source.shape"
+    echo "\\o $(quoted "$work/source.shape")"
     echo "$SHAPE"
-    echo "\\o $work/source.roles"
+    echo "\\o $(quoted "$work/source.roles")"
     echo "$REFERENCED_ROLES"
     echo "\\o"
     echo "SELECT 'hashed';"
@@ -197,7 +260,7 @@ dump_source() {
   read -r -t 3600 line <&"${SNAP[0]}" || die "hashing the source timed out"
   [ "$line" = hashed ] || die "hashing the source failed: $line"
   pg_dump --format=custom --snapshot="$snapshot" --schema="$schema" --no-publications \
-    --no-subscriptions --no-security-labels --file="$work/source.dump" "$SIPGES_MOVE_SOURCE_URL"
+    --no-subscriptions --no-security-labels --file="$work/source.dump" "$SOURCE_URL"
   echo "COMMIT;" >&"${SNAP[1]}"
   eval "exec ${SNAP[1]}>&-" # close psql's input: it ends after COMMIT
   wait "$SNAP_PID" || die "the source snapshot session failed"
@@ -205,29 +268,36 @@ dump_source() {
 }
 
 restore_target() {
-  local placeholders=() left
-  # The roles SIPGES needs, then a NOLOGIN stand-in for each other role the dump names (the old
-  # platform's own), dropped again after the restore so none of their grants survive.
-  SIPGES_APP_PASSWORD="$SIPGES_MOVE_APP_PASSWORD" tgt <<'SQL'
-\getenv app_password SIPGES_APP_PASSWORD
+  local placeholders=() left verifier
+  # The roles SIPGES needs. sipges_app gets its password as a SCRAM verifier computed here; an
+  # existing one (a retry) keeps its attributes, which preflight proved cannot bypass RLS.
+  verifier="$(node "$here/pg-secrets.mjs" scram SIPGES_MOVE_APP_PASSWORD)" ||
+    die "SIPGES_MOVE_APP_PASSWORD is not usable"
+  SIPGES_APP_VERIFIER="$verifier" tgt <<'SQL'
+\getenv app_verifier SIPGES_APP_VERIFIER
 SELECT NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'sipges_tenant') AS make_tenant,
        NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'sipges_app') AS make_app \gset
 \if :make_tenant
 CREATE ROLE sipges_tenant NOLOGIN NOINHERIT;
 \endif
 \if :make_app
-CREATE ROLE sipges_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS PASSWORD :'app_password';
+CREATE ROLE sipges_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS PASSWORD :'app_verifier';
 \else
-ALTER ROLE sipges_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS PASSWORD :'app_password';
+ALTER ROLE sipges_app WITH LOGIN PASSWORD :'app_verifier';
 \endif
 GRANT sipges_tenant TO sipges_app WITH ADMIN OPTION;
 -- ALTER ... OWNER TO sipges_app needs the admin to be able to become it.
 GRANT sipges_app TO CURRENT_USER WITH INHERIT FALSE, SET TRUE;
 SQL
+  # Stand-ins left by a move that could not clean up (killed): their grants must not survive.
+  restoring=1
+  drop_stand_ins || die "could not drop the stand-in roles of an earlier move"
+  # A NOLOGIN stand-in for each other role the dump names (the old platform's own), marked so a
+  # retry recognises it, and dropped again after the restore so none of their grants survive.
   while read -r role; do
     [ -n "$role" ] || continue
     if [ "$(tgt -At -v r="$role" <<<"SELECT count(*) FROM pg_roles WHERE rolname = :'r'")" = 0 ]; then
-      tgt -v r="$role" <<<'CREATE ROLE :"r" NOLOGIN;'
+      tgt -v r="$role" -v marker="$STAND_IN" <<<'CREATE ROLE :"r" NOLOGIN; COMMENT ON ROLE :"r" IS :'"'"'marker'"'"';'
       placeholders+=("$role")
     fi
   done <"$work/source.roles"
@@ -239,16 +309,14 @@ SQL
     grep -vE '^[0-9]+; [0-9]+ [0-9]+ (SCHEMA|DEFAULT ACL) ' >"$work/restore.list"
   echo "skipped: $(pg_restore --list "$work/source.dump" | grep -cE '^[0-9]+; [0-9]+ [0-9]+ DEFAULT ACL ') default privileges of the old platform"
   PGOPTIONS='' pg_restore --no-owner --single-transaction --exit-on-error --use-list="$work/restore.list" \
-    --dbname="$SIPGES_MOVE_TARGET_URL" "$work/source.dump"
-  # Hand over everything in the schema, one statement per object: sequences owned by a column
-  # follow their table. Functions last, as in production-role-cutover.md.
+    --dbname="$TARGET_URL" "$work/source.dump"
   # The stand-ins go while the admin still owns everything: a non-superuser's DROP OWNED revokes
-  # only grants it made, and after the handover the grantor is sipges_app. DROP OWNED needs the
-  # privileges of the role, which its creator may take.
-  for role in "${placeholders[@]}"; do
-    tgt -v r="$role" <<<'GRANT :"r" TO CURRENT_USER WITH INHERIT TRUE; DROP OWNED BY :"r"; DROP ROLE :"r";'
-  done
-  # A non-superuser admin may give an object only to a role with CREATE on its schema.
+  # only grants it made, and after the handover the grantor is sipges_app.
+  drop_stand_ins >/dev/null || die "could not drop the stand-in roles"
+  restoring=0
+  # Hand over everything in the schema, one statement per object: sequences owned by a column
+  # follow their table. Functions last, as in production-role-cutover.md. A non-superuser admin
+  # may give an object only to a role with CREATE on its schema, so that grant comes first.
   tgt <<'SQL'
 SELECT format('GRANT USAGE, CREATE ON SCHEMA %I TO sipges_app', :'schema') \gexec
 SELECT format('ALTER %s %s OWNER TO sipges_app',
@@ -274,6 +342,7 @@ SQL
 
 verify() {
   local failed=0
+  refuse_same
   if [ ! -s "$work/source.hashes" ]; then
     # verify alone: read the source now.
     src -At <<<"$HASHES" >"$work/source.hashes"
@@ -295,9 +364,69 @@ verify() {
     echo "shape: DIFFERENT, see $work/shape.diff" >&2
     failed=1
   fi
+  privilege_audit || failed=1
   rls_proof || failed=1
   [ "$failed" = 0 ] || die "verification FAILED: do not switch to the target"
   echo "verify: ok"
+}
+
+# What the shape cannot see: grants on SIPGES objects to roles SIPGES does not use (the shape
+# compares PUBLIC, sipges_tenant and the owner only), CREATE on the schema for everyone, default
+# privileges for everyone, a SIPGES role that can become a superuser or bypass RLS through
+# membership (attributes are never inherited, but SET ROLE reaches them), and stand-ins left over.
+PRIVILEGES="
+WITH obj AS (
+  SELECT 'relation ' || c.relname AS name, c.relacl AS acl FROM pg_class c
+  WHERE c.relnamespace = :'schema'::regnamespace AND c.relacl IS NOT NULL
+  UNION ALL
+  SELECT 'column ' || c.relname || '.' || a.attname, a.attacl FROM pg_attribute a
+  JOIN pg_class c ON c.oid = a.attrelid
+  WHERE c.relnamespace = :'schema'::regnamespace AND a.attacl IS NOT NULL
+  UNION ALL
+  SELECT 'routine ' || p.oid::regprocedure::text, p.proacl FROM pg_proc p
+  WHERE p.pronamespace = :'schema'::regnamespace AND p.proacl IS NOT NULL
+), sipges AS (
+  SELECT oid FROM pg_roles WHERE rolname IN ('sipges_app', 'sipges_tenant')
+)
+SELECT problem FROM (
+  SELECT format('%s grants %s to %s', o.name, a.privilege_type, r.rolname) AS problem
+  FROM obj o, aclexplode(o.acl) a JOIN pg_roles r ON r.oid = a.grantee
+  WHERE r.oid NOT IN (SELECT oid FROM sipges)
+  UNION ALL
+  SELECT format('schema %s grants %s to %s', n.nspname, a.privilege_type, coalesce(r.rolname, 'PUBLIC'))
+  FROM pg_namespace n, aclexplode(n.nspacl) a LEFT JOIN pg_roles r ON r.oid = a.grantee
+  WHERE n.nspname = :'schema' AND a.grantee <> n.nspowner AND a.grantee NOT IN (SELECT oid FROM sipges)
+    AND NOT (a.grantee = 0 AND a.privilege_type = 'USAGE')
+  UNION ALL
+  SELECT format('default privileges of %s grant %s on %s to PUBLIC', pg_get_userbyid(d.defaclrole),
+    a.privilege_type, d.defaclobjtype)
+  FROM pg_default_acl d, aclexplode(d.defaclacl) a
+  WHERE a.grantee = 0
+    AND NOT (d.defaclobjtype = 'f' AND a.privilege_type = 'EXECUTE')
+    AND NOT (d.defaclobjtype = 'T' AND a.privilege_type = 'USAGE')
+  UNION ALL
+  SELECT format('%s can bypass RLS or is a superuser', s.rolname)
+  FROM pg_roles s WHERE s.rolname IN ('sipges_app', 'sipges_tenant') AND (s.rolsuper OR s.rolbypassrls)
+  UNION ALL
+  SELECT format('%s is a member of %s, which %s', s.rolname, r.rolname,
+    CASE WHEN r.rolsuper THEN 'is a superuser' ELSE 'bypasses RLS' END)
+  FROM pg_roles s, pg_roles r
+  WHERE s.rolname IN ('sipges_app', 'sipges_tenant') AND r.oid <> s.oid
+    AND (r.rolsuper OR r.rolbypassrls) AND pg_has_role(s.oid, r.oid, 'MEMBER')
+  UNION ALL
+  SELECT format('stand-in role %s is left over', r.rolname) FROM pg_roles r
+  WHERE shobj_description(r.oid, 'pg_authid') = :'marker'
+) p ORDER BY 1;"
+
+privilege_audit() {
+  local problems line
+  problems="$(tgt -At -v marker="$STAND_IN" <<<"$PRIVILEGES")" ||
+    { echo "privileges: the audit failed to run" >&2; return 1; }
+  if [ -n "$problems" ]; then
+    while IFS= read -r line; do echo "privileges: $line" >&2; done <<<"$problems"
+    return 1
+  fi
+  echo "privileges: ok, nothing granted beyond sipges_app, sipges_tenant and PUBLIC"
 }
 
 # Row-level security as the APIs will run: login sipges_app, then each tenant as the request path

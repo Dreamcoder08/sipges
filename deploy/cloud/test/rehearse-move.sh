@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
 # Rehearses deploy/cloud/move-postgres.sh between two throwaway PostgreSQL clusters on loopback,
-# with synthetic data only (docs/deployment/planetscale-move.md, "Rehearsal"):
+# with synthetic data only (docs/deployment/planetscale-move.md, "What was proven locally"):
 #   - the source is shaped like production on Neon: a non-superuser owner with BYPASSRLS and
 #     CREATEROLE, and default privileges for a platform role (neon_superuser) the target lacks;
 #   - the target is an empty database owned by an admin shaped like PlanetScale's default role
-#     (no superuser; BYPASSRLS, CREATEROLE, CREATEDB), and sipges_app must sign in
-#     with the password the move sets (scram-sha-256), never by trust;
+#     (no superuser; BYPASSRLS, CREATEROLE, CREATEDB); the admin and sipges_app sign in with
+#     passwords (scram-sha-256) carried in their URLs, never by trust;
+#   - a move that fails in the restore leaves no stand-in role; one killed before it can clean up
+#     is cleaned up by the retry, which also finds sipges_app already there;
+#   - no password ever reaches the argv of psql, pg_dump or pg_restore (logged through shims);
+#   - an existing sipges_app that bypasses RLS, and a target that is the source, are refused;
 #   - after the move: the source is byte-identical, `migrate` as sipges_app finds nothing to do,
-#     and three deliberate faults on the target (a changed row, a lifted FORCE, sipges_app with
-#     BYPASSRLS) each make `verify` fail.
+#     and every planted fault on the target makes `verify` fail.
 #   deploy/cloud/test/rehearse-move.sh [work directory]
 # Needs PostgreSQL 18 client and server binaries (initdb, pg_ctl, psql, pg_dump) and Node 22.
 set -Eeuo pipefail
@@ -45,9 +48,10 @@ cluster() { # name port: a loopback cluster whose admin is sipges_test, with no 
 src_port=$(free_port 57439)
 cluster source "$src_port"
 dst_port=$(free_port $((src_port + 1)))
-# On the target, sipges_app must prove its password; everyone else is trusted on loopback.
+# On the target, the admin and sipges_app must prove their passwords; the cluster's superuser
+# (used only to plant faults) is trusted on loopback.
 initdb -D "$work/target" -U sipges_test --auth=trust -E UTF8 >/dev/null
-printf 'host all sipges_app 127.0.0.1/32 scram-sha-256\nhost all all 127.0.0.1/32 trust\n' >"$work/target/pg_hba.conf"
+printf 'host all sipges_app,ps_admin 127.0.0.1/32 scram-sha-256\nhost all all 127.0.0.1/32 trust\n' >"$work/target/pg_hba.conf"
 pg_ctl -D "$work/target" -w -l "$work/target.log" \
   -o "-p $dst_port -c listen_addresses=127.0.0.1 -c unix_socket_directories='' -c timezone=UTC" start >/dev/null
 started+=("$work/target")
@@ -94,21 +98,75 @@ step "Empty target, its admin shaped like PlanetScale's default role"
 # PlanetScale's `postgres` role: NOSUPERUSER CREATEDB CREATEROLE BYPASSRLS, with pg_read_all_data
 # and pg_write_all_data (https://planetscale.com/docs/postgres/connecting/roles). It creates the
 # database, so it owns it, as the guide asks.
-psql "$admin_dst" -X -q -v ON_ERROR_STOP=1 <<'SQL'
+hex() { head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n'; }
+admin_password=$(hex)
+app_password=$(hex)
+superuser_dst="postgres://sipges_test@127.0.0.1:$dst_port"
+ADMIN_PASSWORD="$admin_password" psql "$admin_dst" -X -q -v ON_ERROR_STOP=1 <<'SQL'
+\getenv admin_password ADMIN_PASSWORD
 CREATE ROLE ps_admin LOGIN NOSUPERUSER CREATEDB CREATEROLE INHERIT REPLICATION BYPASSRLS
-  IN ROLE pg_read_all_data, pg_write_all_data;
+  IN ROLE pg_read_all_data, pg_write_all_data PASSWORD :'admin_password';
 SQL
-psql "postgres://ps_admin@127.0.0.1:$dst_port/postgres" -X -q -v ON_ERROR_STOP=1 -c "CREATE DATABASE sipges"
-app_password=$(head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')
+PGPASSWORD="$admin_password" psql "postgres://ps_admin@127.0.0.1:$dst_port/postgres" -X -q -v ON_ERROR_STOP=1 -c "CREATE DATABASE sipges"
 
+unset PGPASSWORD
 export SIPGES_MOVE_SOURCE_URL="$src_owner"
-export SIPGES_MOVE_TARGET_URL="postgres://ps_admin@127.0.0.1:$dst_port/sipges"
-export SIPGES_MOVE_APP_URL="postgres://sipges_app@127.0.0.1:$dst_port/sipges"
-export PGPASSWORD="$app_password" # read only by the sipges_app connections; trust ignores it
+export SIPGES_MOVE_TARGET_URL="postgres://ps_admin:$admin_password@127.0.0.1:$dst_port/sipges"
+export SIPGES_MOVE_APP_URL="postgres://sipges_app:$app_password@127.0.0.1:$dst_port/sipges"
 export SIPGES_MOVE_APP_PASSWORD="$app_password"
 
-step "Move"
-"$move" move "$work/move"
+# Shims in front of the PostgreSQL clients the tool runs: each logs its argv, and pg_restore can
+# fail, or kill the tool itself, when REHEARSE_RESTORE_FAULT says so.
+mkdir -p "$work/shims"
+export REHEARSE_ARGV_LOG="$work/argv.log" REHEARSE_REAL_PATH="$PATH"
+for client in psql pg_dump pg_restore; do
+  cat >"$work/shims/$client" <<'SHIM'
+#!/usr/bin/env bash
+name=$(basename "$0")
+printf '%s %s\n' "$name" "$*" >>"$REHEARSE_ARGV_LOG"
+if [ "$name" = pg_restore ] && [[ " $* " == *" --dbname="* ]]; then
+  case "${REHEARSE_RESTORE_FAULT:-}" in
+    fail) exit 1 ;;
+    kill) kill -KILL "$PPID"; exit 1 ;;
+  esac
+fi
+exec "$(PATH="$REHEARSE_REAL_PATH" command -v "$name")" "$@"
+SHIM
+  chmod +x "$work/shims/$client"
+done
+run_move() { PATH="$work/shims:$PATH" "$move" "$@"; }
+stand_ins() {
+  psql "$superuser_dst/postgres" -X -At -c \
+    "SELECT count(*) FROM pg_roles WHERE rolname IN ('neon_superuser', 'mascli_workers')"
+}
+
+step "A move that fails in the restore leaves no stand-in role"
+if REHEARSE_RESTORE_FAULT=fail run_move move "$work/failed" >"$work/failed.log" 2>&1; then
+  fail "the move passed with a failing restore"
+fi
+tail -2 "$work/failed.log"
+[ "$(stand_ins)" = 0 ] || fail "a failed move left stand-in roles"
+echo "failed move: no stand-in role left"
+
+step "A move killed before it can clean up: the retry drops what it left"
+mkdir -p "$work/tmp"
+if REHEARSE_RESTORE_FAULT=kill TMPDIR="$work/tmp" run_move move "$work/killed" >"$work/killed.log" 2>&1; then
+  fail "the move survived being killed"
+fi
+[ "$(stand_ins)" = 2 ] || fail "the killed move should have left its 2 stand-ins for the retry"
+rm -rf "$work/tmp" # the killed run's private files, which its trap never removed
+echo "killed move: left 2 stand-ins"
+
+step "Move (the retry: sipges_app and the stand-ins already exist)"
+run_move move "$work/move"
+[ "$(stand_ins)" = 0 ] || fail "the retry left stand-in roles"
+
+step "No password reached any client's argv"
+[ -s "$work/argv.log" ] || fail "the shims logged nothing"
+if grep -F -e "$admin_password" -e "$app_password" "$work/argv.log" >/dev/null; then
+  fail "a password appeared in the argv of a PostgreSQL client"
+fi
+echo "argv: $(wc -l <"$work/argv.log") client calls, no password"
 
 step "The source was only read"
 pg_dump --no-sync -Fp --restrict-key=rehearsal --file="$work/source-after.sql" "$src_admin"
@@ -122,18 +180,45 @@ grep -E '^(Database up to date|Applied)' <<<"$out" || true
 grep -q '^Database up to date' <<<"$out" || fail "migrate as sipges_app did not find the database up to date"
 
 step "A wrong password is refused"
-if PGPASSWORD=wrong psql "$SIPGES_MOVE_APP_URL" -X -At -c 'SELECT 1' >/dev/null 2>&1; then
+if PGPASSWORD=wrong psql "postgres://sipges_app@127.0.0.1:$dst_port/sipges" -X -At -c 'SELECT 1' >/dev/null 2>&1; then
   fail "sipges_app signed in with a wrong password"
 fi
 echo "sipges_app: wrong password refused"
 
+expect_refusal() { # label expected-text, then the command
+  local label=$1 expected=$2
+  shift 2
+  if "$@" >"$work/refused.log" 2>&1; then
+    cat "$work/refused.log"
+    fail "$label was not refused"
+  fi
+  grep -F "$expected" "$work/refused.log" || { cat "$work/refused.log"; fail "$label: expected \"$expected\""; }
+}
+
+step "Refusals"
+psql "$superuser_dst/postgres" -X -q -v ON_ERROR_STOP=1 \
+  -c "ALTER ROLE sipges_app BYPASSRLS" -c "CREATE DATABASE sipges2 OWNER ps_admin"
+SIPGES_MOVE_TARGET_URL="${SIPGES_MOVE_TARGET_URL%/sipges}/sipges2" \
+  SIPGES_MOVE_APP_URL="${SIPGES_MOVE_APP_URL%/sipges}/sipges2" \
+  expect_refusal "an existing sipges_app with BYPASSRLS" "sipges_app exists with SUPERUSER or BYPASSRLS" \
+  run_move move "$work/bypass"
+[ "$(stand_ins)" = 0 ] || fail "the refused move left stand-in roles"
+psql "$superuser_dst/postgres" -X -q -v ON_ERROR_STOP=1 \
+  -c "ALTER ROLE sipges_app NOBYPASSRLS" -c "DROP DATABASE sipges2"
+SIPGES_MOVE_TARGET_URL="$SIPGES_MOVE_SOURCE_URL" \
+  expect_refusal "a target that is the source (verify)" "the target is the source database" \
+  run_move verify "$work/same"
+SIPGES_MOVE_TARGET_URL="$SIPGES_MOVE_SOURCE_URL" \
+  expect_refusal "a target that is the source (move)" "the target is the source database" \
+  run_move move "$work/same-move"
+
 expect_verify_failure() { # label sql-to-break sql-to-repair
   psql "$fault_url" -X -q -v ON_ERROR_STOP=1 -c "$2"
-  if "$move" verify "$work/fault" >"$work/fault.log" 2>&1; then
+  if run_move verify "$work/fault" >"$work/fault.log" 2>&1; then
     cat "$work/fault.log"
     fail "verify passed with $1"
   fi
-  grep -vE 'identical|each seen only' "$work/fault.log" | sed "s#$work#<work>#g"
+  grep -vE 'identical|each seen only|^privileges: ok' "$work/fault.log" | sed "s#$work#<work>#g"
   psql "$fault_url" -X -q -v ON_ERROR_STOP=1 -c "$3"
   rm -rf "$work/fault"
   echo "verify: caught $1"
@@ -141,7 +226,7 @@ expect_verify_failure() { # label sql-to-break sql-to-repair
 
 step "Faults on the target make verify fail"
 # Injected as the cluster's superuser: the admin cannot touch what sipges_app now owns.
-fault_url="postgres://sipges_test@127.0.0.1:$dst_port/sipges"
+fault_url="$superuser_dst/sipges"
 expect_verify_failure "one changed row" \
   "ALTER TABLE module_records DISABLE TRIGGER USER; UPDATE module_records SET payload = payload || '{\"x\":1}' WHERE id = 'awkward-2'; ALTER TABLE module_records ENABLE TRIGGER USER;" \
   "ALTER TABLE module_records DISABLE TRIGGER USER; UPDATE module_records SET payload = payload - 'x' WHERE id = 'awkward-2'; ALTER TABLE module_records ENABLE TRIGGER USER;"
@@ -151,9 +236,30 @@ expect_verify_failure "a lifted FORCE ROW LEVEL SECURITY" \
 expect_verify_failure "sipges_app with BYPASSRLS" \
   "ALTER ROLE sipges_app BYPASSRLS;" \
   "ALTER ROLE sipges_app NOBYPASSRLS;"
+expect_verify_failure "a table grant to another role" \
+  "CREATE ROLE intruder NOLOGIN; GRANT SELECT ON module_records TO intruder;" \
+  "REVOKE SELECT ON module_records FROM intruder; DROP ROLE intruder;"
+expect_verify_failure "a function grant to another role" \
+  "CREATE ROLE intruder NOLOGIN; GRANT EXECUTE ON FUNCTION sipges_can_see(text) TO intruder;" \
+  "REVOKE EXECUTE ON FUNCTION sipges_can_see(text) FROM intruder; DROP ROLE intruder;"
+expect_verify_failure "CREATE on the schema for PUBLIC" \
+  "GRANT CREATE ON SCHEMA public TO PUBLIC;" \
+  "REVOKE CREATE ON SCHEMA public FROM PUBLIC;"
+expect_verify_failure "default privileges for PUBLIC" \
+  "ALTER DEFAULT PRIVILEGES FOR ROLE sipges_app IN SCHEMA public GRANT SELECT ON TABLES TO PUBLIC;" \
+  "ALTER DEFAULT PRIVILEGES FOR ROLE sipges_app IN SCHEMA public REVOKE SELECT ON TABLES FROM PUBLIC;"
+expect_verify_failure "sipges_app a member of a BYPASSRLS role" \
+  "CREATE ROLE bypasser NOLOGIN BYPASSRLS; GRANT bypasser TO sipges_app;" \
+  "REVOKE bypasser FROM sipges_app; DROP ROLE bypasser;"
+expect_verify_failure "sipges_tenant a member of a superuser role" \
+  "GRANT sipges_test TO sipges_tenant;" \
+  "REVOKE sipges_test FROM sipges_tenant;"
+expect_verify_failure "a leftover stand-in role" \
+  "CREATE ROLE neon_superuser NOLOGIN; COMMENT ON ROLE neon_superuser IS 'sipges-move stand-in';" \
+  "DROP ROLE neon_superuser;"
 
 step "Verify after the repairs"
-"$move" verify "$work/final"
+run_move verify "$work/final"
 
 echo
 echo "rehearsal: ok"

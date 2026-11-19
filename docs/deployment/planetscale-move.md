@@ -30,12 +30,14 @@ Expected time once Neon answers: about 30 minutes, most of it checking.
 
 | Phase | What happens |
 | --- | --- |
-| Preflight | Checks the `pg_dump` version against both servers. The source login must bypass RLS, or the dump would miss rows. The target admin must bypass RLS and be able to create roles. The target schema must be empty. Writes nothing. |
+| Preflight | Checks the `pg_dump` version against both servers. The source login must bypass RLS, or the dump would miss rows. The target admin must bypass RLS and be able to create roles. The target schema must be empty. The target must not be the source (same cluster identifier and database). An existing `sipges_app` or `sipges_tenant` that is a superuser or bypasses RLS is refused, never altered. Writes nothing. |
 | Dump | One `REPEATABLE READ` read-only transaction on the source exports a snapshot. The tool hashes every table's rows and records the schema shape inside it, and `pg_dump --snapshot` reads the same snapshot. So the proof and the dump describe the same data, even if something writes meanwhile. |
-| Restore | Creates `sipges_tenant` and `sipges_app` (`LOGIN NOSUPERUSER NOBYPASSRLS`). It adds a temporary stand-in for each Neon role the dump names, such as `neon_superuser`. Then `pg_restore --single-transaction` loads everything or nothing. The stand-ins and their grants are dropped, and every table, sequence and function is handed to `sipges_app`. Neon's default privileges are skipped, because no migration sets any. |
-| Verify | Checks that every table's row count and hash match, and that every sequence matches. Checks that columns, constraints, indexes, policies, triggers, functions, and grants to `PUBLIC`, `sipges_tenant` and the owner match. Then proves RLS as `sipges_app`: with no tenant, forced tables show 0 rows. For every tenant and table, the tenant sees exactly its own rows and 0 of anyone else's. |
+| Restore | Creates `sipges_tenant` and `sipges_app` (`LOGIN NOSUPERUSER NOBYPASSRLS`), or reuses them and only sets the password. The password reaches the server as a SCRAM-SHA-256 verifier computed on your machine, never as text. The tool adds a temporary stand-in for each Neon role the dump names, such as `neon_superuser`, marked with the comment `sipges-move stand-in`. Then `pg_restore --single-transaction` loads everything or nothing. The stand-ins and their grants are dropped, and every table, sequence and function is handed to `sipges_app`. Neon's default privileges are skipped, because no migration sets any. If the move fails, it drops its stand-ins on the way out. If it is killed first, the next move drops them. |
+| Verify | Refuses a target that is the source. Checks that every table's row count and hash match, and that every sequence matches. Checks that columns, constraints, indexes, policies, triggers, functions, and grants to `PUBLIC`, `sipges_tenant` and the owner match. Fails on any grant on a SIPGES object to another role, `CREATE` on the schema for `PUBLIC`, default privileges for `PUBLIC`, `sipges_app` or `sipges_tenant` being or belonging to a superuser or BYPASSRLS role, and a stand-in left over. Then proves RLS as `sipges_app`: with no tenant, forced tables show 0 rows. For every tenant and table, the tenant sees exactly its own rows and 0 of anyone else's. |
 
 The source is only read. Every source session runs with `default_transaction_read_only=on`, and the rehearsal checked that the source dump is byte-identical before and after. Any failed check ends with `verification FAILED: do not switch to the target`.
+
+Passwords never appear in a process's arguments. The tool moves each URL's password into a password file only it can read, in a private temporary directory removed on exit, and hands `psql`, `pg_dump` and `pg_restore` the URL without it.
 
 ## Step 1: the PlanetScale database
 
@@ -67,7 +69,7 @@ openssl rand -hex 32 > "$DIR/app.pw"
 
 | File | Holds |
 | --- | --- |
-| `source.url` | Neon's **direct** host (not `-pooler`), as `mascli_workers` or `neondb_owner`. Both bypass RLS through `neon_superuser`. Keep `sslmode=require`. |
+| `source.url` | Neon's **direct** host (not `-pooler`), as a login whose own attributes include `BYPASSRLS`, such as `mascli_workers` or `neondb_owner`. Membership never passes `BYPASSRLS` on, so belonging to `neon_superuser` is not enough; preflight checks the login itself. Keep `sslmode=require`. |
 | `target.url` | `postgres://postgres.<branch id>:…@<host>:5432/sipges?sslmode=verify-full&sslrootcert=system` |
 | `app.url` | The same host and database, as `sipges_app.<branch id>` with the password in `app.pw` |
 
@@ -82,14 +84,13 @@ export SIPGES_MOVE_SOURCE_URL="$(cat "$DIR/source.url")"
 export SIPGES_MOVE_TARGET_URL="$(cat "$DIR/target.url")"
 export SIPGES_MOVE_APP_URL="$(cat "$DIR/app.url")"
 export SIPGES_MOVE_APP_PASSWORD="$(cat "$DIR/app.pw")"
-export PGPASSWORD="$(cat "$DIR/app.pw")"   # only if app.url carries no password
 deploy/cloud/move-postgres.sh preflight "$DIR/move"
 deploy/cloud/move-postgres.sh move "$DIR/move"
 ```
 
 Go on only if the last line is `verify: ok`. The work directory then holds the dump, the hashes and the diffs. Keep it until the observation window ends.
 
-If the move fails partway, the restore has rolled back. Drop and recreate the `sipges` database on PlanetScale, then run `move` again into a new work directory.
+If the move fails partway, the restore has rolled back and the tool has dropped its stand-in roles. Run `move` again into a new work directory: it reuses `sipges_app` and sets its password again. If the move was killed, the retry drops the stand-ins it left. Only if preflight says the target is not empty, because a killed move had already restored, drop and recreate the `sipges` database first. Either way, `verify` fails while any stand-in remains.
 
 ## Step 4: Hyperdrive
 
@@ -162,19 +163,20 @@ Hyperdrive and PlanetScale's PgBouncer both pool in **transaction mode**. Each t
 | Concurrent tenants through PgBouncer in transaction mode (3 server connections, `max_prepared_statements=0`, no reset query) | `SIPGES_TEST_POOLER_ADDR=$(scripts/agents/test-pgbouncer.sh addr) go test -race ./internal/platform/database/` | 600 jobs across 3 tenants. 0 cross-tenant rows, and no setting or role survived a transaction. |
 | Both APIs through the same pooler, as a NOBYPASSRLS owner with forced RLS | `SIPGES_PARITY_POOLER_ADDR=… pnpm parity` | 2752 of 2752 cases match, including the cross-project cases |
 | Both APIs directly | `pnpm parity` | 2752 of 2752 |
-| The move, with a Neon-shaped source and a PlanetScale-shaped target admin | `deploy/cloud/test/rehearse-move.sh` | 35 tables and 13 sequences identical, and 2127 shape lines identical. RLS held across 7 tenants and 26 tables, with 1849 tenant rows. The source dump was byte-identical before and after. `migrate` as `sipges_app` was up to date. A wrong password was refused. Three planted faults each failed `verify`: a changed row, a lifted `FORCE`, and `sipges_app` with `BYPASSRLS`. |
+| The move, with a Neon-shaped source and a PlanetScale-shaped target admin | `deploy/cloud/test/rehearse-move.sh` | 35 tables and 13 sequences identical, and 2127 shape lines identical. RLS held across 7 tenants and 26 tables, with 1849 tenant rows. The source dump was byte-identical before and after. `migrate` as `sipges_app` was up to date. A wrong password was refused. A failed move left no stand-in role, and the retry after a killed move dropped the two it left while reusing `sipges_app`, as a non-superuser admin. Across 118 client calls, no password appeared in any argv. An existing `sipges_app` with `BYPASSRLS`, and a target that was the source, were refused. Ten planted faults each failed `verify`: a changed row; a lifted `FORCE`; `sipges_app` with `BYPASSRLS`; a table grant and a function grant to another role; `CREATE` on `public` for `PUBLIC`; default privileges for `PUBLIC`; `sipges_app` in a BYPASSRLS role; `sipges_tenant` in a superuser role; and a leftover stand-in. |
 
 To run the local proofs, start PostgreSQL with `scripts/agents/test-pg.sh up`, then PgBouncer with `scripts/agents/test-pgbouncer.sh up`. The PgBouncer script needs a `pgbouncer` binary: the distribution package, or `PGBOUNCER=<path>`. On OpenSSL 4, a source build needs `--without-openssl`, which is fine for loopback.
 
 ## Unproven until a real PlanetScale branch exists
 
-1. **That PlanetScale's `postgres` role behaves like the rehearsal's stand-in.** The tool depends on creating roles, `GRANT sipges_app TO CURRENT_USER`, `DROP OWNED BY` a role it created, and `ALTER … OWNER`. A refusal stops the move in the restore transaction, before anything is switched.
-2. **The `<role>.<branch id>` usernames** through Hyperdrive, pgx and postgres.js, and `sslmode=verify-full sslrootcert=system` in pgx and postgres.js.
-3. **Hyperdrive itself.** Hyperdrive was not run: PgBouncer stood in for it. Its handling of postgres.js named statements is Cloudflare's, as on Neon today.
-4. **The real Neon export.** The `neon_superuser` grants were emulated. The real dump may name other platform roles: the tool creates a stand-in for each, and the shape check ignores only grants to roles other than `PUBLIC`, `sipges_tenant` and the owner.
-5. **Size and time.** The rehearsal moved about 2,000 synthetic rows in seconds. Production was 23 MB on 2026-11-06.
-6. **Latency** from Hyperdrive and the ENAM container to the chosen PlanetScale region.
-7. **The schema needs no extension.** No migration runs `CREATE EXTENSION`, so PostGIS, pgvector and the rest play no part. A later migration that adds one needs PlanetScale's extension settings, and many of those extensions require a superuser.
+1. **That PlanetScale's `postgres` role behaves like the rehearsal's stand-in.** The tool depends on creating roles and commenting on them, `GRANT sipges_app TO CURRENT_USER`, `DROP OWNED BY` a role it created, and `ALTER … OWNER`. A refusal stops the move before anything is switched.
+2. **That PlanetScale accepts a SCRAM-SHA-256 verifier as the password.** Neon refused verifiers ([production-role-cutover.md](production-role-cutover.md#step-0-freeze-save-restore-point)). If PlanetScale does too, the move stops before the restore, and the password has to be set some other way.
+3. **The `<role>.<branch id>` usernames** through Hyperdrive, pgx and postgres.js, and `sslmode=verify-full sslrootcert=system` in pgx and postgres.js.
+4. **Hyperdrive itself.** Hyperdrive was not run: PgBouncer stood in for it. Its handling of postgres.js named statements is Cloudflare's, as on Neon today.
+5. **The real Neon export.** The `neon_superuser` grants were emulated. The real dump may name other platform roles: the tool creates a stand-in for each, and the shape check ignores only grants to roles other than `PUBLIC`, `sipges_tenant` and the owner.
+6. **Size and time.** The rehearsal moved about 2,000 synthetic rows in seconds. Production was 23 MB on 2026-11-06.
+7. **Latency** from Hyperdrive and the ENAM container to the chosen PlanetScale region.
+8. **The schema needs no extension.** No migration runs `CREATE EXTENSION`, so PostGIS, pgvector and the rest play no part. A later migration that adds one needs PlanetScale's extension settings, and many of those extensions require a superuser.
 
 ## Sources
 
