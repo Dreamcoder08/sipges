@@ -44,6 +44,12 @@ func (a *app) analystAsk(ctx context.Context, o *options, args []string) (int, e
 			return 0, err
 		}
 	}
+	// An answer of events is read here, never saved or sent as a form: refused before any read.
+	if *steps {
+		if err := o.refuse("output", "form", "field", "attach"); err != nil {
+			return 0, err
+		}
+	}
 	out, err := o.prepare(route, route.Path, flags)
 	if err != nil {
 		return 0, err
@@ -55,10 +61,6 @@ func (a *app) analystAsk(ctx context.Context, o *options, args []string) (int, e
 	}
 	if !*steps {
 		return o.deliver(ctx, route, out, flags)
-	}
-	// An answer of events is read here, never saved or sent as a form.
-	if err := o.refuse("output", "form", "field", "attach"); err != nil {
-		return 0, err
 	}
 	out.accept = "text/event-stream"
 	c, sessionFile, err := o.connect()
@@ -176,7 +178,7 @@ func withHistory(body []byte, file string) ([]byte, error) {
 		return nil, localError("read the history: %v", err)
 	}
 	var turns []json.RawMessage
-	if json.Unmarshal(raw, &turns) != nil {
+	if json.Unmarshal(raw, &turns) != nil || turns == nil {
 		return nil, usageError("--follow-up needs a JSON list of earlier turns, [{\"question\": …, \"answer\": …}]")
 	}
 	fields["history"] = json.RawMessage(raw)

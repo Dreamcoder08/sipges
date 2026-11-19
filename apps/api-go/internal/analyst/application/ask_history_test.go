@@ -89,6 +89,7 @@ func TestAFollowUpRefusesAHistoryBeyondItsLimitsBeforeSealing(t *testing.T) {
 		"too many characters": {{Question: "¿Algo?", Answer: long}},
 		"an empty answer":     {{Question: "¿Algo?", Answer: "  "}},
 		"an empty question":   {{Question: "", Answer: "Nada."}},
+		"only citations":      {{Question: "¿Algo?", Answer: " [1][2] "}},
 	}
 	for name, history := range cases {
 		t.Run(name, func(t *testing.T) {

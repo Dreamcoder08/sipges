@@ -92,6 +92,9 @@ func TestAskRefusesAHistoryBeyondItsLimitsWithA422(t *testing.T) {
 		"seven turns":         seven,
 		"8,001 characters":    []map[string]string{{"question": "¿", "answer": strings.Repeat("ñ", application.MaxHistoryChars)}},
 		"no answer":           []map[string]string{{"question": "¿Algo?"}},
+		"only citations":      []map[string]string{{"question": "¿Algo?", "answer": "[1][2]"}},
+		"a null turn":         []any{nil},
+		"an object":           map[string]string{"question": "¿Algo?"},
 		"not a list":          "¿Algo?",
 		"a turn not a object": []string{"¿Algo?"},
 	}

@@ -284,12 +284,23 @@ func TestAnalystScrubsTheHistoryAndLogsItWithTheQuestionAsOneRelease(t *testing.
 	}
 }
 
-func TestAnalystSendsNoHistoryWhileExternalAIIsOff(t *testing.T) {
-	model := analystSetup(t, false)
-	t.Setenv("SIPGES_DATA_KEY", dataKey)
+func TestAnalystSendsNoHistoryWhileExternalAIIsOffOrWithoutDataKey(t *testing.T) {
 	history := []map[string]string{{"question": "¿qué pasó?", "answer": "Hubo una reunión."}}
-	got := followUpAs(t, start(t, false), "¿y después?", history)
-	if got.status != http.StatusConflict || len(model.requests()) != 0 {
-		t.Fatalf("status %d, model requests %d", got.status, len(model.requests()))
-	}
+	t.Run("switch off", func(t *testing.T) {
+		model := analystSetup(t, false)
+		t.Setenv("SIPGES_DATA_KEY", dataKey)
+		got := followUpAs(t, start(t, false), "¿y después?", history)
+		if got.status != http.StatusConflict || len(model.requests()) != 0 {
+			t.Fatalf("status %d, model requests %d", got.status, len(model.requests()))
+		}
+	})
+	t.Run("no data key", func(t *testing.T) {
+		model := analystSetup(t, true)
+		t.Setenv("SIPGES_DATA_KEY", "")
+		_ = os.Unsetenv("SIPGES_DATA_KEY")
+		got := followUpAs(t, start(t, false), "¿y después?", history)
+		if got.status != http.StatusConflict || len(model.requests()) != 0 {
+			t.Fatalf("status %d, model requests %d", got.status, len(model.requests()))
+		}
+	})
 }

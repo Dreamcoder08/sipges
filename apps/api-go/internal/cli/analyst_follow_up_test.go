@@ -63,6 +63,7 @@ func TestAnalystAskFollowUpRefusesWhatItCannotMerge(t *testing.T) {
 	}{
 		"no body":          {"", []string{"--follow-up", historyFile(t, syntheticHistory)}, "--follow-up needs --body"},
 		"not a list":       {syntheticAsk, []string{"--body", "-", "--follow-up", historyFile(t, `{"question":"x"}`)}, "a JSON list"},
+		"null":             {syntheticAsk, []string{"--body", "-", "--follow-up", historyFile(t, `null`)}, "a JSON list"},
 		"history in body":  {`{"question":"x","history":[]}`, []string{"--body", "-", "--follow-up", historyFile(t, syntheticHistory)}, "already has a history"},
 		"body not object":  {`["x"]`, []string{"--body", "-", "--follow-up", historyFile(t, syntheticHistory)}, "a JSON object"},
 		"missing the file": {syntheticAsk, []string{"--body", "-", "--follow-up", filepath.Join(t.TempDir(), "none.json")}, "history"},
@@ -72,5 +73,18 @@ func TestAnalystAskFollowUpRefusesWhatItCannotMerge(t *testing.T) {
 		if got.code == ExitOK || !strings.Contains(got.stderr, tc.says) {
 			t.Errorf("%s: exit %d, stderr %q, want it to say %q", name, got.code, got.stderr, tc.says)
 		}
+	}
+}
+
+// --steps refuses --output before it reads anything, as it did before --follow-up.
+func TestAnalystAskStepsStillRefusesOutputBeforeReadingTheBody(t *testing.T) {
+	h := newHarness(t, func(w http.ResponseWriter, _ *http.Request) {
+		t.Error("nothing should reach the API")
+		jsonAnswer(w, http.StatusOK, syntheticAnswer)
+	})
+	missing := filepath.Join(t.TempDir(), "missing.json")
+	got := h.run("", "analyst", "ask", "--steps", "--output", filepath.Join(t.TempDir(), "x"), "--body", missing)
+	if got.code != ExitUsage || !strings.Contains(got.stderr, "--output") {
+		t.Fatalf("exit %d, stderr %q", got.code, got.stderr)
 	}
 }

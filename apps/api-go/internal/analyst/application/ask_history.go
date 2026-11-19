@@ -34,13 +34,14 @@ type EarlierTurn struct {
 }
 
 // CheckHistory refuses a history beyond MaxHistoryTurns or MaxHistoryChars, or with a blank text.
+// An answer of citation markers alone is blank: without them nothing would be left to send.
 func CheckHistory(history []Exchange) error {
 	if len(history) > MaxHistoryTurns {
 		return ErrInvalidHistory
 	}
 	chars := 0
 	for _, e := range history {
-		if strings.TrimSpace(e.Question) == "" || strings.TrimSpace(e.Answer) == "" {
+		if strings.TrimSpace(e.Question) == "" || domain.StripCitations(e.Answer) == "" {
 			return ErrInvalidHistory
 		}
 		chars += utf8.RuneCountInString(e.Question) + utf8.RuneCountInString(e.Answer)
