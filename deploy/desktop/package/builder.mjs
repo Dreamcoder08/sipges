@@ -1,5 +1,5 @@
 import { chmod, cp, lstat, mkdir, readFile, readdir, realpath, rename, rm, stat, writeFile } from 'node:fs/promises';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
@@ -115,9 +115,36 @@ function run(command, args, cwd = repo) {
 /** The SQL migrations both APIs apply (apps/api-go reads the same folder). */
 const MIGRATIONS = 'apps/api/src/platform/database/migrations';
 
+/** The @electric-sql/pglite dist of the API's pinned dependency, which the Go move runs in wazero. */
+const PGLITE_DIST = 'apps/api/node_modules/@electric-sql/pglite/dist';
+
+/**
+ * The pinned PGlite 0.5.15 files sipges-desktop --move-pglite needs, by SHA-256: the same pins
+ * apps/api-go/internal/platform/pglitewasm/dist.go checks before every move (a test keeps them
+ * equal). A build never ships other bytes.
+ */
+export const PGLITE_PINS = Object.freeze({
+  'pglite.wasm': 'cdca79cacb3c128b4634d4ce9fa1da76de8464ef4c1272669bafde14f49a03e6',
+  'pglite.data': 'd73cf4ba1b0bf92f80f088ce7d23b17f9bc175327d7584ec2a713b27e9758c31',
+  'pglite.js': 'b4ee8cc358344c9e495a57b4301938178bec1a2c6d6fad10cd600f5f8632b2a0',
+});
+
+/** Copies the pinned PGlite files into go/pglite, refusing any whose SHA-256 is not the pin. */
+async function addPGliteDist(goDir, say) {
+  await mkdir(join(goDir, 'pglite'), { mode: 0o700 });
+  for (const [name, sha256] of Object.entries(PGLITE_PINS)) {
+    const bytes = await readFile(join(repo, PGLITE_DIST, name));
+    const got = createHash('sha256').update(bytes).digest('hex');
+    if (got !== sha256) throw new Error(`apps/api's @electric-sql/pglite dist/${name} is not the pinned PGlite 0.5.15 (sha256 ${got})`);
+    await writeFile(join(goDir, 'pglite', name), bytes, { flag: 'wx' });
+  }
+  say('PGlite 0.5.15 dist files for sipges-desktop --move-pglite: go/pglite (SHA-256 verified).');
+}
+
 /**
  * The opt-in Go mode (docs/adr/0036, go-rust-stack T72c): sipges-desktop and the Go API built
- * from apps/api-go into go/, the migrations beside them, and on Windows x64 the pinned PostgreSQL
+ * from apps/api-go into go/, the migrations beside them, the pinned PGlite dist files the one-time
+ * move runs without Node (go/pglite, its default --pglite-dist), and on Windows x64 the pinned PostgreSQL
  * 18 in postgresql/ (deploy/desktop/postgresql/bundle.mjs: exact URL and SHA-256). Returns what
  * metadata.json records. The default entry (start.mjs, the TypeScript API) does not change.
  */
@@ -127,6 +154,7 @@ export async function addGoRuntime(destination, { platform = process.platform, a
   for (const name of ['sipges-desktop', 'api'])
     run('go', ['build', '-trimpath', '-o', join(destination, 'go', exe(name)), `./cmd/${name}`], join(repo, 'apps', 'api-go'));
   await cp(join(repo, MIGRATIONS), join(destination, 'go', 'migrations'), { recursive: true, errorOnExist: true, force: false });
+  await addPGliteDist(join(destination, 'go'), say);
   let postgresql = null;
   // Imported here: a build without --go never reads the pin or needs the network.
   const { bundlePostgres, readPin } = await import('../postgresql/bundle.mjs');
@@ -174,7 +202,7 @@ async function assertReleaseVersion(root, version) {
 }
 
 async function main(args) {
-  if (args.length === 1 && args[0] === '--help') { console.log('Usage: node deploy/desktop/package/builder.mjs [--version <semver>] --out .data/desktop-packages/sipges-<version> [--platform <host>] [--arch <host>] [--go]\nThe version defaults to the root package.json version; a release version must equal it, a pre-release (1.2.3-rc.1) marks a rehearsal.\n--go (opt-in) adds the Go mode: sipges-desktop, the Go API and the migrations in go/, and on Windows x64 the pinned PostgreSQL 18 in postgresql/ (downloaded once, SHA-256 verified). The default entry stays the TypeScript one.'); return; }
+  if (args.length === 1 && args[0] === '--help') { console.log('Usage: node deploy/desktop/package/builder.mjs [--version <semver>] --out .data/desktop-packages/sipges-<version> [--platform <host>] [--arch <host>] [--go]\nThe version defaults to the root package.json version; a release version must equal it, a pre-release (1.2.3-rc.1) marks a rehearsal.\n--go (opt-in) adds the Go mode: sipges-desktop, the Go API, the migrations and the pinned PGlite files of the move in go/, and on Windows x64 the pinned PostgreSQL 18 in postgresql/ (downloaded once, SHA-256 verified). The default entry stays the TypeScript one.'); return; }
   const options = {};
   const go = args.includes('--go');
   if (go) {
