@@ -37,10 +37,21 @@ if (command === 'strip') {
     fail(`${name} must be a postgres:// URL`);
   }
   if (url.hostname === '' || url.hostname.includes(',')) fail(`${name} must name exactly one host`);
-  if (url.searchParams.has('passfile')) fail(`${name} must not set passfile`);
-  const password = url.searchParams.get('password') ?? decodeURIComponent(url.password);
-  url.searchParams.delete('password');
+  // The query goes back byte for byte: URLSearchParams would re-encode it (a space as `+`, which
+  // libpq does not decode), so only the raw `password` segment is taken out.
+  const query = value.includes('?') ? value.slice(value.indexOf('?') + 1).replace(/#.*$/, '') : '';
+  const kept = [];
+  let password = decodeURIComponent(url.password);
+  for (const segment of query.split('&').filter(Boolean)) {
+    const [key, ...rest] = segment.split('=');
+    const decodedKey = decodeURIComponent(key);
+    if (decodedKey === 'passfile') fail(`${name} must not set passfile`);
+    if (decodedKey === 'password') password = decodeURIComponent(rest.join('='));
+    else kept.push(segment);
+  }
   url.password = '';
+  url.search = '';
+  url.hash = '';
   if (password !== '') {
     const host = url.hostname.replace(/^\[(.*)\]$/, '$1');
     const user = decodeURIComponent(url.username);
@@ -48,7 +59,7 @@ if (command === 'strip') {
     const line = [host, url.port || '5432', '*', user, password].map(field).join(':');
     appendFileSync(passfile, `${line}\n`, { mode: 0o600 });
   }
-  console.log(url.toString());
+  console.log(kept.length > 0 ? `${url.toString()}?${kept.join('&')}` : url.toString());
 } else if (command === 'scram') {
   // SASLprep is the identity for printable ASCII; anything else could be stored differently
   // from what a client sends, so it is refused rather than guessed.

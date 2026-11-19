@@ -9,7 +9,9 @@
 #      row-level security as sipges_app.
 # The source is only read: every source session runs with default_transaction_read_only=on.
 # Passwords never reach a process argument: they go from the URLs into a private password file,
-# and sipges_app's password reaches the server only as a SCRAM-SHA-256 verifier.
+# and sipges_app's password reaches the server only as a SCRAM-SHA-256 verifier. Put every
+# password in its URL: ~/.pgpass, PGPASSFILE and PGPASSWORD are ignored. If the tool is killed
+# (SIGKILL), delete the private folder it leaves, ${TMPDIR:-/tmp}/sipges-move.*, which holds them.
 #
 # Usage: deploy/cloud/move-postgres.sh preflight|move|verify <work dir>
 #   preflight  checks only, writes nothing anywhere
@@ -21,7 +23,8 @@
 #   SIPGES_MOVE_TARGET_URL    direct URL of the EMPTY target database, as its owner with
 #                             BYPASSRLS and CREATEROLE (PlanetScale's default role) or a superuser
 #   SIPGES_MOVE_APP_PASSWORD  password of sipges_app (move only; printable ASCII; the role is
-#                             created if missing, and refused if it bypasses RLS)
+#                             created if missing, and refused if it has SUPERUSER, BYPASSRLS,
+#                             CREATEDB, CREATEROLE or REPLICATION)
 #   SIPGES_MOVE_APP_URL       direct URL of the target as sipges_app (move and verify)
 #   SIPGES_MOVE_SCHEMA        schema to move (default public)
 # Needs psql, pg_dump and pg_restore at least as new as the source server, and Node 22.
@@ -60,7 +63,7 @@ mkdir -p "$work"
   die "$work already holds a dump: use a new work directory for each move"
 
 here="$(cd "$(dirname "$0")" && pwd)"
-secrets="$(mktemp -d)"
+secrets="$(mktemp -d "${TMPDIR:-/tmp}/sipges-move.XXXXXX")"
 restoring=0
 # Marks the roles this tool creates as stand-ins, so a retry and `verify` can recognise them.
 STAND_IN='sipges-move stand-in'
@@ -106,14 +109,18 @@ refuse_same() {
 
 # Drops every role marked as a stand-in, with what it was granted in this database.
 drop_stand_ins() {
-  local role
+  local roles role
+  # Listed first: a listing that fails must not read as "no stand-ins".
+  roles="$(tgt -At -v marker="$STAND_IN" <<<"SELECT rolname FROM pg_roles
+    WHERE shobj_description(oid, 'pg_authid') = :'marker' ORDER BY 1")" ||
+    { echo "move-postgres: could not list the stand-in roles" >&2; return 1; }
   while IFS= read -r role; do
     [ -n "$role" ] || continue
     # DROP OWNED needs the privileges of the role, which its creator may take.
-    tgt -v r="$role" <<<'GRANT :"r" TO CURRENT_USER WITH INHERIT TRUE; DROP OWNED BY :"r"; DROP ROLE :"r";' || return 1
+    tgt -v r="$role" <<<'GRANT :"r" TO CURRENT_USER WITH INHERIT TRUE; DROP OWNED BY :"r"; DROP ROLE :"r";' ||
+      { echo "move-postgres: could not drop the stand-in role $role" >&2; return 1; }
     echo "dropped stand-in role: $role"
-  done < <(tgt -At -v marker="$STAND_IN" <<<"SELECT rolname FROM pg_roles
-    WHERE shobj_description(oid, 'pg_authid') = :'marker' ORDER BY 1")
+  done <<<"$roles"
 }
 
 # Text output that is the same on any server: the hashes compare row text.
@@ -204,6 +211,15 @@ SELECT DISTINCT r.rolname FROM pg_roles r WHERE r.oid IN (
   UNION SELECT a.grantee FROM pg_default_acl d, aclexplode(d.defaclacl) a
 ) ORDER BY 1;"
 
+# sipges_app and sipges_tenant must hold none of the attributes that reach beyond the database's
+# own rows: one line naming each role that does, and which.
+PRIVILEGED_ROLES="SELECT string_agg(rolname || ' exists with ' || concat_ws(', ',
+    CASE WHEN rolsuper THEN 'SUPERUSER' END, CASE WHEN rolbypassrls THEN 'BYPASSRLS' END,
+    CASE WHEN rolcreatedb THEN 'CREATEDB' END, CASE WHEN rolcreaterole THEN 'CREATEROLE' END,
+    CASE WHEN rolreplication THEN 'REPLICATION' END), '; ' ORDER BY rolname)
+  FROM pg_roles WHERE rolname IN ('sipges_app', 'sipges_tenant')
+    AND (rolsuper OR rolbypassrls OR rolcreatedb OR rolcreaterole OR rolreplication);"
+
 LOGIN="SELECT current_user || ' super=' || rolsuper || ' bypassrls=' || rolbypassrls || ' createrole=' || rolcreaterole
   || ' server=' || current_setting('server_version_num') FROM pg_roles WHERE rolname = current_user;"
 
@@ -227,12 +243,11 @@ preflight() {
     die "the target admin must be able to create roles"
   [ "$(src -At -c 'SHOW transaction_read_only')" = on ] || die "the source session is not read only"
   refuse_same
-  # An existing sipges_app or sipges_tenant is reused only if it cannot bypass RLS. A
-  # non-superuser admin may not even name SUPERUSER in ALTER ROLE, so the tool never alters it.
+  # An existing sipges_app or sipges_tenant is reused only with none of these attributes. A
+  # non-superuser admin may not even name SUPERUSER in ALTER ROLE, so the tool never alters them.
   local privileged
-  privileged="$(tgt -At <<<"SELECT string_agg(rolname, ', ' ORDER BY rolname) FROM pg_roles
-    WHERE rolname IN ('sipges_app', 'sipges_tenant') AND (rolsuper OR rolbypassrls)")"
-  [ -z "$privileged" ] || die "$privileged exists with SUPERUSER or BYPASSRLS: refusing to reuse it"
+  privileged="$(tgt -At <<<"$PRIVILEGED_ROLES")" || die "cannot read the target's roles"
+  [ -z "$privileged" ] || die "$privileged: refusing to reuse it"
   tables="$(tgt -At <<<"SELECT count(*) FROM pg_class WHERE relnamespace = to_regnamespace(:'schema') AND relkind IN ('r','p','S','v','m')")"
   [ "$command" != move ] || [ "$tables" = 0 ] ||
     die "the target schema $schema is not empty ($tables relations): move only into an empty database"
@@ -372,8 +387,9 @@ verify() {
 
 # What the shape cannot see: grants on SIPGES objects to roles SIPGES does not use (the shape
 # compares PUBLIC, sipges_tenant and the owner only), CREATE on the schema for everyone, default
-# privileges for everyone, a SIPGES role that can become a superuser or bypass RLS through
-# membership (attributes are never inherited, but SET ROLE reaches them), and stand-ins left over.
+# privileges for everyone or for any other role, a SIPGES role with an attribute beyond its rows
+# or that can become a superuser or bypass RLS through membership (attributes are never
+# inherited, but SET ROLE reaches them), and stand-ins left over.
 PRIVILEGES="
 WITH obj AS (
   SELECT 'relation ' || c.relname AS name, c.relacl AS acl FROM pg_class c
@@ -405,8 +421,17 @@ SELECT problem FROM (
     AND NOT (d.defaclobjtype = 'f' AND a.privilege_type = 'EXECUTE')
     AND NOT (d.defaclobjtype = 'T' AND a.privilege_type = 'USAGE')
   UNION ALL
-  SELECT format('%s can bypass RLS or is a superuser', s.rolname)
-  FROM pg_roles s WHERE s.rolname IN ('sipges_app', 'sipges_tenant') AND (s.rolsuper OR s.rolbypassrls)
+  SELECT format('default privileges of %s grant %s on %s to %s', pg_get_userbyid(d.defaclrole),
+    a.privilege_type, d.defaclobjtype, r.rolname)
+  FROM pg_default_acl d, aclexplode(d.defaclacl) a JOIN pg_roles r ON r.oid = a.grantee
+  WHERE a.grantee <> d.defaclrole AND r.rolname NOT IN ('sipges_app', 'sipges_tenant')
+  UNION ALL
+  SELECT format('%s has %s', s.rolname, concat_ws(', ',
+    CASE WHEN s.rolsuper THEN 'SUPERUSER' END, CASE WHEN s.rolbypassrls THEN 'BYPASSRLS' END,
+    CASE WHEN s.rolcreatedb THEN 'CREATEDB' END, CASE WHEN s.rolcreaterole THEN 'CREATEROLE' END,
+    CASE WHEN s.rolreplication THEN 'REPLICATION' END))
+  FROM pg_roles s WHERE s.rolname IN ('sipges_app', 'sipges_tenant')
+    AND (s.rolsuper OR s.rolbypassrls OR s.rolcreatedb OR s.rolcreaterole OR s.rolreplication)
   UNION ALL
   SELECT format('%s is a member of %s, which %s', s.rolname, r.rolname,
     CASE WHEN r.rolsuper THEN 'is a superuser' ELSE 'bypasses RLS' END)
@@ -426,7 +451,7 @@ privilege_audit() {
     while IFS= read -r line; do echo "privileges: $line" >&2; done <<<"$problems"
     return 1
   fi
-  echo "privileges: ok, nothing granted beyond sipges_app, sipges_tenant and PUBLIC"
+  echo "privileges: ok, no grant, default privilege, role attribute, membership or stand-in beyond what SIPGES uses"
 }
 
 # Row-level security as the APIs will run: login sipges_app, then each tenant as the request path
