@@ -44,3 +44,18 @@ func BenchmarkIrsa(b *testing.B) {
 	}
 }
 
+// BenchmarkIrsaMemo is BenchmarkIrsa behind the engine memo the API uses: unchanged records
+// skip the engine.
+func BenchmarkIrsaMemo(b *testing.B) {
+	set, err := engines.Shared(context.Background())
+	if err != nil {
+		b.Fatal(err)
+	}
+	s := &Service{Store: inputsStore{in: IrsaInputs{Records: benchRecords()}}, Engine: engines.NewMemo(set.Indicators)}
+	b.ReportAllocs()
+	for b.Loop() {
+		if _, err := s.Irsa(context.Background(), "T"); err != nil {
+			b.Fatal(err)
+		}
+	}
+}

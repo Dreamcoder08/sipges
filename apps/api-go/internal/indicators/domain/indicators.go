@@ -34,29 +34,43 @@ type Records map[string][]Record
 // a JSON object keeps a duplicate key's first position and last value (JSON.parse and the
 // engine's parser alike), which is exactly where the spread puts it.
 func (r Records) JSON() (json.RawMessage, error) {
-	var b bytes.Buffer
-	b.WriteByte('{')
+	size := 2
+	for _, module := range Modules {
+		size += len(module) + 5
+		for _, rec := range r[module] {
+			size += len(rec.Payload) + len(rec.ID) + len(idKey) + 8
+		}
+	}
+	return r.AppendJSON(make([]byte, 0, size))
+}
+
+// AppendJSON writes JSON's value at the end of dst.
+func (r Records) AppendJSON(dst []byte) ([]byte, error) {
+	b := dst
+	b = append(b, '{')
 	for i, module := range Modules {
 		if i > 0 {
-			b.WriteByte(',')
+			b = append(b, ',')
 		}
-		b.Write(mustString(module))
-		b.WriteString(":[")
+		b = appendQuoted(b, module)
+		b = append(b, ":["...)
 		for j, rec := range r[module] {
 			if j > 0 {
-				b.WriteByte(',')
+				b = append(b, ',')
 			}
-			obj, err := AppendMember(rec.Payload, "_id", mustString(rec.ID))
-			if err != nil {
-				return nil, fmt.Errorf("record %s/%s: %w", module, rec.ID, err)
+			var err error
+			if b, err = openMember(b, rec.Payload, idKey); err != nil {
+				return dst, fmt.Errorf("record %s/%s: %w", module, rec.ID, err)
 			}
-			b.Write(obj)
+			b = append(appendQuoted(b, rec.ID), '}')
 		}
-		b.WriteByte(']')
+		b = append(b, ']')
 	}
-	b.WriteByte('}')
-	return b.Bytes(), nil
+	return append(b, '}'), nil
 }
+
+// idKey is the member Records.JSON adds to every record.
+var idKey = quoted("_id")
 
 // ErrNotObject is returned when a JSON value that must be an object is not one.
 var ErrNotObject = errors.New("indicators: not a JSON object")
@@ -64,21 +78,38 @@ var ErrNotObject = errors.New("indicators: not a JSON object")
 // AppendMember returns the object obj with "key": value written last. When obj already has key,
 // the result reads as `{...obj, [key]: value}`: the first position with the last value.
 func AppendMember(obj json.RawMessage, key string, value json.RawMessage) (json.RawMessage, error) {
+	name := quoted(key)
+	out, err := appendMember(make([]byte, 0, len(obj)+len(name)+len(value)+8), obj, name, value)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// appendMember writes AppendMember's result at the end of dst; key is already JSON.
+func appendMember(dst []byte, obj, key, value []byte) ([]byte, error) {
+	dst, err := openMember(dst, obj, key)
+	if err != nil {
+		return dst, err
+	}
+	dst = append(dst, value...)
+	return append(dst, '}'), nil
+}
+
+// openMember writes obj without its closing brace, then key and a colon: the value comes next.
+func openMember(dst []byte, obj, key []byte) ([]byte, error) {
 	trimmed := bytes.TrimSpace(obj)
 	if len(trimmed) < 2 || trimmed[0] != '{' || trimmed[len(trimmed)-1] != '}' {
-		return nil, ErrNotObject
+		return dst, ErrNotObject
 	}
 	body := bytes.TrimSpace(trimmed[1 : len(trimmed)-1])
-	out := make([]byte, 0, len(body)+len(key)+len(value)+8)
-	out = append(out, '{')
-	out = append(out, body...)
+	dst = append(dst, '{')
+	dst = append(dst, body...)
 	if len(body) > 0 {
-		out = append(out, ',')
+		dst = append(dst, ',')
 	}
-	out = append(out, mustString(key)...)
-	out = append(out, ':')
-	out = append(out, value...)
-	return append(out, '}'), nil
+	dst = append(dst, key...)
+	return append(dst, ':'), nil
 }
 
 // Encode is JSON without Go's HTML escaping, closer to JSON.stringify.
@@ -95,6 +126,21 @@ func Encode(v any) ([]byte, error) {
 func mustString(s string) []byte {
 	b, _ := Encode(s) // a Go string always encodes
 	return b
+}
+
+// quoted is mustString without an encoder for text that needs no escape, like every record id.
+func quoted(s string) []byte { return appendQuoted(nil, s) }
+
+// appendQuoted writes mustString(s) at the end of dst.
+func appendQuoted(dst []byte, s string) []byte {
+	for i := 0; i < len(s); i++ {
+		if c := s[i]; c < 0x20 || c >= 0x7f || c == '"' || c == '\\' {
+			return append(dst, mustString(s)...)
+		}
+	}
+	dst = append(dst, '"')
+	dst = append(dst, s...)
+	return append(dst, '"')
 }
 
 // member is one key of a JSON object, in source order.

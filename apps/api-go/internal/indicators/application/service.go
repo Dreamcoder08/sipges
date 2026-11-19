@@ -18,7 +18,8 @@ import (
 )
 
 // Engine runs one request of the indicators engine (engines/README.md) and returns its value.
-// *wasmengine.Engine satisfies it.
+// *wasmengine.Engine and *engines.Memo satisfy it. Call must not keep request after it returns:
+// the service reuses that buffer.
 type Engine interface {
 	Call(ctx context.Context, request []byte) (json.RawMessage, error)
 }
@@ -125,21 +126,44 @@ func (s *Service) Indicators(ctx context.Context, tenantID string) (json.RawMess
 	if err != nil {
 		return nil, err
 	}
-	payload, err := records.JSON()
-	if err != nil {
-		return nil, err
+	return s.callWithRecords(ctx, "indicators", nil, records)
+}
+
+// requestBuffers keeps the buffers of record requests, a megabyte or more each, between calls.
+var requestBuffers sync.Pool
+
+// maxPooledRequest is the largest request buffer kept for the next call.
+const maxPooledRequest = 32 << 20
+
+// callWithRecords sends request(op, "config", config, "records", records.JSON()), written once
+// into a reused buffer instead of being built twice.
+func (s *Service) callWithRecords(ctx context.Context, op string, config json.RawMessage, records domain.Records) (json.RawMessage, error) {
+	buf, _ := requestBuffers.Get().(*[]byte)
+	if buf == nil {
+		buf = new([]byte)
 	}
-	return s.Engine.Call(ctx, request("indicators", "records", payload))
+	b := fmt.Appendf((*buf)[:0], `{"op":%q`, op)
+	if config != nil {
+		b = append(b, `,"config":`...)
+		b = append(b, config...)
+	}
+	b = append(b, `,"records":`...)
+	b, err := records.AppendJSON(b)
+	var result json.RawMessage
+	if err == nil {
+		result, err = s.Engine.Call(ctx, append(b, '}'))
+	}
+	if cap(b) <= maxPooledRequest {
+		*buf = b
+		requestBuffers.Put(buf)
+	}
+	return result, err
 }
 
 // Irsa is computeIrsa with the tenant's configuration, or, when the project's phase has saved
 // weights, that configuration with those weights, plus the phase and its note.
 func (s *Service) Irsa(ctx context.Context, tenantID string) (json.RawMessage, error) {
 	in, err := s.Store.IrsaInputs(ctx, tenantID)
-	if err != nil {
-		return nil, err
-	}
-	records, err := in.Records.JSON()
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +180,7 @@ func (s *Service) Irsa(ctx context.Context, tenantID string) (json.RawMessage, e
 			return nil, err
 		}
 	}
-	result, err := s.Engine.Call(ctx, request("irsa", "config", config, "records", records))
+	result, err := s.callWithRecords(ctx, "irsa", config, in.Records)
 	if err != nil || in.Phase == nil {
 		return result, err
 	}
