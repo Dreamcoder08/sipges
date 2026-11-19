@@ -60,8 +60,13 @@ func scanRecord(row pgx.CollectableRow) (application.StoredRecord, error) {
 		return r, err
 	}
 	var err error
-	r.Payload, err = domain.ParseObject([]byte(payload))
+	r.Payload, err = payloadObject(payload)
 	return r, err
+}
+
+// payloadObject reads a payload column (jsonb::text) as JSON.parse does.
+func payloadObject(text string) (*domain.Object, error) {
+	return domain.ParseObject([]byte(text))
 }
 
 // List returns one page of a module's records, newest first.
@@ -112,7 +117,7 @@ func (s Records) History(ctx context.Context, tenantID, module, id string) ([]ap
 				return v, nil
 			}
 			var err error
-			v.Payload, err = domain.ParseObject([]byte(*payload))
+			v.Payload, err = payloadObject(*payload)
 			return v, err
 		})
 	})

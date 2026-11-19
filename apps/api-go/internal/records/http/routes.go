@@ -177,6 +177,11 @@ func (h handlers) list(w http.ResponseWriter, r *http.Request) {
 		h.fail(w, r)
 		return
 	}
+	writeJSON(w, http.StatusOK, listJSON(rows))
+}
+
+// listJSON is the list answer: [{ ...row.payload, _id, _updated_at }, ...].
+func listJSON(rows []application.StoredRecord) []byte {
 	b := []byte{'['}
 	for i, row := range rows {
 		if i > 0 {
@@ -187,7 +192,7 @@ func (h handlers) list(w http.ResponseWriter, r *http.Request) {
 		out.Set("_updated_at", isoSeconds(row.UpdatedAt))
 		b = domain.AppendJSON(b, out)
 	}
-	writeJSON(w, http.StatusOK, append(b, ']'))
+	return append(b, ']')
 }
 
 func (h handlers) get(w http.ResponseWriter, r *http.Request) {
