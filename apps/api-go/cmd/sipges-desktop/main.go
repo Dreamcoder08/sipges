@@ -43,6 +43,9 @@ const stopTimeout = 60 * time.Second
 
 func main() {
 	joinLauncherJob()
+	if usesMovePGlite(os.Args[1:]) {
+		os.Exit(movePGliteMain(os.Args[1:]))
+	}
 	if usesInstall(os.Args[1:]) {
 		os.Exit(launcherMain(os.Args[1:]))
 	}
@@ -106,11 +109,20 @@ func parseSettings(args []string, lookup func(string) (string, bool), exeDir str
 // holding current.json and install.json, with this program in versions/<version>/go), the folder
 // deploy/desktop/updater/launcher.mjs passes as SIPGES_DESKTOP_UPDATE_DIR; "" anywhere else.
 func managedChannel(exeDir string) string {
+	if root := managedRoot(exeDir); root != "" {
+		return filepath.Join(root, updateChannelFolder)
+	}
+	return ""
+}
+
+// managedRoot is the managed install root exeDir lies in (the one holding current.json and
+// install.json, with this program in versions/<version>/go), "" anywhere else.
+func managedRoot(exeDir string) string {
 	dir := exeDir
 	for range 3 {
 		dir = filepath.Dir(dir)
 		if isFile(filepath.Join(dir, "current.json")) && isFile(filepath.Join(dir, "install.json")) {
-			return filepath.Join(dir, updateChannelFolder)
+			return dir
 		}
 	}
 	return ""

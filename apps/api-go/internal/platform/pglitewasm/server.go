@@ -43,11 +43,15 @@ type Server struct {
 	ctx context.Context
 
 	mu     sync.Mutex
+	freed  *sync.Cond // signalled when active is released or the server closes
 	active net.Conn
-	conns  map[net.Conn]struct{}
-	err    error // the backend failed: every later client gets an error
-	closed bool
-	wg     sync.WaitGroup
+	// resetting: the active client left and its session is being reset; the next client waits
+	// for it instead of being refused.
+	resetting bool
+	conns     map[net.Conn]struct{}
+	err       error // the backend failed: every later client gets an error
+	closed    bool
+	wg        sync.WaitGroup
 }
 
 // Serve listens on 127.0.0.1 at a random free port and serves b until Close; ctx bounds the
@@ -61,6 +65,7 @@ func serve(ctx context.Context, ex exchanger) (*Server, error) {
 		return nil, fmt.Errorf("pglitewasm: listen on loopback: %w", err)
 	}
 	s := &Server{ex: ex, ln: ln, ctx: context.WithoutCancel(ctx), conns: map[net.Conn]struct{}{}}
+	s.freed = sync.NewCond(&s.mu)
 	s.wg.Add(1)
 	go s.acceptLoop()
 	return s, nil
@@ -85,6 +90,7 @@ func (s *Server) Err() error {
 func (s *Server) Close() error {
 	s.mu.Lock()
 	s.closed = true
+	s.freed.Broadcast()
 	for c := range s.conns {
 		_ = c.Close()
 	}
@@ -142,7 +148,7 @@ func (s *Server) handle(c net.Conn) {
 	if !s.relay(c, startup) {
 		return
 	}
-	defer s.resetSession()
+	defer s.endSession()
 	for {
 		batch, terminate, err := readBatch(r)
 		if len(batch) > 0 && !s.relay(c, batch) {
@@ -171,6 +177,14 @@ func (s *Server) relay(c net.Conn, msg []byte) bool {
 	}
 	_, err = c.Write(out)
 	return err == nil
+}
+
+// endSession resets the session after its client left; a client arriving meanwhile waits.
+func (s *Server) endSession() {
+	s.mu.Lock()
+	s.resetting = true
+	s.mu.Unlock()
+	s.resetSession()
 }
 
 // resetSession leaves the single PGlite session clean for the next client: it ends any
@@ -204,6 +218,9 @@ func (s *Server) fail(err error) {
 func (s *Server) acquire(c net.Conn) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	for s.active != nil && s.resetting && !s.closed {
+		s.freed.Wait()
+	}
 	if s.active != nil || s.closed {
 		return false
 	}
@@ -216,6 +233,8 @@ func (s *Server) release(c net.Conn) {
 	defer s.mu.Unlock()
 	if s.active == c {
 		s.active = nil
+		s.resetting = false
+		s.freed.Broadcast()
 	}
 }
 
