@@ -1,5 +1,7 @@
 # Processing benchmarks (T12)
 
+Desktop stacks (TypeScript + PGlite vs Go + PostgreSQL 18): [desktop-ts-vs-go.md](desktop-ts-vs-go.md).
+
 ADR 0005 allowed a Go or Rust adapter only when a benchmark justified it. ADR 0032 superseded
 it and adopted both, so this gate is now the historical reference. It tripped when,
 after algorithmic fixes and at 10× the current data volume:
