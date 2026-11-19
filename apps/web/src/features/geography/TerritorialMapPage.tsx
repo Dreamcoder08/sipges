@@ -1,6 +1,6 @@
 import { GeographyCatalogue, GeographyResult } from '@sipges/contracts';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { lazy, Suspense, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useId, useMemo, useRef, useState } from 'react';
 import { requestJson } from '../../shared/api/client.ts';
 import { saveBlob } from '../../shared/api/download.ts';
 import { moduleRecordsQuery } from '../../shared/api/module-records.ts';
@@ -181,7 +181,22 @@ const TerritorialWorkspace = ({
     to: '',
   });
   const [evidence, setEvidence] = useState<readonly Evidence[]>(EVIDENCE);
-  const [selection, setSelection] = useState<Selection | null>(null);
+  const { points, unlocated } = useMemo(
+    () => mapPoints(layers, area.sechura),
+    [layers, area.sechura],
+  );
+  // `?registro=<module>:<id>` (the Inicio analyst's map block): the layers are already in when
+  // the workspace mounts, so the map opens on that record, or says it has no place on the map.
+  const [opened] = useState(() => {
+    const asked = askedRecord();
+    if (!asked) return null;
+    const point = points.find((p) => LAYER_SLUGS[p.layer] === asked.module && p.id === asked.id);
+    return point ? { point } : { notice: `El registro ${asked.id} no tiene ubicación en el mapa.` };
+  });
+  const askedNotice = opened?.notice ?? '';
+  const [selection, setSelection] = useState<Selection | null>(() =>
+    opened?.point ? { kind: 'point', id: opened.point.id } : null,
+  );
   const [basemap, setBasemap] = useState<Basemap>('calles');
   const [engine, setEngine] = useState<'webgl' | 'svg'>(() => (supportsWebGl2() ? 'webgl' : 'svg'));
   const [showConcessions, setShowConcessions] = useState(true);
@@ -198,29 +213,13 @@ const TerritorialWorkspace = ({
     leave3d('La vista 3D no pudo iniciarse en este navegador; se muestra el mapa en 2D.');
   const [cursor, setCursor] = useState('');
   const [playing, setPlaying] = useState(false);
-  const [focus, setFocus] = useState<Focus | null>(null);
+  const [focus, setFocus] = useState<Focus | null>(() =>
+    opened?.point ? { at: opened.point.at, zoom: 13 } : null,
+  );
   const [canvasView, setCanvasView] = useState<Extent | null>(null);
   const compact = useMediaQuery(COMPACT_QUERY);
   const mapSection = useRef<HTMLElement>(null);
 
-  const { points, unlocated } = useMemo(
-    () => mapPoints(layers, area.sechura),
-    [layers, area.sechura],
-  );
-  // `?registro=<module>:<id>` (the Inicio analyst's map block): select and frame that record once
-  // the layers are in, or say it has no place on the map.
-  const [asked] = useState(askedRecord);
-  const [askedNotice, setAskedNotice] = useState('');
-  const applied = useRef(false);
-  useEffect(() => {
-    if (!asked || applied.current) return;
-    applied.current = true;
-    const point = points.find((p) => LAYER_SLUGS[p.layer] === asked.module && p.id === asked.id);
-    if (point) {
-      setSelection({ kind: 'point', id: point.id });
-      setFocus({ at: point.at, zoom: 13 });
-    } else setAskedNotice(`El registro ${asked.id} no tiene ubicación en el mapa.`);
-  }, [asked, points]);
   const selectedConcession = selection?.kind === 'concession' ? selection.concession : null;
 
   const polygon = selectedConcession ? relationPolygon(selectedConcession) : null;
@@ -289,6 +288,9 @@ const TerritorialWorkspace = ({
     home[1] + homeSpan / 2,
   ];
   const map = useMapView({ home, homeSpan, maxZoom: 32 });
+  // Called through its own name: `map.focus(…)` would make every handler using it depend on the
+  // whole `map`, new on each render, and re-render the list rows that receive those handlers.
+  const focusMap = map.focus;
   const unit = (map.span / 100) * UNITS_PER_DEGREE;
 
   // The cadastre follows the settled view of whichever renderer is drawing.
@@ -348,7 +350,7 @@ const TerritorialWorkspace = ({
       const place = area.sechura
         ? LOCALITIES.find((l) => l.name === value)?.at
         : points.find((p) => p.locality === value)?.at;
-      map.focus(place ?? null, 1);
+      focusMap(place ?? null, 1);
       setFocus(place ? { at: place, zoom: 12 } : { extent: area.extent });
     }
   };
@@ -357,7 +359,7 @@ const TerritorialWorkspace = ({
     // On phones the list sits below the map: bring the map back above the sheet.
     if (compact)
       mapSection.current?.scrollIntoView?.({ block: 'start', behavior: scrollBehavior() });
-    map.focus(point.at, Math.max(map.zoom, 4));
+    focusMap(point.at, undefined, 4);
     setFocus({ at: point.at, zoom: 13 });
   };
   const selectPoint = (pointId: string) => setSelection({ kind: 'point', id: pointId });
@@ -417,7 +419,7 @@ const TerritorialWorkspace = ({
     );
   };
 
-  const select = (key: keyof typeof filters, label: string, options: [string, string][]) => (
+  const filterField = (key: keyof typeof filters, label: string, options: [string, string][]) => (
     <div className={styles.filter}>
       <label htmlFor={`${id}-${key}`}>{label}</label>
       <select
@@ -643,20 +645,23 @@ const TerritorialWorkspace = ({
           {count(visible.length, 'registro', 'registros')} en el mapa
         </summary>
         <div className={styles.toolbar}>
-          {select('layer', 'Capa', [['', 'Todas'], ...LAYERS.map((l): [string, string] => [l, l])])}
-          {select('locality', 'Localidad', [
+          {filterField('layer', 'Capa', [
+            ['', 'Todas'],
+            ...LAYERS.map((l): [string, string] => [l, l]),
+          ])}
+          {filterField('locality', 'Localidad', [
             ['', area.all],
             ...localityOptions.map((name): [string, string] => [name, name]),
           ])}
-          {select('dimension', 'Dimensión', [
+          {filterField('dimension', 'Dimensión', [
             ['', 'Todas'],
             ...DIMENSIONS.map((d): [string, string] => [d, `${d} · ${DIMENSION_NAMES[d]}`]),
           ])}
-          {select('from', 'Desde', [
+          {filterField('from', 'Desde', [
             ['', 'El inicio'],
             ...months.map((m): [string, string] => [m, monthLabel(m)]),
           ])}
-          {select('to', 'Hasta', [
+          {filterField('to', 'Hasta', [
             ['', 'Hoy'],
             ...months.map((m): [string, string] => [m, monthLabel(m)]),
           ])}
