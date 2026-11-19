@@ -86,7 +86,7 @@ type launcher struct {
 	haltText string
 
 	verified *desktoprelease.Available
-	// ignoredRequest is the last unparsable request.json, logged once and kept.
+	// ignoredRequest is the last half-written request.json, logged once and kept.
 	ignoredRequest string
 }
 
@@ -276,6 +276,10 @@ func (l *launcher) run(ctx context.Context) (int, error) {
 	}
 	// PGlite data moves to PostgreSQL 18 only through the one-time migrator (ADR 0036 §4): a first
 	// start here would build an empty pg18 beside it and serve an empty SIPGES.
+	if stateDir, err := desktopupdate.ReadStateDir(root); err == nil && pendingMove(stateDir) {
+		log.event("start_refused", field{"code", nil}, field{"reason", errPendingMove.Error()}, field{"action", pendingMoveNotice})
+		return 0, &userError{msg: pendingMoveNotice, err: errPendingMove}
+	}
 	if err := refuseUnmovedPGlite(root); err != nil {
 		log.event("start_refused", field{"code", nil}, field{"reason", err.Error()}, field{"action", firstStartNotice(err)})
 		return 0, &firstStartError{err}
@@ -494,8 +498,8 @@ func (l *launcher) takeRequest(ctx context.Context) (code int, end bool) {
 		return 0, false
 	}
 	var request map[string]any
-	if json.Unmarshal(text, &request) != nil || request == nil {
-		// Half written, or not a request: kept (the API may still be writing it), logged once.
+	if !json.Valid(text) {
+		// Half written: kept (the API may still be writing it), logged once.
 		if string(text) != l.ignoredRequest {
 			l.ignoredRequest = string(text)
 			l.cfg.Log.event("update_request_ignored", field{"version", nil}, field{"verified", l.verifiedVersion()})
@@ -505,6 +509,12 @@ func (l *launcher) takeRequest(ctx context.Context) (code int, end bool) {
 	l.ignoredRequest = ""
 	if err := os.Remove(path); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		l.cfg.Log.event("update_request_failed", field{"reason", err.Error()})
+		return 0, false
+	}
+	// Complete JSON that is not an object (null, an array, a string…) never becomes a request:
+	// it is dropped and logged, not kept forever.
+	if json.Unmarshal(text, &request) != nil || request == nil {
+		l.cfg.Log.event("update_request_ignored", field{"version", nil}, field{"verified", l.verifiedVersion()})
 		return 0, false
 	}
 	version := request["version"]

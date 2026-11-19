@@ -25,7 +25,7 @@ once into `.data/postgresql`, used only when its SHA-256 matches the pin, and tr
 PostgreSQL version and SHA-256); `entry` stays `start.mjs`. Without network and without a verified
 copy in the cache the build fails with a message that says so. On other platforms no PostgreSQL is
 bundled and the Go mode needs `SIPGES_PG_BIN`. Without `--go` nothing of this is built, read or
-downloaded. See [../README.md](../README.md#go-mode-opt-in-until-the-laptop-visit).
+downloaded. See [../README.md](../README.md#go-mode).
 
 ## Reference data
 

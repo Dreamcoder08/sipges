@@ -15,9 +15,13 @@
 //
 //   SIPGES_MOVE_DATABASE_URL=postgres://<login>@127.0.0.1:<port>/<database> \
 //     node deploy/desktop/migration/pglite-to-postgres.mjs --state <copy of the state folder>
-//     [--to <url>] [--scratch <folder>] [--port 8000]
+//     [--to <url>] [--prepared <state folder>] [--scratch <folder>] [--port 8000]
+//
+// --prepared <state folder>: the folder `sipges-desktop --prepare-only` prepared (the real one, not
+// the copy); its pg18.pending-move, which keeps SIPGES off the empty cluster, is removed only
+// after a committed move with no difference.
 import { randomBytes } from 'node:crypto';
-import { cp, lstat, mkdtemp, readFile, realpath, rm } from 'node:fs/promises';
+import { cp, lstat, mkdtemp, readFile, realpath, rm, unlink } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { homedir, tmpdir } from 'node:os';
 import path from 'node:path';
@@ -654,6 +658,19 @@ function report(source, target, catalog, say) {
   return differences > 0 || result.incomplete.length > 0;
 }
 
+// The mark `sipges-desktop --prepare-only` leaves beside <state>/pg18: nothing starts SIPGES on
+// that empty cluster until a committed move with no difference removes it (--prepared <state>).
+export const PENDING_MOVE = 'pg18.pending-move';
+
+/** The pending-move mark of the prepared (real) state folder, a plain file; refused otherwise. */
+async function checkPrepared(folder) {
+  const mark = path.join(path.resolve(folder), PENDING_MOVE);
+  const info = await lstat(mark).catch(() => null);
+  if (!info?.isFile())
+    refuse(`--prepared names no folder that sipges-desktop --prepare-only prepared (no ${PENDING_MOVE})`);
+  return mark;
+}
+
 /**
  * The whole move. Returns the exit code. Hooks (tests): `afterRestore(tx)`, `answers(port)`, the
  * stop flag.
@@ -674,6 +691,7 @@ export async function runMove(
     if (!Number.isInteger(port) || port < 1 || port > 65535) refuse('invalid --port');
     const url = checkTarget(options.to);
     const db = await checkCopy(options.state, original);
+    const pending = options.prepared ? await checkPrepared(options.prepared) : null;
     const scratch = await checkScratch(options.scratch ?? tmpdir(), path.dirname(db), original);
     await checkStopped(db, port, answers);
     const before = await treeDigest(db);
@@ -685,6 +703,17 @@ export async function runMove(
     say(`Source database read and dumped (PostgreSQL ${source.version}); the copy is unchanged`);
     await restore(tools.postgres, url, source, say, afterRestore, stop);
     say('Moved: the target holds the copy, committed.');
+    if (pending) {
+      try {
+        await unlink(pending);
+      } catch (error) {
+        say(
+          `The move committed, but ${PENDING_MOVE} could not be removed (${error.code ?? 'error'}): remove it from the prepared state folder by hand before opening SIPGES.`,
+        );
+        return NOT_COMPARED_EXIT;
+      }
+      say(`The prepared cluster is ready: removed ${PENDING_MOVE}.`);
+    }
     return 0;
   } catch (error) {
     if (error instanceof Different) {
@@ -697,8 +726,10 @@ export async function runMove(
 }
 
 const USAGE = `Usage: SIPGES_MOVE_DATABASE_URL=postgres://<login>@127.0.0.1:<port>/<database> \\
-  node deploy/desktop/migration/pglite-to-postgres.mjs --state <copy of the state folder> [--scratch <folder>] [--port 8000]
---to <url> may replace the variable; --port is where SIPGES would answer if it were running. Read deploy/desktop/migration/README.md.`;
+  node deploy/desktop/migration/pglite-to-postgres.mjs --state <copy of the state folder> [--prepared <state folder>] [--scratch <folder>] [--port 8000]
+--to <url> may replace the variable; --port is where SIPGES would answer if it were running.
+--prepared names the state folder sipges-desktop --prepare-only prepared: its pg18.pending-move is
+removed only after a committed move with no difference. Read deploy/desktop/migration/README.md.`;
 
 async function main(args) {
   let parsed;
@@ -710,6 +741,7 @@ async function main(args) {
         to: { type: 'string' },
         scratch: { type: 'string' },
         port: { type: 'string' },
+        prepared: { type: 'string' },
       },
     }).values;
   } catch {

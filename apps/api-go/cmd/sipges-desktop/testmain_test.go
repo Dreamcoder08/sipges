@@ -17,9 +17,17 @@ const helperEnv = "SIPGES_DESKTOP_TEST_API"
 // (separated by \x1f), so a test can kill it as the person's computer would.
 const launcherEnvHelper = "SIPGES_DESKTOP_TEST_LAUNCHER"
 
+// mainEnvHelper makes this test binary run main() with these arguments (separated by \x1f).
+const mainEnvHelper = "SIPGES_DESKTOP_TEST_MAIN"
+
 func TestMain(m *testing.M) {
 	if args := os.Getenv(launcherEnvHelper); args != "" {
 		os.Exit(launcherMain(strings.Split(args, "\x1f")))
+	}
+	if args := os.Getenv(mainEnvHelper); args != "" {
+		os.Args = append([]string{os.Args[0]}, strings.Split(args, "\x1f")...)
+		main()
+		os.Exit(0)
 	}
 	if dir := os.Getenv(helperEnv); dir != "" {
 		fakeAPI(dir)

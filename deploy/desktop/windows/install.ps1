@@ -5,7 +5,10 @@
 #   powershell -ExecutionPolicy Bypass -File deploy\desktop\windows\install.ps1 -Release <folder>
 #     Managed mode: installs a signed release into %LOCALAPPDATA%\SIPGES-app, keeps the state
 #     folder where it is, and points the shortcuts at that install, so updates arrive through the
-#     update notice. A rerun keeps the installed version and only refreshes the shortcuts.
+#     update notice. A rerun keeps the installed version and only refreshes the shortcuts. A
+#     release built with --go is installed, without Node, by the trusted sipges-desktop.exe the
+#     kit carries in deploy\desktop\bin (built from the trusted checkout), never by the
+#     release's own binary; one without --go is installed by update.mjs (Node 24).
 #   ... install.ps1 -Release <folder> -State <folder>
 #     Managed mode on another state folder, such as a copy of %LOCALAPPDATA%\SIPGES made for
 #     the data move (deploy\desktop\migration\README.md); the original stays as it was.
@@ -151,6 +154,42 @@ function Assert-NoPendingUpdate {
     }
 }
 
+# The real path of an existing folder, links and junctions followed, as Node's
+# fs.realpathSync.native and sipges-desktop see it (GetFinalPathNameByHandle, without \\?\).
+function Get-RealPath([string]$Path) {
+    if (-not ('SipgesRealPath' -as [type])) {
+        Add-Type -TypeDefinition @'
+        using System;
+        using System.ComponentModel;
+        using System.Runtime.InteropServices;
+        using System.Text;
+        public static class SipgesRealPath {
+          [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+          static extern IntPtr CreateFileW(string name, uint access, uint share, IntPtr security, uint disposition, uint flags, IntPtr template);
+          [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+          static extern uint GetFinalPathNameByHandleW(IntPtr handle, StringBuilder path, uint size, uint flags);
+          [DllImport("kernel32.dll", SetLastError = true)]
+          static extern bool CloseHandle(IntPtr handle);
+          public static string Of(string path) {
+            // Read attributes only; FILE_FLAG_BACKUP_SEMANTICS opens folders; every share mode.
+            IntPtr handle = CreateFileW(path, 0, 7, IntPtr.Zero, 3, 0x02000000, IntPtr.Zero);
+            if (handle == new IntPtr(-1)) throw new Win32Exception(Marshal.GetLastWin32Error(), path);
+            try {
+              StringBuilder buffer = new StringBuilder(32768);
+              uint n = GetFinalPathNameByHandleW(handle, buffer, (uint)buffer.Capacity, 0);
+              if (n == 0 || n >= buffer.Capacity) throw new Win32Exception(Marshal.GetLastWin32Error(), path);
+              string real = buffer.ToString();
+              if (real.StartsWith("\\\\?\\UNC\\")) return "\\\\" + real.Substring(8);
+              if (real.StartsWith("\\\\?\\")) return real.Substring(4);
+              return real;
+            } finally { CloseHandle(handle); }
+          }
+        }
+'@
+    }
+    return [SipgesRealPath]::Of($Path)
+}
+
 # -State names the copy made for the data move. A link or junction, or a path that leads to the
 # original %LOCALAPPDATA%\SIPGES, would have the installer record the original folder and its
 # first start migrate it in place. A rerun keeps its recorded folder, compared in Install-Managed.
@@ -163,8 +202,8 @@ function Assert-StateIsCopy {
     }
     $first = -not (Test-Path -LiteralPath (Join-Path $AppRoot 'install.json'))
     if ($first -and (Test-Path -LiteralPath $State) -and (Test-Path -LiteralPath $original)) {
-        $real = (& node -p "require('fs').realpathSync.native(process.argv[1])" $State) -join ''
-        if ($real -and ($real -eq ((& node -p "require('fs').realpathSync.native(process.argv[1])" $original) -join ''))) {
+        $real = Get-RealPath $State
+        if ($real -and ($real -eq (Get-RealPath $original))) {
             Stop-Install "-State $State lleva a la carpeta de datos original ${original}: pasa con -State la carpeta real de la copia, nunca la original ni un enlace a ella; no se cambió nada."
         }
     }
@@ -204,7 +243,7 @@ function Install-Managed {
     if ($recorded) {
         $given = $State
         if (Test-Path -LiteralPath $State -PathType Container) {
-            $given = (& node -p "require('fs').realpathSync.native(process.argv[1])" $State) -join ''
+            $given = Get-RealPath $State
         }
         if ($StateGiven -and ($given -ne $recorded)) {
             Stop-Install "Esta instalación usa la carpeta de datos $recorded, no ${State}: vuelve a ejecutar el script sin -State o con -State $recorded; no se cambió nada."
@@ -220,6 +259,13 @@ function Install-Managed {
     Protect-Path $AppRoot '(OI)(CI)F'
     if (Test-Path -LiteralPath (Join-Path $AppRoot 'current.json')) {
         Write-Host 'SIPGES ya está instalado: las actualizaciones llegan por el aviso. Solo se renuevan los accesos directos.'
+    } elseif ($GoRelease) {
+        # Verified and installed by the kit's trusted sipges-desktop.exe, never by the release's
+        # own binary, which could verify itself; its key's fingerprint is printed, as update.mjs
+        # does. Nothing of the release runs before that.
+        Invoke-Checked 'instalar la versión firmada' {
+            & $TrustedInstaller --install $AppRoot --release $source --state $State --trust-release-key
+        }
     } else {
         Invoke-Checked 'instalar la versión firmada' {
             & node (Join-Path $Updater 'update.mjs') --install $AppRoot --release $source --state $State --trust-release-key
@@ -243,15 +289,26 @@ function Install-Managed {
     Write-Host "Respalda la carpeta completa $State (contiene tus datos y su clave)."
 }
 
+# Node 24 for clone mode and for a release without the Go mode; never for a Go release.
+function Assert-Node {
+    $node = Get-Command node -ErrorAction SilentlyContinue
+    $major = 0
+    if ($node) { $major = [int](& node -p "process.versions.node.split('.')[0]") }
+    if ($major -lt 24) {
+        Stop-Install 'Node.js 24 o posterior es necesario: instálalo con `winget install OpenJS.NodeJS.LTS` y vuelve a ejecutar este script.'
+    }
+}
+
 # Before anything is created, in both modes.
 Assert-NoPendingUpdate
 
-$node = Get-Command node -ErrorAction SilentlyContinue
-$major = 0
-if ($node) { $major = [int](& node -p "process.versions.node.split('.')[0]") }
-if ($major -lt 24) {
-    Stop-Install 'Node.js 24 o posterior es necesario: instálalo con `winget install OpenJS.NodeJS.LTS` y vuelve a ejecutar este script.'
+# Built from the trusted checkout into the kit: it verifies a release before anything of it runs.
+$TrustedInstaller = Join-Path (Split-Path -Parent $PSScriptRoot) 'bin\sipges-desktop.exe'
+$GoRelease = [bool]$Release -and (Test-Path -LiteralPath (Join-Path $Release 'package\go\sipges-desktop.exe'))
+if ($GoRelease -and -not (Test-Path -LiteralPath $TrustedInstaller -PathType Leaf)) {
+    Stop-Install "Este kit no trae su sipges-desktop.exe de confianza ($TrustedInstaller): constrúyelo desde el checkout de confianza y vuelve a ejecutar este script; no se cambió nada."
 }
+if (-not $GoRelease) { Assert-Node }
 
 if ($Release) {
     Install-Managed

@@ -5,17 +5,20 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import process from 'node:process';
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync, symlinkSync } from 'node:fs';
+import { chmodSync, copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { makeState, newPair, releases, snapshot, withTemp } from '../updater/verifier-helpers.mjs';
+import { keyFingerprint } from '../updater/release.mjs';
+import { makePackage, makeState, newPair, publicPem, releases, snapshot, withTemp } from '../updater/verifier-helpers.mjs';
 
 const installer = join(dirname(fileURLToPath(import.meta.url)), 'install.sh');
-const REAL = ['cat', 'chmod', 'cp', 'cut', 'dirname', 'mkdir', 'openssl', 'readlink', 'sh', 'tr'];
+const desktopDir = join(dirname(fileURLToPath(import.meta.url)), '..');
+const REAL = ['cat', 'chmod', 'cp', 'cut', 'dirname', 'mkdir', 'openssl', 'readlink', 'sed', 'sh', 'tr'];
 
 /** A temporary HOME whose PATH has only the real tools above, the real Node and logging fakes. */
-async function sandbox(dir) {
+async function sandbox(dir, { withoutNode = false, script = installer } = {}) {
   const bin = join(dir, 'bin');
   const home = join(dir, 'home');
   const calls = join(dir, 'calls');
@@ -30,7 +33,7 @@ async function sandbox(dir) {
     writeFile(join(bin, name), `#!/bin/sh\necho "${name} $*" >> '${calls}'\n${body}\n`, {
       mode: 0o755,
     });
-  await fake('node', `exec '${process.execPath}' "$@"`);
+  if (!withoutNode) await fake('node', `exec '${process.execPath}' "$@"`);
   await fake('curl', 'exit 22'); // nothing answers: no port is ever probed
   await fake('pnpm', 'echo 12.11.2');
   await fake('npm', 'exit 0');
@@ -39,7 +42,7 @@ async function sandbox(dir) {
   const state = join(data, 'sipges-local');
   const env = { HOME: home, XDG_DATA_HOME: data, PATH: bin, SIPGES_DESKTOP_PORT: '1' };
   const exec = (args, extra = {}) => {
-    const result = spawnSync(join(bin, 'sh'), [installer, ...args], {
+    const result = spawnSync(join(bin, 'sh'), [script, ...args], {
       env: { ...env, ...extra },
       encoding: 'utf8',
     });
@@ -189,4 +192,136 @@ test('install.sh --managed rerun on a recorded copy refuses a link to it and the
       assert.deepEqual([result.status, result.stdout, result.stderr], [1, '', stderr], state);
       assert.deepEqual(await snapshot(s.home), before, 'nothing in HOME changed');
     }
+  }));
+
+// go-rust-stack T72d3: a release built with --go is installed WITHOUT Node by a trusted
+// sipges-desktop that the kit carries (deploy/desktop/bin, built from the trusted checkout),
+// never by the binary inside the release being installed (which could verify itself).
+const repo = join(dirname(fileURLToPath(import.meta.url)), '../../..');
+const hasGo = spawnSync('go', ['version']).status === 0;
+
+/** A copy of deploy/desktop as the kit unpacks it, with the trusted installer when given. */
+function kit(dir, trusted) {
+  const desktop = join(dir, 'kit', 'deploy', 'desktop');
+  cpSync(desktopDir, desktop, { recursive: true, filter: (from) => !from.includes(`${join('desktop', 'bin')}`) });
+  if (trusted) {
+    mkdirSync(join(desktop, 'bin'), { recursive: true });
+    copyFileSync(trusted, join(desktop, 'bin', 'sipges-desktop'));
+    chmodSync(join(desktop, 'bin', 'sipges-desktop'), 0o755);
+  }
+  return join(desktop, 'linux', 'install.sh');
+}
+
+/** A release binary that leaves a mark when anything runs it. */
+const tattletale = (mark) => `#!/bin/sh\necho ran >> '${mark}'\nexit 0\n`;
+
+let built;
+function trustedBinary() {
+  if (built) return built;
+  const out = mkdtempSync(join(tmpdir(), 'sipges-desktop-build-'));
+  const exe = join(out, 'sipges-desktop');
+  const result = spawnSync('go', ['build', '-o', exe, './cmd/sipges-desktop'], { cwd: join(repo, 'apps/api-go'), encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  process.on('exit', () => rmSync(out, { recursive: true, force: true }));
+  built = exe;
+  return exe;
+}
+
+test('install.sh --managed installs a Go release with the kit\'s trusted sipges-desktop, without Node, never running the release\'s own', { skip: !hasGo && 'needs the go toolchain' }, () =>
+  withTemp(async (dir) => {
+    const mark = join(dir, 'release-binary-ran');
+    const s = await sandbox(dir, { withoutNode: true, script: kit(dir, trustedBinary()) });
+    const pair = newPair();
+    const release = await releases(dir, pair, {
+      make: async (pkg, version) => {
+        await makePackage(pkg, version);
+        await mkdir(join(pkg, 'go'), { recursive: true });
+        await writeFile(join(pkg, 'go', 'sipges-desktop'), tattletale(mark), { mode: 0o755 });
+      },
+    })('1.0.0');
+    const result = s.exec(['--managed', release]);
+    assert.equal(result.status, 0, result.stderr);
+    assert.ok(
+      result.stdout.startsWith(`Trusting the update key that signed this release (SHA-256 ${keyFingerprint(pair.publicKey)}).\nInstalled 1.0.0\n`),
+      result.stdout,
+    );
+    assert.equal(existsSync(mark), false, 'the release\'s own sipges-desktop never ran');
+    assert.doesNotMatch(result.log, /^node /m, 'node was never run');
+    const current = JSON.parse(readFileSync(join(s.appRoot, 'current.json'), 'utf8'));
+    assert.deepEqual([current.version, current.path], ['1.0.0', 'versions/1.0.0']);
+    assert.equal(JSON.parse(readFileSync(join(s.appRoot, 'install.json'), 'utf8')).stateDir, s.state);
+    assert.deepEqual(readdirSync(s.state).sort(), ['admin-password', 'data-key', 'pglite', 'uploads']);
+    // A rerun reads the installed version without Node and keeps it.
+    const rerun = s.exec(['--managed', release]);
+    assert.equal(rerun.status, 0, rerun.stderr);
+    assert.match(rerun.stdout, /^SIPGES is already installed: 1\.0\.0\. /m);
+  }));
+
+// The verifier's probe: an unsigned manifest, a garbage signature and a script as the binary.
+test('install.sh --managed refuses a tampered Go release and never runs its binary', { skip: !hasGo && 'needs the go toolchain' }, () =>
+  withTemp(async (dir) => {
+    const mark = join(dir, 'release-binary-ran');
+    const s = await sandbox(dir, { withoutNode: true, script: kit(dir, trustedBinary()) });
+    const release = join(dir, 'release-tampered');
+    await makePackage(join(release, 'package'), '1.0.0');
+    await mkdir(join(release, 'package', 'go'), { recursive: true });
+    await writeFile(join(release, 'package', 'go', 'sipges-desktop'), tattletale(mark), { mode: 0o755 });
+    await writeFile(join(release, 'package', 'update-public-key.pem'), publicPem(newPair()));
+    await writeFile(join(release, 'release.json'), '{"format":1,"version":"1.0.0"}\n');
+    await writeFile(join(release, 'release.sig'), 'not a signature\n');
+    const result = s.exec(['--managed', release]);
+    assert.equal(result.status, 1, result.stdout);
+    assert.match(result.stderr, /the signed release could not be installed/);
+    assert.equal(existsSync(mark), false, 'the tampered release\'s binary never ran');
+    assert.equal(existsSync(join(s.appRoot, 'current.json')), false, 'nothing was installed');
+    assert.equal(existsSync(s.state), false, 'no state folder was created');
+  }));
+
+test('install.sh --managed refuses a Go release when the kit carries no trusted sipges-desktop', () =>
+  withTemp(async (dir) => {
+    const mark = join(dir, 'release-binary-ran');
+    const s = await sandbox(dir, { withoutNode: true, script: kit(dir, null) });
+    const release = await releases(dir, newPair(), {
+      make: async (pkg, version) => {
+        await makePackage(pkg, version);
+        await mkdir(join(pkg, 'go'), { recursive: true });
+        await writeFile(join(pkg, 'go', 'sipges-desktop'), tattletale(mark), { mode: 0o755 });
+      },
+    })('1.0.0');
+    const result = s.exec(['--managed', release]);
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /^SIPGES: this kit has no trusted sipges-desktop \(.*\/deploy\/desktop\/bin\/sipges-desktop\): build it from the trusted checkout and run this script again; nothing was changed\.\n$/);
+    assert.equal(existsSync(mark), false, 'the release\'s binary never ran');
+    assert.equal(existsSync(s.appRoot), false, 'nothing was created');
+  }));
+
+test('install.sh --managed asks for Node only for a release without the Go mode', () =>
+  withTemp(async (dir) => {
+    const s = await sandbox(dir, { withoutNode: true });
+    const release = await releases(dir, newPair())('1.0.0');
+    const result = s.exec(['--managed', release]);
+    assert.equal(result.status, 1);
+    assert.equal(result.stderr, 'SIPGES: Node.js 24 or later is required: install it and run this script again.\n');
+    assert.equal(existsSync(s.appRoot), false, 'nothing was created');
+  }));
+
+test('install.sh --managed refuses a Go release without the trusted sipges-desktop on a rerun too', { skip: !hasGo && 'needs the go toolchain' }, () =>
+  withTemp(async (dir) => {
+    const mark = join(dir, 'release-binary-ran');
+    const release = await releases(dir, newPair(), {
+      make: async (pkg, version) => {
+        await makePackage(pkg, version);
+        await mkdir(join(pkg, 'go'), { recursive: true });
+        await writeFile(join(pkg, 'go', 'sipges-desktop'), tattletale(mark), { mode: 0o755 });
+      },
+    })('1.0.0');
+    await mkdir(join(dir, 'a'));
+    const first = await sandbox(join(dir, 'a'), { withoutNode: true, script: kit(join(dir, 'a'), trustedBinary()) });
+    assert.equal(first.exec(['--managed', release]).status, 0);
+    // The same HOME, now from a kit without the trusted installer.
+    const bare = kit(join(dir, 'b'), null);
+    const rerun = spawnSync('sh', [bare, '--managed', release], { env: { HOME: first.home, XDG_DATA_HOME: first.data, PATH: join(dir, 'a', 'bin'), SIPGES_DESKTOP_PORT: '1' }, encoding: 'utf8' });
+    assert.equal(rerun.status, 1, rerun.stdout);
+    assert.match(rerun.stderr, /this kit has no trusted sipges-desktop/);
+    assert.equal(existsSync(mark), false);
   }));

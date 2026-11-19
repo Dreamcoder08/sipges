@@ -16,23 +16,29 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/desktopupdate"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/localpg"
 )
 
 const launcherUsage = `Usage: sipges-desktop --install <root> [--releases <dir>] [--port <port>] [--pg-bin <dir>]
        sipges-desktop --install <root> --prepare-only [--pg-bin <dir>]
+       sipges-desktop --install <root> --release <dir> --state <dir> (--trust-key <public.pem> | --trust-release-key)
 
 Starts the current version of a managed install on 127.0.0.1 (default port 8000): its bundled
 PostgreSQL 18 (<version>/postgresql/bin, else --pg-bin or SIPGES_PG_BIN) on <state>/pg18 and its
 Go API (<version>/go/api). It checks <dir> for a newer signed release at startup and offers it in
 the app; updates run only after an administrator clicks «Actualizar». Without --releases no
 check is made.
---prepare-only creates an empty PostgreSQL 18 cluster in the state folder with the roles, the
-database and the migrations, then stops it, so the one-time PGlite migrator can load it. It is
-refused when <state>/pg18 already holds data.
+--prepare-only creates a PostgreSQL 18 cluster in the state folder with the roles and an empty
+database (no migration: the Go launcher migrates when it starts), then stops it, so the
+one-time PGlite migrator can fill it. It is refused when <state>/pg18 already holds data.
 A first SIGINT or SIGTERM stops SIPGES gracefully; a second one kills the server at once and
 exits with code 1.
+--release installs a signed release into an empty <root> and records <state> (its real path) in
+install.json, as update.mjs --install does; --trust-release-key trusts the key that signed this
+release and prints its SHA-256 fingerprint. It starts nothing.
 Exit codes: 0 stopped, 3 an update could not be rolled back and nothing was started (restore
 the pre-update copy named in the message), otherwise the server's own exit code or 1.`
 
@@ -430,15 +436,18 @@ func clusterRunning(ctx context.Context, binDir, dataDir string) (bool, error) {
 	}
 }
 
-// stopOrphanClusters stops, through localpg (its fast stop and orphan handling), every PostgreSQL
-// left running on one of the folders, typically by a launcher that was killed. It fails without
-// touching anything else when one cannot be stopped, or when another instance owns it.
+// stopOrphanClusters stops every PostgreSQL left running on one of the folders, typically by a
+// launcher that was killed, with localpg.StopLeftover: pg_ctl stop -m fast on that data folder,
+// then a kill when that fails, and never a start, so a copy of the state folder is never served.
+// A postmaster.pid that no PostgreSQL serves (a crashed server, or a process id the system gave
+// to another program) leaves the folder free. It fails without touching anything else when a
+// server cannot be stopped.
 func stopOrphanClusters(rt runtimeEnv, root string) func(context.Context, []string) error {
 	return func(ctx context.Context, folders []string) error {
 		binDir := ""
 		for _, dir := range folders {
 			dataDir := filepath.Join(dir, dataFolder)
-			if _, err := os.Stat(filepath.Join(dataDir, "postmaster.pid")); err != nil {
+			if _, serving := localpg.Serving(ctx, dataDir); !serving {
 				continue
 			}
 			if binDir == "" {
@@ -455,36 +464,26 @@ func stopOrphanClusters(rt runtimeEnv, root string) func(context.Context, []stri
 				}
 				binDir = bins.pgBin
 			}
-			running, err := clusterRunning(ctx, binDir, dataDir)
-			if err != nil {
-				return err
-			}
-			if !running {
-				continue
-			}
-			super, err := readSuperPassword(dir)
-			if err != nil {
-				return fmt.Errorf("stop the PostgreSQL left running on %s: %w", dataDir, err)
-			}
-			pg, err := localpg.Start(ctx, localpg.Options{
-				BinDir: binDir, DataDir: dataDir, LogPath: filepath.Join(dir, dataFolder+".log"), SuperPassword: super,
+			stopped, err := localpg.StopLeftover(ctx, localpg.Options{
+				BinDir: binDir, DataDir: dataDir, LogPath: filepath.Join(dir, dataFolder+".log"),
 			})
-			if err == nil {
-				err = stopCluster(ctx, pg)
-			}
 			if err != nil {
 				return fmt.Errorf("stop the PostgreSQL left running on %s: %w", dataDir, err)
 			}
-			_, _ = fmt.Fprintf(rt.stderr, "sipges-desktop: stopped the PostgreSQL left running on %s\n", dataDir)
+			if stopped {
+				_, _ = fmt.Fprintf(rt.stderr, "sipges-desktop: stopped the PostgreSQL left running on %s\n", dataDir)
+			}
 		}
 		return nil
 	}
 }
 
-// prepareOnly makes an empty PostgreSQL 18 cluster in the state folder ready for the one-time
-// PGlite migrator: roles, database and migrations, then PostgreSQL stops. A pg18 folder that
-// already holds anything is refused.
-func prepareOnly(ctx context.Context, stateDir string, bins versionBins, base []string, stdout, stderr io.Writer) (err error) {
+// prepareOnly makes an empty PostgreSQL 18 cluster in the state folder for the one-time PGlite
+// migrator, pglite-to-postgres.mjs: the roles and an empty database owned by the API's login, no
+// migration (the migrator only fills an empty database, and its dump carries schema_migrations;
+// the Go launcher migrates when it starts). It checks the login reaches that empty database,
+// then stops PostgreSQL. A pg18 folder that already holds anything is refused.
+func prepareOnly(ctx context.Context, stateDir, pgBin string, stdout io.Writer) (err error) {
 	dataDir := filepath.Join(stateDir, dataFolder)
 	if entries, readErr := os.ReadDir(dataDir); readErr == nil && len(entries) > 0 {
 		return &userError{
@@ -498,18 +497,37 @@ func prepareOnly(ctx context.Context, stateDir string, bins versionBins, base []
 	if err != nil {
 		return err
 	}
-	pg, err := startCluster(ctx, bins.pgBin, stateDir, sec)
+	// The mark goes first: from here until the move commits, nothing starts SIPGES on this cluster.
+	if err := os.WriteFile(filepath.Join(stateDir, pendingMoveName), []byte("pglite-to-postgres.mjs --prepared removes this after the move\n"), 0o600); err != nil {
+		return &userError{msg: "No se pudo preparar la base de datos local. Revise el registro de SIPGES.", err: err}
+	}
+	pg, err := startCluster(ctx, pgBin, stateDir, sec)
 	if err != nil {
-		return removeHalfMade(ctx, bins.pgBin, dataDir, err)
+		return removeHalfMade(ctx, pgBin, dataDir, err)
 	}
-	env, err := serverEnv(base, bins, stateDir, sec, pg.URL(appRole, sec.pgApp, appDatabase), 8000, "")
-	if err == nil {
-		err = migrateAPI(ctx, bins.api, env, stdout, stderr)
-	}
+	err = prepareCheck(ctx, pg.URL(appRole, sec.pgApp, appDatabase))
 	if err = errors.Join(err, stopCluster(ctx, pg)); err != nil {
-		return removeHalfMade(ctx, bins.pgBin, dataDir, err)
+		return removeHalfMade(ctx, pgBin, dataDir, err)
 	}
 	_, _ = fmt.Fprintf(stdout, "sipges-desktop: PostgreSQL 18 prepared in %s\n", dataDir)
+	return nil
+}
+
+// prepareCheck proves what --prepare-only leaves: the API's login connects to the application
+// database, which holds no table. A variable so a test can make it fail after the cluster exists.
+var prepareCheck = func(ctx context.Context, databaseURL string) error {
+	conn, err := pgx.Connect(ctx, databaseURL)
+	if err != nil {
+		return fmt.Errorf("connect as %s: %w", appRole, err)
+	}
+	defer func() { _ = conn.Close(context.WithoutCancel(ctx)) }()
+	var tables int
+	if err := conn.QueryRow(ctx, "SELECT count(*) FROM pg_tables WHERE schemaname NOT IN ('pg_catalog', 'information_schema')").Scan(&tables); err != nil {
+		return fmt.Errorf("count the tables: %w", err)
+	}
+	if tables != 0 {
+		return fmt.Errorf("the new database already holds %d tables", tables)
+	}
 	return nil
 }
 
@@ -519,17 +537,23 @@ func removeHalfMade(ctx context.Context, binDir, dataDir string, cause error) er
 	running, err := clusterRunning(context.WithoutCancel(ctx), binDir, dataDir)
 	if err == nil && !running {
 		err = os.RemoveAll(dataDir)
+	}
+	if err == nil && !running {
+		// Only once the cluster is gone: the mark keeps SIPGES off a cluster that is still there.
+		if rmErr := os.Remove(dataDir + ".pending-move"); rmErr != nil && !errors.Is(rmErr, os.ErrNotExist) {
+			err = rmErr
+		}
 	} else if err == nil {
 		err = errors.New("PostgreSQL still runs on it")
 	}
 	if err != nil {
 		return &userError{
-			msg: "No se pudo preparar la base de datos local. Detenga PostgreSQL y borre la carpeta " + dataDir + " antes de volver a intentarlo.",
+			msg: "No se pudo preparar la base de datos local. Detenga PostgreSQL y borre la carpeta " + dataDir + " antes de volver a intentarlo. Detalle: " + cause.Error(),
 			err: errors.Join(cause, fmt.Errorf("remove the half-made %s: %w", dataDir, err)),
 		}
 	}
 	return &userError{
-		msg: "No se pudo preparar la base de datos local; se borró la carpeta pg18 a medio preparar. Revise el registro de SIPGES.",
+		msg: "No se pudo preparar la base de datos local; se borró la carpeta pg18 a medio preparar. Detalle: " + cause.Error(),
 		err: cause,
 	}
 }
@@ -542,6 +566,11 @@ type launcherOptions struct {
 	port        int
 	prepareOnly bool
 	help        bool
+	// The install form (update.mjs --install <root> --release <dir>): a first install.
+	release      string
+	state        string
+	trustKey     string
+	trustRelease bool
 }
 
 var errInvalidOptions = errors.New("Invalid options; use --help") //nolint:staticcheck // ST1005: launcher.mjs's message
@@ -565,7 +594,14 @@ func parseLauncherArgs(args []string, lookup func(string) (string, bool)) (launc
 			o.prepareOnly = true
 			continue
 		}
-		targets := map[string]*string{"--install": &o.install, "--releases": &o.releases, "--port": &port, "--pg-bin": &o.pgBin}
+		if key == "--trust-release-key" && !inline && !o.trustRelease {
+			o.trustRelease = true
+			continue
+		}
+		targets := map[string]*string{
+			"--install": &o.install, "--releases": &o.releases, "--port": &port, "--pg-bin": &o.pgBin,
+			"--release": &o.release, "--state": &o.state, "--trust-key": &o.trustKey,
+		}
 		target, ok := targets[key]
 		if !ok || seen[key] {
 			return launcherOptions{}, errInvalidOptions
@@ -584,6 +620,9 @@ func parseLauncherArgs(args []string, lookup func(string) (string, bool)) (launc
 	}
 	if o.install == "" {
 		return launcherOptions{}, errors.New("Missing --install") //nolint:staticcheck // ST1005: launcher.mjs's message
+	}
+	if err := checkInstallForm(o, seen); err != nil {
+		return launcherOptions{}, err
 	}
 	if port != "" {
 		n, err := strconv.Atoi(port)
@@ -614,6 +653,9 @@ func runLauncherCLI(ctx context.Context, args, environ []string, stdout, stderr 
 	if err != nil {
 		_, _ = fmt.Fprintln(stderr, "Error: "+err.Error())
 		return 1
+	}
+	if o.release != "" {
+		return runInstall(ctx, root, o, stdout, stderr)
 	}
 	rt := runtimeEnv{base: environ, pgBin: o.pgBin, stdout: stdout, stderr: stderr}
 	if o.prepareOnly {
@@ -672,8 +714,11 @@ func reportStartError(err error, stderr io.Writer) int {
 		return exitRollbackIncomplete
 	}
 	var first *firstStartError
+	var ue *userError
 	if errors.As(err, &first) {
 		_, _ = fmt.Fprintln(stderr, firstStartNotice(first.err))
+	} else if errors.As(err, &ue) {
+		_, _ = fmt.Fprintln(stderr, ue.msg)
 	}
 	_, _ = fmt.Fprintln(stderr, "Error: "+err.Error())
 	return 1
@@ -696,5 +741,5 @@ func prepareManaged(ctx context.Context, root string, rt runtimeEnv) error {
 	if err != nil {
 		return err
 	}
-	return prepareOnly(ctx, stateDir, bins, rt.base, rt.stdout, rt.stderr)
+	return prepareOnly(ctx, stateDir, bins.pgBin, rt.stdout)
 }

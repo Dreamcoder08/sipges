@@ -479,3 +479,40 @@ test('a refused connection is reported as a connection error', async () => {
   assert.match(out, /could not connect to the target server \(ECONNREFUSED\)/);
   assert.doesNotMatch(out, /file system error/);
 });
+
+// Review C1: sipges-desktop --prepare-only leaves <state>/pg18.pending-move so nothing starts
+// SIPGES on the empty cluster; --prepared <state> removes it only after a committed move with no
+// difference. The prepared state folder is the real one (the copy is what --state reads).
+async function prepared(name) {
+  const dir = join(scratch, name);
+  await mkdir(join(dir, 'pg18'), { recursive: true });
+  await writeFile(join(dir, 'pg18.pending-move'), 'synthetic\n');
+  return dir;
+}
+
+test('refuses --prepared without the pending-move mark, before reading anything', async () => {
+  const copy = await copyOf('copy-prepared-unmarked');
+  const unmarked = join(scratch, 'unmarked-state');
+  await mkdir(unmarked, { recursive: true });
+  const { code, out } = await run(['--state', copy, '--prepared', unmarked], { SIPGES_MOVE_DATABASE_URL: UNREACHABLE });
+  assert.equal(code, 2, out);
+  assert.match(out, /RESULT: not moved: --prepared names no folder that sipges-desktop --prepare-only prepared \(no pg18\.pending-move\)/);
+});
+
+test('a committed move with no difference removes the pending-move mark of --prepared', { skip: pgSkip }, async () => {
+  const state = await prepared('prepared-ok');
+  const { code, out } = await run(['--state', await copyOf('copy-prepared-ok'), '--prepared', state], { SIPGES_MOVE_DATABASE_URL: await target() });
+  assert.equal(code, 0, out);
+  assert.match(out, /Moved: the target holds the copy, committed\.\nThe prepared cluster is ready: removed pg18\.pending-move\./);
+  assert.equal(existsSync(join(state, 'pg18.pending-move')), false);
+});
+
+test('a move with a difference keeps the pending-move mark', { skip: pgSkip }, async () => {
+  const state = await prepared('prepared-different');
+  const { code, out } = await move(
+    { state: await copyOf('copy-prepared-different'), to: await target(), prepared: state },
+    { afterRestore: (tx) => tx`UPDATE tenants SET label = label || ' cambiado'` },
+  );
+  assert.equal(code, 1, out);
+  assert.equal(existsSync(join(state, 'pg18.pending-move')), true, 'the mark was removed after a difference');
+});

@@ -177,7 +177,7 @@ func (f *firstStart) run() (FirstStartResult, error) {
 			return FirstStartResult{}, refuse("The state folder holds a database but %s is missing or empty; restore it from the backup of this state folder before starting SIPGES", filepath.Join(stateDir, name))
 		}
 	}
-	if err := checkStateRoom(stateDir, 3, f.Statfs); err != nil {
+	if err := checkStateRoom(f.ctx, stateDir, 3, f.Statfs); err != nil {
 		return FirstStartResult{}, err
 	}
 	when := stamp(f.Now())

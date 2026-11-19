@@ -315,8 +315,11 @@ function git(args, options = {}) {
  * The scripts as the visit carries them (runbook section 1): `deploy/desktop` of the committed
  * HEAD in a zip, unpacked on the laptop with Expand-Archive. Uncommitted changes never travel.
  */
-export function packScripts(zip, cwd = repo) {
-  git(['archive', '--format=zip', '-o', zip, 'HEAD', 'deploy/desktop'], { cwd });
+export function packScripts(zip, cwd = repo, trusted = null) {
+  // The trusted installer (built from this checkout) goes in deploy/desktop/bin: install.ps1
+  // installs a Go release with it, never with the release's own binary.
+  const extra = trusted ? ['--prefix=deploy/desktop/bin/', `--add-file=${trusted}`, '--prefix='] : [];
+  git(['archive', '--format=zip', '-o', zip, ...extra, 'HEAD', 'deploy/desktop'], { cwd });
 }
 
 async function countFiles(dir) {
@@ -463,6 +466,7 @@ export {
   check,
   countLine,
   endServer,
+  events,
   git,
   healthy,
   killTree,
@@ -476,6 +480,7 @@ export {
   readJson,
   run,
   say,
+  sizeOf,
   step,
   trees,
   waitFor,

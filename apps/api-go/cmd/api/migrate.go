@@ -39,7 +39,7 @@ func dispatch(ctx context.Context, args []string, lookup config.Lookup, stdout i
 		return healthcheck(ctx, lookup)
 	}
 	if args[0] == "reset-mfa" {
-		return resetMFA(ctx, args, lookup, stdout)
+		return resetMFA(ctx, args, lookup, stdout, os.Stderr)
 	}
 	return fmt.Errorf("unknown command %q: run with no arguments to serve, or use `migrate`, `import-report`, `inventory`, `vapid-keys`, `healthcheck` or `reset-mfa`", args[0])
 }
