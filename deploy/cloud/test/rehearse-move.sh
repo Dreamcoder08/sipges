@@ -6,10 +6,13 @@
 #   - the target is an empty database owned by an admin shaped like PlanetScale's default role
 #     (no superuser; BYPASSRLS, CREATEROLE, CREATEDB); the admin and sipges_app sign in with
 #     passwords (scram-sha-256) carried in their URLs, never by trust;
+#   - pg-secrets.mjs keeps a PlanetScale-style query string byte for byte (pg-secrets.test.mjs);
 #   - a move that fails in the restore leaves no stand-in role; one killed before it can clean up
-#     is cleaned up by the retry, which also finds sipges_app already there;
+#     leaves only its private sipges-move.* folder and its stand-ins, which the retry drops while
+#     finding sipges_app already there; a cleanup that cannot list its stand-ins fails loudly;
 #   - no password ever reaches the argv of psql, pg_dump or pg_restore (logged through shims);
-#   - an existing sipges_app that bypasses RLS, and a target that is the source, are refused;
+#   - an existing sipges_app or sipges_tenant with SUPERUSER, BYPASSRLS, CREATEDB, CREATEROLE or
+#     REPLICATION, and a target that is the source, are refused;
 #   - after the move: the source is byte-identical, `migrate` as sipges_app finds nothing to do,
 #     and every planted fault on the target makes `verify` fail.
 #   deploy/cloud/test/rehearse-move.sh [work directory]
@@ -124,6 +127,12 @@ for client in psql pg_dump pg_restore; do
 #!/usr/bin/env bash
 name=$(basename "$0")
 printf '%s %s\n' "$name" "$*" >>"$REHEARSE_ARGV_LOG"
+if [ "$name" = psql ] && [ "${REHEARSE_PSQL_FAULT:-}" = list ] && [[ " $* " == *" marker="* ]]; then
+  # The stand-in listing is the first call that passes the marker; stdin is never read, so the
+  # snapshot session's stream stays untouched.
+  echo "rehearsal: the stand-in listing fails" >&2
+  exit 1
+fi
 if [ "$name" = pg_restore ] && [[ " $* " == *" --dbname="* ]]; then
   case "${REHEARSE_RESTORE_FAULT:-}" in
     fail) exit 1 ;;
@@ -140,6 +149,11 @@ stand_ins() {
     "SELECT count(*) FROM pg_roles WHERE rolname IN ('neon_superuser', 'mascli_workers')"
 }
 
+step "pg-secrets keeps PlanetScale-style URLs byte for byte"
+SIPGES_TEST_DATABASE_URL="$admin_dst" node --test "$here/pg-secrets.test.mjs" 2>&1 | grep -E '^# (pass|fail)'
+SIPGES_TEST_DATABASE_URL="$admin_dst" node --test "$here/pg-secrets.test.mjs" >/dev/null 2>&1 ||
+  fail "pg-secrets.test.mjs failed"
+
 step "A move that fails in the restore leaves no stand-in role"
 if REHEARSE_RESTORE_FAULT=fail run_move move "$work/failed" >"$work/failed.log" 2>&1; then
   fail "the move passed with a failing restore"
@@ -154,12 +168,25 @@ if REHEARSE_RESTORE_FAULT=kill TMPDIR="$work/tmp" run_move move "$work/killed" >
   fail "the move survived being killed"
 fi
 [ "$(stand_ins)" = 2 ] || fail "the killed move should have left its 2 stand-ins for the retry"
-rm -rf "$work/tmp" # the killed run's private files, which its trap never removed
-echo "killed move: left 2 stand-ins"
+# What the guide says to delete after a kill: the private folder, which holds the passwords.
+left_behind=("$work"/tmp/sipges-move.*)
+[ "${#left_behind[@]}" = 1 ] && [ -f "${left_behind[0]}/pgpass" ] ||
+  fail "the killed move should have left exactly one sipges-move.* folder with its password file"
+rm -rf -- "${left_behind[@]}"
+echo "killed move: left 2 stand-ins and one private sipges-move.* folder, now deleted"
+
+step "A cleanup that cannot list its stand-ins fails loudly"
+if REHEARSE_PSQL_FAULT=list run_move move "$work/unlisted" >"$work/unlisted.log" 2>&1 </dev/null; then
+  fail "the move passed although it could not list its stand-ins"
+fi
+grep -F "could not list the stand-in roles" "$work/unlisted.log" || { cat "$work/unlisted.log"; fail "no loud failure"; }
+[ "$(stand_ins)" = 2 ] || fail "the stand-ins should still be there for the next move"
 
 step "Move (the retry: sipges_app and the stand-ins already exist)"
-run_move move "$work/move"
+mkdir -p "$work/tmp"
+TMPDIR="$work/tmp" run_move move "$work/move"
 [ "$(stand_ins)" = 0 ] || fail "the retry left stand-in roles"
+[ -z "$(ls -A "$work/tmp")" ] || fail "a finished move left its private folder behind"
 
 step "No password reached any client's argv"
 [ -s "$work/argv.log" ] || fail "the shims logged nothing"
@@ -196,15 +223,22 @@ expect_refusal() { # label expected-text, then the command
 }
 
 step "Refusals"
-psql "$superuser_dst/postgres" -X -q -v ON_ERROR_STOP=1 \
-  -c "ALTER ROLE sipges_app BYPASSRLS" -c "CREATE DATABASE sipges2 OWNER ps_admin"
-SIPGES_MOVE_TARGET_URL="${SIPGES_MOVE_TARGET_URL%/sipges}/sipges2" \
-  SIPGES_MOVE_APP_URL="${SIPGES_MOVE_APP_URL%/sipges}/sipges2" \
-  expect_refusal "an existing sipges_app with BYPASSRLS" "sipges_app exists with SUPERUSER or BYPASSRLS" \
-  run_move move "$work/bypass"
-[ "$(stand_ins)" = 0 ] || fail "the refused move left stand-in roles"
-psql "$superuser_dst/postgres" -X -q -v ON_ERROR_STOP=1 \
-  -c "ALTER ROLE sipges_app NOBYPASSRLS" -c "DROP DATABASE sipges2"
+psql "$superuser_dst/postgres" -X -q -v ON_ERROR_STOP=1 -c "CREATE DATABASE sipges2 OWNER ps_admin"
+expect_role_refusal() { # role attribute
+  psql "$superuser_dst/postgres" -X -q -v ON_ERROR_STOP=1 -c "ALTER ROLE $1 $2"
+  SIPGES_MOVE_TARGET_URL="${SIPGES_MOVE_TARGET_URL%/sipges}/sipges2" \
+    SIPGES_MOVE_APP_URL="${SIPGES_MOVE_APP_URL%/sipges}/sipges2" \
+    expect_refusal "an existing $1 with $2" "$1 exists with $2: refusing to reuse it" \
+    run_move move "$work/refused-$1-$2"
+  [ "$(stand_ins)" = 0 ] || fail "the refused move left stand-in roles"
+  psql "$superuser_dst/postgres" -X -q -v ON_ERROR_STOP=1 -c "ALTER ROLE $1 NO$2"
+}
+expect_role_refusal sipges_app BYPASSRLS
+expect_role_refusal sipges_app CREATEDB
+expect_role_refusal sipges_app CREATEROLE
+expect_role_refusal sipges_app REPLICATION
+expect_role_refusal sipges_tenant REPLICATION
+psql "$superuser_dst/postgres" -X -q -v ON_ERROR_STOP=1 -c "DROP DATABASE sipges2"
 SIPGES_MOVE_TARGET_URL="$SIPGES_MOVE_SOURCE_URL" \
   expect_refusal "a target that is the source (verify)" "the target is the source database" \
   run_move verify "$work/same"
@@ -248,6 +282,9 @@ expect_verify_failure "CREATE on the schema for PUBLIC" \
 expect_verify_failure "default privileges for PUBLIC" \
   "ALTER DEFAULT PRIVILEGES FOR ROLE sipges_app IN SCHEMA public GRANT SELECT ON TABLES TO PUBLIC;" \
   "ALTER DEFAULT PRIVILEGES FOR ROLE sipges_app IN SCHEMA public REVOKE SELECT ON TABLES FROM PUBLIC;"
+expect_verify_failure "default privileges for another role" \
+  "CREATE ROLE intruder NOLOGIN; ALTER DEFAULT PRIVILEGES FOR ROLE sipges_app IN SCHEMA public GRANT SELECT ON TABLES TO intruder;" \
+  "ALTER DEFAULT PRIVILEGES FOR ROLE sipges_app IN SCHEMA public REVOKE SELECT ON TABLES FROM intruder; DROP ROLE intruder;"
 expect_verify_failure "sipges_app a member of a BYPASSRLS role" \
   "CREATE ROLE bypasser NOLOGIN BYPASSRLS; GRANT bypasser TO sipges_app;" \
   "REVOKE bypasser FROM sipges_app; DROP ROLE bypasser;"
