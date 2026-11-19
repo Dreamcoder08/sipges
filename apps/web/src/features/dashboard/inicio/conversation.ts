@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { loadConversationView } from './answer-view.tsx';
+import { historyOf } from './history.ts';
 import type { Turn } from './turn.ts';
 
 /** What the page's one status region says: the start and the end of each answer, once each. */
@@ -54,6 +55,8 @@ export const useThreadState = (scope: string) => {
   /** Asks and resolves to whether an answer came back for this turn. */
   const ask = async (question: string): Promise<boolean> => {
     // One answer at a time: one still pending is stopped, not left waiting forever.
+    // The thread as it stood before this question: its answered turns are the follow-up's history.
+    const history = historyOf(turns);
     const previous = release();
     if (previous)
       settle(previous.id, { id: previous.id, question: previous.question, state: 'stopped' });
@@ -81,7 +84,11 @@ export const useThreadState = (scope: string) => {
         id,
         question,
         state: 'answered',
-        answer: await askAnalystStream(scope, question, { signal: controller.signal, onStep }),
+        answer: await askAnalystStream(scope, question, {
+          signal: controller.signal,
+          onStep,
+          history,
+        }),
       };
     } catch (error) {
       next = { id, question, state: 'failed', error };
