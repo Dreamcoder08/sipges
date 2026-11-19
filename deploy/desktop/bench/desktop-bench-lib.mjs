@@ -236,8 +236,11 @@ export function killOrder(procs, rootPid) {
   const children = new Map();
   for (const p of procs) children.set(p.ppid, [...(children.get(p.ppid) ?? []), p.pid]);
   const order = [];
+  // Windows reuses process ids, so a stale parent id can loop back: each pid is visited once.
+  const visited = new Set();
   const visit = (pid) => {
-    for (const child of children.get(pid) ?? []) visit(child);
+    visited.add(pid);
+    for (const child of children.get(pid) ?? []) if (!visited.has(child)) visit(child);
     order.push(pid);
   };
   visit(rootPid);
@@ -304,3 +307,29 @@ export const memoryMetricRows = (windows) =>
         { key: 'databasePssPeakMb', label: 'PostgreSQL processes peak Pss, summed (MB)' },
         { key: 'totalPssPeakMb', label: 'All processes peak Pss, summed (MB)' },
       ];
+
+/** The failure for the partial report: its message and, for an Error, its stack trace. */
+export const describeFailure = (error) => ({
+  error: String(error?.message ?? error),
+  stack: typeof error?.stack === 'string' ? error.stack : null,
+});
+
+/**
+ * Runs a side task, such as writing a log, whose failure must never replace the error a run is
+ * already ending with: its error goes to `onError` and is not thrown.
+ */
+export async function bestEffort(task, onError) {
+  try {
+    await task();
+  } catch (error) {
+    onError(error);
+  }
+}
+
+/** The one-line progress after each run; a missing value prints as a dash. */
+export function progressLine(metrics, steps) {
+  const top = steps.at(-1);
+  const show = (value) => (value === null || value === undefined ? '–' : value);
+  const apiPeak = metrics.apiPeakRssMb ?? metrics.apiPeakWorkingSetMb;
+  return `ready ${show(metrics.coldStartMs)} ms; ${top} screen(s) ${show(metrics[`rps${top}`])} req/s; API peak ${show(apiPeak)} MB`;
+}

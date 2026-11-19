@@ -7,7 +7,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   aggregate,
+  bestEffort,
   classify,
+  describeFailure,
   folderBytes,
   insertBatches,
   keepWorkFolder,
@@ -15,6 +17,7 @@ import {
   memoryMetricRows,
   memoryMetrics,
   parseOptions,
+  progressLine,
   parseProcStatus,
   parseSmapsRollup,
   renderMarkdown,
@@ -260,4 +263,60 @@ test('memory metrics name one measure per row and differ by platform', () => {
     const foreign = windows ? ['RSS', 'Pss'] : ['working set'];
     assert.ok(rows.every((r) => foreign.every((m) => !r.label.includes(m))));
   }
+});
+
+test('killOrder ends when a reused Windows PID makes the parent links a cycle', () => {
+  // 3's stale parent id points back at 1, which already sits above it.
+  const procs = [
+    { pid: 1, ppid: 3 },
+    { pid: 2, ppid: 1 },
+    { pid: 3, ppid: 2 },
+  ];
+  const order = killOrder(procs, 1);
+  assert.deepEqual([...order].sort(), [1, 2, 3]);
+  assert.equal(order.at(-1), 1);
+  assert.equal(new Set(order).size, order.length, 'no pid twice');
+  // A process that names itself as its parent.
+  assert.deepEqual(killOrder([{ pid: 5, ppid: 5 }], 5), [5]);
+});
+
+test('describeFailure keeps the message and the stack trace', () => {
+  const error = new Error('the server ended before it was ready');
+  const described = describeFailure(error);
+  assert.equal(described.error, 'the server ended before it was ready');
+  assert.match(described.stack, /the server ended before it was ready\n\s+at /);
+  // Something thrown that is not an Error still reads.
+  assert.deepEqual(describeFailure('plain text'), { error: 'plain text', stack: null });
+});
+
+test('bestEffort never lets its own error replace the original failure', async () => {
+  const seen = [];
+  const original = new Error('seed failed');
+  const run = async () => {
+    try {
+      throw original;
+    } finally {
+      await bestEffort(
+        async () => {
+          throw new Error('disk full');
+        },
+        (error) => seen.push(error.message),
+      );
+    }
+  };
+  await assert.rejects(run, (error) => error === original);
+  assert.deepEqual(seen, ['disk full']);
+  assert.equal(await bestEffort(async () => 7, () => undefined), undefined);
+});
+
+test('progressLine falls back to a dash for any missing value', () => {
+  assert.equal(
+    progressLine({ coldStartMs: 900, rps8: 650, apiPeakRssMb: 85 }, [1, 4, 8]),
+    'ready 900 ms; 8 screen(s) 650 req/s; API peak 85 MB',
+  );
+  assert.equal(
+    progressLine({ coldStartMs: 900, apiPeakWorkingSetMb: 120 }, [1, 4, 8]),
+    'ready 900 ms; 8 screen(s) – req/s; API peak 120 MB',
+  );
+  assert.equal(progressLine({}, [2]), 'ready – ms; 2 screen(s) – req/s; API peak – MB');
 });
