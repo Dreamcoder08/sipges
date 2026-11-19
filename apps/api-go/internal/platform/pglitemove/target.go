@@ -145,27 +145,36 @@ func probeCheck(ctx context.Context, tx pgx.Tx, schema, relation, def string) (p
 	return parsed, sp.Commit(ctx)
 }
 
-// restore loads the dump, compares and commits in one transaction; any difference rolls
-// everything back.
-func restore(ctx context.Context, targetURL string, src *source, key []byte, say func(string), h Hooks) error {
+// targetConfig is the connection to the target: 127.0.0.1 only, whatever the environment adds
+// (checkTarget refused a host override), notices dropped.
+func targetConfig(targetURL string) (*pgx.ConnConfig, error) {
 	cfg, err := pgx.ParseConfig(targetURL)
 	if err != nil {
-		return refusef("the target must be a postgres:// URL to a database on 127.0.0.1, with no host override")
+		return nil, refusef("the target must be a postgres:// URL to a database on 127.0.0.1, with no host override")
 	}
-	// Only 127.0.0.1, whatever the environment adds (checkTarget refused a host override).
 	local := cfg.Host == "127.0.0.1"
 	for _, f := range cfg.Fallbacks { // sslmode=prefer adds the same host without TLS
 		local = local && f.Host == "127.0.0.1"
 	}
 	if !local {
-		return refusef("the target must be a postgres:// URL to a database on 127.0.0.1, with no host override")
+		return nil, refusef("the target must be a postgres:// URL to a database on 127.0.0.1, with no host override")
 	}
 	cfg.DefaultQueryExecMode = pgx.QueryExecModeDescribeExec
 	cfg.RuntimeParams["application_name"] = "sipges-pglite-move"
+	cfg.OnNotice = func(*pgconn.PgConn, *pgconn.Notice) {}
+	return cfg, nil
+}
+
+// restore loads the dump, compares and commits in one transaction; any difference rolls
+// everything back.
+func restore(ctx context.Context, targetURL string, src *source, key []byte, say func(string), h Hooks) error {
+	cfg, err := targetConfig(targetURL)
+	if err != nil {
+		return err
+	}
 	for _, kv := range session {
 		cfg.RuntimeParams[kv[0]] = kv[1]
 	}
-	cfg.OnNotice = func(*pgconn.PgConn, *pgconn.Notice) {}
 	conn, err := pgx.ConnectConfig(ctx, cfg)
 	if err != nil {
 		return connectFailure(err)
