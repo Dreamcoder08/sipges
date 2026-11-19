@@ -3,7 +3,7 @@
 // a complete build and a build that fails half-way can be produced in a temporary folder. Runs on
 // Linux and Windows: builder.mjs starts pnpm through cmd.exe there, which finds `pnpm.cmd`.
 import { spawnSync } from 'node:child_process';
-import { copyFile, lstat, mkdir, readFile, readdir, readlink, symlink, writeFile } from 'node:fs/promises';
+import { copyFile, lstat, mkdir, readFile, readdir, readlink, realpath, symlink, writeFile } from 'node:fs/promises';
 import { delimiter, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import process from 'node:process';
@@ -79,10 +79,13 @@ export async function fakeCheckout(root) {
   await writeFile(join(bin, 'pnpm.cmd'), `@"${process.execPath}" "%~dp0pnpm" %*\r\n`);
   await writeFile(join(bin, 'go'), FAKE_GO, { mode: 0o755 });
   await writeFile(join(bin, 'go.cmd'), `@"${process.execPath}" "%~dp0go" %*\r\n`);
-  // What `--go` copies: the Go module folder the fake go builds in, and the SQL migrations.
+  // What `--go` copies: the Go module folder the fake go builds in, the SQL migrations and PGlite.
   await mkdir(join(root, 'apps/api-go'), { recursive: true });
   await mkdir(join(root, 'apps/api/src/platform/database/migrations'), { recursive: true });
   await writeFile(join(root, 'apps/api/src/platform/database/migrations/0001_synthetic.sql'), 'SELECT 1;\n');
+  // The pinned PGlite dist --go ships for the Go move: a link to this repository's installed one.
+  await mkdir(join(root, 'apps/api/node_modules/@electric-sql'), { recursive: true });
+  await symlink(await realpath(join(repo, 'apps/api/node_modules/@electric-sql/pglite')), join(root, 'apps/api/node_modules/@electric-sql/pglite'), 'junction');
   /** The environment builder.mjs runs in: the fake pnpm first on PATH (whatever its key's case). */
   const env = ({ failWebBuild = false, failGo = false } = {}) => {
     const out = { ...process.env };

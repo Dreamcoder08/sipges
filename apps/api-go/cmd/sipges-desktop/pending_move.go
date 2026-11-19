@@ -4,14 +4,16 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/pglitemove"
 )
 
-// pendingMoveName is the mark --prepare-only leaves beside <state>/pg18 until the one-time PGlite
-// move (deploy/desktop/migration/pglite-to-postgres.mjs --prepared <state>) has filled the
-// cluster and committed with no difference; that move removes it. While it is there the cluster
-// holds no data yet: SIPGES must not start on it (it would migrate an empty database, which the
-// move then refuses).
-const pendingMoveName = dataFolder + ".pending-move"
+// pendingMoveName is the mark --prepare-only leaves beside <state>/pg18 (dataFolder) until the
+// one-time PGlite move (sipges-desktop --move-pglite --prepared <state>, or
+// deploy/desktop/migration/pglite-to-postgres.mjs) has filled the cluster and committed with no
+// difference; that move removes it. While it is there the cluster holds no data yet: SIPGES must
+// not start on it (it would migrate an empty database, which the move then refuses).
+const pendingMoveName = pglitemove.PendingMoveName
 
 // pendingMoveNotice is what the person reads; start-managed.ps1 and sipges-managed.sh say the same.
 const pendingMoveNotice = "SIPGES no se inició en modo Go: sus datos todavía no se movieron a PostgreSQL. No se tocó nada. Abra SIPGES desde su acceso directo habitual."

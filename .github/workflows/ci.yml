@@ -332,3 +332,69 @@ jobs:
         run: pip install -r reference/python/requirements-test.txt
       - if: steps.changes.outputs.python == 'true'
         run: PYTHONPATH=reference/python python -m pytest -q reference/python/tests
+
+  pglite-move:
+    name: PGlite move in Go (WebAssembly in wazero, PostgreSQL 18)
+    # GitHub-hosted on purpose: it installs PostgreSQL 18 from the PGDG apt repository with sudo.
+    # The Go job (go.yml) skips these tests: it has no PGlite dist, no Node fixture and no PostgreSQL
+    # 18 binaries. Synthetic data only: both fixture folders are made by PGlite itself below.
+    runs-on: ubuntu-latest
+    # The suite takes about 3 to 10 minutes (each PGlite open compiles the WebAssembly).
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      # Run only when the move, its WebAssembly host, the desktop command or the pinned dist can
+      # change, but always report the check. Only the base commit is fetched (depth 1).
+      - id: changes
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          [ -n "$BASE" ] && git fetch --no-tags --depth=1 origin "$BASE" 2>/dev/null || true
+          if [ -z "$BASE" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null \
+            || git diff --name-only "$BASE" HEAD -- apps/api-go/internal/platform/pglitewasm \
+              apps/api-go/internal/platform/pglitemove apps/api-go/internal/platform/localpg \
+              apps/api-go/cmd/sipges-desktop apps/api-go/go.mod apps/api-go/go.sum apps/api/package.json \
+              pnpm-lock.yaml .github/workflows/ci.yml | grep -q .; then
+            echo "pglite=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "pglite=false" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.changes.outputs.pglite == 'true'
+        uses: pnpm/action-setup@v4
+      - if: steps.changes.outputs.pglite == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - if: steps.changes.outputs.pglite == 'true'
+        uses: actions/setup-go@v7
+        with:
+          go-version: '1.27.4'
+          cache-dependency-path: apps/api-go/go.sum
+      # pg_dump, psql, initdb, pg_ctl and postgres 18; no cluster is created or started.
+      - if: steps.changes.outputs.pglite == 'true'
+        name: Install PostgreSQL 18
+        run: |
+          pgdg=/usr/share/postgresql-common/pgdg/apt.postgresql.org.sh
+          [ -x "$pgdg" ] || { sudo apt-get update && sudo apt-get install -y --no-install-recommends postgresql-common; }
+          echo 'create_main_cluster = false' | sudo tee -a /etc/postgresql-common/createcluster.conf
+          sudo "$pgdg" -y
+          sudo apt-get install -y --no-install-recommends postgresql-18
+          echo /usr/lib/postgresql/18/bin >> "$GITHUB_PATH"
+          echo SIPGES_PG_BIN=/usr/lib/postgresql/18/bin >> "$GITHUB_ENV"
+      - if: steps.changes.outputs.pglite == 'true'
+        run: pnpm install --frozen-lockfile
+      # The pinned @electric-sql/pglite 0.5.15 of apps/api (hash-checked by the tests) and a
+      # synthetic data folder made by it.
+      - if: steps.changes.outputs.pglite == 'true'
+        name: Point the tests at the pinned PGlite dist and a synthetic data folder
+        run: |
+          dist="$(cd apps/api/node_modules/@electric-sql/pglite/dist && pwd -P)"
+          node apps/api-go/internal/platform/pglitewasm/testdata/make-pgdata.mjs "$dist" "$RUNNER_TEMP/pglite-pgdata"
+          echo "SIPGES_PGLITE_DIST=$dist" >> "$GITHUB_ENV"
+          echo "SIPGES_PGLITE_PGDATA=$RUNNER_TEMP/pglite-pgdata" >> "$GITHUB_ENV"
+      # No race detector: it multiplies the WebAssembly run time; go.yml runs these packages with it.
+      - if: steps.changes.outputs.pglite == 'true'
+        name: go test (PGlite WebAssembly, PostgreSQL 18)
+        working-directory: apps/api-go
+        run: go test -count=1 -p 1 ./internal/platform/pglitewasm/ ./internal/platform/pglitemove/ ./cmd/sipges-desktop/

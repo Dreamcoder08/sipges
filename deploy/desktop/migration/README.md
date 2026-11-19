@@ -16,7 +16,7 @@ This folder holds the proof that it does, and the scripts to check it on the rea
 | `migration.test.mjs` | Tests of the two scripts against a fake API full of recognisable synthetic values.                     |
 | `rehearse.test.mjs`  | Tests that every process the rehearsal starts is stopped and awaited, also on SIGINT and SIGTERM.      |
 | `tables.test.mjs`    | Tests of `tables.mjs` on synthetic PGlite folders: comparisons, refusals, no value ever printed.       |
-| `pglite-to-postgres.mjs` | Once, for the Go API: a copy's PGlite database into PostgreSQL 18, proved identical ([below](#into-postgresql-18-for-the-go-api-adr-0036-4)). |
+| `pglite-to-postgres.mjs` | Once, for the Go API: a copy's PGlite database into PostgreSQL 18, proved identical ([below](#into-postgresql-18-for-the-go-api-adr-0036-4)); the Node fallback of `sipges-desktop --move-pglite`. |
 | `pglite-to-postgres.test.mjs` | Its refusals, the whole move into a throwaway PostgreSQL, rollback on a difference, Go's migrator. |
 
 The scripts need only Node.js 24 or later; nothing to install (`tables.mjs` takes PGlite from the
@@ -429,13 +429,30 @@ runs. With only 0032 between the two, the structure is compared (0032 restores w
 
 ## Into PostgreSQL 18, for the Go API (ADR 0036 §4)
 
-`pglite-to-postgres.mjs` moves the database of a **copy** of the state folder into a native
-PostgreSQL 18 server, once. Go cannot open a PGlite folder (a 32-bit WebAssembly build), so the
+The move takes the database of a **copy** of the state folder into a native PostgreSQL 18
+server, once. A native PostgreSQL cannot open a PGlite folder (a 32-bit WebAssembly build), so the
 move is logical: a dump, never the data files.
+
+On a desktop install the move is `sipges-desktop --move-pglite`, with no Node: the release's
+`sipges-desktop` runs the pinned PGlite 0.5.15 WebAssembly (`<version>/go/pglite`, shipped by
+`builder.mjs --go` and checked by SHA-256 before use) in Go and dumps it with the release's
+PostgreSQL 18 `pg_dump` (`<version>/postgresql/bin`); `--pglite-dist` and `--pg-bin` (or
+`SIPGES_PGLITE_DIST` and `SIPGES_PG_BIN`) name other folders. Same options, steps, refusals,
+output lines and exit codes as below; its first line names the WebAssembly in Go
+(`sipges-desktop --move-pglite --help`).
 
 ```sh
 # 1. Close SIPGES completely, then copy the state folder (never work on the original).
-# 2. A new, empty database owned by the login the Go API serves with (not a superuser).
+# 2. A new, empty database owned by the login the Go API serves with (not a superuser):
+#    sipges-desktop --install <root> --prepare-only makes it in <state>/pg18.
+SIPGES_MOVE_DATABASE_URL='postgres://<login>@127.0.0.1:<port>/<database>' \
+  <version>/go/sipges-desktop --move-pglite --state <copy of the state folder> --prepared <state folder>
+```
+
+`pglite-to-postgres.mjs` is the same move in Node, kept for a checkout or a release built without
+`--go` (no `go/pglite`) and as the fallback; it needs `pnpm install` in the checkout:
+
+```sh
 SIPGES_MOVE_DATABASE_URL='postgres://<login>@127.0.0.1:<port>/<database>' \
   node deploy/desktop/migration/pglite-to-postgres.mjs --state <copy of the state folder>
 ```
@@ -452,15 +469,15 @@ resolve to `<state folder>/pg18` when the login may read it (`pg_read_all_settin
 for the API's login, the server's system identifier (`pg_control_system()`) must equal the one in
 `pg18/global/pg_control` and the port it answers on the one in `pg18/postmaster.pid`. Any other
 folder is refused in Spanish with exit 2, and its mark stays. If the mark cannot be removed after
-the move committed, the exit is 2 and the exact command that removes it is printed. It needs `pnpm install` in this checkout: it takes `@electric-sql/pglite`,
-`@electric-sql/pglite-tools` and `postgres` from `apps/api`.
+the move committed, the exit is 2 and the exact command that removes it is printed. The Node
+migrator takes `@electric-sql/pglite`, `@electric-sql/pglite-tools` and `postgres` from `apps/api`.
 
 | Step | What happens |
 | --- | --- |
 | Refusals, before reading anything | `--state` is a link or junction, is the original folder (`%LOCALAPPDATA%\SIPGES`, `~/.local/share/sipges-local`) or inside it, or its `pglite` is a link: the rule of `install.sh` and `install.ps1`. `--scratch` inside the original folder or the copy (the rule of `tables.mjs`). SIPGES answering on `--port`, or a `pglite/postmaster.pid` in the copy touched in the last two minutes (the copy was taken with SIPGES open): close SIPGES and copy the folder again, in Spanish for the owner. A target not on `127.0.0.1`, or with a `host` override. |
-| Pinned pair | `@electric-sql/pglite-tools` 0.4.15 needs `@electric-sql/pglite` 0.5.15 exactly; any other installed PGlite is refused. |
+| Pinned PGlite | Go: `pglite.wasm`, `pglite.data` and `pglite.js` must have the SHA-256 of `@electric-sql/pglite` 0.5.15, and `pg_dump` must be PostgreSQL 18. Node: `@electric-sql/pglite-tools` 0.4.15 needs `@electric-sql/pglite` 0.5.15 exactly; any other installed PGlite is refused. |
 | Read | The copy's `pglite` folder is hashed, copied to scratch, and only that is opened; the copy is hashed again and must be unchanged. The scratch copy is removed by the run, also after Ctrl+C: the signal only asks the run to stop at its next step, as in `tables.mjs`. |
-| Dump | `pgDump` with `--no-owner` (plain SQL, `--inserts`): the tables become the target login's, grants to `sipges_tenant` stay. |
+| Dump | `--no-owner`, plain SQL, `--inserts` (Go: the native `pg_dump` 18 against a loopback-only server over the WebAssembly; Node: `pgDump`): the tables become the target login's, grants to `sipges_tenant` stay. |
 | Refusals on the target | Not PostgreSQL 18; a superuser or `BYPASSRLS` login (the Go API refuses it too); a database that already holds tables, functions, types or schemas. |
 | Restore | One transaction: the roles the source grants to (`sipges_tenant`) are created `NOLOGIN NOINHERIT` when missing and granted to the login as the migrations do, then the dump. |
 | Proof, same transaction | `tables.mjs`'s comparison with every table `identical`, every column, structure included; sequences equal; and by digest: functions, views, indexes (with replica identity and cluster flags), triggers, policies, grants, default privileges, each column's default, identity, generation, collation and comment, each table's persistence (unlogged), storage options, replica identity and comment, each sequence's parameters (type, start, increment, min, max, cache, cycle) and the extensions. `FORCE ROW LEVEL SECURITY` is lifted to read and restored before the structure is read. |
@@ -494,7 +511,12 @@ The dump carries its rows, so `api migrate` (Go) against the moved database prin
 date (<n> migrations known)` and applies nothing; a release with newer migrations applies only
 those. `pglite-to-postgres.test.mjs` runs it (`go run ./cmd/api migrate`) when `go` is installed.
 
-Tests: `node --test deploy/desktop/migration/pglite-to-postgres.test.mjs`. The PostgreSQL part
+Tests of the Go move: `cd apps/api-go && go test ./internal/platform/pglitemove/
+./internal/platform/pglitewasm/`, which need `SIPGES_PGLITE_DIST` (the pinned dist folder),
+`SIPGES_PGLITE_PGDATA` (a synthetic folder `internal/platform/pglitemove/testdata/make-state.mjs`
+writes) and PostgreSQL 18 (`scripts/agents/test-pg.sh up`), and are skipped without them; CI
+sets all three. Tests of the Node migrator: `node --test
+deploy/desktop/migration/pglite-to-postgres.test.mjs`. The PostgreSQL part
 needs `SIPGES_TEST_DATABASE_URL`, a superuser on a throwaway loopback server
 (`scripts/agents/test-pg.sh up` prints one); it creates a database and login per test and drops
 them. Without it those tests are skipped.
