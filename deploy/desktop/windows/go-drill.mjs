@@ -16,7 +16,9 @@
 //    deploy\desktop\bin, never the release's own.
 // 2. An install still on PGlite: its TypeScript launcher (run-current.mjs, as the shortcut ran it
 //    before) serves from node.exe; synthetic data go in through the public API (rehearse.mjs's
-//    seed); snapshot.mjs. Then the installed start.ps1 keeps it on the TypeScript launcher.
+//    seed); the before-photo with the release's `sipges-desktop.exe --snapshot`, no Node on the
+//    PATH (the runbook's G1), and snapshot.mjs too for the cross check of step 5. Then the
+//    installed start.ps1 keeps it on the TypeScript launcher.
 // 3. start.ps1 -Go refuses, changing nothing, while the data are only in PGlite.
 // 4. The move, as the visit does it: the state folder copied; `sipges-desktop.exe --install <root>
 //    --prepare-only` (no Node) creates the cluster in <state>\pg18 with the roles and an empty
@@ -27,16 +29,20 @@
 //    proof and removes the mark, pg_ctl stops it.
 // 5. start.ps1, with no switch and no Node on the PATH: the Go launcher (sipges-desktop.exe
 //    --install) applies the migrations on start and serves the Go API (api.exe) on port 8000;
-//    compare.mjs finds no difference.
+//    `sipges-desktop.exe --compare`, no Node on the PATH (G6), finds no difference. The one
+//    Node-vs-Go cross check: compare.mjs finds none against the Go snapshot, and --compare none
+//    against the Node one.
 // 6. The launcher is killed (its whole process tree, taskkill /F) while writes are in flight;
 //    start.ps1 again stops a PostgreSQL that outlived it, if any, and SIPGES reads.
 // 7. The update: the second release copied into <root>\releases; start.ps1 (no Node): the Go
 //    launcher offers it, an administrator asks for it through POST /system/desktop/update, the Go
-//    launcher applies it (copy, migrate, ready, switch) and serves it; compare.mjs.
+//    launcher applies it (copy, migrate, ready, switch) and serves it; --snapshot before and
+//    --compare after, without Node.
 // 8. Clean stop: sipges-desktop in a console of its own answers, then a Ctrl+C stops the API and
 //    PostgreSQL: exit 0, «PostgreSQL stopped», no postgres.exe left, port 8000 free.
 // 9. The way back: the original PGlite folder (<state>\pglite) is byte-identical to step 2; with
-//    pg18 set aside start.ps1 serves it again from node.exe and compare.mjs finds no difference.
+//    pg18 set aside start.ps1 serves it again from node.exe (TypeScript needs Node: G7) and
+//    --compare, still without Node, finds no difference.
 //
 // Logs and command outputs go to --logs; never a state folder, a snapshot or the key.
 /* global fetch */
@@ -97,6 +103,16 @@ export function withoutNode(env, hasNode = (dir) => existsSync(join(dir, 'node.e
   const kept = (env[key] ?? '').split(';').filter((dir) => dir && !hasNode(dir));
   return { ...env, [key]: kept.join(';') };
 }
+
+/** sipges-desktop --snapshot (G1): snapshot.mjs's options after the mode, never Node. */
+export const snapshotArgs = (out, login, base = BASE) => ['--snapshot', '--url', base, '--out', out, ...login];
+
+/** sipges-desktop --compare (G6): compare.mjs's options after the mode, never Node. */
+export const compareArgs = (before, login, base = BASE) => ['--compare', '--before', before, '--url', base, ...login];
+
+/** A comparison that passed: exit 0, «RESULT: no difference» and no part left unchecked. */
+export const comparedClean = (result) =>
+  result.status === 0 && /^RESULT: no difference( \(.*\))?$/m.test(result.output) && !/not (fully )?checked/.test(result.output);
 
 /** The version of the update release: the patch after the drill's own, same suffix. */
 export function nextVersion(version) {
@@ -288,9 +304,15 @@ async function main(args) {
     check(serverImage() === 'node.exe', 'run-current.mjs serves from node.exe (the TypeScript API)');
     const secrets = await seed(BASE, state, work);
     say('synthetic data seeded: 2 projects, records, links, uploads, admin with MFA, a second account');
+    // G1: the release's own sipges-desktop.exe takes the before-photo, with no Node on the PATH.
+    let desktop = join(version, 'go', 'sipges-desktop.exe');
     const before = join(work, 'sipges-antes.json');
-    const snapshot = await node([join(repo, 'deploy', 'desktop', 'migration', 'snapshot.mjs'), '--url', BASE, '--out', before, ...LOGIN(secrets, state)], { log: out('snapshot') });
-    check(snapshot.status === 0 && snapshot.output.includes('Written:'), 'snapshot.mjs exit 0');
+    const snapshot = await run(desktop, snapshotArgs(before, LOGIN(secrets, state)), { env: noNode, log: out('snapshot') });
+    check(snapshot.status === 0 && snapshot.output.includes(`Written: ${before}`), 'sipges-desktop --snapshot exit 0, without Node (G1)');
+    // The cross check of step 5: snapshot.mjs on the same data (the format both write is one).
+    const beforeNode = join(work, 'sipges-antes-node.json');
+    const nodeSnapshot = await node([join(repo, 'deploy', 'desktop', 'migration', 'snapshot.mjs'), '--url', BASE, '--out', beforeNode, ...LOGIN(secrets, state)], { log: out('snapshot-node') });
+    check(nodeSnapshot.status === 0 && nodeSnapshot.output.includes('Written:'), 'snapshot.mjs exit 0 (for the Node-vs-Go cross check)');
     await stopTree(ts, 'TypeScript launcher');
     ts = await startManaged('ts-start-1');
     check(serverImage() === 'node.exe', 'start.ps1 keeps data only in PGlite on the TypeScript launcher (node.exe)');
@@ -309,10 +331,10 @@ async function main(args) {
     const pgliteDigest = digest(await tree(pglite));
     say(`original PGlite folder digest ${pgliteDigest}`);
 
-    const compare = async (label) => {
-      const result = await node([join(repo, 'deploy', 'desktop', 'migration', 'compare.mjs'), '--before', before, '--url', BASE, ...LOGIN(secrets, state)], { log: out(`compare-${label}`) });
-      check(result.status === 0 && result.output.includes('RESULT: no difference'), `compare.mjs: RESULT: no difference (${label})`);
-      check(!/not (fully )?checked/.test(result.output), `compare.mjs: every part checked (${label})`);
+    // G6: sipges-desktop.exe --compare, with no Node on the PATH.
+    const compare = async (label, file = before) => {
+      const result = await run(desktop, compareArgs(file, LOGIN(secrets, state)), { env: noNode, log: out(`compare-${label}`) });
+      check(comparedClean(result), `sipges-desktop --compare without Node: RESULT: no difference, every part checked (${label})`);
     };
 
     step('3. start.ps1 -Go refuses while the data are only in PGlite');
@@ -325,7 +347,6 @@ async function main(args) {
     const copy = join(work, 'state-copy');
     cpSync(state, copy, { recursive: true });
     check(digest(await tree(join(copy, 'pglite'))) === pgliteDigest, 'the copy of the state folder holds the same PGlite');
-    let desktop = join(version, 'go', 'sipges-desktop.exe');
     const goEnv = () => ({ SIPGES_DESKTOP_STATE: state, SIPGES_PG_BIN: pgBin, SIPGES_WEB_DIR: join(version, 'web') });
     const preparedRun = await run(desktop, ['--install', appRoot, '--prepare-only'], { env: noNode, log: out('prepare-only') });
     check(preparedRun.status === 0 && preparedRun.output.includes(`sipges-desktop: PostgreSQL 18 prepared in ${join(state, 'pg18')}`), 'sipges-desktop --prepare-only made the cluster, without Node');
@@ -374,6 +395,10 @@ async function main(args) {
     check(health.status === 200, 'GET /health 200');
     await health.arrayBuffer();
     await compare('go');
+    // The one Node-vs-Go cross check: each implementation compares the other's snapshot.
+    const crossNode = await node([join(repo, 'deploy', 'desktop', 'migration', 'compare.mjs'), '--before', before, '--url', BASE, ...LOGIN(secrets, state)], { log: out('compare-node-on-go-snapshot') });
+    check(comparedClean(crossNode), 'compare.mjs on the sipges-desktop --snapshot file: RESULT: no difference, every part checked');
+    await compare('go-on-node-snapshot', beforeNode);
 
     step('6. The launcher killed during writes, then started again');
     const password = (await readFile(join(state, 'admin-password'), 'utf8')).trim();
@@ -417,8 +442,8 @@ async function main(args) {
       (await events(launcherLog, from)).find((e) => e.event === 'update_check' || e.event === 'update_check_failed'),
     );
     check(offered.event === 'update_check' && offered.available === nextV, `the Go launcher offers ${nextV} (${JSON.stringify(offered)})`);
-    const pre = await node([join(repo, 'deploy', 'desktop', 'migration', 'snapshot.mjs'), '--url', BASE, '--out', beforeUpdate, ...LOGIN(secrets, state)], { log: out('snapshot-before-update') });
-    check(pre.status === 0, 'snapshot.mjs before the update exit 0');
+    const pre = await run(desktop, snapshotArgs(beforeUpdate, LOGIN(secrets, state)), { env: noNode, log: out('snapshot-before-update') });
+    check(pre.status === 0, 'sipges-desktop --snapshot before the update exit 0, without Node');
     const updater = await signIn({ base: BASE, username: 'admin', password, totpSecret, totpState: secrets.totpState });
     const shown = await updater.call('/system/desktop/update', { scope: ALFA });
     const notice = shown.status === 200 ? await shown.json() : { status: shown.status };
@@ -439,11 +464,10 @@ async function main(args) {
     await waitFor('SIPGES after the update', 240, healthy, goStart);
     check(serverImage() === 'api.exe', 'after the update the Go API answers');
     check((await readJson(join(appRoot, 'current.json'))).version === nextV, `current.json: ${nextV}`);
-    const kept = await node([join(repo, 'deploy', 'desktop', 'migration', 'compare.mjs'), '--before', beforeUpdate, '--url', BASE, ...LOGIN(secrets, state)], { log: out('compare-after-update') });
-    check(kept.status === 0 && kept.output.includes('RESULT: no difference'), 'compare.mjs after the update: RESULT: no difference');
     version = join(appRoot, ...(await readJson(join(appRoot, 'current.json'))).path.split('/'));
     pgBin = join(version, 'postgresql', 'bin');
     desktop = join(version, 'go', 'sipges-desktop.exe');
+    await compare('after-update', beforeUpdate);
     await stopTree(goStart, 'Go launcher');
     await waitFor('PostgreSQL stopped', 120, async () => !postgresRunning());
 

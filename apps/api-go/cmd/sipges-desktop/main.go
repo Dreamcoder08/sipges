@@ -23,6 +23,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/desktopsnapshot"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/localpg"
 )
 
@@ -43,6 +44,9 @@ const stopTimeout = 60 * time.Second
 
 func main() {
 	joinLauncherJob()
+	if usesSnapshot(os.Args[1:]) {
+		os.Exit(runSnapshotMode(os.Args[1:], os.Environ(), desktopsnapshot.SystemTerminal(), os.Stdout, os.Stderr))
+	}
 	if usesMovePGlite(os.Args[1:]) {
 		os.Exit(movePGliteMain(os.Args[1:]))
 	}

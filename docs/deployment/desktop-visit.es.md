@@ -908,8 +908,9 @@ Códigos de salida de `sipges-desktop.exe` y de `update.mjs` (`$LASTEXITCODE`): 
 go-rust-stack T72d3, [ADR 0036](../adr/0036-desktop-go-with-bundled-postgresql.md) §5–6. Se hace una sola
 vez, en la laptop, después de que la versión instalada incluya el modo Go. Hasta este paso la laptop sigue
 en TypeScript sobre PGlite: el acceso directo elige solo el lanzador Go cuando los datos ya están en `pg18`
-(o la instalación es nueva). Node hace falta en G1, G6 y para la vuelta atrás (G7); ni el instalador, ni
-el acceso directo, ni el traslado (G4) lo usan con una versión Go.
+(o la instalación es nueva). Node hace falta solo para la vuelta atrás (G7); ni el instalador, ni
+el acceso directo, ni la foto (G1), ni el traslado (G4), ni la comparación (G6) lo usan con una
+versión Go.
 
 En los comandos, `$app` es `"$env:LOCALAPPDATA\SIPGES-app"`, `$datos` es la carpeta de datos que registra
 `$app\install.json` (`stateDir`) y `$v` es la carpeta de la versión actual (`path` en `$app\current.json`).
@@ -923,8 +924,18 @@ En los comandos, `$app` es `"$env:LOCALAPPDATA\SIPGES-app"`, `$datos` es la carp
   los accesos directos y `start.ps1`. Comprobalo con
   `Select-String -LiteralPath "$app\start.ps1" -Pattern 'pg18.pending-move' -Quiet`: `True`. Con el
   `start.ps1` viejo, G5 abriría TypeScript sobre el `pglite` de antes del traslado.
-- [ ] **G1 — Foto antes de cerrar.** Con SIPGES abierto (TypeScript), `snapshot.mjs` como en el paso 2:
-  `sipges-antes-go.json` en `SIPGES-visita`.
+- [ ] **G1 — Foto antes de cerrar (sin Node).** Con SIPGES abierto (TypeScript), la foto la toma el
+  `sipges-desktop.exe` de la versión, con las mismas opciones que `snapshot.mjs` en el paso 2. Pide
+  `Contraseña:` (no se ve lo que se escribe) y `Código MFA (vacío si no tiene):`:
+
+  ```powershell
+  & "$v\go\sipges-desktop.exe" --snapshot --url http://127.0.0.1:8000 --out "$env:LOCALAPPDATA\SIPGES-visita\sipges-antes-go.json"
+  ```
+
+  Escribe el mismo archivo que `snapshot.mjs` y las mismas líneas del paso 2: `SIPGES snapshot at …`,
+  `Projects: N`, una línea `project N [hash]: …` por proyecto, `Accounts: N` y
+  `Written: …\sipges-antes-go.json`. Si una línea dice `(not fully checked)` o sale `Error: …`, no
+  sigas.
 - [ ] **G2 — Cerrar y respaldar.** Cerrá SIPGES por completo (`SIPGES cerrado`) y esperá dos minutos (el
   `pglite\postmaster.pid` deja de estar fresco). Respaldo completo de `$datos` en `E:` como en el paso 8,
   con los mismos números en las dos líneas. Después, la copia que lee el traslado:
@@ -959,8 +970,18 @@ En los comandos, `$app` es `"$env:LOCALAPPDATA\SIPGES-app"`, `$datos` es la carp
 - [ ] **G5 — Abrir en modo Go.** Abrí SIPGES desde el acceso directo. El lanzador Go aplica las
   migraciones que falten al arrancar y abre la API en Go. En `$app\launcher.log` la última línea
   `"event":"started"` nombra la versión, y `Get-Process api` existe (`node` no sirve el puerto 8000).
-- [ ] **G6 — Comparar.** `compare.mjs` contra `sipges-antes-go.json` como en el paso 5:
-  `RESULT: no difference`. La usuaria entra y ve sus registros.
+- [ ] **G6 — Comparar (sin Node).** Esperá a que el autenticador muestre un código **nuevo** y
+  compará con el mismo `sipges-desktop.exe`:
+
+  ```powershell
+  & "$v\go\sipges-desktop.exe" --compare --before "$env:LOCALAPPDATA\SIPGES-visita\sipges-antes-go.json" --url http://127.0.0.1:8000
+  $LASTEXITCODE
+  ```
+
+  Mismas reglas, mismas líneas y mismos códigos que `compare.mjs` en el paso 5 (leelas con su
+  tabla): `Managed install: version <versión>`, al final `RESULT: no difference` y `0`; cualquier
+  otro `RESULT` o código es la regla de corte. Lee también una foto de `snapshot.mjs`, y
+  `compare.mjs` una de `--snapshot`: es el mismo archivo. La usuaria entra y ve sus registros.
 - [ ] **G7 — La vuelta atrás** (si G4, G5 o G6 fallan, o la usuaria lo pide en los 30 días). Necesita
   Node 24: TypeScript corre con Node. Cerrá SIPGES por completo y apartá el clúster:
   `Rename-Item "$datos\pg18" "pg18.vuelta-<fecha>"`. El acceso directo vuelve a TypeScript sobre `pglite`,

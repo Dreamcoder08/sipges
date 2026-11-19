@@ -296,7 +296,8 @@ están solo en PGlite sigue con la API en TypeScript hasta que se trasladen (la 
   por su SHA-256) y una segunda versión un número mayor, `install.ps1 -Release` sin Node en el PATH,
   una instalación todavía en PGlite que `start.ps1` deja en TypeScript, `start.ps1 -Go` rechazado
   antes del traslado, el traslado (`--prepare-only`, `pg_ctl`, `sipges-desktop --move-pglite` sin Node con su prueba tabla por tabla), `start.ps1` (sin Node) abriendo el
-  lanzador Go con `compare.mjs` sin diferencias, el lanzador terminado a la fuerza durante escrituras
+  lanzador Go con `sipges-desktop --compare` (sin Node) sin diferencias contra su propio
+  `--snapshot`, y `compare.mjs` contra él como el único control cruzado con Node, el lanzador terminado a la fuerza durante escrituras
   y vuelto a abrir, la actualización ofrecida y aplicada por el lanzador Go, una parada limpia con
   Ctrl+C (`windows/go-console.ps1`), la carpeta PGlite original idéntica byte a byte y la vuelta a
   TypeScript con `pg18` apartado. A mano, en otro equipo con Windows, con Go y el puerto 8000 libre:
@@ -348,7 +349,9 @@ Restaurar:
 8. Abre SIPGES, inicia sesión con la contraseña y un código MFA, y abre algunos registros y
    archivos. Para comprobarlo todo, ejecuta `deploy/desktop/migration/snapshot.mjs` antes del
    paso 1 y `compare.mjs` después de este paso, como hizo el simulacro: debe decir
-   `RESULT: no difference`.
+   `RESULT: no difference`. Una versión con el modo Go hace lo mismo sin Node:
+   `sipges-desktop --snapshot` y `sipges-desktop --compare` toman las mismas opciones y escriben y
+   leen el mismo archivo.
    `compare.mjs` solo compara contra una instalación gestionada; contra una instalación por clon
    se niega con `RESULT: not compared (…)` y código 2.
 
