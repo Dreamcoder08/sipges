@@ -33,6 +33,8 @@ const sandbox = ({
   rustup = true,
   toolchains = [`${CHANNEL}-x86_64-unknown-linux-gnu`],
   toolExit = 0,
+  toolSignal = null,
+  cargoExit = 0,
 } = {}) => {
   const dir = path.join(scratch, `case-${(counter += 1)}`);
   const bin = path.join(dir, 'bin');
@@ -65,13 +67,18 @@ ${body}
   // cargo build "produces" a binary that records its call and exits with toolExit.
   fake(
     'cargo',
-    `const bin = args[args.indexOf('--bin') + 1];
+    `if (${cargoExit}) {
+  console.error('error[E0425]: cannot find value \`synthetic\` in this scope');
+  process.exit(${cargoExit});
+}
+const bin = args[args.indexOf('--bin') + 1];
 const out = path.join(process.env.CARGO_BUILD_TARGET_DIR ?? process.env.CARGO_TARGET_DIR, 'release');
 fs.mkdirSync(out, { recursive: true });
 fs.writeFileSync(path.join(out, bin), ${JSON.stringify(
       `#!/usr/bin/env node
 require('node:fs').appendFileSync(${JSON.stringify(log)}, JSON.stringify({ name: 'tool', args: process.argv.slice(2), cwd: process.cwd() }) + '\\n');
 console.log('tool output');
+${toolSignal ? `process.kill(process.pid, '${toolSignal}');\nsetTimeout(() => {}, 10000);` : ''}
 process.exit(${toolExit});
 `,
     )});
@@ -210,4 +217,28 @@ test('the binary cargo just built runs, not a stale one in the default target fo
   rmSync(elsewhere, { recursive: true, force: true });
   assert.equal(result.status, 0, `the stale binary ran: ${result.stderr}`);
   assert.equal(result.calls.filter((call) => call.name === 'tool').length, 1);
+});
+
+// Verifier advisory on #541: a tool killed by a signal exits like a shell reports it (128 + n).
+test('a tool killed by SIGTERM makes the launcher exit with 143, as a shell would', () => {
+  const { run } = sandbox({ toolSignal: 'SIGTERM' });
+  const result = run(['sipges-rotate-data-key', 'rotate-data-key', 'rotate:data-key'], DB);
+  assert.ok(
+    result.status === 143 || result.signal === 'SIGTERM',
+    `status ${result.status}, signal ${result.signal}`,
+  );
+  assert.equal(result.calls.filter((call) => call.name === 'tool').length, 1);
+});
+
+// Verifier advisory on #541: a failed build shows cargo's diagnostics and runs no binary at all.
+test('a failing cargo build exits non-zero with its diagnostics and runs nothing', () => {
+  const { run } = sandbox({ cargoExit: 101 });
+  const result = run(['sipges-rotate-data-key', 'rotate-data-key', 'rotate:data-key'], DB);
+  assert.equal(result.status, 101);
+  assert.match(result.stderr, /error\[E0425\]/);
+  assert.equal(result.stdout, '');
+  assert.deepEqual(
+    result.calls.filter((call) => call.name === 'tool'),
+    [],
+  );
 });

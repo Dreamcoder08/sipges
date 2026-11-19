@@ -4,9 +4,12 @@
 // It builds the binary with the toolchain pinned in engines/rust-toolchain.toml (rustup reads that
 // file from the working directory, not from the manifest, so the channel is passed explicitly),
 // then runs it in the caller's directory with the arguments unchanged, so relative paths such as
-// --seed or --report mean what they meant with the TypeScript tool. Exit code: the tool's.
+// --seed or --report mean what they meant with the TypeScript tool. Exit code: the tool's, or
+// 128 + the signal number when a signal killed it, as a shell reports it; a failed build exits
+// with cargo's code after its diagnostics, and nothing runs.
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { constants } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -80,7 +83,10 @@ const build = spawnSync(
   },
 );
 if (build.error) fail(`No se pudo ejecutar cargo: ${build.error.message}`);
-if (build.status !== 0) process.exit(build.status ?? 1);
+/** The exit code a shell gives a child that ended with this status or signal. */
+const exitCode = ({ status, signal }) =>
+  status ?? (signal && constants.signals[signal] ? 128 + constants.signals[signal] : 1);
+if (build.status !== 0) process.exit(exitCode(build));
 
 const executable = build.stdout
   .split('\n')
@@ -97,4 +103,4 @@ const executable = build.stdout
 if (!executable) fail(`cargo no informó dónde quedó ${binary}; no se ejecutó nada.`);
 const run = spawnSync(executable, toolArgs, { stdio: 'inherit' });
 if (run.error) fail(`No se pudo ejecutar ${executable}: ${run.error.message}`);
-process.exit(run.status ?? 1);
+process.exit(exitCode(run));
