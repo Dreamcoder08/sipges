@@ -79,14 +79,14 @@ jobs:
       matrix:
         include: ${{ fromJSON(inputs.old_commit && format('[{{"commit":"{0}","label":"{0}"}}]', inputs.old_commit) || '[{"commit":"6d867050","label":"6d867050"},{"commit":"228daf43","label":"228daf43"},{"commit":"a73f831a","label":"a73f831a"},{"commit":"dc7abde0","label":"dc7abde0"},{"commit":"origin/main","label":"main"}]') }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           # The drill clones the old commit from this checkout: every branch, so 228daf43 is there.
           fetch-depth: 0
           persist-credentials: false
       # pnpm 12.11.2 from packageManager, the version install.ps1 installs.
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           cache: pnpm
@@ -132,7 +132,7 @@ jobs:
       # Logs and command outputs only: never a state folder, a snapshot or the key.
       - name: Upload the drill logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: windows-desktop-drill-logs-${{ strategy.job-index }}-${{ matrix.label == 'main' && 'main' || 'commit' }}
           path: ${{ runner.temp }}/drill-logs
@@ -144,16 +144,16 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           cache: pnpm
       # The kit carries the trusted sipges-desktop.exe it builds from this checkout (review B1).
-      - uses: actions/setup-go@v7
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
         with:
           go-version: '1.27.4'
           cache-dependency-path: apps/api-go/go.sum
@@ -203,15 +203,15 @@ jobs:
     # Measured in its first runs; the hard cap only stops a hung run.
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           # The old clone is checked out from this checkout: every branch.
           fetch-depth: 0
           persist-credentials: false
       # pnpm 12.11.2 from packageManager. No pnpm install here: the rehearsal installs its own
       # second clone, with LOCALAPPDATA in a scratch folder like the laptop's single account.
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
       # The kit carries the trusted sipges-desktop.exe it builds from this checkout (review B1).
@@ -253,7 +253,7 @@ jobs:
       # Logs, command outputs and measures.txt only: never a state folder, a snapshot or the key.
       - name: Upload the rehearsal logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: windows-laptop-kit-logs
           path: ${{ runner.temp }}/laptop-kit-logs
@@ -266,21 +266,21 @@ jobs:
     # The hard cap only stops a hung run.
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           cache: pnpm
-      - uses: actions/setup-go@v7
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
         with:
           go-version: '1.27.4'
           cache-dependency-path: apps/api-go/go.sum
       # The pinned zip, keyed by the pin file (its URL and SHA-256): builder.mjs --go hashes it
       # again before it unpacks anything, and downloads it when the cache is cold.
-      - uses: actions/cache@v6
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .data/postgresql
           key: postgresql-bundle-${{ hashFiles('deploy/desktop/postgresql/pg18.json') }}
@@ -293,7 +293,7 @@ jobs:
       # Logs and command outputs only: never a state folder, a snapshot or the key.
       - name: Upload the rehearsal logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: windows-go-mode-logs
           path: ${{ runner.temp }}/go-drill-logs
