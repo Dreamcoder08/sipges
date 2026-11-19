@@ -139,6 +139,17 @@ Settings that must survive `./sipges start` and `./sipges update` go in `.env`, 
 
 If that file is missing, `./sipges` stops with `SIPGES_COMPOSE_OVERRIDE names <path>, which does not exist` instead of running without it. Fix the path or remove the line. Docker Compose would read a `compose.override.yaml` next to `compose.yaml` by itself only when no file is named, and `./sipges` always names one, so the setting is the only way in. It belongs to that `.env`, so a drill run with `SIPGES_ENV_FILE` never picks up yours.
 
+### Sized to the computer
+
+`./sipges install`, `start` and `update` read the processors and memory Docker has (on Windows and macOS, Docker's own virtual machine) and write two lines to `.env`, after the comment `# Sized by ./sipges`:
+
+| Setting | Value |
+| --- | --- |
+| `SIPGES_API_MEMORY` | A quarter of the memory, from `1g` (below 8 GiB, as before) up to `4g` |
+| `SIPGES_DB_POOL_MAX` | One database connection per processor, at least 4 and at most 40, so two APIs stay under PostgreSQL's 100 |
+
+The command says what it chose (`Sized for 16 CPUs and 32 GiB: …`). A bigger computer, or more memory for Docker, is picked up by the next `./sipges start` or `update`. To keep your own values, add `SIPGES_SIZING=manual` to `.env` with your `SIPGES_API_MEMORY` and `SIPGES_DB_POOL_MAX`. If Docker cannot say its size, nothing is written and each API keeps 1 GiB and 4 connections.
+
 ### Two API replicas
 
 On one computer a second copy of the API buys availability, not speed: both share the same processor, memory and database. What it gives:
@@ -147,7 +158,7 @@ On one computer a second copy of the API buys availability, not speed: both shar
 - **Health checks.** Caddy asks each API `/health/ready` every 5 seconds and skips one that does not answer; Docker checks each one too (`./sipges status` shows `healthy`). A request that cannot reach one API tries the other.
 - **Updates without a gap.** `./sipges update` applies the database changes, restarts the first API and waits until it is healthy, then does the same with the second. If the new version never becomes healthy, the second API keeps serving the version it had.
 
-To turn it on, add `SIPGES_API_REPLICAS=2` to `.env` and run `./sipges start`. To go back to one, set it to `1` (or remove the line) and run `./sipges start`: the second API is removed. Any other value stops `./sipges` with `SIPGES_API_REPLICAS must be 1 or 2`. Each API may use up to 1 GiB of memory.
+To turn it on, add `SIPGES_API_REPLICAS=2` to `.env` and run `./sipges start`. To go back to one, set it to `1` (or remove the line) and run `./sipges start`: the second API is removed. Any other value stops `./sipges` with `SIPGES_API_REPLICAS must be 1 or 2`. Each API may use the memory and connections of [Sized to the computer](#sized-to-the-computer).
 
 - The scheduled automation runs on the first API only, so it pauses for the few seconds that API restarts.
 - If you use `SIPGES_COMPOSE_OVERRIDE`, a change you make to `api` there does not reach the second API, `api-2`: give `api-2` the same change.

@@ -10,7 +10,8 @@ x-hardening: &hardening
     driver: json-file
     options: { max-size: 10m, max-file: '5' }
 
-x-database-url: &database-url postgres://sipges_app:${SIPGES_DB_PASSWORD:?}@db:5432/sipges?sslmode=disable
+# pool_max_conns follows the machine (./sipges size_host); 4 when unsized, pgx's own floor.
+x-database-url: &database-url postgres://sipges_app:${SIPGES_DB_PASSWORD:?}@db:5432/sipges?sslmode=disable&pool_max_conns=${SIPGES_DB_POOL_MAX:-4}
 
 # The API's settings, shared by `api` and the optional second replica `api-2` (ADR 0035).
 x-api-environment: &api-environment
@@ -52,7 +53,8 @@ x-api: &api
   networks: [backend, frontend]
   read_only: true
   tmpfs: [/tmp]
-  mem_limit: 1g
+  # Follows the machine (./sipges size_host): 1g when unsized, as before.
+  mem_limit: ${SIPGES_API_MEMORY:-1g}
   # The image has no shell: the API binary asks itself. Caddy runs its own checks too.
   healthcheck:
     test: [CMD, /api, healthcheck]

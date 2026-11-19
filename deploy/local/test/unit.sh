@@ -43,7 +43,10 @@ compose)
     ;;
   esac
   ;;
-info) ;;
+info)
+  # The machine Docker runs on, as `docker info --format '{{.NCPU}} {{.MemTotal}}'` answers.
+  [[ $* != *--format* ]] || cat "$FAKE/machine" 2>/dev/null
+  ;;
 ps)
   # Containers this project left behind, by service label.
   cat "$FAKE/stale-api-2" 2>/dev/null
@@ -422,7 +425,8 @@ check 'a drill leaves the marks of a real install alone' test "$(image_id ready)
 # --- one API or two
 
 # The calls start and update made before replicas existed, with W for the work folder.
-one_api_start='compose --env-file W/env -p sipges -f compose.yaml config -q
+one_api_start='info --format {{.NCPU}} {{.MemTotal}}
+compose --env-file W/env -p sipges -f compose.yaml config -q
 compose --env-file W/env -p sipges -f compose.yaml up -d db api caddy backup
 compose --env-file W/env -p sipges -f compose.yaml exec -T caddy wget -qO- --header Host: localhost http://api:8080/health/ready
 tag sipges-local:current sipges-local:ready'
@@ -546,6 +550,52 @@ two_apis
 run install
 touch "$FAKE/ps-fails-once"
 if run start; then ok 'a rolling start survives one failing compose ps while it waits'; else fail 'a rolling start survives one failing compose ps while it waits'; fi
+
+
+# --- sizing to the machine Docker runs on (local-qa-findings T16)
+
+GIB=$((1024 * 1024 * 1024))
+sized() { # cpus gib -> runs install on that machine
+  fresh
+  printf '%s %s\n' "$1" "$(($2 * GIB))" >"$FAKE/machine"
+  run install
+}
+env_is() { [[ $(sed -n "s/^$1=//p" "$SIPGES_ENV_FILE" | tail -n 1) == "$2" ]]; }
+
+sized 2 4
+check 'a small machine keeps the 1 GiB API limit' env_is SIPGES_API_MEMORY 1g
+check 'and the pool pgx would choose, 4' env_is SIPGES_DB_POOL_MAX 4
+sized 8 7
+check 'below 8 GiB the API limit stays 1 GiB' env_is SIPGES_API_MEMORY 1g
+check 'the pool follows the CPUs, as pgx does' env_is SIPGES_DB_POOL_MAX 8
+sized 16 32
+check 'a large machine gives the API a quarter of its memory, up to 4 GiB' env_is SIPGES_API_MEMORY 4g
+check 'and a pool of one connection per CPU' env_is SIPGES_DB_POOL_MAX 16
+check 'install says what it chose' said 'Sized for 16 CPUs and 32 GiB'
+sized 64 12
+check '12 GiB gives 3 GiB' env_is SIPGES_API_MEMORY 3g
+check 'the pool stops at 40, so two APIs stay under PostgreSQL'"'"'s 100 connections' env_is SIPGES_DB_POOL_MAX 40
+
+# A bigger machine later: update sizes again and keeps one line of each.
+sized 4 8
+printf '16 %s\n' "$((32 * GIB))" >"$FAKE/machine"
+run update || true
+check 'update follows a bigger machine' env_is SIPGES_API_MEMORY 4g
+check 'and keeps one line of each' test "$(grep -c '^SIPGES_API_MEMORY=' "$SIPGES_ENV_FILE")" = 1
+
+# The operator's own values stay when the .env says so.
+fresh
+printf '16 %s\n' "$((32 * GIB))" >"$FAKE/machine"
+printf 'SIPGES_SIZING=manual\nSIPGES_API_MEMORY=6g\nSIPGES_DB_POOL_MAX=12\n' >>"$SIPGES_ENV_FILE"
+run install
+check 'SIPGES_SIZING=manual keeps the memory the operator set' env_is SIPGES_API_MEMORY 6g
+check 'and the pool' env_is SIPGES_DB_POOL_MAX 12
+
+# Docker that cannot say: nothing is written, and the install goes on with the defaults.
+fresh
+run install
+check 'without the machine'"'"'s size the install still runs' said 'Open https://'
+check 'and writes no sizing' test -z "$(grep '^SIPGES_API_MEMORY=' "$SIPGES_ENV_FILE" || true)"
 
 command rm -rf "$root"
 if ((failures > 0)); then

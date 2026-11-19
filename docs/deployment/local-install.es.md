@@ -154,6 +154,17 @@ Lo que debe sobrevivir a `./sipges start` y `./sipges update` va en `.env`, nunc
 
 Si ese archivo no existe, `./sipges` se detiene con `SIPGES_COMPOSE_OVERRIDE names <path>, which does not exist` en vez de seguir sin él. Corrige la ruta o quita la línea. Docker Compose leería solo un `compose.override.yaml` junto a `compose.yaml` únicamente cuando no se nombra ningún archivo, y `./sipges` siempre nombra uno, así que esta línea es la única entrada. Pertenece a ese `.env`, así que un simulacro con `SIPGES_ENV_FILE` nunca toma el tuyo.
 
+### Ajustado a la computadora
+
+`./sipges install`, `start` y `update` leen los procesadores y la memoria que tiene Docker (en Windows y macOS, la máquina virtual de Docker) y escriben dos líneas en `.env`, después del comentario `# Sized by ./sipges`:
+
+| Ajuste | Valor |
+| --- | --- |
+| `SIPGES_API_MEMORY` | Un cuarto de la memoria, desde `1g` (por debajo de 8 GiB, como antes) hasta `4g` |
+| `SIPGES_DB_POOL_MAX` | Una conexión a la base por procesador, mínimo 4 y máximo 40, para que dos APIs queden por debajo de las 100 de PostgreSQL |
+
+El comando dice lo que eligió (`Sized for 16 CPUs and 32 GiB: …`). Una computadora más grande, o más memoria para Docker, se toma en el siguiente `./sipges start` o `update`. Para conservar valores propios, agrega `SIPGES_SIZING=manual` a `.env` junto con tus `SIPGES_API_MEMORY` y `SIPGES_DB_POOL_MAX`. Si Docker no informa su tamaño, no se escribe nada y cada API conserva 1 GiB y 4 conexiones.
+
 ### Dos réplicas de la API
 
 En una sola computadora, una segunda copia de la API da disponibilidad, no velocidad: las dos comparten el mismo procesador, memoria y base de datos. Lo que da:
@@ -162,7 +173,7 @@ En una sola computadora, una segunda copia de la API da disponibilidad, no veloc
 - **Chequeos de salud.** Caddy le pregunta a cada API `/health/ready` cada 5 segundos y salta la que no responde; Docker también revisa cada una (`./sipges status` muestra `healthy`). Una solicitud que no llega a una API prueba con la otra.
 - **Actualizar sin corte.** `./sipges update` aplica los cambios de la base de datos, reinicia la primera API y espera a que esté sana, y luego hace lo mismo con la segunda. Si la versión nueva nunca queda sana, la segunda API sigue sirviendo la versión que tenía.
 
-Para activarlo, agrega `SIPGES_API_REPLICAS=2` a `.env` y ejecuta `./sipges start`. Para volver a una, ponlo en `1` (o quita la línea) y ejecuta `./sipges start`: la segunda API se elimina. Cualquier otro valor detiene `./sipges` con `SIPGES_API_REPLICAS must be 1 or 2`. Cada API puede usar hasta 1 GiB de memoria.
+Para activarlo, agrega `SIPGES_API_REPLICAS=2` a `.env` y ejecuta `./sipges start`. Para volver a una, ponlo en `1` (o quita la línea) y ejecuta `./sipges start`: la segunda API se elimina. Cualquier otro valor detiene `./sipges` con `SIPGES_API_REPLICAS must be 1 or 2`. Cada API usa la memoria y las conexiones de [Ajustado a la computadora](#ajustado-a-la-computadora).
 
 - La automatización programada corre solo en la primera API, así que se pausa los segundos que esa API se reinicia.
 - Si usas `SIPGES_COMPOSE_OVERRIDE`, un cambio que hagas ahí a `api` no llega a la segunda API, `api-2`: dale a `api-2` el mismo cambio.
