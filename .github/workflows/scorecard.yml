@@ -1,0 +1,42 @@
+name: OpenSSF Scorecard
+
+# Supply-chain checks of the repository (pinned actions, token permissions, dangerous workflows,
+# dependency updates, ...) by the OpenSSF Scorecard. Results go to code scanning (Security tab).
+# Weekly, and on every push to main so a regression shows up right after it lands.
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: scorecard-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  scorecard:
+    name: OpenSSF Scorecard
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+      # Upload the SARIF to code scanning.
+      security-events: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      # publish_results stays false: publishing to the public Scorecard API would need id-token: write.
+      - uses: ossf/scorecard-action@fa7117db83c52d787ae5a89f350999701505d78e # v2.5.0
+        with:
+          results_file: scorecard.sarif
+          results_format: sarif
+          publish_results: false
+      - uses: github/codeql-action/upload-sarif@1fc58d04a4d4374f921bdac573c3811c240f9c26 # v4.39.2
+        with:
+          sarif_file: scorecard.sarif
+          category: scorecard

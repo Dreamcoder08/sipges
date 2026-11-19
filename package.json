@@ -23,6 +23,7 @@
     "odd:close": "node scripts/odd-close-task.mjs",
     "odd:status": "node scripts/odd-status.mjs",
     "parity": "node apps/parity/src/main.ts",
+    "bench:desktop": "node deploy/desktop/bench/desktop-bench.mjs",
     "engram": "node scripts/agents/engram.mjs",
     "test:tooling": "node --test scripts/tooling.test.mjs scripts/check-bundle-budget.test.mjs scripts/rust-tool.test.mjs"
   },
