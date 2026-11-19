@@ -30,14 +30,14 @@ jobs:
     timeout-minutes: 20
     environment: production
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       # The Rust port (engines/crates/review-materialize, T43): same flags, output and exit codes
       # as the TypeScript tool; no Node needed. Installs the toolchain pinned in rust-toolchain.toml.
       - working-directory: engines
         run: rustup toolchain install && rustc --version
       # Release builds keyed by the toolchain channel and the lock file. This job runs only on main,
       # so it restores caches written from main, never from a pull request branch.
-      - uses: actions/cache@v6
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cargo/registry/index

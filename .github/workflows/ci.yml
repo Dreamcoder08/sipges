@@ -34,7 +34,7 @@ jobs:
     outputs:
       code: ${{ steps.diff.outputs.code }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - id: diff
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
@@ -55,11 +55,11 @@ jobs:
     timeout-minutes: 20
     steps:
       - if: needs.changes.outputs.code == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - if: needs.changes.outputs.code == 'true'
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
       - if: needs.changes.outputs.code == 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           # Self-hosted runners keep a persistent pnpm store in their volume (docs/operations/ci-runner.md).
@@ -103,11 +103,11 @@ jobs:
         name: Point the tests at the PostgreSQL service
         run: echo "SIPGES_TEST_DATABASE_URL=postgres://postgres:ci-only-password@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/postgres" >> "$GITHUB_ENV"
       - if: needs.changes.outputs.code == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - if: needs.changes.outputs.code == 'true'
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
       - if: needs.changes.outputs.code == 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           # Self-hosted runners keep a persistent pnpm store in their volume (docs/operations/ci-runner.md).
@@ -149,11 +149,11 @@ jobs:
         name: Point the tests at the PostgreSQL service
         run: echo "SIPGES_E2E_DATABASE_URL=postgres://postgres:ci-only-password@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/postgres" >> "$GITHUB_ENV"
       - if: needs.changes.outputs.code == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - if: needs.changes.outputs.code == 'true'
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
       - if: needs.changes.outputs.code == 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           # Self-hosted runners keep a persistent pnpm store in their volume (docs/operations/ci-runner.md).
@@ -176,7 +176,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
       - if: needs.changes.outputs.code == 'true' && runner.environment == 'github-hosted'
         name: Cache the Playwright browser and its apt packages
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cache/ms-playwright
@@ -199,7 +199,7 @@ jobs:
       - if: needs.changes.outputs.code == 'true' && matrix.browser == 'webkit'
         run: pnpm --filter @sipges/e2e exec playwright test --config playwright.webkit.config.ts
       - if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: playwright-report-${{ matrix.browser }}-${{ strategy.job-index }}
           path: |
@@ -237,18 +237,18 @@ jobs:
         name: Point the tests at the PostgreSQL service
         run: echo "SIPGES_E2E_DATABASE_URL=postgres://postgres:ci-only-password@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/postgres" >> "$GITHUB_ENV"
       - if: needs.changes.outputs.code == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - if: needs.changes.outputs.code == 'true'
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
       - if: needs.changes.outputs.code == 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           # Self-hosted runners keep a persistent pnpm store in their volume (docs/operations/ci-runner.md).
           cache: ${{ runner.environment == 'github-hosted' && 'pnpm' || '' }}
       # The Go version apps/api-go/go.mod names; global-setup.ts runs `go build ./cmd/api` with it.
       - if: needs.changes.outputs.code == 'true'
-        uses: actions/setup-go@v7
+        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
         with:
           go-version-file: apps/api-go/go.mod
           cache-dependency-path: apps/api-go/go.sum
@@ -270,7 +270,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
       - if: needs.changes.outputs.code == 'true' && runner.environment == 'github-hosted'
         name: Cache the Playwright browser and its apt packages
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cache/ms-playwright
@@ -293,7 +293,7 @@ jobs:
           pnpm --filter @sipges/e2e exec playwright test --project=chromium
           tests/06- tests/07- tests/34- tests/35- tests/37- tests/01- tests/03- tests/14-
       - if: always() && needs.changes.outputs.code == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: playwright-report-go
           path: |
@@ -308,7 +308,7 @@ jobs:
     runs-on: ${{ fromJSON(vars.SIPGES_RUNS_ON || '"ubuntu-24.04"') }}
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       # The reference is frozen: run it only when it changes, but always report the check.
       # Only the base commit is fetched (depth 1): comparing two trees needs no history.
       - id: changes
@@ -323,7 +323,7 @@ jobs:
             echo "python=false" >> "$GITHUB_OUTPUT"
           fi
       - if: steps.changes.outputs.python == 'true'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version-file: reference/python/.python-version
           cache: pip
