@@ -5,7 +5,7 @@
 //
 //   node deploy/desktop/bench/desktop-bench.mjs [--sizes 1,10] [--reps 3] [--steps 1,4,8]
 //     [--step-seconds 10] [--writes 40] [--stacks ts,go] [--pg-bin <dir>] [--bin-dir <dir>]
-//     [--work <new dir>] [--out result.json] [--label name]
+//     [--work <new dir>] [--logs <dir>] [--out result.json] [--label name]
 //
 // For every size (1× is the legacy installation's record counts, bench/synthetic.ts):
 // 1. Prepare one state folder per stack: the first start applies the migrations and creates the
@@ -18,7 +18,9 @@
 //    sequential record creates and updates (POST and PUT /api/eventos); the peak memory of the
 //    API and database processes; and the data folder's size after the run.
 // Results: JSON (--out or stdout) and a Markdown summary on stderr. Every repetition is kept;
-// outliers are flagged, never dropped.
+// outliers are flagged, never dropped. Server logs go to --logs (default: <work>/logs). When a run
+// fails, the runs that finished are written (to --out, or <logs>/partial-result.json), the work
+// folder is kept and its path printed, and the exit code is 1.
 /* global fetch, setTimeout, clearTimeout, AbortSignal, URLSearchParams, Buffer */
 import { execFileSync, spawn } from 'node:child_process';
 import { cp, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
@@ -35,15 +37,24 @@ import console from 'node:console';
 import { freePort } from '../updater/boot.mjs';
 import {
   aggregate,
+  bestEffort,
   classify,
+  describeFailure,
   folderBytes,
   insertBatches,
+  keepWorkFolder,
+  killOrder,
+  memoryMetricRows,
+  memoryMetrics,
   parseOptions,
+  progressLine,
   parseProcStatus,
   parseSmapsRollup,
   renderMarkdown,
+  resolvePgBin,
   runOrder,
   summarizeSamples,
+  timedRequest,
 } from './desktop-bench-lib.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -53,6 +64,7 @@ const MIGRATIONS = join(API_DIR, 'src/platform/database/migrations');
 const TENANT = 'SIPGES/PRJ-SECHURA';
 const READY_TIMEOUT_MS = 180_000;
 const REQUEST_TIMEOUT_MS = 45_000;
+const WRITE_TIMEOUT_MS = 45_000;
 const SAMPLE_MS = 500;
 const isWindows = platform() === 'win32';
 const exe = (name) => (isWindows ? `${name}.exe` : name);
@@ -96,7 +108,10 @@ function startProcess(command, args, { env, log }) {
       done({ code, signal });
     });
   });
-  child.once('error', () => undefined);
+  // A program that cannot start emits no output: its error goes into the failure message.
+  child.once('error', (error) => {
+    child.output += `could not start ${command}: ${error.message}\n`;
+  });
   return child;
 }
 
@@ -104,16 +119,37 @@ async function stopProcess(child, graceMs = 60_000) {
   const alive = child.exitCode === null && child.signalCode === null;
   // Windows has no SIGTERM: kill() ends only the launcher, so its whole tree goes; the cluster it
   // leaves is stopped by stopCluster.
-  if (alive && isWindows)
-    try {
-      execFileSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
-    } catch {
-      // It ended on its own meanwhile.
-    }
+  if (alive && isWindows) killTreeWindows(child.pid);
   else if (alive) child.kill('SIGTERM');
   const timer = setTimeout(() => child.kill('SIGKILL'), graceMs);
   await child.ended;
   clearTimeout(timer);
+}
+
+/**
+ * Windows: `taskkill /T /F` ends the launcher and everything below it. When taskkill fails, the
+ * tree is read from Win32_Process and each process is ended, children first, so the API never
+ * outlives the launcher. The cluster it leaves is stopped by stopCluster.
+ */
+function killTreeWindows(pid) {
+  try {
+    execFileSync('taskkill', ['/PID', String(pid), '/T', '/F'], { stdio: 'ignore' });
+    return;
+  } catch {
+    say(`taskkill failed for ${pid}; ending its process tree one by one`);
+  }
+  let procs = [];
+  try {
+    procs = windowsProcesses();
+  } catch {
+    // Without the list, only the launcher itself can be ended.
+  }
+  for (const target of killOrder(procs, pid))
+    try {
+      process.kill(target);
+    } catch {
+      // Already gone.
+    }
 }
 
 /** A postmaster left behind (Windows ends a child without a signal it can handle) is stopped. */
@@ -221,33 +257,26 @@ function memoryWatch(rootPid, dataDir, stack) {
     const roles = classify(procs, rootPid, dataDir, stack);
     stopped = true;
     await loop;
-    const mb = (k) => (k === null ? null : Math.round(k / 1024));
-    const hwm = (list) => list.reduce((a, p) => a + (p.hwmKb ?? 0), 0);
-    if (isWindows)
-      return {
-        source: 'peak working set per process, summed (Windows)',
-        apiPeakMb: mb(hwm(roles.api)),
-        databasePeakMb: stack === 'ts' ? null : mb(hwm(roles.database)),
-        totalPeakMb: mb(hwm(roles.api) + hwm(roles.database) + hwm(roles.launcher)),
-      };
-    const peaks = summarizeSamples(samples);
+    const peaks = isWindows ? null : summarizeSamples(samples);
     return {
-      source: `VmHWM of the API process; Pss sums sampled every ${SAMPLE_MS} ms (Linux)`,
-      apiPeakMb: mb(hwm(roles.api)),
-      apiPssPeakMb: mb(peaks.api),
-      databasePeakMb: stack === 'ts' ? null : mb(peaks.database),
-      totalPeakMb: mb(peaks.total),
+      source: isWindows
+        ? 'peak working set per process, summed per role, one snapshot at the end (Windows)'
+        : `VmHWM of the API process; Pss summed per role, sampled every ${SAMPLE_MS} ms (Linux)`,
       samples: samples.length,
+      metrics: memoryMetrics({ windows: isWindows, stack, roles, peaks }),
     };
   };
 }
 
 // ---- stacks ------------------------------------------------------------------------------
 
-const pgBin =
-  options.pgBin ??
-  process.env.SIPGES_PG_BIN ??
-  execFileSync('pg_config', ['--bindir'], { encoding: 'utf8' }).trim();
+// Only the Go stack needs PostgreSQL's binaries: a TypeScript-only run never looks for them.
+const pgBin = resolvePgBin({
+  stacks: options.stacks,
+  pgBin: options.pgBin,
+  env: process.env,
+  find: () => execFileSync('pg_config', ['--bindir'], { encoding: 'utf8' }).trim(),
+});
 
 /** Only what the toolchains need; no SIPGES_* variable of the caller reaches either API. */
 const baseEnv = () =>
@@ -340,16 +369,21 @@ async function seedGo(state, records, launcherOutput) {
   }
 }
 
-async function prepare(stack, state, records) {
+async function prepare(stack, state, records, tag) {
   await newState(state);
   const port = await freePort();
-  const child = await STACK[stack].start(state, port, null);
+  const log = [];
+  const child = await STACK[stack].start(state, port, log);
   try {
     await waitReady(child, `http://127.0.0.1:${port}`);
     if (stack === 'go') await seedGo(state, records, child.output);
   } finally {
     await stopProcess(child);
     if (stack === 'go') stopCluster(join(state, 'pg18'));
+    await bestEffort(
+      () => writeFile(join(logsDir, `prepare-${tag}.txt`), Buffer.concat(log)),
+      (error) => say(`could not write the prepare log of ${tag}: ${error.message}`),
+    );
   }
   if (stack === 'ts') await seedTs(state, records);
   const data = join(state, STACK[stack].dataFolder);
@@ -418,12 +452,8 @@ async function writes(base, cookie, tag) {
     'content-type': 'application/json',
     'X-SIPGES-Scope': TENANT,
   };
-  const timed = async (path, method, payload) => {
-    const started = performance.now();
-    const response = await fetch(base + path, { method, headers, body: JSON.stringify({ payload }) });
-    await response.arrayBuffer();
-    return { ok: response.status >= 200 && response.status < 300, status: response.status, ms: performance.now() - started };
-  };
+  const timed = (path, method, payload) =>
+    timedRequest(fetch, base + path, { method, headers, body: JSON.stringify({ payload }) }, WRITE_TIMEOUT_MS);
   const create = [];
   const update = [];
   let errors = 0;
@@ -464,7 +494,10 @@ async function measure(stack, template, work, tag) {
   } finally {
     await stopProcess(child);
     if (stack === 'go') stopCluster(dataDir);
-    await writeFile(join(work, `log-${tag}.txt`), Buffer.concat(log));
+    await bestEffort(
+      () => writeFile(join(logsDir, `run-${tag}.txt`), Buffer.concat(log)),
+      (error) => say(`could not write the log of ${tag}: ${error.message}`),
+    );
   }
   result.dataBytesAfter = await folderBytes(dataDir);
   if (stack === 'go') result.walBytesAfter = await folderBytes(join(dataDir, 'pg_wal'));
@@ -486,9 +519,7 @@ function flatten(result) {
   metrics.updateP50 = result.writes.update.p50;
   metrics.updateP95 = result.writes.update.p95;
   metrics.writeErrors = result.writes.errors;
-  metrics.apiPeakMb = result.memory.apiPeakMb;
-  metrics.databasePeakMb = result.memory.databasePeakMb;
-  metrics.totalPeakMb = result.memory.totalPeakMb;
+  Object.assign(metrics, result.memory.metrics);
   metrics.dataMbAfter = +(result.dataBytesAfter / 2 ** 20).toFixed(1);
   return metrics;
 }
@@ -506,9 +537,7 @@ const METRICS = [
   { key: 'updateP50', label: 'Update record p50 (ms)' },
   { key: 'updateP95', label: 'Update record p95 (ms)' },
   { key: 'writeErrors', label: 'Write errors' },
-  { key: 'apiPeakMb', label: 'API process peak RSS (MB)' },
-  { key: 'databasePeakMb', label: 'PostgreSQL processes peak, Pss sum (MB)' },
-  { key: 'totalPeakMb', label: 'All processes peak, Pss sum (MB)' },
+  ...memoryMetricRows(isWindows),
   { key: 'seededMb', label: 'Data folder after seeding (MB)' },
   { key: 'seededWalMb', label: '  of which pg_wal (MB)' },
   { key: 'dataMbAfter', label: 'Data folder after the run (MB)' },
@@ -527,6 +556,9 @@ const version = (command, args) => {
 const ownWork = !options.work;
 const work = options.work ? resolve(options.work) : await mkdtemp(join(tmpdir(), 'sipges-desktop-bench-'));
 await mkdir(work, { recursive: true });
+// Server logs: --logs, or the work folder. Kept after a failure, with the runs that finished.
+const logsDir = options.logs ? resolve(options.logs) : join(work, 'logs');
+await mkdir(logsDir, { recursive: true });
 let binDir = options.binDir ? resolve(options.binDir) : join(work, 'bin');
 if (options.stacks.includes('go') && !options.binDir) {
   say('Building the Go API and launcher…');
@@ -540,6 +572,7 @@ if (options.stacks.includes('go') && !options.binDir) {
     });
 }
 
+let failed = null;
 const report = {
   label: options.label,
   startedAt: new Date().toISOString(),
@@ -549,10 +582,10 @@ const report = {
     cores: availableParallelism(),
     memoryGiB: Math.round(totalmem() / 2 ** 30),
     node: process.version,
-    postgres: version(join(pgBin, exe('postgres')), ['--version']),
+    postgres: pgBin ? version(join(pgBin, exe('postgres')), ['--version']) : 'not used',
     go: version('go', ['version']),
   },
-  options: { ...options, pgBin: undefined, binDir: undefined, work: undefined },
+  options: { ...options, pgBin: undefined, binDir: undefined, work: undefined, logs: undefined },
   sizes: {},
   runs: [],
 };
@@ -566,7 +599,7 @@ try {
       checkInterrupted();
       say(`Preparing ${stack} at ${size}× (${totalRecords(records)} records)…`);
       templates[stack] = join(work, `template-${stack}-${size}`);
-      report.sizes[size].seededBytes[stack] = await prepare(stack, templates[stack], records);
+      report.sizes[size].seededBytes[stack] = await prepare(stack, templates[stack], records, `${stack}-${size}x`);
     }
     for (let rep = 0; rep < options.reps; rep++)
       for (const stack of runOrder(rep, options.stacks)) {
@@ -581,13 +614,27 @@ try {
           seededWalMb: seeded.walBytes === null ? null : +(seeded.walBytes / 2 ** 20).toFixed(1),
         };
         report.runs.push({ size, stack, rep, metrics, result });
-        say(`  ready ${metrics.coldStartMs} ms; 8 screens ${metrics.rps8 ?? '–'} req/s; API peak ${metrics.apiPeakMb} MB`);
+        say(`  ${progressLine(metrics, options.steps)}`);
       }
     for (const stack of options.stacks) await rm(templates[stack], { recursive: true, force: true });
   }
+} catch (error) {
+  failed = error;
 } finally {
   await Promise.all([...running].map((child) => stopProcess(child, 5_000)));
-  if (ownWork) await rm(work, { recursive: true, force: true });
+  if (!keepWorkFolder({ ownWork, failed: Boolean(failed) })) await rm(work, { recursive: true, force: true });
+}
+
+if (failed) {
+  // What finished is kept: the runs so far go to --out (or the logs folder), never discarded.
+  report.failedAt = new Date().toISOString();
+  Object.assign(report, describeFailure(failed));
+  const partial = options.out ?? join(logsDir, 'partial-result.json');
+  await writeFile(partial, `${JSON.stringify(report, null, 2)}\n`);
+  say(`\nThe benchmark failed: ${report.stack ?? report.error}`);
+  say(`${report.runs.length} finished run(s) in ${partial}; server logs in ${logsDir}`);
+  if (ownWork) say(`Work folder kept for inspection: ${work}`);
+  process.exit(1);
 }
 
 report.finishedAt = new Date().toISOString();

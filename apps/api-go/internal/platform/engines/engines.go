@@ -27,6 +27,15 @@ type Set struct {
 	// Analytics runs the ops of sipges-analytics-wasm (situational, strategic, consensus,
 	// candidate_links, integrated).
 	Analytics *wasmengine.Engine
+
+	memoOnce sync.Once
+	memo     *Memo
+}
+
+// IndicatorsMemo is Indicators behind one Memo per Set: its answers depend on the request alone.
+func (s *Set) IndicatorsMemo() *Memo {
+	s.memoOnce.Do(func() { s.memo = NewMemo(s.Indicators) })
+	return s.memo
 }
 
 // analyticsRetainPages keeps 64 MiB of linear memory in an idle analytics instance. A call over

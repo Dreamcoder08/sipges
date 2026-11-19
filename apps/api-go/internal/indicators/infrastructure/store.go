@@ -135,9 +135,12 @@ func records(ctx context.Context, q database.Querier, tenantID string) (domain.R
 	if err != nil {
 		return nil, err
 	}
-	var module, id, payload string
+	var (
+		module, id string
+		payload    []byte // pgx allocates each row's slice, so the record can keep it
+	)
 	_, err = pgx.ForEachRow(rows, []any{&module, &id, &payload}, func() error {
-		out[module] = append(out[module], domain.Record{ID: id, Payload: json.RawMessage(payload)})
+		out[module] = append(out[module], domain.Record{ID: id, Payload: payload})
 		return nil
 	})
 	return out, err
