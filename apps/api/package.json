@@ -9,13 +9,17 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "bench": "node bench/run.ts",
-    "migrate:legacy": "node src/tools/migrate-legacy/cli.ts",
+    "migrate:legacy": "node ../../scripts/rust-tool.mjs sipges-migrate-legacy migrate-legacy migrate:legacy",
+    "migrate:legacy:ts": "node src/tools/migrate-legacy/cli.ts",
     "bench:compare": "node bench/compare.ts",
     "bench:prod-screens": "node bench/prod-screens-stress.ts",
     "vapid:keys": "node src/tools/vapid-keys.ts",
-    "import:base-maestra": "node src/tools/base-maestra/cli.ts",
-    "review:materialize": "node src/tools/review-materialize/cli.ts",
-    "rotate:data-key": "node src/tools/rotate-data-key/cli.ts"
+    "import:base-maestra": "node ../../scripts/rust-tool.mjs sipges-base-maestra import-base-maestra import:base-maestra",
+    "import:base-maestra:ts": "node src/tools/base-maestra/cli.ts",
+    "review:materialize": "node ../../scripts/rust-tool.mjs sipges-review-materialize review-materialize review:materialize",
+    "review:materialize:ts": "node src/tools/review-materialize/cli.ts",
+    "rotate:data-key": "node ../../scripts/rust-tool.mjs sipges-rotate-data-key rotate-data-key rotate:data-key",
+    "rotate:data-key:ts": "node src/tools/rotate-data-key/cli.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.4.0",

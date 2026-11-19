@@ -9,7 +9,8 @@ ODD forbids doing so without an explicit user decision.
 
 - Code: `apps/api/src/tools/migrate-legacy/` (`domain/` pure mapping, `application/` use case
   and ports, `infrastructure/` SQLite reader and PostgreSQL writer, `cli.ts`).
-- Command: `pnpm --filter @sipges/api migrate:legacy -- --legacy-root <dir> [...]`.
+- Command: `pnpm --filter @sipges/api migrate:legacy -- --legacy-root <dir> [...]`, which runs
+  the Rust port (see [Rust port](#rust-port)); `migrate:legacy:ts` runs this TypeScript tool.
 - Tests: `apps/api/test/migration/*`, `apps/api/test/integration/migration-postgres.test.ts`.
 
 ## What the tool reads
@@ -218,11 +219,17 @@ accounts (one with TOTP), uploads on disk and deliberately broken rows.
 ## Rust port
 
 `engines/crates/migrate-legacy` is the Rust port of this tool (ADR 0032, T43): same flags, summary,
-JSON report, exit codes, rows and objects. The workflows still call the TypeScript tool, and a
-real run needs the owner's word whichever one is used.
+JSON report, exit codes, rows and objects. It is the scripted path: `pnpm --filter @sipges/api
+migrate:legacy` runs it through `scripts/rust-tool.mjs`, which builds it with the toolchain pinned in
+`engines/rust-toolchain.toml` (rustup must be installed; the first run compiles it), and `./sipges import legacy` runs it from the import image. The TypeScript tool stays
+reachable as `migrate:legacy:ts` until it is retired (T73). Unlike that tool, the port requires
+`SIPGES_DATABASE_URL` and never opens a local PGlite: with only `SIPGES_PGLITE_DIR` set, the script
+stops before compiling and points at `migrate:legacy:ts`, which a PGlite install uses until it
+moves to pg18. A real run needs the owner's word whichever
+one is used.
 
 ```sh
-cd engines && cargo build --release -p sipges-migrate-legacy
+cd engines && cargo build --release --locked -p sipges-migrate-legacy
 target/release/migrate-legacy --legacy-root /srv/sipges-legacy --report report.json
 ```
 

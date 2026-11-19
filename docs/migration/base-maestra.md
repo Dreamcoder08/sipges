@@ -36,5 +36,15 @@ SIPGES_DATABASE_URL=… pnpm --filter @sipges/api import:base-maestra -- --seed 
 SIPGES_DATABASE_URL=… pnpm --filter @sipges/api import:base-maestra -- --seed data/seed.json --apply
 ```
 
+El script ejecuta la versión en Rust, `engines/crates/base-maestra` (ADR 0032, T43), con
+`scripts/rust-tool.mjs`, que la compila con el toolchain fijado en `engines/rust-toolchain.toml`
+(requiere rustup; la primera ejecución la compila). Las
+opciones, la salida y los códigos de salida son los de la herramienta TypeScript, que sigue
+disponible como `import:base-maestra:ts` hasta su retiro (T73). A diferencia de esta, exige
+`SIPGES_DATABASE_URL` y `SIPGES_DATA_KEY`, y no abre un PGlite local: con solo `SIPGES_PGLITE_DIR`,
+el script se detiene antes de compilar e indica usar `import:base-maestra:ts`, la variante de una
+instalación con PGlite hasta que se migre a pg18. En una instalación local,
+`./sipges import base-maestra` ya usa este mismo binario.
+
 Para revertir: los registros importados se identifican por la entrada de auditoría y sus
 códigos; se eliminan desde la aplicación (cada borrado queda auditado y en el historial).
