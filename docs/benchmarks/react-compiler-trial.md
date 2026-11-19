@@ -1,6 +1,6 @@
 # React Compiler trial (2026-11-19)
 
-**Decision: keep.** React Compiler v1 (stable, Babel) runs in annotation mode on 19 components. It cuts the
+**Decision: keep.** React Compiler v1 (stable, Babel) runs in annotation mode on 19 annotated components, 18 of which compile: `TerritorialWorkspace` bails out on its local `select` helper (`[hoisting] EnterSSA`), so it stays uncompiled, which is why Territorio is neutral. It cuts the
 components React renders during the measured interactions by 46% on Inicio, 70% on IRSA and 17% on Registros, and
 main-thread script time by 26%, 20% and 5%. Territorio is neutral. The entry chunk grows 2.3 kB gzip and stays
 inside its budget. Compiling every component (infer mode) renders less but crosses the entry budget, so it was
@@ -74,7 +74,7 @@ To see component names in `top`, build without minification: `pnpm exec vite bui
 
 ### Components rendered (deterministic)
 
-| Screen | Baseline | Final (19 annotated) | First pass (6 screen components) | Infer mode, all components (reference) |
+| Screen | Baseline | Final (19 annotated, 18 compiled) | First pass (6 screen components) | Infer mode, all components (reference) |
 | --- | ---: | ---: | ---: | ---: |
 | Inicio | 260 | 140 (−46%) | 140 | 80 |
 | Registros | 2,033 | 1,691 (−17%) | 2,013 | 1,526 |
@@ -134,3 +134,11 @@ none was rewritten.
   but they come from a different compiler implementation than the final build.
 - Chromium only: CPU throttling and the performance metrics need the DevTools protocol. WebKit runs the functional
   e2e in CI; it could not launch on the trial machine, which lacks its system libraries.
+
+## Render-time dates
+
+The compiler caches a render-time `new Date()` together with the other inputs of the computation that uses it.
+Inicio's «this week» line called `eventsThisWeek(events.data, new Date())`, so it stayed on the previous day after
+Lima midnight until the events changed. It now reads the day from `useLimaDay()` (`apps/web/src/shared/lib/lima-day.ts`),
+which re-renders at Lima midnight; `lima-day.test.tsx` pins this through a component compiled with `'use memo'`.
+Avoid `new Date()` during render in compiled components.
