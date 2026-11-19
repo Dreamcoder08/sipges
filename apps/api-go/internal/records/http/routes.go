@@ -180,6 +180,9 @@ func (h handlers) list(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, listJSON(rows))
 }
 
+// listExtra are the members the list adds to each payload.
+var listExtra = [...]string{"_id", "_updated_at"}
+
 // listJSON is the list answer: [{ ...row.payload, _id, _updated_at }, ...].
 func listJSON(rows []application.StoredRecord) []byte {
 	b := []byte{'['}
@@ -187,10 +190,7 @@ func listJSON(rows []application.StoredRecord) []byte {
 		if i > 0 {
 			b = append(b, ',')
 		}
-		out := row.Payload.Clone() // { ...row.payload, _id, _updated_at }
-		out.Set("_id", row.ID)
-		out.Set("_updated_at", isoSeconds(row.UpdatedAt))
-		b = domain.AppendJSON(b, out)
+		b = domain.AppendSpread(b, row.Payload, listExtra[:], []string{row.ID, isoSeconds(row.UpdatedAt)})
 	}
 	return append(b, ']')
 }
