@@ -1,4 +1,4 @@
-import { type KeyboardEvent, type ReactNode, useId, useRef, useState } from 'react';
+import { type KeyboardEvent, memo, type ReactNode, useId, useRef, useState } from 'react';
 import { Button } from '../../../shared/ui/Button.tsx';
 import { EmptyState } from '../../../shared/ui/EmptyState.tsx';
 import { Field } from '../../../shared/ui/Field.tsx';
@@ -34,6 +34,65 @@ const MOVES: Readonly<Record<string, (from: number, last: number) => number>> = 
   Home: () => 0,
   End: (_from, last) => last,
 };
+
+/**
+ * One row of the Todos table, memoised: React Compiler does not cache the elements a `.map`
+ * builds, so without `memo` a density change or a new selection would render every row again.
+ * It takes `selected` and `tabbable` as booleans, so a new selection re-renders only the rows it
+ * changes.
+ */
+const TodosRow = memo(function TodosRow({
+  row,
+  selected,
+  tabbable,
+  onOpen,
+}: {
+  row: RecordSummary;
+  selected: boolean;
+  tabbable: boolean;
+  onOpen: (record: OpenRecord, way: OpenWay) => void;
+}) {
+  'use memo';
+  return (
+    <tr
+      aria-selected={selected}
+      onClick={(event) => {
+        // A click anywhere on the row selects it; Escape later returns here.
+        event.currentTarget.querySelector<HTMLElement>('[data-opener]')?.focus();
+        onOpen({ module: row.module, id: row.id }, 'select');
+      }}
+    >
+      <td className={styles.id}>{row.id}</td>
+      <td className={styles.title}>
+        <button
+          type="button"
+          className={styles.open}
+          data-return={`abrir-${row.id}`}
+          data-opener={keyOf(row)}
+          tabIndex={tabbable ? 0 : -1}
+        >
+          <span className="visually-hidden">Abrir {row.id}: </span>
+          {row.title}
+        </button>
+      </td>
+      <td className={styles.colType}>
+        <TypeChip module={row.module} />
+      </td>
+      <td className={styles.colPlace}>
+        {row.territory || <span className={styles.muted}>—</span>}
+      </td>
+      <td className={styles.colDate}>
+        {row.date ? <DateText value={row.date} /> : <span className={styles.muted}>—</span>}
+      </td>
+      <td>
+        <VerificationChip letter={row.verification} />
+      </td>
+      <td>
+        <ValidationChip state={row.validation} />
+      </td>
+    </tr>
+  );
+});
 
 /**
  * Every record type in one list, filtered by search and, in one sheet, A–E and validation.
@@ -212,48 +271,13 @@ export const TodosList = ({
               onFocus={(event) => setFocused(event.target.dataset.opener ?? null)}
             >
               {visible.map((row) => (
-                <tr
+                <TodosRow
                   key={keyOf(row)}
-                  aria-selected={keyOf(row) === chosen}
-                  onClick={(event) => {
-                    // A click anywhere on the row selects it; Escape later returns here.
-                    event.currentTarget.querySelector<HTMLElement>('[data-opener]')?.focus();
-                    onOpen({ module: row.module, id: row.id }, 'select');
-                  }}
-                >
-                  <td className={styles.id}>{row.id}</td>
-                  <td className={styles.title}>
-                    <button
-                      type="button"
-                      className={styles.open}
-                      data-return={`abrir-${row.id}`}
-                      data-opener={keyOf(row)}
-                      tabIndex={keyOf(row) === stop ? 0 : -1}
-                    >
-                      <span className="visually-hidden">Abrir {row.id}: </span>
-                      {row.title}
-                    </button>
-                  </td>
-                  <td className={styles.colType}>
-                    <TypeChip module={row.module} />
-                  </td>
-                  <td className={styles.colPlace}>
-                    {row.territory || <span className={styles.muted}>—</span>}
-                  </td>
-                  <td className={styles.colDate}>
-                    {row.date ? (
-                      <DateText value={row.date} />
-                    ) : (
-                      <span className={styles.muted}>—</span>
-                    )}
-                  </td>
-                  <td>
-                    <VerificationChip letter={row.verification} />
-                  </td>
-                  <td>
-                    <ValidationChip state={row.validation} />
-                  </td>
-                </tr>
+                  row={row}
+                  selected={keyOf(row) === chosen}
+                  tabbable={keyOf(row) === stop}
+                  onOpen={onOpen}
+                />
               ))}
             </tbody>
           </table>
