@@ -268,11 +268,15 @@ niega a escribir ahí. Con la red de la casa.
   ```
 
   Tenés que ver `Descargando Go <versión> (<tamaño> MB) de https://go.dev/dl/…`,
+  `Descomprimiendo en C:\SIPGES-go.<…>.partial (no lo cortes)`,
   `Go <versión> portable listo en C:\SIPGES-go\go (SHA-256 … verificado). No se instaló nada en el
   sistema.`, `C:\SIPGES-go\go\bin`, `0`, `C:\SIPGES-go\go\bin\go.exe` y
   `go version go<versión> windows/amd64`, con la misma `<versión>` que imprimió la descarga. Si lo
-  cortás con Ctrl+C o cerrás la ventana mientras descarga o descomprime, borra lo que escribió y no
-  queda nada a medias. `GOTOOLCHAIN`, `GOPATH` y `GOCACHE` hacen que Go no baje otra
+  cortás con Ctrl+C o cerrás la ventana **mientras descarga**, borra lo que escribió
+  (`Interrumpido: se borró lo descargado; …`); si dice `Interrumpido, pero no se pudo borrar …`,
+  borrá esa carpeta con `cmd /c rmdir /s /q "<carpeta>"`. **Mientras descomprime no lo cortes**: si
+  igual se corta, puede quedar `C:\SIPGES-go.<…>.partial`; borrala igual y repetí (el comando
+  siguiente usa una carpeta nueva). `GOTOOLCHAIN`, `GOPATH` y `GOCACHE` hacen que Go no baje otra
   versión y deje lo que descarga dentro de `C:\SIPGES-go`.
 
   Antes de descomprimir, se niega con `Error: …` y `1`:
