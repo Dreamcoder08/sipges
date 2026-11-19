@@ -3,11 +3,14 @@ import { useLevelLabel } from '../lib/project-settings.tsx';
 import { DIMENSION_NAMES, type DimensionCode, LEVELS, type Level } from '../lib/text.ts';
 import styles from './Badges.module.css';
 
-export const DimensionBadge = ({ code }: { code: DimensionCode }) => (
-  <abbr className={`${styles.dimension} ${styles[code]}`} title={DIMENSION_NAMES[code]}>
-    {code}
-  </abbr>
-);
+export const DimensionBadge = ({ code }: { code: DimensionCode }) => {
+  'use memo';
+  return (
+    <abbr className={`${styles.dimension} ${styles[code]}`} title={DIMENSION_NAMES[code]}>
+      {code}
+    </abbr>
+  );
+};
 
 const LEVEL_CLASS: Readonly<Record<string, string | undefined>> = {
   Verde: styles.green,

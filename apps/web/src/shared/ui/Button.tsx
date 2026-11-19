@@ -13,12 +13,15 @@ export const Button = ({
   type = 'button',
   className,
   ...props
-}: Props) => (
-  <button
-    type={type}
-    className={[styles.button, styles[variant], size === 'sm' ? styles.sm : '', className]
-      .filter(Boolean)
-      .join(' ')}
-    {...props}
-  />
-);
+}: Props) => {
+  'use memo';
+  return (
+    <button
+      type={type}
+      className={[styles.button, styles[variant], size === 'sm' ? styles.sm : '', className]
+        .filter(Boolean)
+        .join(' ')}
+      {...props}
+    />
+  );
+};

@@ -64,6 +64,7 @@ export const InicioPage = ({
   /** The destination's tabs («Inicio | Panel | Centro gerencial»), at the start of the top bar. */
   tabs?: ReactNode;
 }) => {
+  'use memo';
   const [question, setQuestion] = useState('');
   const [choice, setChoice] = useState<ComposerMode>('preguntar');
   const fieldId = useId();

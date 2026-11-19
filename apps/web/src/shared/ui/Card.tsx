@@ -12,17 +12,20 @@ export const Card = ({
   title?: string;
   action?: ReactNode;
   children: ReactNode;
-}) => (
-  <section className={styles.card}>
-    {eyebrow || title || action ? (
-      <header className={styles.header}>
-        <div>
-          {eyebrow ? <p className={styles.eyebrow}>{eyebrow}</p> : null}
-          {title ? <h2 className={styles.title}>{title}</h2> : null}
-        </div>
-        {action}
-      </header>
-    ) : null}
-    {children}
-  </section>
-);
+}) => {
+  'use memo';
+  return (
+    <section className={styles.card}>
+      {eyebrow || title || action ? (
+        <header className={styles.header}>
+          <div>
+            {eyebrow ? <p className={styles.eyebrow}>{eyebrow}</p> : null}
+            {title ? <h2 className={styles.title}>{title}</h2> : null}
+          </div>
+          {action}
+        </header>
+      ) : null}
+      {children}
+    </section>
+  );
+};

@@ -11,6 +11,7 @@ type Props = InputHTMLAttributes<HTMLInputElement> & {
 
 /** Labelled input; the hint and any error are linked with aria-describedby. */
 export const Field = ({ label, hint, error, id, ...input }: Props) => {
+  'use memo';
   const generated = useId();
   const inputId = id ?? generated;
   const hintId = `${inputId}-hint`;

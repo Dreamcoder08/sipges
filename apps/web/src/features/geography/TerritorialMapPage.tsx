@@ -170,6 +170,7 @@ const TerritorialWorkspace = ({
   openAlerts: number;
   scope: string;
 }) => {
+  'use memo';
   const id = useId();
   const area = projectArea(useProjectSettings()?.location);
   const [filters, setFilters] = useState({

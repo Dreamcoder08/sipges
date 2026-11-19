@@ -38,6 +38,7 @@ export const IrsaPage = (context: FeatureContext) => (
   <IrsaWorkspace key={context.scope} {...context} />
 );
 const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
+  'use memo';
   const report = useQuery(irsaQuery(scope));
   const config = useQuery(configQuery(scope));
   const history = useQuery(historyQuery(scope));
@@ -312,6 +313,7 @@ const DECIMAL_FIELD = {
 } as const;
 
 const ConfigurationForm = ({ scope, config }: { scope: string; config: IrsaConfig }) => {
+  'use memo';
   // Weights show as fractions that add up (0,167 ×4 and 0,166 ×2, like the shares above); one the
   // person leaves as shown keeps its stored value, so an untouched save stores the same numbers.
   const shownWeights = Object.fromEntries(

@@ -62,6 +62,7 @@ export const MapList = ({
   selectedId: string;
   onSelect: (point: MapPoint) => void;
 }) => {
+  'use memo';
   const list = useRef<HTMLOListElement>(null);
   // Rendered rows are what it measures, so it runs again whenever they change.
   useLayoutEffect(() => wholeRows(list.current), [items]);

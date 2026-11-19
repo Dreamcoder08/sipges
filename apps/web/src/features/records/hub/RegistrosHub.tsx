@@ -214,6 +214,7 @@ const Workspace = ({
   start: 'create' | 'import' | undefined;
   onStarted: () => void;
 }) => {
+  'use memo';
   const [density, setDensity] = useDensity(
     selected,
     docked && selected === 'todos' ? 'compact' : 'cozy',

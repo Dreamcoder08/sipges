@@ -3,7 +3,8 @@ import { cp, stat } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { dirname, extname, join, resolve, sep } from 'node:path';
-import react from '@vitejs/plugin-react';
+import babel from '@rolldown/plugin-babel';
+import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 import { precompress } from './scripts/precompress.ts';
@@ -95,8 +96,16 @@ const cesiumStatic = (): Plugin => {
 };
 
 export default defineConfig({
-  // precompress writes brotli and gzip variants of the hashed assets for the servers (F26).
-  plugins: [react(), maplibreCss(), cesiumStatic(), precompress()],
+  plugins: [
+    react(),
+    // React Compiler v1 (stable, Babel), only on functions marked 'use memo': compiling every
+    // component crosses the entry bundle budget (docs/benchmarks/react-compiler-trial.md).
+    babel({ presets: [reactCompilerPreset({ compilationMode: 'annotation' })] }),
+    maplibreCss(),
+    cesiumStatic(),
+    // precompress writes brotli and gzip variants of the hashed assets for the servers (F26).
+    precompress(),
+  ],
   // Pre-bundling would skip the CSP patches above in development.
   optimizeDeps: { exclude: ['@cesium/engine'] },
   resolve: {

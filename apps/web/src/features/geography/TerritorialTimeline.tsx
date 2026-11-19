@@ -52,6 +52,7 @@ export const TerritorialTimeline = ({
   onPlaying: (playing: boolean) => void;
   onSelect: (point: MapPoint) => void;
 }) => {
+  'use memo';
   const id = useId();
   const months = series.map((s) => s.month).filter((m) => (!from || m >= from) && (!to || m <= to));
   const index = cursor ? months.indexOf(cursor) : -1;
