@@ -1,0 +1,75 @@
+name: Desktop stack benchmark
+
+# The desktop stack benchmark (go-rust-stack T72, docs/benchmarks/desktop-ts-vs-go.md) on a real
+# Windows runner: the TypeScript API on PGlite against the Go launcher with the pinned PostgreSQL 18
+# of deploy/desktop/postgresql, same synthetic data, alternating runs. Manual only: a shared runner
+# is noisy, so its numbers compare the two stacks on one machine, not against another run.
+# No secrets; synthetic data only. The result JSON and the run's logs are uploaded.
+on:
+  workflow_dispatch:
+    inputs:
+      reps:
+        description: 'Repetitions per stack and size'
+        required: false
+        default: '3'
+        type: string
+      step_seconds:
+        description: 'Seconds per concurrency step'
+        required: false
+        default: '10'
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    name: TypeScript + PGlite vs Go + PostgreSQL 18 (windows-latest)
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.27.4'
+          cache-dependency-path: apps/api-go/go.sum
+      # The pinned zip, keyed by the pin file; bundle.mjs hashes it again before unpacking.
+      - uses: actions/cache@v6
+        with:
+          path: .data/postgresql
+          key: postgresql-bundle-${{ hashFiles('deploy/desktop/postgresql/pg18.json') }}
+      - name: Install this checkout
+        run: pnpm install --frozen-lockfile
+      - name: Benchmark unit tests
+        run: node --test deploy/desktop/bench/desktop-bench.test.mjs
+      - name: Unpack the pinned PostgreSQL 18
+        run: |
+          node deploy/desktop/postgresql/bundle.mjs --out "$env:RUNNER_TEMP\pg18"
+          New-Item -ItemType Directory -Force "$env:RUNNER_TEMP\desktop-bench" | Out-Null
+      - name: Benchmark (synthetic data only)
+        env:
+          REPS: ${{ inputs.reps }}
+          STEP_SECONDS: ${{ inputs.step_seconds }}
+        run: >-
+          node deploy/desktop/bench/desktop-bench.mjs --label windows-latest
+          --reps "$env:REPS" --step-seconds "$env:STEP_SECONDS"
+          --pg-bin "$env:RUNNER_TEMP\pg18\bin" --out "$env:RUNNER_TEMP\desktop-bench\result.json"
+          2> "$env:RUNNER_TEMP\desktop-bench\summary.md"
+      - name: Show the summary
+        if: always()
+        run: Get-Content "$env:RUNNER_TEMP\desktop-bench\summary.md" -ErrorAction SilentlyContinue
+      - name: Upload the result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-bench-windows
+          path: ${{ runner.temp }}/desktop-bench
+          if-no-files-found: warn
+          retention-days: 30
