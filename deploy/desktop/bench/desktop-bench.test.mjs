@@ -1,4 +1,5 @@
 // node --test deploy/desktop/bench/desktop-bench.test.mjs
+/* global Response */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
@@ -9,12 +10,18 @@ import {
   classify,
   folderBytes,
   insertBatches,
+  keepWorkFolder,
+  killOrder,
+  memoryMetricRows,
+  memoryMetrics,
   parseOptions,
   parseProcStatus,
   parseSmapsRollup,
   renderMarkdown,
+  resolvePgBin,
   runOrder,
   summarizeSamples,
+  timedRequest,
 } from './desktop-bench-lib.mjs';
 
 test('runOrder alternates which stack goes first on every repetition', () => {
@@ -151,4 +158,106 @@ test('renderMarkdown prints one row per metric with both stacks and their ratio'
   const md = renderMarkdown(aggregate(runs), [{ key: 'coldStartMs', label: 'Cold start (ms)' }]);
   assert.match(md, /### 1×/);
   assert.match(md, /\| Cold start \(ms\) \| 4000 \| 1000 \| 0\.25 \|/);
+});
+
+test('keepWorkFolder keeps a folder the run made only when the run failed', () => {
+  assert.equal(keepWorkFolder({ ownWork: true, failed: false }), false);
+  assert.equal(keepWorkFolder({ ownWork: true, failed: true }), true);
+  // A folder the caller named is never removed.
+  assert.equal(keepWorkFolder({ ownWork: false, failed: false }), true);
+  assert.equal(keepWorkFolder({ ownWork: false, failed: true }), true);
+});
+
+test('parseOptions takes a logs folder', () => {
+  assert.equal(parseOptions([]).logs, undefined);
+  assert.equal(parseOptions(['--logs', 'out/logs']).logs, 'out/logs');
+});
+
+test('killOrder lists the tree below the root deepest first, then the root', () => {
+  const procs = [
+    { pid: 1, ppid: 0 },
+    { pid: 2, ppid: 1 },
+    { pid: 3, ppid: 2 },
+    { pid: 4, ppid: 1 },
+    { pid: 9, ppid: 0 },
+  ];
+  const order = killOrder(procs, 1);
+  assert.deepEqual(order.at(-1), 1);
+  assert.ok(order.indexOf(3) < order.indexOf(2), 'a child goes before its parent');
+  assert.deepEqual([...order].sort(), [1, 2, 3, 4]);
+  assert.deepEqual(killOrder(procs, 42), [42]);
+});
+
+test('resolvePgBin is only needed when the Go stack runs', () => {
+  const never = () => {
+    throw new Error('pg_config was called');
+  };
+  assert.equal(resolvePgBin({ stacks: ['ts'], pgBin: undefined, env: {}, find: never }), null);
+  assert.equal(resolvePgBin({ stacks: ['go'], pgBin: '/opt/pg/bin', env: {}, find: never }), '/opt/pg/bin');
+  assert.equal(
+    resolvePgBin({ stacks: ['go'], pgBin: undefined, env: { SIPGES_PG_BIN: '/env/bin' }, find: never }),
+    '/env/bin',
+  );
+  assert.equal(resolvePgBin({ stacks: ['ts', 'go'], pgBin: undefined, env: {}, find: () => '/found' }), '/found');
+});
+
+test('timedRequest gives up after its timeout and reports it', async () => {
+  const hang = (url, init) =>
+    new Promise((_, reject) => init.signal.addEventListener('abort', () => reject(init.signal.reason)));
+  const slow = await timedRequest(hang, 'http://x/api', { method: 'POST' }, 30);
+  assert.equal(slow.ok, false);
+  assert.equal(slow.status, 'timeout');
+  const fine = await timedRequest(
+    async () => new Response('{}', { status: 201 }),
+    'http://x/api',
+    { method: 'POST' },
+    1_000,
+  );
+  assert.equal(fine.ok, true);
+  assert.equal(fine.status, 201);
+  assert.ok(fine.ms >= 0);
+  const refused = await timedRequest(
+    async () => {
+      throw Object.assign(new TypeError('fetch failed'), { cause: { code: 'ECONNREFUSED' } });
+    },
+    'http://x/api',
+    {},
+    1_000,
+  );
+  assert.deepEqual([refused.ok, refused.status], [false, 'neterr:ECONNREFUSED']);
+});
+
+test('memory metrics name one measure per row and differ by platform', () => {
+  const roles = {
+    api: [{ hwmKb: 2048 }],
+    database: [{ hwmKb: 1024 }, { hwmKb: 1024 }],
+    launcher: [{ hwmKb: 1024 }],
+  };
+  const peaks = { api: 3072, database: 4096, launcher: 1024, total: 8192 };
+  assert.deepEqual(memoryMetrics({ windows: false, stack: 'go', roles, peaks }), {
+    apiPeakRssMb: 2,
+    apiPssPeakMb: 3,
+    databasePssPeakMb: 4,
+    totalPssPeakMb: 8,
+  });
+  assert.deepEqual(memoryMetrics({ windows: true, stack: 'go', roles, peaks: null }), {
+    apiPeakWorkingSetMb: 2,
+    databasePeakWorkingSetMb: 2,
+    totalPeakWorkingSetMb: 5,
+  });
+  assert.equal(memoryMetrics({ windows: false, stack: 'ts', roles, peaks }).databasePssPeakMb, null);
+  assert.equal(memoryMetrics({ windows: true, stack: 'ts', roles, peaks: null }).databasePeakWorkingSetMb, null);
+
+  for (const windows of [false, true]) {
+    const rows = memoryMetricRows(windows);
+    const keys = Object.keys(memoryMetrics({ windows, stack: 'go', roles, peaks }));
+    assert.deepEqual(rows.map((r) => r.key), keys);
+    for (const { label } of rows) {
+      const measures = ['RSS', 'Pss', 'working set'].filter((m) => label.includes(m));
+      assert.equal(measures.length, 1, `one measure in "${label}"`);
+    }
+    // Each platform reports only its own measures.
+    const foreign = windows ? ['RSS', 'Pss'] : ['working set'];
+    assert.ok(rows.every((r) => foreign.every((m) => !r.label.includes(m))));
+  }
 });

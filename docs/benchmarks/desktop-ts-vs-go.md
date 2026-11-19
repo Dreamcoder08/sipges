@@ -39,10 +39,11 @@ PostgreSQL's preallocated WAL. No request failed in any run.
      request of the step; requests/s is requests ÷ 10 s.
   3. **Writes**: 40 sequential `POST /api/eventos` creates, each followed by a `PUT /api/eventos/<id>`
      update, as the administrator. Every write was answered 2xx.
-  4. **Memory**: the API process's peak RSS (`VmHWM`). PostgreSQL and the total are the peak of the
-     proportional set size (Pss) summed per role, sampled every 500 ms. Pss counts a page shared between
-     PostgreSQL processes once. For TypeScript, PGlite lives inside the API process, so it has no separate
-     row.
+  4. **Memory**, one measure per row. **RSS**: the API process's peak resident set (`VmHWM`).
+     **Pss**: the proportional set size, sampled every 500 ms and summed per role (API, PostgreSQL, all
+     processes); a page shared between processes counts once. Compare RSS with RSS and Pss with Pss. For
+     TypeScript, PGlite lives inside the API process, so it has no PostgreSQL row. On Windows the rows are
+     peak working sets instead (see Limits).
   5. **Disk**: apparent size of every file in the data folder (`pglite` or `pg18`), after seeding and after
      the run.
 - Three repetitions per stack and size. The stack that runs first alternates on every repetition. A cell
@@ -77,8 +78,9 @@ Cells hold the median of 3 runs. A cell that lists three values in parentheses h
 | Create record p50 / p95 (ms)            | 27.1 / 64.8                | 6.4 / 16.3              | 0.24–0.25 |
 | Update record p50 / p95 (ms)            | 29.2 / 48.7                | 6.8 / 14.3              | 0.23–0.29 |
 | API process peak RSS (MB)               | 453                        | 85                      | 0.19    |
-| PostgreSQL processes peak, Pss (MB)     | – (inside the API)         | 68                      | –       |
-| All processes peak, Pss (MB)            | 439                        | 140                     | 0.32    |
+| API process peak Pss (MB)               | 439                        | 77                      | 0.18    |
+| PostgreSQL processes peak Pss, summed (MB) | – (inside the API)      | 68                      | –       |
+| All processes peak Pss, summed (MB)     | 439                        | 140                     | 0.32    |
 | Data folder after seeding (MB)          | 41.3                       | 66.0, of which pg_wal 32 | 1.60   |
 | Data folder after the run (MB)          | 41.7                       | 66.3                    | 1.59    |
 
@@ -97,8 +99,9 @@ Cells hold the median of 3 runs. A cell that lists three values in parentheses h
 | Create record p50 / p95 (ms)            | 28.8 / 97.3 (143.9 / 36.8 / 97.3) | 4.7 / 7.5 (6.8 / 7.5 / 21.5) | 0.08–0.16 |
 | Update record p50 / p95 (ms)            | 27.5 / 55.9 (74.1 / 28.7 / 55.9) | 4.8 / 7.5        | 0.13–0.17 |
 | API process peak RSS (MB)               | 477                        | 190                     | 0.40    |
-| PostgreSQL processes peak, Pss (MB)     | – (inside the API)         | 87                      | –       |
-| All processes peak, Pss (MB)            | 467                        | 264                     | 0.57    |
+| API process peak Pss (MB)               | 467                        | 185                     | 0.40    |
+| PostgreSQL processes peak Pss, summed (MB) | – (inside the API)      | 87                      | –       |
+| All processes peak Pss, summed (MB)     | 467                        | 264                     | 0.57    |
 | Data folder after seeding (MB)          | 67.4                       | 76.1, of which pg_wal 32 | 1.13   |
 | Data folder after the run (MB)          | 67.7                       | 76.8                    | 1.13    |
 
@@ -112,8 +115,9 @@ Cells hold the median of 3 runs. A cell that lists three values in parentheses h
 - **The first screen alone** (1 screen) is where a single user feels it: requests take 3–4 ms on Go and
   15–18 ms on TypeScript (p50).
 - **Writes** run 4–6× faster at p50. The p95 gap widens at 10× (7.5 vs 97.3 ms).
-- **Memory.** The TypeScript process carries Node, the API and the PGlite WebAssembly heap: about 450–480 MB
-  at both sizes. Go + PostgreSQL together peak at 140 MB (1×) and 264 MB (10×). Go's peak grows with data
+- **Memory.** The TypeScript process carries Node, the API and the PGlite WebAssembly heap. Its peak RSS
+  is 453–477 MB, against 85–190 MB for the Go API alone. In Pss, the whole stack peaks at 439 MB (1×) and
+  467 MB (10×) on TypeScript, and at 140 MB and 264 MB on Go + PostgreSQL. Go's peak grows with data
   because a 10× response is held in memory while it is written.
 - **Disk.** Without its 32 MB of preallocated WAL segments, PostgreSQL's data is smaller than PGlite's at 1×
   (34 vs 41 MB) and at 10× (44 vs 67 MB). The WAL size is bounded by `max_wal_size`, not by data volume.
@@ -137,9 +141,10 @@ Cells hold the median of 3 runs. A cell that lists three values in parentheses h
   The ratios between the stacks are more likely to carry over than the absolute numbers, but even the
   ratios are not proven for Windows. The manual
   [`desktop-bench.yml`](../../.github/workflows/desktop-bench.yml) workflow runs the same benchmark on
-  `windows-latest` with the pinned PostgreSQL 18 bundle and uploads the JSON. A shared runner is noisy,
-  and on Windows memory is one snapshot of peak working sets taken at the end of the run (a shared page
-  counts once per process, so the PostgreSQL sum overstates). Only a run on the laptop itself measures
+  `windows-latest` with the pinned PostgreSQL 18 bundle and uploads the JSON and the server logs. A
+  shared runner is noisy. On Windows the memory rows are peak working sets, one snapshot taken at the end
+  of the run, never Pss or RSS: a shared page counts once per process that maps it, so the PostgreSQL sum
+  overstates. Only a run on the laptop itself measures
   the laptop.
 - One machine and three repetitions: the medians are indicative, not statistically tight. The load client
   shares the CPU with the server.
