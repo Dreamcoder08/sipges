@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -56,13 +57,9 @@ type Terminal struct {
 func SystemTerminal() *Terminal {
 	return &Terminal{
 		In: os.Stdin, Out: os.Stderr,
-		IsTerminal: func() bool { return isTerminal(os.Stdin) },
-		HideTyping: func() (func(), error) { return hideTyping(os.Stdin) },
-		Interrupted: func() (<-chan os.Signal, func()) {
-			c := make(chan os.Signal, 1)
-			signal.Notify(c, os.Interrupt)
-			return c, func() { signal.Stop(c) }
-		},
+		IsTerminal:  func() bool { return isTerminal(os.Stdin) },
+		HideTyping:  func() (func(), error) { return hideTyping(os.Stdin) },
+		Interrupted: notifyPromptSignals,
 	}
 }
 
@@ -75,6 +72,29 @@ func (t *Terminal) line() (string, error) {
 		return "", err
 	}
 	return strings.TrimRight(text, "\r\n"), nil
+}
+
+// promptSignals end a hidden prompt; the terminal is put back before the run stops.
+var promptSignals = []os.Signal{os.Interrupt, syscall.SIGTERM, syscall.SIGHUP}
+
+// notifyPromptSignals delivers promptSignals until stop.
+func notifyPromptSignals() (<-chan os.Signal, func()) {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, promptSignals...)
+	return c, func() { signal.Stop(c) }
+}
+
+// signalName names a cancelling signal as the person pressed or a supervisor sent it.
+func signalName(sig os.Signal) string {
+	switch sig {
+	case os.Interrupt:
+		return "Ctrl+C"
+	case syscall.SIGTERM:
+		return "SIGTERM"
+	case syscall.SIGHUP:
+		return "SIGHUP"
+	}
+	return sig.String()
 }
 
 // ask is client.mjs's ask: a visible question; no terminal answers empty.
@@ -93,7 +113,13 @@ func (t *Terminal) readHidden(question string) (string, error) {
 	if t.IsTerminal == nil || !t.IsTerminal() || t.HideTyping == nil {
 		return "", nil
 	}
-	_, _ = fmt.Fprint(t.Out, question)
+	// The signals first: one that arrives once echo is off must find the terminal restorable.
+	var interrupted <-chan os.Signal
+	if t.Interrupted != nil {
+		c, stop := t.Interrupted()
+		defer stop()
+		interrupted = c
+	}
 	restore, err := t.HideTyping()
 	if err != nil {
 		return "", err
@@ -102,12 +128,7 @@ func (t *Terminal) readHidden(question string) (string, error) {
 		restore()
 		_, _ = fmt.Fprintln(t.Out)
 	}()
-	var interrupted <-chan os.Signal
-	if t.Interrupted != nil {
-		c, stop := t.Interrupted()
-		defer stop()
-		interrupted = c
-	}
+	_, _ = fmt.Fprint(t.Out, question)
 	type result struct {
 		text string
 		err  error
@@ -120,8 +141,8 @@ func (t *Terminal) readHidden(question string) (string, error) {
 	select {
 	case r := <-done:
 		return Trim(r.text), r.err
-	case <-interrupted:
-		return "", errors.New("Cancelado (Ctrl+C)") //nolint:staticcheck // ST1005: client.mjs's message
+	case sig := <-interrupted:
+		return "", fmt.Errorf("Cancelado (%s)", signalName(sig)) //nolint:staticcheck // ST1005: client.mjs's message, the signal named
 	}
 }
 

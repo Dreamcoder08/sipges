@@ -39,6 +39,7 @@ on:
       - 'deploy/desktop/**'
       - 'apps/api-go/cmd/sipges-desktop/**'
       - 'apps/api-go/internal/platform/desktoprelease/**'
+      - 'apps/api-go/internal/platform/desktopsnapshot/**'
       - 'apps/api-go/internal/platform/desktopupdate/**'
       - 'apps/api-go/internal/platform/localpg/**'
       - 'apps/api-go/internal/platform/pglitemove/**'
@@ -53,6 +54,7 @@ on:
       - 'deploy/desktop/**'
       - 'apps/api-go/cmd/sipges-desktop/**'
       - 'apps/api-go/internal/platform/desktoprelease/**'
+      - 'apps/api-go/internal/platform/desktopsnapshot/**'
       - 'apps/api-go/internal/platform/desktopupdate/**'
       - 'apps/api-go/internal/platform/localpg/**'
       - 'apps/api-go/internal/platform/pglitemove/**'
@@ -291,7 +293,7 @@ jobs:
       - name: Install this checkout
         run: pnpm install --frozen-lockfile
       - name: Go mode unit tests on Windows
-        run: node --test deploy/desktop/windows/go-mode.test.mjs deploy/desktop/postgresql/bundle.test.mjs
+        run: node --test deploy/desktop/windows/go-mode.test.mjs deploy/desktop/postgresql/bundle.test.mjs deploy/desktop/windows/go-drill.test.mjs deploy/desktop/migration/migration.test.mjs
       - name: Go mode rehearsal (synthetic data only)
         run: node deploy/desktop/windows/go-drill.mjs --work "$env:RUNNER_TEMP\g" --logs "$env:RUNNER_TEMP\go-drill-logs"
       # Logs and command outputs only: never a state folder, a snapshot or the key.

@@ -8,12 +8,6 @@ import (
 	"strings"
 )
 
-// isTerminal reports a character device: a person typing, not a pipe or a file.
-func isTerminal(f *os.File) bool {
-	info, err := f.Stat()
-	return err == nil && info.Mode()&os.ModeCharDevice != 0
-}
-
 // stty runs on the terminal itself; the standard library cannot turn echo off.
 func stty(f *os.File, args ...string) (string, error) {
 	cmd := exec.Command("stty", args...) //nolint:noctx,gosec // restoring the terminal must outlive the run; our own arguments

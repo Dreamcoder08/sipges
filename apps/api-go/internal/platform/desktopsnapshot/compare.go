@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -32,20 +33,62 @@ type hashMap struct {
 func (m hashMap) has(k string) bool { _, ok := m.vals[k]; return ok }
 func (m hashMap) count() int        { return len(m.keys) }
 
+// asHashMap is Object.keys(v) with its values: null or undefined is a TypeError in JavaScript
+// (here a malformed --before), and a primitive has no keys of its own (a string its indices).
 func asHashMap(v any) (hashMap, error) {
-	o, ok := v.(*Object)
-	if !ok {
+	switch x := v.(type) {
+	case nil, undefinedValue:
 		return hashMap{}, errMalformed
+	case *Object:
+		return hashMap{keys: x.Keys(), vals: x.vals}, nil
 	}
-	return hashMap{keys: o.Keys(), vals: o.vals}, nil
+	m := hashMap{vals: map[string]any{}}
+	for _, e := range entries(v) {
+		k := e[0].(string)
+		m.keys = append(m.keys, k)
+		m.vals[k] = e[1]
+	}
+	return m, nil
 }
 
-type recordView struct {
-	updated any
-	fields  hashMap
+// defaulted is a parameter with the default {}: undefined reads as an empty map.
+func defaulted(v any) (hashMap, error) {
+	if v == Undefined {
+		return hashMap{vals: map[string]any{}}, nil
+	}
+	return asHashMap(v)
 }
 
-type uploadView struct{ content, meta any }
+// prop is value.key: undefined for a primitive, a TypeError (malformed) for null or undefined.
+func prop(v any, key string) (any, error) {
+	switch x := v.(type) {
+	case nil, undefinedValue:
+		return nil, errMalformed
+	case *Object:
+		return x.Get(key), nil
+	}
+	return Undefined, nil
+}
+
+// recordView is a record as compare.mjs reads it: its fields are read only when the other side
+// holds the record too, so a malformed one only stops the comparison then.
+type recordView struct{ raw any }
+
+func (r recordView) parts() (updated any, fields hashMap, err error) {
+	if updated, err = prop(r.raw, "updated"); err != nil {
+		return nil, hashMap{}, err
+	}
+	f, err := prop(r.raw, "fields")
+	if err != nil {
+		return nil, hashMap{}, err
+	}
+	fields, err = defaulted(f)
+	return updated, fields, err
+}
+
+// uploadView is an upload as compare.mjs reads it, its content and metadata read only when the
+// other side holds it too.
+type uploadView struct{ raw any }
 
 type projectView struct {
 	key              string
@@ -109,40 +152,28 @@ func projectOf(p *Object) (projectView, error) {
 		return pv, errMalformed
 	}
 	for _, slug := range modules.Keys() {
-		rows, ok := modules.vals[slug].(*Object)
-		if !ok {
-			return pv, errMalformed
+		rows, err := asHashMap(modules.vals[slug])
+		if err != nil {
+			return pv, err
 		}
 		records := map[string]recordView{}
-		for _, k := range rows.Keys() {
-			r, ok := rows.vals[k].(*Object)
-			if !ok {
-				return pv, errMalformed
-			}
-			fields, err := asHashMap(r.Get("fields"))
-			if err != nil {
-				return pv, err
-			}
-			records[k] = recordView{updated: r.Get("updated"), fields: fields}
+		for _, k := range rows.keys {
+			records[k] = recordView{raw: rows.vals[k]}
 		}
 		pv.modules[slug] = records
-		pv.moduleKeys[slug] = rows.Keys()
+		pv.moduleKeys[slug] = rows.keys
 	}
 	var err error
-	if pv.links, err = asHashMap(p.Get("links")); err != nil {
+	if pv.links, err = defaulted(p.Get("links")); err != nil {
 		return pv, err
 	}
-	uploads, ok := p.Get("uploads").(*Object)
-	if !ok {
-		return pv, errMalformed
+	uploads, err := asHashMap(p.Get("uploads"))
+	if err != nil {
+		return pv, err
 	}
-	pv.uploadKeys = uploads.Keys()
+	pv.uploadKeys = uploads.keys
 	for _, k := range pv.uploadKeys {
-		u, ok := uploads.vals[k].(*Object)
-		if !ok {
-			return pv, errMalformed
-		}
-		pv.uploads[k] = uploadView{content: u.Get("content"), meta: u.Get("meta")}
+		pv.uploads[k] = uploadView{raw: uploads.vals[k]}
 	}
 	pv.uploadsComplete = Truthy(p.Get("uploadsComplete"))
 	unchecked, ok := p.Get("recordsUnchecked").([]any)
@@ -211,19 +242,26 @@ func mapProblems(before, after hashMap, noun, changed string) []string {
 	return problems
 }
 
-func recordProblems(before, after map[string]recordView, beforeKeys, afterKeys []string) []string {
+func recordProblems(before, after map[string]recordView, beforeKeys, afterKeys []string) ([]string, error) {
 	var problems []string
 	for _, key := range sortedKeys(beforeKeys) {
-		was := before[key]
 		now, ok := after[key]
-		if !ok {
+		if !ok || !Truthy(now.raw) {
 			problems = append(problems, fmt.Sprintf("record [%s] missing", Short(key)))
 			continue
 		}
-		for _, p := range mapProblems(was.fields, now.fields, "field", "differs") {
+		wasUpdated, wasFields, err := before[key].parts()
+		if err != nil {
+			return nil, err
+		}
+		nowUpdated, nowFields, err := now.parts()
+		if err != nil {
+			return nil, err
+		}
+		for _, p := range mapProblems(wasFields, nowFields, "field", "differs") {
 			problems = append(problems, fmt.Sprintf("record [%s] %s", Short(key), p))
 		}
-		if !StrictEqual(was.updated, now.updated) {
+		if !StrictEqual(wasUpdated, nowUpdated) {
 			problems = append(problems, fmt.Sprintf("record [%s] update time differs", Short(key)))
 		}
 	}
@@ -232,7 +270,7 @@ func recordProblems(before, after map[string]recordView, beforeKeys, afterKeys [
 			problems = append(problems, fmt.Sprintf("record [%s] new", Short(key)))
 		}
 	}
-	return problems
+	return problems, nil
 }
 
 // report is one line, or a line and the problems under it.
@@ -386,7 +424,9 @@ func CompareSnapshots(beforeObject, afterObject *Object, live *Live) (Result, er
 			r.Differences++
 			continue
 		}
-		compareProject(&r, was, now, live)
+		if err := compareProject(&r, was, now, live); err != nil {
+			return Result{}, err
+		}
 	}
 	for _, p := range after.projects {
 		found := false
@@ -419,7 +459,7 @@ func CompareSnapshots(beforeObject, afterObject *Object, live *Live) (Result, er
 	return r, nil
 }
 
-func compareProject(r *Result, was, now projectView, live *Live) {
+func compareProject(r *Result, was, now projectView, live *Live) error {
 	out := &r.Lines
 	seen := map[string]bool{}
 	var slugs []string
@@ -437,7 +477,10 @@ func compareProject(r *Result, was, now projectView, live *Live) {
 		if a == 0 && b == 0 {
 			continue
 		}
-		problems := recordProblems(was.modules[slug], now.modules[slug], was.moduleKeys[slug], now.moduleKeys[slug])
+		problems, err := recordProblems(was.modules[slug], now.modules[slug], was.moduleKeys[slug], now.moduleKeys[slug])
+		if err != nil {
+			return err
+		}
 		r.Differences += len(problems)
 		report(out, fmt.Sprintf("%s: %d -> %d", slug, a, b), problems, "every field identical")
 	}
@@ -458,14 +501,32 @@ func compareProject(r *Result, was, now projectView, live *Live) {
 	report(out, fmt.Sprintf("links: %d -> %d", was.links.count(), now.links.count()), links, "identical")
 	var uploads []string
 	for _, key := range sortedKeys(was.uploadKeys) {
-		x := was.uploads[key]
 		y, ok := now.uploads[key]
-		switch {
-		case !ok:
+		if !ok || !Truthy(y.raw) {
 			uploads = append(uploads, fmt.Sprintf("upload [%s] missing", Short(key)))
-		case !StrictEqual(x.content, y.content):
+			continue
+		}
+		xContent, err := prop(was.uploads[key].raw, "content")
+		if err != nil {
+			return err
+		}
+		yContent, err := prop(y.raw, "content")
+		if err != nil {
+			return err
+		}
+		if !StrictEqual(xContent, yContent) {
 			uploads = append(uploads, fmt.Sprintf("upload [%s] content differs", Short(key)))
-		case !StrictEqual(x.meta, y.meta):
+			continue
+		}
+		xMeta, err := prop(was.uploads[key].raw, "meta")
+		if err != nil {
+			return err
+		}
+		yMeta, err := prop(y.raw, "meta")
+		if err != nil {
+			return err
+		}
+		if !StrictEqual(xMeta, yMeta) {
 			uploads = append(uploads, fmt.Sprintf("upload [%s] metadata differs", Short(key)))
 		}
 	}
@@ -480,14 +541,41 @@ func compareProject(r *Result, was, now projectView, live *Live) {
 	}
 	r.Differences += len(uploads)
 	// Keyed content hashes only: a known file's plain SHA-256 is never printed.
-	contents := make([]string, 0, len(was.uploadKeys))
-	for _, key := range was.uploadKeys {
-		contents = append(contents, ToString(was.uploads[key].content))
+	// Array.prototype.sort leaves undefined last; join writes undefined and null as "".
+	type sortedContent struct {
+		key  string // what sort compares: String(value)
+		text string // what join writes
 	}
-	SortStrings(contents)
-	content := Keyed("00")(strings.Join(contents, "\n"))
+	var contents []sortedContent
+	var missing []string
+	var single any
+	for _, key := range was.uploadKeys {
+		c, err := prop(was.uploads[key].raw, "content")
+		if err != nil {
+			return err
+		}
+		single = c
+		switch c.(type) {
+		case undefinedValue:
+			missing = append(missing, "")
+		case nil:
+			contents = append(contents, sortedContent{"null", ""})
+		default:
+			contents = append(contents, sortedContent{ToString(c), ToString(c)})
+		}
+	}
+	sort.SliceStable(contents, func(i, j int) bool { return Less(contents[i].key, contents[j].key) })
+	joined := make([]string, 0, len(contents)+len(missing))
+	for _, c := range contents {
+		joined = append(joined, c.text)
+	}
+	content := Keyed("00")(strings.Join(append(joined, missing...), "\n"))
 	if len(was.uploadKeys) == 1 {
-		content = ToString(was.uploads[was.uploadKeys[0]].content)
+		text, ok := single.(string)
+		if !ok && was.uploadsComplete && now.uploadsComplete {
+			return errMalformed // content.slice is not a function
+		}
+		content = text
 	}
 	if was.uploadsComplete && now.uploadsComplete {
 		okText := "none"
@@ -509,7 +597,7 @@ func compareProject(r *Result, was, now projectView, live *Live) {
 	if !was.auditComplete || !now.auditComplete || !StrictEqual(was.auditSource, now.auditSource) {
 		r.Incomplete++
 		*out = append(*out, fmt.Sprintf("  audit: not fully checked (%d -> %d entries; more than one page and the project export is not readable)", was.auditEntries.count(), now.auditEntries.count()))
-		return
+		return nil
 	}
 	var trail []TrailEntry
 	if lp := live.Projects[now.key]; lp != nil {
@@ -518,6 +606,7 @@ func compareProject(r *Result, was, now projectView, live *Live) {
 	problems, added := auditLine(out, was.auditEntries, now.auditEntries, trail)
 	r.Differences += problems
 	r.Added += added
+	return nil
 }
 
 // sliceUnits is String.prototype.slice(0, n) on UTF-16 units (a hash is ASCII).

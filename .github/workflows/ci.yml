@@ -71,6 +71,16 @@ jobs:
       # `pnpm check` minus @sipges/api, which runs sharded in the api job below.
       - if: needs.changes.outputs.code == 'true'
         run: pnpm -r --workspace-concurrency=1 --filter '!@sipges/api' run test && pnpm test:tooling
+      # The data move's snapshot and comparison (deploy/desktop/migration) and the go-mode drill's
+      # helpers; migration.test.mjs builds sipges-desktop to check it against the Node scripts.
+      - if: needs.changes.outputs.code == 'true'
+        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version-file: apps/api-go/go.mod
+          cache-dependency-path: apps/api-go/go.sum
+      - if: needs.changes.outputs.code == 'true'
+        name: Desktop snapshot and comparison, Node and Go
+        run: node --test deploy/desktop/migration/migration.test.mjs deploy/desktop/windows/go-drill.test.mjs
       - if: needs.changes.outputs.code == 'true'
         run: pnpm --filter @sipges/web build
       # Bundle size budget (closure-roadmap T32, docs/testing/budgets.md): fails when the build grows past it.
