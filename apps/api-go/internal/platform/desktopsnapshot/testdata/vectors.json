@@ -1,0 +1,324 @@
+{
+  "salt": "00ff10a5",
+  "vectors": [
+    {
+      "text": "null",
+      "hash": "4dca4f645491635009b7db4ab857d01587e6676f8e9dfe3c16f5780c4a8c34d5",
+      "string": "null",
+      "number": "0",
+      "stringify": "null",
+      "indented": "null",
+      "keys": null,
+      "content": null,
+      "attachments": null
+    },
+    {
+      "text": "true",
+      "hash": "2fc94382692935f4870d102f0c743a68e0dfda8899b8499a7167bfcc7772f7a7",
+      "string": "true",
+      "number": "1",
+      "stringify": "true",
+      "indented": "true",
+      "keys": null,
+      "content": null,
+      "attachments": null
+    },
+    {
+      "text": "0",
+      "hash": "72d1f15c962cc147bf08dfbdf6dd269d51324c77485191e7732d97f7011b1414",
+      "string": "0",
+      "number": "0",
+      "stringify": "0",
+      "indented": "0",
+      "keys": null,
+      "content": null,
+      "attachments": null
+    },
+    {
+      "text": "-0",
+      "hash": "72d1f15c962cc147bf08dfbdf6dd269d51324c77485191e7732d97f7011b1414",
+      "string": "0",
+      "number": "0",
+      "stringify": "0",
+      "indented": "0",
+      "keys": null,
+      "content": null,
+      "attachments": null
+    },
+    {
+      "text": "1.0",
+      "hash": "48839b1cea25c45dcf2c44aa0b6b88bd298c6585bc2a1f800b81f159798f72a8",
+      "string": "1",
+      "number": "1",
+      "stringify": "1",
+      "indented": "1",
+      "keys": null,
+      "content": null,
+      "attachments": null
+    },
+    {
+      "text": "1e21",
+      "hash": "b1b367aa7e7c1ec06baa3795f84e14443c03ce78c04b93d4698f5e2cdaa60cb0",
+      "string": "1e+21",
+      "number": "1e+21",
+      "stringify": "1e+21",
+      "indented": "1e+21",
+      "keys": null,
+      "content": null,
+      "attachments": null
+    },
+    {
+      "text": "1e-7",
+      "hash": "206054824632d9755e21b442abce7b4d9a1db82ef5bb7eabf4717f284643cb25",
+      "string": "1e-7",
+      "number": "1e-7",
+      "stringify": "1e-7",
+      "indented": "1e-7",
+      "keys": null,
+      "content": null,
+      "attachments": null
+    },
+    {
+      "text": "123e-20",
+      "hash": "0616019b7ea0923c2aa3dff72f0710244b45190e6cf3f40788917f344d01517d",
+      "string": "1.23e-18",
+      "number": "1.23e-18",
+      "stringify": "1.23e-18",
+      "indented": "1.23e-18",
+      "keys": null,
+      "content": null,
+      "attachments": null
+    },
+    {
+      "text": "0.000001",
+      "hash": "30c1c8ef122481fc6be70a140e2aab01fcf78c752197f9ffefae8916c0cbf8f1",
+      "string": "0.000001",
+      "number": "0.000001",
+      "stringify": "0.000001",
+      "indented": "0.000001",
+      "keys": null,
+      "content": null,
+      "attachments": null
+    },
+    {
+      "text": "1.5e300",
+      "hash": "b7496f60681e1d9be546e36102e3484c8b3934e42a50e7f096a03bf7dd6910dc",
+      "string": "1.5e+300",
+      "number": "1.5e+300",
+      "stringify": "1.5e+300",
+      "indented": "1.5e+300",
+      "keys": null,
+      "content": null,
+      "attachments": null
+    },
+    {
+      "text": "1e400",
+      "hash": "4dca4f645491635009b7db4ab857d01587e6676f8e9dfe3c16f5780c4a8c34d5",
+      "string": "Infinity",
+      "number": "Infinity",
+      "stringify": "null",
+      "indented": "null",
+      "keys": null,
+      "content": null,
+      "attachments": null
+    },
+    {
+      "text": "-1e400",
+      "hash": "4dca4f645491635009b7db4ab857d01587e6676f8e9dfe3c16f5780c4a8c34d5",
+      "string": "-Infinity",
+      "number": "-Infinity",
+      "stringify": "null",
+      "indented": "null",
+      "keys": null,
+      "content": null,
+      "attachments": null
+    },
+    {
+      "text": "12345678901234567890",
+      "hash": "2ed1fb24515829115b898b85db5307811089f7fd41cf526dcffa7a64cbadcb8f",
+      "string": "12345678901234567000",
+      "number": "12345678901234567000",
+      "stringify": "12345678901234567000",
+      "indented": "12345678901234567000",
+      "keys": null,
+      "content": null,
+      "attachments": null
+    },
+    {
+      "text": "9007199254740993",
+      "hash": "b11fc53f1145ea036db04e1045878abe38eed85669e880b63965f5527ea27674",
+      "string": "9007199254740992",
+      "number": "9007199254740992",
+      "stringify": "9007199254740992",
+      "indented": "9007199254740992",
+      "keys": null,
+      "content": null,
+      "attachments": null
+    },
+    {
+      "text": "0.1",
+      "hash": "aa7bc4e366ff4bdfc0b7e3ef0e950de11375516005c62258c1ed945fd5b53115",
+      "string": "0.1",
+      "number": "0.1",
+      "stringify": "0.1",
+      "indented": "0.1",
+      "keys": null,
+      "content": null,
+      "attachments": null
+    },
+    {
+      "text": "5e-324",
+      "hash": "7a98a379c03a0f7820bd5d399a2572cd93bbf4d7a1b2ec87624056a83774b709",
+      "string": "5e-324",
+      "number": "5e-324",
+      "stringify": "5e-324",
+      "indented": "5e-324",
+      "keys": null,
+      "content": null,
+      "attachments": null
+    },
+    {
+      "text": "\"texto\"",
+      "hash": "3591e361d0849f17136858144e87e4276c80319266d9b1215020e428327cb40f",
+      "string": "texto",
+      "number": "NaN",
+      "stringify": "\"texto\"",
+      "indented": "\"texto\"",
+      "keys": null,
+      "content": null,
+      "attachments": null
+    },
+    {
+      "text": "\"\\u00e9 \\ud83d\\ude00 \\ud800 x \\udc00\"",
+      "hash": "16106b070b901834876691175be0d8ec116b7c95677cc55c9d94d2bb413ddbd4",
+      "string": "é 😀 \ud800 x \udc00",
+      "number": "NaN",
+      "stringify": "\"é 😀 \\ud800 x \\udc00\"",
+      "indented": "\"é 😀 \\ud800 x \\udc00\"",
+      "keys": null,
+      "content": null,
+      "attachments": null
+    },
+    {
+      "text": "\"<script>&\\u2028\\u2029\\u007f\\u0001\\b\\f\\n\\r\\t\\\"\\\\/\"",
+      "hash": "7cf7eb332c08e52ef93c72575004e33117e1eff33cd6fb9e43972fba4d9baa27",
+      "string": "<script>&  \u0001\b\f\n\r\t\"\\/",
+      "number": "NaN",
+      "stringify": "\"<script>&  \\u0001\\b\\f\\n\\r\\t\\\"\\\\/\"",
+      "indented": "\"<script>&  \\u0001\\b\\f\\n\\r\\t\\\"\\\\/\"",
+      "keys": null,
+      "content": null,
+      "attachments": null
+    },
+    {
+      "text": "\"ü€😀\"",
+      "hash": "67ad8cdfdaf982218aff3ee45b66c83d9fef18f1066b0ab1e173559100939148",
+      "string": "ü€😀",
+      "number": "NaN",
+      "stringify": "\"ü€😀\"",
+      "indented": "\"ü€😀\"",
+      "keys": null,
+      "content": null,
+      "attachments": null
+    },
+    {
+      "text": "[]",
+      "hash": "45dc39a2f63c2ce2cb13a69cc877c61b925984c899cb1f866d6b2893ed0eec90",
+      "string": "",
+      "number": "0",
+      "stringify": "[]",
+      "indented": "[]",
+      "keys": null,
+      "content": null,
+      "attachments": null
+    },
+    {
+      "text": "{}",
+      "hash": "a86868946ba236acf18737c0be999c18e42cf6f5608977a01976e6c349b3d4ac",
+      "string": "[object Object]",
+      "number": "NaN",
+      "stringify": "{}",
+      "indented": "{}",
+      "keys": [],
+      "content": "45dc39a2f63c2ce2cb13a69cc877c61b925984c899cb1f866d6b2893ed0eec90",
+      "attachments": "a86868946ba236acf18737c0be999c18e42cf6f5608977a01976e6c349b3d4ac"
+    },
+    {
+      "text": "[1,\"1\",null,true,[],{}]",
+      "hash": "e78d03a0ede35315bcb7fb1f2e2b868f84be487d964a8e0456509fa4cc012f84",
+      "string": "1,1,,true,,[object Object]",
+      "number": "NaN",
+      "stringify": "[1,\"1\",null,true,[],{}]",
+      "indented": "[\n  1,\n  \"1\",\n  null,\n  true,\n  [],\n  {}\n]",
+      "keys": null,
+      "content": null,
+      "attachments": null
+    },
+    {
+      "text": "{\"b\":1,\"a\":2,\"10\":3,\"2\":4,\"02\":5,\"-1\":6,\"4294967294\":7,\"4294967295\":8,\"Z\":9,\"é\":10,\"😀\":11,\"\\uff5e\":12}",
+      "hash": "575d4db52a65f0c38c35f564a757159163824fc9d4a867e76c5bcb2b6d5618d4",
+      "string": "[object Object]",
+      "number": "NaN",
+      "stringify": "{\"2\":4,\"10\":3,\"4294967294\":7,\"b\":1,\"a\":2,\"02\":5,\"-1\":6,\"4294967295\":8,\"Z\":9,\"é\":10,\"😀\":11,\"～\":12}",
+      "indented": "{\n  \"2\": 4,\n  \"10\": 3,\n  \"4294967294\": 7,\n  \"b\": 1,\n  \"a\": 2,\n  \"02\": 5,\n  \"-1\": 6,\n  \"4294967295\": 8,\n  \"Z\": 9,\n  \"é\": 10,\n  \"😀\": 11,\n  \"～\": 12\n}",
+      "keys": ["2", "10", "4294967294", "b", "a", "02", "-1", "4294967295", "Z", "é", "😀", "～"],
+      "content": "cb6ec9702393f19ca672456d5ab884d0fc41401e9a1c65d9ec1d9ea4fcb1df00",
+      "attachments": "575d4db52a65f0c38c35f564a757159163824fc9d4a867e76c5bcb2b6d5618d4"
+    },
+    {
+      "text": "{\"a\":1,\"a\":2,\"b\":{\"y\":[1,{\"d\":0,\"c\":1}],\"x\":null}}",
+      "hash": "f244938454aad284f765e322d07b6525d809f561e971d8f3326e53054a1c2c22",
+      "string": "[object Object]",
+      "number": "NaN",
+      "stringify": "{\"a\":2,\"b\":{\"y\":[1,{\"d\":0,\"c\":1}],\"x\":null}}",
+      "indented": "{\n  \"a\": 2,\n  \"b\": {\n    \"y\": [\n      1,\n      {\n        \"d\": 0,\n        \"c\": 1\n      }\n    ],\n    \"x\": null\n  }\n}",
+      "keys": ["a", "b"],
+      "content": "86806d5f40f8558226df049d5bd6f705449d34bcd7d9ded6a272f4bc62d2ec9d",
+      "attachments": "f244938454aad284f765e322d07b6525d809f561e971d8f3326e53054a1c2c22"
+    },
+    {
+      "text": "{\"id\":\"U-1\",\"size_bytes\":1234}",
+      "hash": "50693cf199231a48bb44b2a8fb4d8ee870cdf53f2c6f78e89c1f36e94326c548",
+      "string": "[object Object]",
+      "number": "NaN",
+      "stringify": "{\"id\":\"U-1\",\"size_bytes\":1234}",
+      "indented": "{\n  \"id\": \"U-1\",\n  \"size_bytes\": 1234\n}",
+      "keys": ["id", "size_bytes"],
+      "content": "2b8fbc07d3c70a7191b1c1dacd4817636ce51f876bf024bfbfcc2579ab026f3e",
+      "attachments": "ae44c909f5d274fed651c8a190af4bf62700a9e5ea4d721f51ee1de9701172c2"
+    },
+    {
+      "text": "{\"id\":\"U-1\",\"size_bytes\":\"1234\"}",
+      "hash": "ae44c909f5d274fed651c8a190af4bf62700a9e5ea4d721f51ee1de9701172c2",
+      "string": "[object Object]",
+      "number": "NaN",
+      "stringify": "{\"id\":\"U-1\",\"size_bytes\":\"1234\"}",
+      "indented": "{\n  \"id\": \"U-1\",\n  \"size_bytes\": \"1234\"\n}",
+      "keys": ["id", "size_bytes"],
+      "content": "cd4803198b4e38cb5d016219becda0c0420ef17215b76e70332d5559b3e7c946",
+      "attachments": "ae44c909f5d274fed651c8a190af4bf62700a9e5ea4d721f51ee1de9701172c2"
+    },
+    {
+      "text": "{\"id\":\"U-1\",\"size_bytes\":1234.5}",
+      "hash": "b8d487b48e619237ac3e62b69b5e4cb6619d8b4da4726826f19c45a100790614",
+      "string": "[object Object]",
+      "number": "NaN",
+      "stringify": "{\"id\":\"U-1\",\"size_bytes\":1234.5}",
+      "indented": "{\n  \"id\": \"U-1\",\n  \"size_bytes\": 1234.5\n}",
+      "keys": ["id", "size_bytes"],
+      "content": "987183fa8e652195e0ac2135b7ca7a3bea81630cabad110fb269099f9471b6f2",
+      "attachments": "b8d487b48e619237ac3e62b69b5e4cb6619d8b4da4726826f19c45a100790614"
+    },
+    {
+      "text": "{\"id\":\"U-1\",\"size_bytes\":9007199254740993}",
+      "hash": "06415cff8b9fcd1f1f35431190f664a1114a74387dabf6c9a53eb76b60e1f547",
+      "string": "[object Object]",
+      "number": "NaN",
+      "stringify": "{\"id\":\"U-1\",\"size_bytes\":9007199254740992}",
+      "indented": "{\n  \"id\": \"U-1\",\n  \"size_bytes\": 9007199254740992\n}",
+      "keys": ["id", "size_bytes"],
+      "content": "7ceb5941f121b9089a54df6dac305ed57320f533f3652744694c0f7ed624d44f",
+      "attachments": "06415cff8b9fcd1f1f35431190f664a1114a74387dabf6c9a53eb76b60e1f547"
+    }
+  ]
+}

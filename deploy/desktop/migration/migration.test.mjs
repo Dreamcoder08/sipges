@@ -1299,3 +1299,226 @@ test('an exported bigint column compares by value: 1234 equals "1234", nothing e
   // Snapshots hashed the old way are refused, never compared.
   assert.equal(FORMAT_VERSION, 4);
 });
+
+// go-rust-stack T72d3: sipges-desktop --snapshot and --compare are snapshot.mjs and compare.mjs
+// in Go. Against the same synthetic API they must write the same file (format 4, byte for byte
+// with the same salt), print the same lines and exit with the same codes, so a Node snapshot
+// taken before the visit compares against the Go one after, and the other way round.
+const goModule = join(here, '..', '..', '..', 'apps', 'api-go');
+let goBuild;
+/** Builds sipges-desktop once; null when Go is not on PATH (the test is then skipped). */
+function goDesktop() {
+  goBuild ??= (async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'sipges-go-desktop-'));
+    const bin = join(dir, process.platform === 'win32' ? 'sipges-desktop.exe' : 'sipges-desktop');
+    const child = spawn('go', ['build', '-o', bin, './cmd/sipges-desktop'], {
+      cwd: goModule,
+      stdio: ['ignore', 'ignore', 'pipe'],
+    });
+    let stderr = '';
+    child.stderr.on('data', (d) => (stderr += d));
+    const [status] = await Promise.race([
+      once(child, 'exit'),
+      once(child, 'error').then(() => [null]),
+    ]);
+    if (status === null) return null;
+    assert.equal(status, 0, `go build: ${stderr}`);
+    process.once('exit', () => rm(dir, { recursive: true, force: true }));
+    return bin;
+  })();
+  return goBuild;
+}
+
+/** Runs sipges-desktop <mode> like `run` runs a script. */
+function runGo(bin, mode, args, { timeoutMs = 60_000 } = {}) {
+  const child = spawn(bin, [mode, ...args], { stdio: ['ignore', 'pipe', 'pipe'] });
+  let stdout = '';
+  let stderr = '';
+  child.stdout.on('data', (d) => (stdout += d));
+  child.stderr.on('data', (d) => (stderr += d));
+  const timer = setTimeout(() => child.kill('SIGKILL'), timeoutMs);
+  return once(child, 'exit').then(([status]) => {
+    clearTimeout(timer);
+    return { status, stdout, stderr };
+  });
+}
+
+/** A snapshot file with its time of day and hashes masked: what the format itself is. */
+const shape = (text) =>
+  text.replace(/"takenAt": "[^"]+"/, '"takenAt": "T"').replace(/[0-9a-f]{64}|[0-9a-f]{32}/g, 'H');
+const sameFile = (a, b) => assert.equal(a.replace(/"takenAt": "[^"]+"/, ''), b.replace(/"takenAt": "[^"]+"/, ''));
+
+test('T72d3: Node and Go snapshots of one API are the same file; either compares with either', async (t) => {
+  const bin = await goDesktop();
+  if (!bin) return t.skip('go is not on PATH');
+  await withTemp(async (dir) => {
+    const login = await credentials(dir);
+    const api = await fakeApi(fixture());
+    try {
+      const out = (name) => join(dir, name);
+      const node = await run(snapshotCli, ['--url', api.url, ...login, '--out', out('node.json')]);
+      const go = await runGo(bin, '--snapshot', ['--url', api.url, ...login, '--out', out('go.json')]);
+      assert.equal(node.status, 0, node.stderr);
+      assert.equal(go.status, 0, go.stderr);
+      const mask = (text) =>
+        text
+          .replace(/^SIPGES snapshot at .*$/m, '')
+          .replace(/\[[0-9a-f]{8}\]/g, '[h]')
+          .replace(/^Written: .*$/m, '');
+      assert.equal(mask(go.stdout), mask(node.stdout));
+      assert.match(go.stdout, /^Written: .*go\.json$/m);
+      const [nodeFile, goFile] = [await readFile(out('node.json'), 'utf8'), await readFile(out('go.json'), 'utf8')];
+      assert.equal(shape(goFile), shape(nodeFile), 'the same keys, order, layout and values');
+      absent(goFile + go.stdout + go.stderr, fixture(), 'the Go snapshot');
+
+      // The same salt (the --before file's): byte-identical after-files, identical output.
+      for (const [label, before] of [['Node', 'node.json'], ['Go', 'go.json']]) {
+        const n = await run(compareCli, ['--before', out(before), '--url', api.url, ...login, '--out', out(`${before}.node-after`)]);
+        const g = await runGo(bin, '--compare', ['--before', out(before), '--url', api.url, ...login, '--out', out(`${before}.go-after`)]);
+        assert.equal(n.status, 0, `compare.mjs on the ${label} snapshot: ${n.stdout}${n.stderr}`);
+        assert.equal(g.status, 0, `--compare on the ${label} snapshot: ${g.stdout}${g.stderr}`);
+        assert.equal(g.stdout, n.stdout, `the ${label} snapshot compared by both`);
+        assert.match(g.stdout, /^RESULT: no difference$/m);
+        sameFile(await readFile(out(`${before}.go-after`), 'utf8'), await readFile(out(`${before}.node-after`), 'utf8'));
+        sameFile(await readFile(out(`${before}.go-after`), 'utf8'), await readFile(out(before), 'utf8'));
+      }
+    } finally {
+      api.close();
+    }
+  });
+});
+
+/** compare.mjs and --compare on one Node snapshot of `before`, each against a fresh `after` API. */
+async function compareBoth(parent, bin, before, after, beforeOptions, afterOptions, extra = []) {
+  const dir = await mkdtemp(join(parent, 'both-'));
+  const login = await credentials(dir);
+  const file = join(dir, 'before.json');
+  const first = await fakeApi(before, beforeOptions);
+  try {
+    const taken = await run(snapshotCli, ['--url', first.url, ...login, '--out', file]);
+    assert.equal(taken.status, 0, taken.stderr);
+  } finally {
+    first.close();
+  }
+  const results = [];
+  for (const go of [false, true]) {
+    const api = await fakeApi(after, afterOptions);
+    try {
+      const args = ['--before', file, '--url', api.url, ...login, ...extra];
+      results.push(go ? await runGo(bin, '--compare', args) : await run(compareCli, args));
+    } finally {
+      api.close();
+    }
+  }
+  return { node: results[0], go: results[1] };
+}
+
+test('T72d3: a planted difference, gap or refusal is reported identically by Node and Go', async (t) => {
+  const bin = await goDesktop();
+  if (!bin) return t.skip('go is not on PATH');
+  const alfa = 'EMPRESA-SINTETICA/PRJ-ALFA-SINTETICO';
+  const changed = fixture();
+  changed.scopes[alfa].records.eventos[1].Lugar = 'OTRO-VALOR-SECRETO';
+  changed.scopes['EMPRESA-SINTETICA/PRJ-BETA-SINTETICO'].uploads[0].bytes = 'CONTENIDO-CAMBIADO\n';
+  const typed = fixture();
+  typed.scopes[alfa].records.eventos[0].Fecha = 20260102;
+  const lost = auditOf(fixture());
+  lost[alfa].splice(1, 1);
+  const many = fixture();
+  many.scopes[alfa].records.eventos = Array.from({ length: 30 }, (_, i) => ({
+    _id: `EV-MUCHOS-${String(i).padStart(4, '0')}`,
+    Titulo: `TITULO-SECRETO-${i}`,
+  }));
+  const long = auditOf(fixture(), { [alfa]: Array.from({ length: 600 }, () => 'login') });
+  const cases = [
+    ['a changed field and upload', fixture(), changed, {}, {}, 1],
+    ['a field whose JSON type changed', fixture(), typed, {}, {}, 1],
+    ['audit entries added', fixture(), fixture(), {}, { audit: auditOf(fixture(), { [alfa]: ['login', 'migrate'] }) }, 0],
+    ['an audit entry missing', fixture(), fixture(), {}, { audit: lost }, 1],
+    ['a leak between projects', fixture(), fixture(), {}, { leak: true }, 1],
+    ['a shared id answered with the other content', fixture(), fixture(), {}, { leakShared: true }, 1],
+    ['no export on either side', fixture(), fixture(), { noExport: true }, { noExport: true }, 1],
+    ['the export on one side only', fixture(), fixture(), {}, { noExport: true }, 1],
+    ['no accounts on either side', fixture(), fixture(), { noAccounts: true }, { noAccounts: true }, 1],
+    ['a list that ignores its offset, proved by the export', many, many, {}, { ignoreOffset: true }, 0],
+    ['a list that ignores its offset, no export', many, many, { noExport: true }, { ignoreOffset: true, noExport: true }, 1],
+    ['a list capped below the page', many, many, { listCap: 7 }, { listCap: 7 }, 0],
+    ['a trail past one page without the export', fixture(), fixture(), { audit: long, noExport: true }, { audit: long, noExport: true }, 1],
+    ['the old server', fixture(), fixture(), {}, { desktop: null }, 2],
+    ['an HTML answer', fixture(), fixture(), {}, { desktop: 'html' }, 2],
+    ['JSON sent as text', fixture(), fixture(), {}, { desktop: 'text' }, 2],
+    ['a 403 on the managed route', fixture(), fixture(), {}, { desktop: 'forbidden' }, 2],
+    ['no installed version', fixture(), fixture(), {}, { desktop: { installed: '' } }, 2],
+    ['a redirect on the managed route', fixture(), fixture(), {}, { desktop: 'redirect' }, 2],
+    ['a redirect on a read', fixture(), fixture(), {}, { redirect: { prefix: '/system/links', status: 307 } }, 2],
+    ['a body that is not JSON', fixture(), fixture(), {}, { notJson: '/system/links' }, 2],
+    ['an MFA sign-in that no longer works', fixture(), fixture(), {}, { mfaBroken: true }, 1],
+  ];
+  await withTemp(async (dir) => {
+    for (const [label, before, after, beforeOptions, afterOptions, status] of cases) {
+      const { node, go } = await compareBoth(dir, bin, before, after, beforeOptions, afterOptions);
+      assert.equal(node.status, status, `${label}: compare.mjs ${node.stdout}${node.stderr}`);
+      assert.equal(go.status, status, `${label}: --compare ${go.stdout}${go.stderr}`);
+      assert.equal(go.stdout, node.stdout, `${label}: the same lines`);
+      assert.equal(go.stderr, node.stderr, `${label}: the same errors`);
+      absent(go.stdout + go.stderr, after, `${label}: --compare output`);
+    }
+    const dropped = await compareBoth(dir, bin, fixture(), fixture(), {}, { drop: '/system/links' });
+    assert.equal(dropped.go.status, 2, dropped.go.stdout + dropped.go.stderr);
+    assert.equal(dropped.go.stdout, dropped.node.stdout);
+    assert.equal(dropped.go.stderr, dropped.node.stderr);
+    assert.match(
+      dropped.go.stdout,
+      /^Managed install: version 1\.0\.0-sintetico\.1\nRESULT: not compared \(the server could not be reached or the connection dropped: [^\n]+\)\n$/m,
+    );
+    const closed = createServer();
+    closed.listen(0, '127.0.0.1');
+    await once(closed, 'listening');
+    const gone = `http://127.0.0.1:${closed.address().port}`;
+    closed.close();
+    await once(closed, 'close');
+    const login = await credentials(dir);
+    const file = join(dir, 'reach.json');
+    const api = await fakeApi(fixture());
+    try {
+      assert.equal((await run(snapshotCli, ['--url', api.url, ...login, '--out', file])).status, 0);
+    } finally {
+      api.close();
+    }
+    const nodeGone = await run(compareCli, ['--before', file, '--url', gone, ...login]);
+    const goGone = await runGo(bin, '--compare', ['--before', file, '--url', gone, ...login]);
+    assert.equal(goGone.status, 2);
+    assert.equal(goGone.stdout, nodeGone.stdout);
+    assert.equal(goGone.stderr, nodeGone.stderr);
+    const limited = await compareBoth(dir, bin, many, many, {}, {}, ['--probe-limit', '3']);
+    assert.equal(limited.go.stdout, limited.node.stdout, '--probe-limit');
+    assert.match(limited.go.stdout, /^Isolation: \d+ probes, no record/m);
+  });
+});
+
+test('T72d3: Go refuses what compare.mjs refuses before signing in, with the same exit code', async (t) => {
+  const bin = await goDesktop();
+  if (!bin) return t.skip('go is not on PATH');
+  await withTemp(async (dir) => {
+    const old = join(dir, 'old.json');
+    await writeFile(old, JSON.stringify({ format: 'sipges.migration-snapshot', version: 3, salt: '00' }));
+    for (const args of [
+      ['--before', old, '--url', 'http://127.0.0.1:9'],
+      ['--url', 'http://127.0.0.1:9'],
+      ['--before', old, '--url', 'http://127.0.0.1:9', '--probe-limit', '-1'],
+      ['--before', old, '--bogus', 'x'],
+    ]) {
+      const node = await run(compareCli, args);
+      const go = await runGo(bin, '--compare', args);
+      assert.equal(go.status, node.status, args.join(' '));
+      assert.equal(go.stdout, node.stdout, args.join(' '));
+      assert.equal(go.stderr, node.stderr, args.join(' '));
+    }
+    const help = await runGo(bin, '--compare', ['--help']);
+    assert.equal(help.status, 0);
+    assert.match(help.stdout, /^Usage: sipges-desktop --compare --before/);
+    const snap = await runGo(bin, '--snapshot', ['--url', 'http://127.0.0.1:9']);
+    assert.equal(snap.status, 1);
+    assert.equal(snap.stderr, 'Error: --url and --out are required\n');
+  });
+});
