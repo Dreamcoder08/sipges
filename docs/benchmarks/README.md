@@ -20,6 +20,8 @@ p95 values were 86.43 / 63.84 ms, below 500 ms. This is not a comparable Postgre
 regression or justification for a native adapter. See [T6 evidence and limits](../../odd/evidence/t6-benchmark/README.md)
 and [the 36-scenario result JSON](../../odd/evidence/t6-benchmark/full.json).
 
+Go API CPU at 1/4 vCPU: profile, fixes and before/after in [go-cpu-profile.md](go-cpu-profile.md).
+
 ## Dashboard projection candidate (local, not a production gate)
 
 The first [production-candidate slice](../../odd/archive/production-candidate.md) keeps the
