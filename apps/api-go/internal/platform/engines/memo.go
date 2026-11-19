@@ -33,6 +33,10 @@ var ErrEnginePanicked = errors.New("engines: the engine panicked on this request
 // outside the request reaches it. The IRSA of a project is the same request on every screen
 // until a record changes, and computing it was most of the Go API's CPU (docs/benchmarks/
 // go-cpu-profile.md). Only successful answers are kept; requests are keyed by their SHA-256.
+//
+// Concurrent callers of one request wait for the first: they share its answer or its engine
+// error. When the first caller's own context ends (its client left), one waiter computes
+// instead and the rest wait for that one.
 type Memo struct {
 	engine Caller
 
@@ -54,6 +58,8 @@ type memoCall struct {
 	value   json.RawMessage
 	err     error
 	waiters int // callers waiting for it; m.mu guards it
+	// callerGone is a failure of the computing caller's context, not of the request.
+	callerGone bool
 }
 
 // NewMemo wraps engine, which must be pure (see Memo).
@@ -87,11 +93,12 @@ func (m *Memo) Call(ctx context.Context, request []byte) (json.RawMessage, error
 		switch {
 		case c.err == nil:
 			return bytes.Clone(c.value), nil
-		case errors.Is(c.err, ErrEnginePanicked):
-			return nil, c.err
+		case c.callerGone:
+			// Only the first caller's context ended (its client left): ask again, so one
+			// waiter computes and the others wait for it.
+			return m.Call(ctx, request)
 		}
-		// The first caller failed, perhaps only its context: run the request again.
-		return m.engine.Call(ctx, request)
+		return nil, c.err // the engine's own failure, or ErrEnginePanicked
 	}
 	c := &memoCall{done: make(chan struct{}), err: ErrEnginePanicked}
 	m.inFlight[key] = c
@@ -109,7 +116,7 @@ func (m *Memo) Call(ctx context.Context, request []byte) (json.RawMessage, error
 	}()
 
 	value, err := m.engine.Call(ctx, request)
-	c.value, c.err = value, err
+	c.value, c.err, c.callerGone = value, err, err != nil && ctx.Err() != nil
 	if err != nil {
 		return nil, err
 	}

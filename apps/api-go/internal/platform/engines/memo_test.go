@@ -256,3 +256,102 @@ func TestMemoSurvivesAPanickingEngine(t *testing.T) {
 		t.Fatalf("later call: %q, %v", got, err)
 	}
 }
+
+// ctxEngine waits for release or for its caller's context, then answers or returns ctx's error.
+type ctxEngine struct {
+	calls   atomic.Int64
+	release chan struct{}
+}
+
+func (e *ctxEngine) Call(ctx context.Context, request []byte) (json.RawMessage, error) {
+	e.calls.Add(1)
+	select {
+	case <-e.release:
+		return append(bytes.Clone(request), '!'), nil
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+}
+
+func waiters(m *Memo, request string) int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if c, ok := m.inFlight[sha256.Sum256([]byte(request))]; ok {
+		return c.waiters
+	}
+	return -1
+}
+
+func TestMemoWaiterTakesOverWhenTheFirstCallerGivesUp(t *testing.T) {
+	t.Parallel()
+	engine := &ctxEngine{release: make(chan struct{})}
+	m := NewMemo(engine)
+	leaderCtx, disconnect := context.WithCancel(context.Background())
+	leader := make(chan error, 1)
+	go func() {
+		_, err := m.Call(leaderCtx, []byte("q"))
+		leader <- err
+	}()
+	for engine.calls.Load() == 0 {
+		// wait until the first caller is inside the engine
+	}
+	const n = 4
+	answers := make(chan string, n)
+	for range n {
+		go func() {
+			got, err := m.Call(context.Background(), []byte("q"))
+			if err != nil {
+				t.Error(err)
+			}
+			answers <- string(got)
+		}()
+	}
+	for waiters(m, "q") != n {
+		// wait until every waiter joined
+	}
+	disconnect() // the client of the first caller went away
+	if err := <-leader; !errors.Is(err, context.Canceled) {
+		t.Fatalf("first caller: %v", err)
+	}
+	for engine.calls.Load() < 2 {
+		// one waiter is the new computer
+	}
+	close(engine.release)
+	for range n {
+		if got := <-answers; got != "q!" {
+			t.Fatalf("answer %q", got)
+		}
+	}
+	if c := engine.calls.Load(); c != 2 {
+		t.Fatalf("engine ran %d times, want 2 (the first caller and one waiter)", c)
+	}
+	if got, err := m.Call(context.Background(), []byte("q")); err != nil || string(got) != "q!" || engine.calls.Load() != 2 {
+		t.Fatalf("not memoized after the takeover: %q, %v, %d calls", got, err, engine.calls.Load())
+	}
+}
+
+func TestMemoWaitersShareAnEngineError(t *testing.T) {
+	t.Parallel()
+	engine := &countingEngine{release: make(chan struct{})}
+	m := NewMemo(engine)
+	const n = 4
+	errs := make(chan error, n+1)
+	for range n + 1 {
+		go func() {
+			_, err := m.Call(context.Background(), []byte("fail"))
+			errs <- err
+		}()
+	}
+	for waiters(m, "fail") != n {
+		// wait until one computes and the others wait
+	}
+	close(engine.release)
+	for range n + 1 {
+		if err := <-errs; err == nil || err.Error() != "engine failed" {
+			t.Fatalf("err = %v", err)
+		}
+	}
+	if c := engine.calls.Load(); c != 1 {
+		t.Fatalf("engine ran %d times for one failing request, want 1", c)
+	}
+}
