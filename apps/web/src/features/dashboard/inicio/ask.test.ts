@@ -211,3 +211,17 @@ it('stops reading the stream once aborted', async () => {
   await new Promise((resolve) => setTimeout(resolve, 20));
   expect(onStep.mock.calls).toEqual([['Buscando registros…']]);
 });
+
+it('sends the earlier turns of a follow-up as history, and no history field without them (T9)', async () => {
+  const bodies: unknown[] = [];
+  server.use(
+    http.post('/system/analyst/ask', async ({ request }) => {
+      bodies.push(await request.json());
+      return HttpResponse.json({ answer: 'Sin registros.', sources: [] });
+    }),
+  );
+  const history = [{ question: '¿Qué pasa?', answer: 'El bloqueo sigue [1].' }];
+  await askAnalyst('DEMO/PRJ-DEMO', '¿Desde cuándo?', undefined, history);
+  await askAnalyst('DEMO/PRJ-DEMO', '¿Algo?', undefined, []);
+  expect(bodies).toEqual([{ question: '¿Desde cuándo?', history }, { question: '¿Algo?' }]);
+});

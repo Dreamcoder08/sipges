@@ -98,13 +98,13 @@
     "path": "/system/analyst/ask",
     "access": "session",
     "command": "analyst ask",
-    "summary": "Ask the Inicio analyst a question; JSON body {\"question\": …} with --body FILE, or --body - for stdin; --steps prints its steps on stderr as they happen"
+    "summary": "Ask the Inicio analyst a question; JSON body {\"question\": …, \"history\": [{\"question\": …, \"answer\": …}]} with --body FILE, or --body - for stdin; history is optional, at most 6 earlier turns and 8,000 characters, and --follow-up FILE adds it from a file; --steps prints its steps on stderr as they happen"
   },
   {
     "method": "POST",
     "path": "/system/analyst/ask/stream",
     "access": "session",
-    "summary": "The Inicio question as server-sent events: a step per tool call, then the answer or an error, then done; read by sipgesctl analyst ask --steps"
+    "summary": "The Inicio question as server-sent events, with the same body and optional history as /system/analyst/ask: a step per tool call, then the answer or an error, then done; read by sipgesctl analyst ask --steps"
   },
   {
     "method": "GET",

@@ -56,15 +56,20 @@ func askFactory(d Deps) (func(ctx context.Context, tenantID string) (*analyst.As
 // askPurpose names the question's release in the egress log.
 const askPurpose = "ask"
 
-// sealQuestion releases the question as free text on the analyst channel, as semantic search
-// releases its query: known names and contact data scrubbed, and the release logged.
+// sealQuestion releases the question, and the earlier turns of a follow-up, as free text on the
+// analyst channel, as semantic search releases its query: known names and contact data scrubbed,
+// and one release logged for all of them (odd/tasks/chat-first-ui.md T9).
 func sealQuestion(guard integration.Egress, tenantID string) analyst.Seal {
-	return func(ctx context.Context, question string) (privacy.Sanitised[string], error) {
+	return func(ctx context.Context, texts []string) ([]privacy.Sanitised[string], error) {
 		session, err := guard.Open(ctx, privacy.Request{TenantID: tenantID, Channel: privacy.ChannelAnalyst, Purpose: askPurpose})
 		if err != nil {
-			return privacy.Sanitised[string]{}, err
+			return nil, err
 		}
-		return privacy.Release(ctx, session, session.Text(question))
+		scrubbed := make([]string, 0, len(texts))
+		for _, text := range texts {
+			scrubbed = append(scrubbed, session.Text(text))
+		}
+		return privacy.ReleaseMany(ctx, session, scrubbed)
 	}
 }
 

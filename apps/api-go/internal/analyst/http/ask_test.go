@@ -53,9 +53,7 @@ func analystFor(model application.ToolModel, tools application.ToolRunner, seen 
 		if seen != nil {
 			*seen = tenantID
 		}
-		return &application.Ask{Model: model, Tools: tools, Seal: func(_ context.Context, q string) (privacy.Sanitised[string], error) {
-			return privacy.ExemptPayload(q, privacy.ExemptConstant), nil
-		}}, nil
+		return &application.Ask{Model: model, Tools: tools, Seal: exempt}, nil
 	}
 }
 

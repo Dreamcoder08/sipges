@@ -63,11 +63,12 @@ type ToolTurn struct {
 	Sources []domain.Cited
 }
 
-// Turn is one entry of the conversation of a question: the question, the model's calls, or a
-// tool's answer. Exactly one is set; the question is the person's text as the egress guard
+// Turn is one entry of the conversation of a question: an earlier question and answer, the
+// question, the model's calls, or a tool's answer. Exactly one is set; the question is the person's text as the egress guard
 // released it, so an adapter cannot receive it raw.
 type Turn struct {
 	Question privacy.Sanitised[string]
+	Earlier  *EarlierTurn
 	Calls    []ToolCall
 	Result   *ToolTurn
 }
@@ -89,9 +90,10 @@ type ToolRunner interface {
 	Run(ctx context.Context, name string, input json.RawMessage) (ToolOutput, error)
 }
 
-// Seal releases the person's question through the egress guard: scrubbed of known names and
-// contact data, and logged.
-type Seal func(ctx context.Context, question string) (privacy.Sanitised[string], error)
+// Seal releases the person's texts through the egress guard in one release: scrubbed of known
+// names and contact data, and logged once. texts[0] is the question, then each earlier question
+// and answer in order; the result has one sealed text per text, in the same order.
+type Seal func(ctx context.Context, texts []string) ([]privacy.Sanitised[string], error)
 
 // Ask answers one question; Timeout zero means AskTimeout. Without Seal nothing leaves.
 type Ask struct {
@@ -131,6 +133,16 @@ func (a Ask) Answer(ctx context.Context, question string) (domain.CitedAnswer, e
 // AnswerWithProgress is Answer that reports each tool call to progress; nil reports nothing. The
 // loop stops as soon as ctx ends: no model or tool call starts after a cancel.
 func (a Ask) AnswerWithProgress(ctx context.Context, question string, progress Progress) (domain.CitedAnswer, error) {
+	return a.AnswerFollowUp(ctx, question, nil, progress)
+}
+
+// AnswerFollowUp is AnswerWithProgress after the earlier turns of history, which the model sees
+// before the question. They are context only: citations still number only this question's tool
+// results, so a record named in the history must be fetched again to be cited.
+func (a Ask) AnswerFollowUp(ctx context.Context, question string, history []Exchange, progress Progress) (domain.CitedAnswer, error) {
+	if err := CheckHistory(history); err != nil {
+		return domain.CitedAnswer{}, err
+	}
 	timeout := a.Timeout
 	if timeout <= 0 {
 		timeout = AskTimeout
@@ -140,12 +152,19 @@ func (a Ask) AnswerWithProgress(ctx context.Context, question string, progress P
 	if a.Seal == nil {
 		return domain.CitedAnswer{}, privacy.ErrDisabled
 	}
-	sealed, err := a.Seal(ctx, question)
+	sealed, err := a.Seal(ctx, historyTexts(question, history))
 	if err != nil {
 		return domain.CitedAnswer{}, err
 	}
+	if len(sealed) != 1+2*len(history) {
+		return domain.CitedAnswer{}, fmt.Errorf("analyst: seal returned %d texts for %d", len(sealed), 1+2*len(history))
+	}
 	specs := a.Tools.Specs()
-	turns := []Turn{{Question: sealed}}
+	turns := make([]Turn, 0, len(history)+1)
+	for i := range history {
+		turns = append(turns, Turn{Earlier: &EarlierTurn{Question: sealed[1+2*i], Answer: sealed[2+2*i]}})
+	}
+	turns = append(turns, Turn{Question: sealed[0]})
 	var sources domain.Sources
 	calls := 0
 	for {

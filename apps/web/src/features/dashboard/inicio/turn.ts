@@ -1,7 +1,7 @@
 import type { AnalystAnswer } from './ask.ts';
 
 /**
- * One question and what became of it; the question is sent alone (no history yet, T9). A pending
+ * One question and what became of it; answered turns travel with later questions (T9). A pending
  * turn's `step` is what the analyst is doing now, the stream's latest label (T21): shown, never
  * announced.
  */
