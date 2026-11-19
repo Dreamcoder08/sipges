@@ -25,6 +25,9 @@ import (
 const launcherUsage = `Usage: sipges-desktop --install <root> [--releases <dir>] [--port <port>] [--pg-bin <dir>]
        sipges-desktop --install <root> --prepare-only [--pg-bin <dir>]
        sipges-desktop --install <root> --release <dir> --state <dir> (--trust-key <public.pem> | --trust-release-key)
+       sipges-desktop --install <root> --recover [--accept-restored-state] [--pg-bin <dir>]
+       sipges-desktop --install <root> --copies
+       sipges-desktop --install <root> --remove-copies-older-than <days> [--pg-bin <dir>]
 
 Starts the current version of a managed install on 127.0.0.1 (default port 8000): its bundled
 PostgreSQL 18 (<version>/postgresql/bin, else --pg-bin or SIPGES_PG_BIN) on <state>/pg18 and its
@@ -39,8 +42,20 @@ exits with code 1.
 --release installs a signed release into an empty <root> and records <state> (its real path) in
 install.json, as update.mjs --install does; --trust-release-key trusts the key that signed this
 release and prints its SHA-256 fingerprint. It starts nothing.
+--recover finishes an interrupted update, as update.mjs --recover does. When it cannot (exit
+code 3), restore the state folder from your own backup, then --recover --accept-restored-state
+makes the version from before the update current again without touching the state folder
+(refused while it is missing or empty).
+--copies lists the copies beside the state folder (pre-update, rehearsal and failed copies),
+their number and total size. None is ever removed automatically. --remove-copies-older-than
+removes those older than <days> whole days, except the newest pre-update copy, which is never
+removed; it is refused while an update is pending or halted.
+--recover and --remove-copies-older-than are refused while SIPGES runs on this install; they
+first stop a PostgreSQL that a stopped launcher left running, as the start does (its pg_ctl is
+the current version's, else --pg-bin or SIPGES_PG_BIN). They start nothing.
 Exit codes: 0 stopped, 3 an update could not be rolled back and nothing was started (restore
-the pre-update copy named in the message), otherwise the server's own exit code or 1.`
+the pre-update copy named in the message), otherwise the server's own exit code or 1.
+For --release, --recover and the copies: 0 done, 1 refused or invalid, 3 rollback incomplete.`
 
 // The only SIPGES_* variables a managed API sees (boot.mjs LAUNCHER_ENV, for the Go API).
 var launcherVars = map[string]bool{
@@ -571,6 +586,12 @@ type launcherOptions struct {
 	state        string
 	trustKey     string
 	trustRelease bool
+	// The maintenance forms (update.mjs --recover, --copies, --remove-copies-older-than).
+	recover       bool
+	accept        bool
+	copies        bool
+	olderThan     string
+	olderThanDays int
 }
 
 var errInvalidOptions = errors.New("Invalid options; use --help") //nolint:staticcheck // ST1005: launcher.mjs's message
@@ -598,9 +619,14 @@ func parseLauncherArgs(args []string, lookup func(string) (string, bool)) (launc
 			o.trustRelease = true
 			continue
 		}
+		if flag := maintenanceFlags(&o)[key]; flag != nil && !inline && !*flag {
+			*flag = true
+			continue
+		}
 		targets := map[string]*string{
 			"--install": &o.install, "--releases": &o.releases, "--port": &port, "--pg-bin": &o.pgBin,
 			"--release": &o.release, "--state": &o.state, "--trust-key": &o.trustKey,
+			"--remove-copies-older-than": &o.olderThan,
 		}
 		target, ok := targets[key]
 		if !ok || seen[key] {
@@ -621,7 +647,11 @@ func parseLauncherArgs(args []string, lookup func(string) (string, bool)) (launc
 	if o.install == "" {
 		return launcherOptions{}, errors.New("Missing --install") //nolint:staticcheck // ST1005: launcher.mjs's message
 	}
-	if err := checkInstallForm(o, seen); err != nil {
+	if maintenance(o) {
+		if err := checkMaintenanceForm(&o, seen); err != nil {
+			return launcherOptions{}, err
+		}
+	} else if err := checkInstallForm(o, seen); err != nil {
 		return launcherOptions{}, err
 	}
 	if port != "" {
@@ -658,6 +688,9 @@ func runLauncherCLI(ctx context.Context, args, environ []string, stdout, stderr 
 		return runInstall(ctx, root, o, stdout, stderr)
 	}
 	rt := runtimeEnv{base: environ, pgBin: o.pgBin, stdout: stdout, stderr: stderr}
+	if maintenance(o) {
+		return runMaintenance(ctx, root, o, stdout, stderr, stopOrphanClusters(rt, root))
+	}
 	if o.prepareOnly {
 		if err := prepareManaged(ctx, root, rt); err != nil {
 			_, _ = fmt.Fprintln(stderr, "sipges-desktop:", err)
