@@ -63,10 +63,11 @@ describe('pg-secrets strip', () => {
     assert.equal(lines, '');
   });
 
-  it('refuses a malformed percent escape with one line that does not echo the value', () => {
+  it('refuses an invalid percent escape with one line that does not echo the value', () => {
     for (const url of [
       'postgres://reader:s3cr%zzt@host.example/sipges',
       'postgres://reader@host.example/sipges?password=s3cr%zzt',
+      'postgres://reader@host.example/sipges?password=a%e9b',
     ]) {
       const result = spawnSync(process.execPath, [helper, 'strip', 'URL', path.join(scratch, 'malformed')], {
         env: { ...process.env, URL: url },
@@ -74,7 +75,7 @@ describe('pg-secrets strip', () => {
       });
       assert.equal(result.status, 1);
       assert.equal(result.stdout, '');
-      assert.equal(result.stderr, 'pg-secrets: URL has a malformed percent escape\n');
+      assert.equal(result.stderr, 'pg-secrets: URL has an invalid percent escape\n');
     }
   });
 

@@ -25,12 +25,13 @@ if (!value) fail(`${name ?? 'the variable'} is empty`);
 // A password file field: backslash and colon are escaped (libpq, "The Password File").
 const field = (text) => text.replaceAll('\\', '\\\\').replaceAll(':', '\\:');
 
-// decodeURIComponent throws on a stray `%`; that would print a stack trace instead of one line.
+// decodeURIComponent throws on a stray `%` or bytes that are not UTF-8; uncaught, that would
+// print a stack trace instead of one line.
 const decode = (text) => {
   try {
     return decodeURIComponent(text);
   } catch {
-    return fail(`${name} has a malformed percent escape`); // never echo the value
+    return fail(`${name} has an invalid percent escape`); // never echo the value
   }
 };
 
