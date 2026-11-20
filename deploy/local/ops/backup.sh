@@ -50,3 +50,6 @@ find /backups -mindepth 1 -maxdepth 1 -type d -name '20*Z' ! -name "$stamp" -pri
 done
 rm -f /backups/.last-failure
 echo "backup finished: $stamp"
+
+# The copy on a second disk (local-qa-findings T15): its own failures never fail the backup.
+bash /ops/copy.sh "$stamp" || echo 'backup copy step failed' >&2

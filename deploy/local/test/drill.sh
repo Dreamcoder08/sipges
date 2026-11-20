@@ -247,4 +247,37 @@ grep -q '^SIPGES_SITE_HOST=127.0.0.1$' "$SIPGES_ENV_FILE" || { echo 'the address
 code=$(curl -sk -o /dev/null -w '%{http_code}' "https://127.0.0.1:$https_port/health")
 [[ $code == 200 ]] || { echo "the new address answered $code"; exit 1; }
 echo 'ok - the new address serves'
+step 'a copy of each backup on a second disk (local-qa-findings T15)'
+mkdir "$work/second-disk"
+sipges copy-backups-to "$work/second-disk"
+sipges start
+sipges backup
+latest=$(sipges backups | tail -n 1)
+[[ -f $work/second-disk/$latest/SHA256SUMS ]] || { echo "no copy of $latest on the second disk"; exit 1; }
+(cd "$work/second-disk/$latest" && sha256sum --quiet -c SHA256SUMS) || { echo 'the copy does not match'; exit 1; }
+sleep 1
+sipges backup
+sleep 1
+sipges backup
+copies=$(find "$work/second-disk" -mindepth 1 -maxdepth 1 -type d -name '20*Z' | wc -l)
+((copies == 2)) || { echo "the second disk keeps $copies copies, want 2"; exit 1; }
+echo 'ok - each backup is copied, checked, and kept like the backups'
+# Unplugged: Docker would mount an empty folder of this disk. Without the mark nothing is copied
+# there, the backup itself still succeeds, and status says why.
+rm "$work/second-disk/.sipges-backup-copy"
+sleep 1
+sipges backup
+after=$(sipges backups | tail -n 1)
+[[ ! -e $work/second-disk/$after ]] || { echo 'copied into an unmarked folder'; exit 1; }
+sipges status | grep -q 'the copy to the second disk failed' || { echo 'status did not say the copy failed'; exit 1; }
+echo 'ok - an unplugged disk gets nothing, the backup still counts, and status says so'
+# Plugged back in: start gives the backup service the disk again, and the next backup is copied.
+touch "$work/second-disk/.sipges-backup-copy"
+sipges start
+sleep 1
+sipges backup
+back=$(sipges backups | tail -n 1)
+[[ -f $work/second-disk/$back/SHA256SUMS ]] || { echo 'no copy after plugging the disk back in and starting'; exit 1; }
+sipges status | grep -q 'the copy to the second disk failed' && { echo 'status still says the copy failed'; exit 1; }
+echo 'ok - plugged back in and started, the next backup is copied and the warning is gone'
 step 'drill passed'

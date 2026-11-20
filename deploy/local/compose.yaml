@@ -155,12 +155,16 @@ services:
       SIPGES_BACKUP_KEEP: ${SIPGES_BACKUP_KEEP:-14}
       SIPGES_HOST_OWNER: ${SIPGES_HOST_OWNER:?}
       TZ: ${SIPGES_TIMEZONE:-America/Lima}
+      # Set by ./sipges copy-backups-to: each backup is also copied there (local-qa T15).
+      SIPGES_BACKUP_COPY: ${SIPGES_BACKUP_COPY_DIR:-}
     depends_on:
       migrate: { condition: service_completed_successfully }
     volumes:
       - uploads:/data/uploads:ro
       - ./ops:/ops:ro
       - ${SIPGES_BACKUP_DIR:-./backups}:/backups
+      # Unset, the backup folder stands in: SIPGES_BACKUP_COPY is then empty and nothing is copied.
+      - ${SIPGES_BACKUP_COPY_DIR:-${SIPGES_BACKUP_DIR:-./backups}}:/backup-copy
     networks: [backend]
     cap_drop: [ALL]
     cap_add: [CHOWN, DAC_OVERRIDE, DAC_READ_SEARCH, FOWNER]
