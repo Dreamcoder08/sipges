@@ -94,7 +94,15 @@ Revisa `./sipges status` una vez por semana. Así te enteras de que falló un re
 
 SIPGES se respalda cada noche a las 2:00, hora de Lima, y conserva los últimos 14. Un respaldo incluye la base de datos y todos los archivos de evidencia, cifrados. Solo cuenta cuando SIPGES ya lo volvió a leer.
 
-Los respaldos están en `deploy/local/backups`. **Un respaldo en la misma computadora no te protege de un disco dañado.** Copia esa carpeta con frecuencia a un disco externo cifrado o a otra computadora.
+Los respaldos están en `deploy/local/backups`. **Un respaldo en la misma computadora no te protege de un disco dañado.** Haz que SIPGES copie cada uno a una carpeta en otro disco (un disco externo cifrado, o la carpeta compartida de otra computadora montada aquí):
+
+```bash
+./sipges copy-backups-to /media/usb/sipges-backups
+./sipges start
+./sipges backup
+```
+
+La carpeta debe existir. SIPGES la marca con un archivo `.sipges-backup-copy`, copia allí cada respaldo después de leerlo de vuelta, comprueba la copia con sus sumas de verificación y conserva tantas como `SIPGES_BACKUP_KEEP`. Solo copia a la carpeta marcada: con el disco desconectado no se escribe nada en el disco de esta computadora en su lugar, el respaldo igual cuenta y `./sipges status` dice que la copia falló y por qué. Al volver a conectar el disco, el siguiente respaldo se copia de nuevo. Para dejar de copiar, quita la línea `SIPGES_BACKUP_COPY_DIR` de `.env` y ejecuta `./sipges start`.
 
 | Comando | Qué hace |
 | --- | --- |

@@ -79,7 +79,15 @@ Check `./sipges status` once a week. It is how you find out a nightly backup fai
 
 SIPGES backs itself up every night at 2:00, Lima time, and keeps the latest 14. A backup holds the database and every evidence file, encrypted. It counts only after SIPGES has read it back.
 
-Backups are in `deploy/local/backups`. **A backup on the same computer does not protect you from a dead disk.** Copy that folder to an external disk or another computer regularly.
+Backups are in `deploy/local/backups`. **A backup on the same computer does not protect you from a dead disk.** Let SIPGES copy each one to a folder on another disk (an encrypted external disk, or another computer's shared folder mounted here):
+
+```bash
+./sipges copy-backups-to /media/usb/sipges-backups
+./sipges start
+./sipges backup
+```
+
+The folder must exist. SIPGES marks it with a `.sipges-backup-copy` file, copies every backup there after it is read back, checks the copy against its checksums and keeps as many as `SIPGES_BACKUP_KEEP`. It copies only into the marked folder: with the disk unplugged, nothing goes to this computer's disk in its place, the backup itself still counts, and `./sipges status` says the copy failed and why. Plug the disk back in and the next backup is copied again. To stop the copies, remove the `SIPGES_BACKUP_COPY_DIR` line from `.env` and run `./sipges start`.
 
 | Command | What it does |
 | --- | --- |

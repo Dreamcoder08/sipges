@@ -247,6 +247,7 @@ size_host() {
 start() {
   mkdir -p "$(env_value SIPGES_BACKUP_DIR)"
   size_host
+  check_copy_folder
   preflight
   ensure_push_keys
   local replicas
@@ -481,6 +482,43 @@ cmd_status() {
   if [[ -f $dir/.last-failure ]]; then
     say "WARNING: the nightly backup failed at $(cat "$dir/.last-failure"). See ./sipges logs backup"
   fi
+  if [[ -f $dir/.last-copy-failure ]]; then
+    local when reason
+    read -r when reason <"$dir/.last-copy-failure"
+    say "WARNING: the copy to the second disk failed at $when: $reason"
+  elif [[ -n $(env_value SIPGES_BACKUP_COPY_DIR) ]]; then
+    say "Backups copied to: $(env_value SIPGES_BACKUP_COPY_DIR)"
+  fi
+}
+
+# A copy of every backup on a second disk (local-qa-findings T15): a dead disk loses the data and
+# the backups beside it. The folder gets a mark, and the backup copies only into a marked folder:
+# with the disk unplugged, Docker would mount an empty folder of this disk in its place.
+COPY_MARK=.sipges-backup-copy
+cmd_copy_backups_to() {
+  need_env
+  [[ -n ${1:-} ]] || die 'say where: ./sipges copy-backups-to /media/usb/sipges-backups'
+  [[ -d $1 ]] || die "$1 is not a folder here. Plug in the disk and create the folder first"
+  local dir backups
+  dir=$(readlink -f "$1")
+  backups=$(readlink -m "$(env_value SIPGES_BACKUP_DIR)")
+  if [[ $dir == "$backups" || $dir == "$backups"/* ]]; then
+    die "$dir is the backup folder itself: choose a folder on another disk"
+  fi
+  touch "$dir/$COPY_MARK" 2>/dev/null || die "cannot write in $dir"
+  sed -i '/^SIPGES_BACKUP_COPY_DIR=/d' "$ENV_FILE"
+  [[ ! -s $ENV_FILE || -z $(tail -c 1 "$ENV_FILE") ]] || printf '\n' >>"$ENV_FILE"
+  printf 'SIPGES_BACKUP_COPY_DIR=%s\n' "$dir" >>"$ENV_FILE"
+  say "Every backup will also be copied to $dir."
+  say 'Run ./sipges start to apply it, then ./sipges backup to make the first copy now.'
+}
+
+# Says, without stopping anything, that the copy folder has lost its mark.
+check_copy_folder() {
+  local dir
+  dir=$(env_value SIPGES_BACKUP_COPY_DIR)
+  [[ -n $dir && ! -f $dir/$COPY_MARK ]] || return 0
+  say "WARNING: $dir is not marked as the backup copy (is the disk plugged in?). Backups go on; copies wait until it is back."
 }
 
 cmd_backups() {
@@ -561,6 +599,7 @@ status) cmd_status ;;
 logs) need_env; shift; compose logs --tail=200 "$@" ;;
 backup) need_env; compose exec -T backup bash /ops/backup.sh ;;
 backups) cmd_backups ;;
+copy-backups-to) shift; cmd_copy_backups_to "$@" ;;
 restore) shift; cmd_restore "$@" ;;
 update) cmd_update ;;
 ca) need_env; compose cp caddy:/data/caddy/pki/authorities/local/root.crt sipges-root-ca.crt; say 'Wrote sipges-root-ca.crt' ;;
@@ -576,6 +615,7 @@ help | -h | --help)
 ./sipges logs [service]    Recent logs: api, db, caddy, backup.
 ./sipges backup            Take a backup now.
 ./sipges backups           List the backups.
+./sipges copy-backups-to <dir>  Also copy every backup to a folder on another disk.
 ./sipges restore <name>    Replace all data with a backup.
 ./sipges update            Back up, get the new version, rebuild, restart.
 ./sipges ca                Export the certificate each computer must trust.

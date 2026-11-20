@@ -123,6 +123,7 @@ check() {
 }
 said() { grep -qF -- "$1" "$work/out"; }
 called() { grep -qF -- "$1" "$FAKE/calls"; }
+said_not_refused() { called ' up -d'; }
 never_built() { ! called ' build ' && ! grep -q '^build' "$FAKE/calls"; }
 
 # --- the reports folder and the client's folder
@@ -596,6 +597,42 @@ fresh
 run install
 check 'without the machine'"'"'s size the install still runs' said 'Open https://'
 check 'and writes no sizing' test -z "$(grep '^SIPGES_API_MEMORY=' "$SIPGES_ENV_FILE" || true)"
+
+
+# --- a copy of the backups on a second disk (local-qa-findings T15)
+
+fresh
+mkdir -p "$work/second"
+run copy-backups-to "$work/second" || true
+check 'copy-backups-to marks the folder as the copy' test -f "$work/second/.sipges-backup-copy"
+check 'and writes it to the .env' env_is SIPGES_BACKUP_COPY_DIR "$work/second"
+check 'and says how to apply it' said './sipges start'
+mkdir -p "$work/other"
+run copy-backups-to "$work/other" || true
+check 'a new folder replaces the old one, one line only' test "$(grep -c '^SIPGES_BACKUP_COPY_DIR=' "$SIPGES_ENV_FILE")" = 1
+check 'with the new path' env_is SIPGES_BACKUP_COPY_DIR "$work/other"
+
+fresh
+if run copy-backups-to "$work/nowhere"; then fail 'a missing folder is refused'; else ok 'a missing folder is refused'; fi
+check 'and nothing is written' test -z "$(grep '^SIPGES_BACKUP_COPY_DIR=' "$SIPGES_ENV_FILE" || true)"
+if run copy-backups-to "$work/backups"; then fail 'the backup folder itself is refused'; else ok 'the backup folder itself is refused'; fi
+check 'with the reason' said 'another disk'
+if run copy-backups-to; then fail 'no folder is refused'; else ok 'no folder is refused'; fi
+
+# A disk that is not plugged in: the start says so, and nothing stops.
+fresh
+mkdir -p "$work/second"
+run copy-backups-to "$work/second" || true
+command rm -f "$work/second/.sipges-backup-copy"
+run start || true
+check 'start warns when the copy folder lost its mark' said 'is the disk plugged in'
+check 'and still starts' said_not_refused
+
+# status shows a failed copy.
+fresh
+printf '2026-11-19T07:00:00Z the copy folder is not marked\n' >"$work/backups/.last-copy-failure"
+run status || true
+check 'status shows the failed copy' said 'the copy to the second disk failed at 2026-11-19T07:00:00Z'
 
 command rm -rf "$root"
 if ((failures > 0)); then
