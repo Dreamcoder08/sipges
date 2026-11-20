@@ -12,7 +12,11 @@ name=$1
 backups=${SIPGES_BACKUPS_PATH:-/backups}
 copy=${SIPGES_COPY_PATH:-/backup-copy}
 keep=${SIPGES_BACKUP_KEEP:-14}
-[[ -n ${SIPGES_BACKUP_COPY:-} ]] || exit 0
+if [[ -z ${SIPGES_BACKUP_COPY:-} ]]; then
+  # No copy any more: a failure of an earlier one must not keep showing in status.
+  rm -f -- "$backups/.last-copy-failure"
+  exit 0
+fi
 
 failed() {
   printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$1" >"$backups/.last-copy-failure"

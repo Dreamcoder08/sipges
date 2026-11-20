@@ -718,6 +718,14 @@ copy_step "$work/backups" "$work/empty" 20261119T070000Z
 check 'an unmarked folder gets nothing' test -z "$(ls -A "$work/empty")"
 check 'and the failure says to plug the disk in and start again' grep -q 'run ./sipges start' "$work/backups/.last-copy-failure"
 
+# A copy turned off: the failure of an earlier one stops showing.
+fresh
+printf '2026-11-19T07:00:00Z old\n' >"$work/backups/.last-copy-failure"
+a_backup "$work/backups" 20261119T070000Z
+SIPGES_BACKUPS_PATH=$work/backups SIPGES_COPY_PATH=$work/none SIPGES_BACKUP_COPY='' \
+  bash "$(dirname "$script")/ops/copy.sh" 20261119T070000Z >"$work/out" 2>&1
+check 'with no copy set, an old copy failure is cleared' test ! -e "$work/backups/.last-copy-failure"
+
 # A start with a copy folder gives the backup service a fresh mount; without one it does not.
 fresh
 mkdir -p "$work/second"
