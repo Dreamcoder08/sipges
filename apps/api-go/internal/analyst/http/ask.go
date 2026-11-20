@@ -26,11 +26,13 @@ import (
 const maxQuestion = 500
 
 const (
-	askInvalid     = "Escribe una pregunta de 1 a 500 caracteres"
-	askUnavailable = "El analista no está configurado en esta instalación"
-	askBadSources  = "El analista no citó bien sus fuentes; vuelve a preguntar"
-	askNoAnswer    = "El analista no llegó a una respuesta; vuelve a preguntar"
-	askTooSlow     = "El analista tardó demasiado; vuelve a preguntar"
+	askInvalid = "Escribe una pregunta de 1 a 500 caracteres"
+	// askInvalidHistory is a follow-up whose earlier turns pass their limits (chat-first-ui T9).
+	askInvalidHistory = "El historial admite hasta 6 turnos y 8.000 caracteres, cada uno con su pregunta y su respuesta"
+	askUnavailable    = "El analista no está configurado en esta instalación"
+	askBadSources     = "El analista no citó bien sus fuentes; vuelve a preguntar"
+	askNoAnswer       = "El analista no llegó a una respuesta; vuelve a preguntar"
+	askTooSlow        = "El analista tardó demasiado; vuelve a preguntar"
 	// askProviderDown is a model provider out of reach (local QA T6): the bridge stopped, its
 	// login expired or its quota ran out. A 503, like no analyst at all: the search still works.
 	askProviderDown = "El analista no respondió: el servicio de IA no está disponible. " +
@@ -70,8 +72,8 @@ type askJSON struct {
 
 func askRoute(opts Options) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		question, valid := readQuestion(r)
-		answer, err := answerQuestion(r.Context(), opts, question, valid, nil)
+		req := readAsk(r)
+		answer, err := answerQuestion(r.Context(), opts, req, nil)
 		if err == nil {
 			httpx.WriteJSON(w, http.StatusOK, toAskJSON(answer))
 			return
@@ -91,9 +93,9 @@ var (
 
 // answerQuestion is the question of /ask and /ask/stream: the same checks in the same order, the
 // analyst of the request's project, and the loop, reporting to progress when it is not nil.
-func answerQuestion(ctx context.Context, opts Options, question string, valid bool, progress application.Progress) (domain.CitedAnswer, error) {
-	if !valid {
-		return domain.CitedAnswer{}, errInvalidQuestion
+func answerQuestion(ctx context.Context, opts Options, req askRequest, progress application.Progress) (domain.CitedAnswer, error) {
+	if req.err != nil {
+		return domain.CitedAnswer{}, req.err
 	}
 	scope, scoped := tenancyhttp.ScopeFrom(ctx)
 	if opts.Ask == nil || !scoped {
@@ -103,7 +105,7 @@ func answerQuestion(ctx context.Context, opts Options, question string, valid bo
 	if err != nil {
 		return domain.CitedAnswer{}, err
 	}
-	return analyst.AnswerWithProgress(ctx, question, progress)
+	return analyst.AnswerFollowUp(ctx, req.question, req.history, progress)
 }
 
 // logAskFailure logs a server-side failure of a question; the client's own failures are not logged.
@@ -120,27 +122,69 @@ func logAskFailure(r *http.Request, opts Options, status int, err error) {
 	opts.Logger.LogAttrs(r.Context(), slog.LevelWarn, "analyst_ask_failed", attrs...)
 }
 
-// readQuestion reads {"question": "..."}: trimmed, 1 to maxQuestion characters.
-func readQuestion(r *http.Request) (string, bool) {
-	raw, err := io.ReadAll(io.LimitReader(r.Body, 16<<10))
+// maxAskBody bounds the body: a question and a full history, every character escaped as \uXXXX.
+const maxAskBody = 64 << 10
+
+// askRequest is a read body: the question, the earlier turns of a follow-up, or why it is refused.
+type askRequest struct {
+	question string
+	history  []application.Exchange
+	err      error
+}
+
+// readAsk reads {"question": "...", "history": [{"question": "...", "answer": "..."}]}: the
+// question trimmed, 1 to maxQuestion characters; history optional, within application's limits.
+func readAsk(r *http.Request) askRequest {
+	raw, err := io.ReadAll(io.LimitReader(r.Body, maxAskBody))
 	if err != nil {
-		return "", false
+		return askRequest{err: errInvalidQuestion}
 	}
 	var body struct {
-		Question *string `json:"question"`
+		Question *string         `json:"question"`
+		History  json.RawMessage `json:"history"`
 	}
 	if json.Unmarshal(raw, &body) != nil || body.Question == nil {
-		return "", false
+		return askRequest{err: errInvalidQuestion}
 	}
 	question := strings.TrimSpace(*body.Question)
-	n := utf8.RuneCountInString(question)
-	return question, n >= 1 && n <= maxQuestion
+	if n := utf8.RuneCountInString(question); n < 1 || n > maxQuestion {
+		return askRequest{err: errInvalidQuestion}
+	}
+	history, err := readHistory(body.History)
+	if err != nil {
+		return askRequest{err: err}
+	}
+	return askRequest{question: question, history: history}
+}
+
+// readHistory reads the optional earlier turns; each needs both texts.
+func readHistory(raw json.RawMessage) ([]application.Exchange, error) {
+	if len(raw) == 0 || string(raw) == "null" {
+		return nil, nil
+	}
+	var turns []struct {
+		Question *string `json:"question"`
+		Answer   *string `json:"answer"`
+	}
+	if json.Unmarshal(raw, &turns) != nil {
+		return nil, application.ErrInvalidHistory
+	}
+	history := make([]application.Exchange, 0, len(turns))
+	for _, turn := range turns {
+		if turn.Question == nil || turn.Answer == nil {
+			return nil, application.ErrInvalidHistory
+		}
+		history = append(history, application.Exchange{Question: *turn.Question, Answer: *turn.Answer})
+	}
+	return history, application.CheckHistory(history)
 }
 
 func askFailure(err error) (int, string) {
 	switch {
 	case errors.Is(err, errInvalidQuestion):
 		return http.StatusUnprocessableEntity, askInvalid
+	case errors.Is(err, application.ErrInvalidHistory):
+		return http.StatusUnprocessableEntity, askInvalidHistory
 	case errors.Is(err, errNoAnalyst):
 		return http.StatusServiceUnavailable, askUnavailable
 	case errors.Is(err, privacy.ErrDisabled):

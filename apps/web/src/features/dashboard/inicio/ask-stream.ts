@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { ApiError, isApiError, request } from '../../../shared/api/client.ts';
 import { readServerSentEvents } from '../../../shared/api/sse.ts';
-import { AnalystAnswer, askAnalyst } from './ask.ts';
+import { AnalystAnswer, type Exchange, askAnalyst, askBody } from './ask.ts';
 
 /** What the turn says when the stream ended with no answer and no error (T21). */
 export const NO_ANSWER = 'El analista no llegó a una respuesta; vuelve a preguntar';
@@ -26,24 +26,32 @@ const isEventStream = (response: Response) =>
 export const askAnalystStream = async (
   scope: string,
   question: string,
-  { signal, onStep }: { signal?: AbortSignal; onStep?: (label: string) => void } = {},
+  {
+    signal,
+    onStep,
+    history = [],
+  }: {
+    signal?: AbortSignal;
+    onStep?: (label: string) => void;
+    history?: readonly Exchange[];
+  } = {},
 ): Promise<AnalystAnswer> => {
   let response: Response;
   try {
     response = await request('/system/analyst/ask/stream', {
       scope,
       method: 'POST',
-      body: { json: { question } },
+      body: { json: askBody(question, history) },
       accept: 'text/event-stream',
       ...(signal ? { signal } : {}),
     });
   } catch (error) {
-    if (noStreamRoute(error)) return askAnalyst(scope, question, signal);
+    if (noStreamRoute(error)) return askAnalyst(scope, question, signal, history);
     throw error;
   }
   if (!response.body || !isEventStream(response)) {
     await response.body?.cancel().catch(() => undefined);
-    return askAnalyst(scope, question, signal);
+    return askAnalyst(scope, question, signal, history);
   }
   for await (const { event, data } of readServerSentEvents(response.body)) {
     if (event === 'step') {

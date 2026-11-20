@@ -91,3 +91,12 @@ func RenumberCitations(text string, refs []int, shared, full Briefing) (string, 
 	}
 	return out, moved
 }
+
+// citationMark is a citation with the space before it, as StripCitations removes it.
+var citationMark = regexp.MustCompile(`\s*\[[0-9]{1,4}\]`)
+
+// StripCitations removes the [n] markers of an earlier answer: its numbers belonged to that
+// answer's sources, and in a new question they would name other records.
+func StripCitations(text string) string {
+	return strings.TrimSpace(citationMark.ReplaceAllString(text, ""))
+}

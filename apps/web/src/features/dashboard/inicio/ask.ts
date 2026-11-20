@@ -47,12 +47,27 @@ export const AnalystAnswer = z.object({
 });
 export type AnalystAnswer = z.infer<typeof AnalystAnswer>;
 
-/** «Detener» aborts the request through `signal` (chat-first-ui T7); the server ends on it. */
-export const askAnalyst = (scope: string, question: string, signal?: AbortSignal) =>
+/** One earlier question and its answer, sent with a follow-up (chat-first-ui T9, `historyOf`). */
+export type Exchange = { readonly question: string; readonly answer: string };
+
+/** The body of a question: `history` only for a follow-up (chat-first-ui T9). */
+export const askBody = (question: string, history: readonly Exchange[] = []) =>
+  history.length ? { question, history } : { question };
+
+/**
+ * «Detener» aborts the request through `signal` (chat-first-ui T7); the server ends on it.
+ * `history` is the thread's earlier turns (T9, `historyOf`).
+ */
+export const askAnalyst = (
+  scope: string,
+  question: string,
+  signal?: AbortSignal,
+  history: readonly Exchange[] = [],
+) =>
   requestJson('/system/analyst/ask', AnalystAnswer, {
     scope,
     method: 'POST',
-    body: { json: { question } },
+    body: { json: askBody(question, history) },
     ...(signal ? { signal } : {}),
   });
 
