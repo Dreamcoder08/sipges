@@ -426,8 +426,8 @@ check 'a drill leaves the marks of a real install alone' test "$(image_id ready)
 # --- one API or two
 
 # The calls start and update made before replicas existed, with W for the work folder.
-one_api_start='info --format {{.NCPU}} {{.MemTotal}}
-compose --env-file W/env -p sipges -f compose.yaml config -q
+one_api_start='compose --env-file W/env -p sipges -f compose.yaml config -q
+info --format {{.NCPU}} {{.MemTotal}}
 compose --env-file W/env -p sipges -f compose.yaml up -d db api caddy backup
 compose --env-file W/env -p sipges -f compose.yaml exec -T caddy wget -qO- --header Host: localhost http://api:8080/health/ready
 tag sipges-local:current sipges-local:ready'
@@ -565,17 +565,39 @@ env_is() { [[ $(sed -n "s/^$1=//p" "$SIPGES_ENV_FILE" | tail -n 1) == "$2" ]]; }
 
 sized 2 4
 check 'a small machine keeps the 1 GiB API limit' env_is SIPGES_API_MEMORY 1g
+check 'and Go keeps its 800 MiB target, as the image sets it' env_is SIPGES_API_GOMEMLIMIT 800MiB
 check 'and the pool pgx would choose, 4' env_is SIPGES_DB_POOL_MAX 4
 sized 8 7
 check 'below 8 GiB the API limit stays 1 GiB' env_is SIPGES_API_MEMORY 1g
 check 'the pool follows the CPUs, as pgx does' env_is SIPGES_DB_POOL_MAX 8
 sized 16 32
 check 'a large machine gives the API a quarter of its memory, up to 4 GiB' env_is SIPGES_API_MEMORY 4g
+check 'and Go may use 800 MiB of each GiB, or the larger limit would sit unused' env_is SIPGES_API_GOMEMLIMIT 3200MiB
 check 'and a pool of one connection per CPU' env_is SIPGES_DB_POOL_MAX 16
 check 'install says what it chose' said 'Sized for 16 CPUs and 32 GiB'
 sized 64 12
 check '12 GiB gives 3 GiB' env_is SIPGES_API_MEMORY 3g
 check 'the pool stops at 40, so two APIs stay under PostgreSQL'"'"'s 100 connections' env_is SIPGES_DB_POOL_MAX 40
+
+sized 4 8
+check '8 GiB is the first size above 1 GiB' env_is SIPGES_API_MEMORY 2g
+
+# A hand-edited .env: no final newline, and a line whose name only starts like a sized one.
+fresh
+printf 'SIPGES_API_MEMORY_NOTE=keep\nSIPGES_TIMEZONE=America/Lima' >>"$SIPGES_ENV_FILE"
+printf '16 %s\n' "$((32 * GIB))" >"$FAKE/machine"
+run install
+check 'the last line of an .env without a final newline survives' env_is SIPGES_TIMEZONE America/Lima
+check 'a line that only starts like a sized one survives' env_is SIPGES_API_MEMORY_NOTE keep
+check 'and the sizing is written after it' env_is SIPGES_API_MEMORY 4g
+
+# A start that its checks stop leaves the .env as it was.
+fresh
+printf '16 %s\n' "$((32 * GIB))" >"$FAKE/machine"
+printf 'SIPGES_BACKUP_HOUR=25\n' >>"$SIPGES_ENV_FILE"
+cp "$SIPGES_ENV_FILE" "$work/env.before"
+run start || true
+check 'a start its checks refuse does not rewrite the .env' cmp -s "$SIPGES_ENV_FILE" "$work/env.before"
 
 # A bigger machine later: update sizes again and keeps one line of each.
 sized 4 8

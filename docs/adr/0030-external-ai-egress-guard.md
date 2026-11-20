@@ -86,3 +86,13 @@ One guard, `contexts/privacy`, in front of every egress path.
 - Hosting is itself outside Peru (Neon, Cloudflare R2). Their regions and data-processing terms
   belong to the owner's legal review.
 - A project key is derived from `SIPGES_DATA_KEY`; rotating that key changes every pseudonym.
+
+## Amendment (2026-11-19): the Inicio analyst and its follow-ups
+
+The Inicio analyst (`POST /system/analyst/ask`, `odd/tasks/agentic-analyst.md`) came after this
+decision and follows it: the question is scrubbed and released on the analyst channel before the
+model sees it, each read tool releases its own result, and with the switch off nothing is sent.
+Follow-up questions (`odd/tasks/chat-first-ui.md` T9, owner decision L18) add the earlier questions
+and answers the person's tab kept, at most 6 turns and 8,000 characters. They are scrubbed like the
+question and released with it as one logged release; their citation numbers are removed, and the
+server stores none of them.

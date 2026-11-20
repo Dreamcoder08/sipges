@@ -67,6 +67,11 @@ func (o *options) send(ctx context.Context, route Route, path string, f *request
 	if err != nil {
 		return 0, err
 	}
+	return o.deliver(ctx, route, out, f)
+}
+
+// deliver sends a prepared request and prints the answer.
+func (o *options) deliver(ctx context.Context, route Route, out request, f *requestFlags) (int, error) {
 	c, sessionFile, err := o.connect()
 	if err != nil {
 		return 0, err

@@ -247,7 +247,7 @@ Ley 29733, no una decisión legal.
   administradores y **apagado por defecto**. Apagado, las herramientas de lectura de MCP
   responden «El envío a IA externa está desactivado para este proyecto», el resumen asistido no
   se genera (queda el informe extractivo), el analista de Inicio (`POST /system/analyst/ask` y su
-  variante `POST /system/analyst/ask/stream`, `sipgesctl analyst ask [--steps]`) responde 409 sin enviar la pregunta y los embeddings a una URL no local
+  variante `POST /system/analyst/ask/stream`, `sipgesctl analyst ask [--steps] [--follow-up]`) responde 409 sin enviar la pregunta ni los turnos anteriores de una pregunta de seguimiento y los embeddings a una URL no local
   se rechazan. Siguen
   funcionando `list_object_types`, `create_record`, `link_records` y los embeddings de un Ollama
   en `localhost`/`127.0.0.1`/`[::1]`.

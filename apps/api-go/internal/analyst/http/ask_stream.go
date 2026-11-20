@@ -64,7 +64,7 @@ func askStreamRoute(opts Options) http.HandlerFunc {
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Read before the first write: HTTP/1.x may close the body once the answer starts.
-		question, valid := readQuestion(r)
+		req := readAsk(r)
 		ctx, cancel := context.WithCancel(r.Context())
 		defer cancel()
 
@@ -104,7 +104,7 @@ func askStreamRoute(opts Options) http.HandlerFunc {
 					done <- askOutcome{err: fmt.Errorf("analyst stream panic: %v", r)}
 				}
 			}()
-			answer, err := answerQuestion(ctx, opts, question, valid, stepRelay{ctx: ctx, steps: steps})
+			answer, err := answerQuestion(ctx, opts, req, stepRelay{ctx: ctx, steps: steps})
 			done <- askOutcome{answer, err}
 		}()
 
