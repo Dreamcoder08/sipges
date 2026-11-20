@@ -224,7 +224,7 @@ ensure_push_keys() {
 # virtual machine, the real limit. The API gets a quarter of its memory, from 1 GiB below 8 GiB (as
 # before) up to 4 GiB, and a database pool of one connection per CPU, at least 4 as pgx chooses, at
 # most 40, so two APIs stay under PostgreSQL's 100 connections. SIPGES_SIZING=manual in the .env
-# keeps the operator's own SIPGES_API_MEMORY and SIPGES_DB_POOL_MAX; a Docker that cannot say its
+# keeps the operator's own SIPGES_API_MEMORY, SIPGES_API_GOMEMLIMIT and SIPGES_DB_POOL_MAX; a Docker that cannot say its
 # size leaves the compose defaults.
 size_host() {
   [[ $(env_value SIPGES_SIZING) != manual ]] || return 0
@@ -237,17 +237,19 @@ size_host() {
   ((memory <= 4)) || memory=4
   pool=$((cpus < 4 ? 4 : cpus))
   ((pool <= 40)) || pool=40
-  sed -i '/^SIPGES_API_MEMORY=/d; /^SIPGES_DB_POOL_MAX=/d; /^# Sized by .\/sipges/d' "$ENV_FILE"
+  sed -i '/^SIPGES_API_MEMORY=/d; /^SIPGES_API_GOMEMLIMIT=/d; /^SIPGES_DB_POOL_MAX=/d; /^# Sized by .\/sipges/d' "$ENV_FILE"
   [[ ! -s $ENV_FILE || -z $(tail -c 1 "$ENV_FILE") ]] || printf '\n' >>"$ENV_FILE"
-  printf '# Sized by ./sipges for %s CPUs and %s GiB; SIPGES_SIZING=manual keeps your own values.\nSIPGES_API_MEMORY=%sg\nSIPGES_DB_POOL_MAX=%s\n' \
-    "$cpus" "$gib" "$memory" "$pool" >>"$ENV_FILE"
+  # Go does not read the container's limit: its own target (the image's 800MiB for 1 GiB) grows
+  # with it, or the larger limit would sit unused while Go collected garbage as if it had 1 GiB.
+  printf '# Sized by ./sipges for %s CPUs and %s GiB; SIPGES_SIZING=manual keeps your own values.\nSIPGES_API_MEMORY=%sg\nSIPGES_API_GOMEMLIMIT=%sMiB\nSIPGES_DB_POOL_MAX=%s\n' \
+    "$cpus" "$gib" "$memory" "$((memory * 800))" "$pool" >>"$ENV_FILE"
   say "Sized for $cpus CPUs and $gib GiB: the API may use ${memory} GiB and $pool database connections."
 }
 
 start() {
   mkdir -p "$(env_value SIPGES_BACKUP_DIR)"
-  size_host
   preflight
+  size_host
   ensure_push_keys
   local replicas
   replicas=$(api_replicas) || exit 1

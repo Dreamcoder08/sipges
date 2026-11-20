@@ -156,14 +156,15 @@ Si ese archivo no existe, `./sipges` se detiene con `SIPGES_COMPOSE_OVERRIDE nam
 
 ### Ajustado a la computadora
 
-`./sipges install`, `start` y `update` leen los procesadores y la memoria que tiene Docker (en Windows y macOS, la máquina virtual de Docker) y escriben dos líneas en `.env`, después del comentario `# Sized by ./sipges`:
+`./sipges install`, `start` y `update` leen los procesadores y la memoria que tiene Docker (en Windows y macOS, la máquina virtual de Docker) y escriben tres líneas en `.env`, después del comentario `# Sized by ./sipges`:
 
 | Ajuste | Valor |
 | --- | --- |
 | `SIPGES_API_MEMORY` | Un cuarto de la memoria, desde `1g` (por debajo de 8 GiB, como antes) hasta `4g` |
+| `SIPGES_API_GOMEMLIMIT` | El objetivo de memoria del propio Go, 800 MiB por cada GiB de `SIPGES_API_MEMORY` (`800MiB`, como antes, para `1g`). Go no lee el límite del contenedor, así que sin esto un límite mayor quedaría sin usar |
 | `SIPGES_DB_POOL_MAX` | Una conexión a la base por procesador, mínimo 4 y máximo 40, para que dos APIs queden por debajo de las 100 de PostgreSQL |
 
-El comando dice lo que eligió (`Sized for 16 CPUs and 32 GiB: …`). Una computadora más grande, o más memoria para Docker, se toma en el siguiente `./sipges start` o `update`. Para conservar valores propios, agrega `SIPGES_SIZING=manual` a `.env` junto con tus `SIPGES_API_MEMORY` y `SIPGES_DB_POOL_MAX`. Si Docker no informa su tamaño, no se escribe nada y cada API conserva 1 GiB y 4 conexiones.
+El comando dice lo que eligió (`Sized for 16 CPUs and 32 GiB: …`). Una computadora más grande, o más memoria para Docker, se toma en el siguiente `./sipges start` o `update`. Para conservar valores propios, agrega `SIPGES_SIZING=manual` a `.env` junto con tus `SIPGES_API_MEMORY`, `SIPGES_API_GOMEMLIMIT` y `SIPGES_DB_POOL_MAX`. Si Docker no informa su tamaño, no se escribe nada y cada API conserva 1 GiB, los 800 MiB de Go y 4 conexiones (antes de este ajuste el pool era uno por procesador). Con `SIPGES_SIZING=manual`, define los tres valores.
 
 ### Dos réplicas de la API
 

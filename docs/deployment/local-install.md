@@ -141,14 +141,15 @@ If that file is missing, `./sipges` stops with `SIPGES_COMPOSE_OVERRIDE names <p
 
 ### Sized to the computer
 
-`./sipges install`, `start` and `update` read the processors and memory Docker has (on Windows and macOS, Docker's own virtual machine) and write two lines to `.env`, after the comment `# Sized by ./sipges`:
+`./sipges install`, `start` and `update` read the processors and memory Docker has (on Windows and macOS, Docker's own virtual machine) and write three lines to `.env`, after the comment `# Sized by ./sipges`:
 
 | Setting | Value |
 | --- | --- |
 | `SIPGES_API_MEMORY` | A quarter of the memory, from `1g` (below 8 GiB, as before) up to `4g` |
+| `SIPGES_API_GOMEMLIMIT` | Go's own memory target, 800 MiB for each GiB of `SIPGES_API_MEMORY` (`800MiB`, as before, for `1g`). Go does not read the container's limit, so without it a larger limit would sit unused |
 | `SIPGES_DB_POOL_MAX` | One database connection per processor, at least 4 and at most 40, so two APIs stay under PostgreSQL's 100 |
 
-The command says what it chose (`Sized for 16 CPUs and 32 GiB: …`). A bigger computer, or more memory for Docker, is picked up by the next `./sipges start` or `update`. To keep your own values, add `SIPGES_SIZING=manual` to `.env` with your `SIPGES_API_MEMORY` and `SIPGES_DB_POOL_MAX`. If Docker cannot say its size, nothing is written and each API keeps 1 GiB and 4 connections.
+The command says what it chose (`Sized for 16 CPUs and 32 GiB: …`). A bigger computer, or more memory for Docker, is picked up by the next `./sipges start` or `update`. To keep your own values, add `SIPGES_SIZING=manual` to `.env` with your `SIPGES_API_MEMORY`, `SIPGES_API_GOMEMLIMIT` and `SIPGES_DB_POOL_MAX`. If Docker cannot say its size, nothing is written and each API keeps 1 GiB, Go's 800 MiB and 4 connections (before sizing existed, the pool was one per processor). With `SIPGES_SIZING=manual`, set all three values.
 
 ### Two API replicas
 

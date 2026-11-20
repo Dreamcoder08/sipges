@@ -16,6 +16,8 @@ x-database-url: &database-url postgres://sipges_app:${SIPGES_DB_PASSWORD:?}@db:5
 # The API's settings, shared by `api` and the optional second replica `api-2` (ADR 0035).
 x-api-environment: &api-environment
   SIPGES_DATABASE_URL: *database-url
+  # Go's memory target follows mem_limit (./sipges size_host); 800MiB, the image's, when unsized.
+  GOMEMLIMIT: ${SIPGES_API_GOMEMLIMIT:-800MiB}
   SIPGES_ALLOWED_HOSTS: ${SIPGES_SITE_HOST:?}
   SIPGES_DATA_KEY: ${SIPGES_DATA_KEY:?}
   SIPGES_ADMIN_USERNAME: ${SIPGES_ADMIN_USERNAME:-admin}
