@@ -634,6 +634,81 @@ printf '2026-11-19T07:00:00Z the copy folder is not marked\n' >"$work/backups/.l
 run status || true
 check 'status shows the failed copy' said 'the copy to the second disk failed at 2026-11-19T07:00:00Z'
 
+
+# The copy step itself (ops/copy.sh), on folders of this test instead of the container's.
+copy_step() { # backups folder, copy folder, name
+  SIPGES_BACKUPS_PATH=$1 SIPGES_COPY_PATH=$2 SIPGES_BACKUP_COPY=/media/disk SIPGES_BACKUP_KEEP=2 \
+    bash "$(dirname "$script")/ops/copy.sh" "$3" >"$work/out" 2>&1
+}
+a_backup() { # folder name
+  mkdir -p "$1/$2"
+  echo "$2" >"$1/$2/db.dump.gpg"
+  (cd "$1/$2" && sha256sum db.dump.gpg >SHA256SUMS)
+}
+fresh
+copies=$work/disk
+mkdir -p "$copies"
+touch "$copies/.sipges-backup-copy"
+mkdir "$copies/2025 photos Z" "$copies/20250101T000000Z-notes"
+for stamp in 20261117T070000Z 20261118T070000Z 20261119T070000Z; do
+  a_backup "$work/backups" "$stamp"
+  copy_step "$work/backups" "$copies" "$stamp"
+done
+check 'each backup is copied and checked' test -f "$copies/20261119T070000Z/SHA256SUMS"
+check 'the copy keeps SIPGES_BACKUP_KEEP of them' test ! -e "$copies/20261117T070000Z"
+check 'and touches no folder that is not a backup' test -d "$copies/2025 photos Z"
+check 'not even one that starts like one' test -d "$copies/20250101T000000Z-notes"
+
+# An old copy that cannot be removed (a disk gone read-only): the copy step still ends with 0.
+fresh
+copies=$work/disk
+mkdir -p "$copies/20261101T070000Z/locked"
+touch "$copies/.sipges-backup-copy" "$copies/20261101T070000Z/locked/file"
+chmod a-w "$copies/20261101T070000Z/locked"
+a_backup "$work/backups" 20261118T070000Z
+a_backup "$work/backups" 20261119T070000Z
+copy_step "$work/backups" "$copies" 20261118T070000Z
+if copy_step "$work/backups" "$copies" 20261119T070000Z; then
+  ok 'a copy whose old copies cannot be removed does not fail the backup'
+else
+  fail 'a copy whose old copies cannot be removed does not fail the backup'
+fi
+check 'and is recorded for status' grep -q 'could not remove older copies' "$work/backups/.last-copy-failure"
+chmod u+w "$copies/20261101T070000Z/locked"
+
+# A copy that does not match its checksums never counts.
+fresh
+copies=$work/disk
+mkdir -p "$copies"
+touch "$copies/.sipges-backup-copy"
+a_backup "$work/backups" 20261119T070000Z
+echo tampered >"$work/backups/20261119T070000Z/db.dump.gpg"
+copy_step "$work/backups" "$copies" 20261119T070000Z
+check 'a copy that does not match is not kept' test ! -e "$copies/20261119T070000Z"
+check 'nor is its partial' test -z "$(find "$copies" -name '.partial-*')"
+check 'and the failure is recorded' grep -q 'could not copy' "$work/backups/.last-copy-failure"
+
+# Unmarked (the disk is not plugged in): nothing is written, and the way back is named.
+fresh
+mkdir -p "$work/empty"
+a_backup "$work/backups" 20261119T070000Z
+copy_step "$work/backups" "$work/empty" 20261119T070000Z
+check 'an unmarked folder gets nothing' test -z "$(ls -A "$work/empty")"
+check 'and the failure says to plug the disk in and start again' grep -q 'run ./sipges start' "$work/backups/.last-copy-failure"
+
+# A start with a copy folder gives the backup service a fresh mount; without one it does not.
+fresh
+mkdir -p "$work/second"
+run copy-backups-to "$work/second" || true
+check 'a folder on the same disk as the backups is pointed out' said 'same disk as the backups'
+: >"$FAKE/calls"
+run install || true
+check 'start with a copy folder recreates the backup service, for a disk plugged in since' called 'up -d --no-deps --force-recreate backup'
+fresh
+: >"$FAKE/calls"
+run install || true
+check 'without one it does not' no_call 'force-recreate'
+
 command rm -rf "$root"
 if ((failures > 0)); then
   printf '%d failed\n' "$failures"

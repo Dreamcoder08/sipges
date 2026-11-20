@@ -51,37 +51,5 @@ done
 rm -f /backups/.last-failure
 echo "backup finished: $stamp"
 
-# The copy on a second disk (local-qa-findings T15). It never fails the backup: a copy that cannot
-# be made is written where ./sipges status shows it. It goes only into a folder ./sipges
-# copy-backups-to marked, so an unplugged disk, for which Docker mounts an empty folder of this
-# disk instead, gets nothing; it counts only once its checksums match.
-copy_failed() {
-  printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$1" >/backups/.last-copy-failure
-  chown "$SIPGES_HOST_OWNER" /backups/.last-copy-failure
-  echo "backup copy skipped: $1" >&2
-}
-copy_out() {
-  local copy=/backup-copy partial
-  [[ -n ${SIPGES_BACKUP_COPY:-} ]] || return 0
-  if [[ ! -f $copy/.sipges-backup-copy ]]; then
-    copy_failed "$SIPGES_BACKUP_COPY is not marked as the copy (is the disk plugged in?)"
-    return 0
-  fi
-  partial="$copy/.partial-$stamp"
-  rm -rf -- "$partial"
-  if ! cp -r -- "$final" "$partial" || ! (cd "$partial" && sha256sum --quiet -c SHA256SUMS) ||
-    ! mv -T -- "$partial" "$copy/$stamp"; then
-    rm -rf -- "$partial"
-    copy_failed "could not copy $stamp to $SIPGES_BACKUP_COPY"
-    return 0
-  fi
-  # Disks such as FAT keep no owner: then the copy simply stays as written.
-  chown -R "$SIPGES_HOST_OWNER" "$copy/$stamp" 2>/dev/null || true
-  find "$copy" -mindepth 1 -maxdepth 1 -type d -name '20*Z' ! -name "$stamp" -printf '%f\n' | sort -r |
-    tail -n "+$keep" | while read -r old; do
-    rm -rf -- "$copy/${old:?}"
-  done
-  rm -f /backups/.last-copy-failure
-  echo "backup copied to $SIPGES_BACKUP_COPY"
-}
-copy_out
+# The copy on a second disk (local-qa-findings T15): its own failures never fail the backup.
+bash /ops/copy.sh "$stamp" || echo 'backup copy step failed' >&2

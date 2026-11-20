@@ -102,7 +102,7 @@ Los respaldos están en `deploy/local/backups`. **Un respaldo en la misma comput
 ./sipges backup
 ```
 
-La carpeta debe existir. SIPGES la marca con un archivo `.sipges-backup-copy`, copia allí cada respaldo después de leerlo de vuelta, comprueba la copia con sus sumas de verificación y conserva tantas como `SIPGES_BACKUP_KEEP`. Solo copia a la carpeta marcada: con el disco desconectado no se escribe nada en el disco de esta computadora en su lugar, el respaldo igual cuenta y `./sipges status` dice que la copia falló y por qué. Al volver a conectar el disco, el siguiente respaldo se copia de nuevo. Para dejar de copiar, quita la línea `SIPGES_BACKUP_COPY_DIR` de `.env` y ejecuta `./sipges start`.
+La carpeta debe existir. SIPGES la marca con un archivo `.sipges-backup-copy`, copia allí cada respaldo después de leerlo de vuelta, comprueba la copia con sus sumas de verificación y conserva tantas como `SIPGES_BACKUP_KEEP`. Solo copia a la carpeta marcada: con el disco desconectado no se escribe nada en el disco de esta computadora en su lugar, el respaldo igual cuenta y `./sipges status` dice que la copia falló y por qué. Al volver a conectar el disco ejecuta `./sipges start`: el servicio en marcha sigue viendo la carpeta vacía con la que arrancó, y start le devuelve el disco, así el siguiente respaldo se copia. `copy-backups-to` avisa cuando la carpeta está en el mismo disco que los respaldos, como pasa si se creó con el otro disco desconectado. Para dejar de copiar, quita la línea `SIPGES_BACKUP_COPY_DIR` de `.env` y ejecuta `./sipges start`.
 
 | Comando | Qué hace |
 | --- | --- |

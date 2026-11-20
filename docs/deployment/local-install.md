@@ -87,7 +87,7 @@ Backups are in `deploy/local/backups`. **A backup on the same computer does not 
 ./sipges backup
 ```
 
-The folder must exist. SIPGES marks it with a `.sipges-backup-copy` file, copies every backup there after it is read back, checks the copy against its checksums and keeps as many as `SIPGES_BACKUP_KEEP`. It copies only into the marked folder: with the disk unplugged, nothing goes to this computer's disk in its place, the backup itself still counts, and `./sipges status` says the copy failed and why. Plug the disk back in and the next backup is copied again. To stop the copies, remove the `SIPGES_BACKUP_COPY_DIR` line from `.env` and run `./sipges start`.
+The folder must exist. SIPGES marks it with a `.sipges-backup-copy` file, copies every backup there after it is read back, checks the copy against its checksums and keeps as many as `SIPGES_BACKUP_KEEP`. It copies only into the marked folder: with the disk unplugged, nothing goes to this computer's disk in its place, the backup itself still counts, and `./sipges status` says the copy failed and why. Plug the disk back in and run `./sipges start`: a running service keeps seeing the empty folder it started with, and start gives it the disk again, so the next backup is copied. `copy-backups-to` warns when the folder is on the same disk as the backups, as happens when it was made while the other disk was unplugged. To stop the copies, remove the `SIPGES_BACKUP_COPY_DIR` line from `.env` and run `./sipges start`.
 
 | Command | What it does |
 | --- | --- |

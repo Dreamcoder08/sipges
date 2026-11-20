@@ -260,6 +260,14 @@ start() {
   fi
   wait_ready
   mark_ready
+  refresh_copy_mount
+}
+
+# A container keeps the mount it started with: a disk plugged in after it started, or plugged
+# back in, shows only in a new one. With a copy folder set, start gives the backup service one.
+refresh_copy_mount() {
+  [[ -n $(env_value SIPGES_BACKUP_COPY_DIR) ]] || return 0
+  compose up -d --no-deps --force-recreate backup
 }
 
 # Two APIs restart one at a time, so one always answers through Caddy. The migrations run while
@@ -506,6 +514,10 @@ cmd_copy_backups_to() {
     die "$dir is the backup folder itself: choose a folder on another disk"
   fi
   touch "$dir/$COPY_MARK" 2>/dev/null || die "cannot write in $dir"
+  # A folder made while the disk was unplugged lands on this disk: then a dead disk loses both.
+  if [[ -d $backups && $(stat -c %d "$dir") == "$(stat -c %d "$backups")" ]]; then
+    say "WARNING: $dir is on the same disk as the backups, so a dead disk loses both. Is the other disk plugged in?"
+  fi
   sed -i '/^SIPGES_BACKUP_COPY_DIR=/d' "$ENV_FILE"
   [[ ! -s $ENV_FILE || -z $(tail -c 1 "$ENV_FILE") ]] || printf '\n' >>"$ENV_FILE"
   printf 'SIPGES_BACKUP_COPY_DIR=%s\n' "$dir" >>"$ENV_FILE"
@@ -518,7 +530,7 @@ check_copy_folder() {
   local dir
   dir=$(env_value SIPGES_BACKUP_COPY_DIR)
   [[ -n $dir && ! -f $dir/$COPY_MARK ]] || return 0
-  say "WARNING: $dir is not marked as the backup copy (is the disk plugged in?). Backups go on; copies wait until it is back."
+  say "WARNING: $dir is not marked as the backup copy (is the disk plugged in?). Backups go on without a copy until it is back and ./sipges start runs again."
 }
 
 cmd_backups() {
