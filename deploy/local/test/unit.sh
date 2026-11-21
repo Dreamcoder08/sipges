@@ -582,6 +582,30 @@ check 'the pool stops at 40, so two APIs stay under PostgreSQL'"'"'s 100 connect
 sized 4 8
 check '8 GiB is the first size above 1 GiB' env_is SIPGES_API_MEMORY 2g
 
+# PostgreSQL gets its own limit and settings from it (world-class-local T1).
+sized 2 4
+check 'a small machine gives PostgreSQL 1 GiB' env_is SIPGES_DB_MEMORY 1g
+check 'and a quarter of it as shared_buffers' env_is SIPGES_DB_SHARED_BUFFERS 256MB
+check 'and three quarters as the cache estimate' env_is SIPGES_DB_EFFECTIVE_CACHE_SIZE 768MB
+check 'and work_mem that 80 connections cannot push past the limit' env_is SIPGES_DB_WORK_MEM 8MB
+check 'and maintenance_work_mem of a sixteenth' env_is SIPGES_DB_MAINTENANCE_WORK_MEM 64MB
+sized 16 32
+check 'a large machine gives PostgreSQL up to 4 GiB' env_is SIPGES_DB_MEMORY 4g
+check 'with 1 GiB of shared_buffers' env_is SIPGES_DB_SHARED_BUFFERS 1024MB
+check 'a 3 GiB cache estimate' env_is SIPGES_DB_EFFECTIVE_CACHE_SIZE 3072MB
+check 'and 32 MB of work_mem' env_is SIPGES_DB_WORK_MEM 32MB
+
+# Two APIs share the API budget instead of taking it twice (world-class-local T1).
+two_apis
+printf '8 %s\n' "$((16 * GIB))" >"$FAKE/machine"
+run install
+check 'two APIs on 16 GiB get 2 GiB each, not 4 each (half the machine)' env_is SIPGES_API_MEMORY 2g
+check 'and Go follows the halved limit' env_is SIPGES_API_GOMEMLIMIT 1600MiB
+two_apis
+printf '4 %s\n' "$((7 * GIB))" >"$FAKE/machine"
+run install
+check 'two APIs on 7 GiB keep the 1 GiB floor each' env_is SIPGES_API_MEMORY 1g
+
 # A hand-edited .env: no final newline, and a line whose name only starts like a sized one.
 fresh
 printf 'SIPGES_API_MEMORY_NOTE=keep\nSIPGES_TIMEZONE=America/Lima' >>"$SIPGES_ENV_FILE"

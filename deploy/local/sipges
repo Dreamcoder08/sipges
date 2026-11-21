@@ -228,22 +228,33 @@ ensure_push_keys() {
 # size leaves the compose defaults.
 size_host() {
   [[ $(env_value SIPGES_SIZING) != manual ]] || return 0
-  local cpus bytes gib memory pool
+  local cpus bytes gib memory pool replicas db db_mib
   read -r cpus bytes < <(docker info --format '{{.NCPU}} {{.MemTotal}}' 2>/dev/null) || true
   [[ ${cpus:-} =~ ^[1-9][0-9]*$ && ${bytes:-} =~ ^[1-9][0-9]*$ ]] || return 0
+  replicas=$(api_replicas) || exit 1
   gib=$((bytes / 1024 / 1024 / 1024))
-  memory=$((gib / 4))
+  # The APIs share a quarter of the machine, up to 4 GiB each and never under 1 GiB each.
+  memory=$((gib / 4 / replicas))
   ((memory >= 2)) || memory=1
   ((memory <= 4)) || memory=4
   pool=$((cpus < 4 ? 4 : cpus))
   ((pool <= 40)) || pool=40
-  sed -i '/^SIPGES_API_MEMORY=/d; /^SIPGES_API_GOMEMLIMIT=/d; /^SIPGES_DB_POOL_MAX=/d; /^# Sized by .\/sipges/d' "$ENV_FILE"
+  # PostgreSQL gets its own quarter, 1 to 4 GiB, so the kernel never picks it to free memory
+  # for an unbounded neighbour; its settings follow that limit (world-class-local T1).
+  db=$((gib / 4))
+  ((db >= 1)) || db=1
+  ((db <= 4)) || db=4
+  db_mib=$((db * 1024))
+  sed -i '/^SIPGES_API_MEMORY=/d; /^SIPGES_API_GOMEMLIMIT=/d; /^SIPGES_DB_POOL_MAX=/d; /^SIPGES_DB_MEMORY=/d; /^SIPGES_DB_SHARED_BUFFERS=/d; /^SIPGES_DB_EFFECTIVE_CACHE_SIZE=/d; /^SIPGES_DB_WORK_MEM=/d; /^SIPGES_DB_MAINTENANCE_WORK_MEM=/d; /^# Sized by .\/sipges/d' "$ENV_FILE"
   [[ ! -s $ENV_FILE || -z $(tail -c 1 "$ENV_FILE") ]] || printf '\n' >>"$ENV_FILE"
   # Go does not read the container's limit: its own target (the image's 800MiB for 1 GiB) grows
   # with it, or the larger limit would sit unused while Go collected garbage as if it had 1 GiB.
   printf '# Sized by ./sipges for %s CPUs and %s GiB; SIPGES_SIZING=manual keeps your own values.\nSIPGES_API_MEMORY=%sg\nSIPGES_API_GOMEMLIMIT=%sMiB\nSIPGES_DB_POOL_MAX=%s\n' \
     "$cpus" "$gib" "$memory" "$((memory * 800))" "$pool" >>"$ENV_FILE"
-  say "Sized for $cpus CPUs and $gib GiB: the API may use ${memory} GiB and $pool database connections."
+  # work_mem is per sort or hash, per connection: a 128th keeps two full pools inside the limit.
+  printf 'SIPGES_DB_MEMORY=%sg\nSIPGES_DB_SHARED_BUFFERS=%sMB\nSIPGES_DB_EFFECTIVE_CACHE_SIZE=%sMB\nSIPGES_DB_WORK_MEM=%sMB\nSIPGES_DB_MAINTENANCE_WORK_MEM=%sMB\n' \
+    "$db" "$((db_mib / 4))" "$((db_mib * 3 / 4))" "$((db_mib / 128))" "$((db_mib / 16))" >>"$ENV_FILE"
+  say "Sized for $cpus CPUs and $gib GiB: each API may use ${memory} GiB, the database ${db} GiB, with $pool database connections."
 }
 
 start() {
