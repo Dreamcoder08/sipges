@@ -1,6 +1,7 @@
 package app_test
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
 	"testing"
@@ -79,5 +80,41 @@ func TestMCPReportPeriodIsListedAndGuarded(t *testing.T) {
 	}
 	if text, isError := tool(t, s, mcpOff, "report_period", `{"module":"eventos","period":"hoy"}`); !isError || text != disabled {
 		t.Errorf("switch off: %v %s", isError, text)
+	}
+}
+
+// format «csv» adds the same rows as CSV text, with a header and the total, ready to save: a byte
+// order mark and CRLF so a spreadsheet opens it in UTF-8 (odd/tasks/reporting-mcp.md S6, T8).
+func TestMCPReportPeriodAsCSV(t *testing.T) {
+	mcpSeed(t)
+	t.Setenv("SIPGES_DATA_KEY", dataKey)
+	s := start(t, false)
+	s.clock.set(time.Date(2026, 3, 15, 15, 0, 0, 0, time.UTC))
+	csvOf := func(args string) string {
+		t.Helper()
+		text, isError := tool(t, s, mcpCounts, "report_period", args)
+		if isError {
+			t.Fatalf("%s: %s", args, text)
+		}
+		var answer struct {
+			CSV *string `json:"csv"`
+		}
+		if err := json.Unmarshal([]byte(text), &answer); err != nil || answer.CSV == nil {
+			t.Fatalf("%s: no csv in %s", args, text)
+		}
+		return *answer.CSV
+	}
+	const bom = "\uFEFF"
+	for args, want := range map[string]string{
+		`{"module":"eventos","group_by":"Tipo_Evento","format":"csv"}`:       bom + "Tipo_Evento,cantidad\r\nAsamblea,2\r\nBloqueo,1\r\nParo,1\r\n(sin valor),1\r\nTotal,5\r\n",
+		`{"module":"eventos","period":"este año","by":"mes","format":"CSV"}`: bom + "mes,cantidad\r\n2026-01,1\r\n2026-03,1\r\nTotal,2\r\n",
+		`{"module":"eventos","period":"hoy","format":"csv"}`:                 bom + "Total\r\n0\r\n",
+	} {
+		if got := csvOf(args); got != want {
+			t.Errorf("%s:\n got %q\nwant %q", args, got, want)
+		}
+	}
+	if text, _ := tool(t, s, mcpCounts, "report_period", `{"module":"eventos","period":"hoy"}`); strings.Contains(text, `"csv"`) {
+		t.Errorf("json carries a csv: %s", text)
 	}
 }

@@ -3,7 +3,9 @@ package application
 import (
 	"cmp"
 	"context"
+	"encoding/csv"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -134,7 +136,61 @@ func (c readCall) report(ctx context.Context) (any, string, error) {
 		out.Series = append(out.Series, reportPointJSON{Period: point, Count: count})
 	}
 	slices.SortFunc(out.Series, func(a, b reportPointJSON) int { return cmp.Compare(a.Period, b.Period) })
+	if format == "csv" {
+		text := reportCSV(out)
+		out.CSV = &text
+	}
 	return out, "", nil
+}
+
+// csvBOM and CRLF make a spreadsheet open the text as UTF-8, as the web's own exports do.
+const csvBOM = "\uFEFF"
+
+// noValue names the group of records without the field, as a person reads the sheet.
+const noValue = "(sin valor)"
+
+// asCSVText keeps text a spreadsheet would run as a formula as text (OWASP CSV injection): a
+// leading =, +, -, @, tab or carriage return gets an apostrophe in front.
+func asCSVText(text string) string {
+	if text != "" && strings.ContainsRune("=+-@\t\r", rune(text[0])) {
+		return "'" + text
+	}
+	return text
+}
+
+// reportCSV is the report as CSV: the groups or the series with a header, then the total. Built
+// from values the guard's session already sanitised; the release scrubs it again with the rest.
+func reportCSV(r reportJSON) string {
+	var b strings.Builder
+	b.WriteString(csvBOM)
+	w := csv.NewWriter(&b)
+	w.UseCRLF = true
+	switch {
+	case r.GroupBy != nil:
+		_ = w.Write([]string{*r.GroupBy, "cantidad"})
+		for _, g := range r.Groups {
+			value := noValue
+			switch {
+			case g.Value != nil && g.Value.IsNumber:
+				value = groupKey{isNumber: true, number: g.Value.Number}.asText()
+			case g.Value != nil:
+				value = asCSVText(g.Value.Text)
+			}
+			_ = w.Write([]string{value, strconv.Itoa(g.Count)})
+		}
+		_ = w.Write([]string{"Total", strconv.Itoa(r.Total)})
+	case r.By != nil:
+		_ = w.Write([]string{*r.By, "cantidad"})
+		for _, p := range r.Series {
+			_ = w.Write([]string{p.Period, strconv.Itoa(p.Count)})
+		}
+		_ = w.Write([]string{"Total", strconv.Itoa(r.Total)})
+	default:
+		_ = w.Write([]string{"Total"})
+		_ = w.Write([]string{strconv.Itoa(r.Total)})
+	}
+	w.Flush()
+	return b.String()
 }
 
 // period is the range the report covers: period words, explicit dates as count_records takes them,
