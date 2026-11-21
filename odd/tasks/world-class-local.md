@@ -10,7 +10,7 @@ Branch per task from `origin/main`; delivery `ask-on-risk`; runners: `deploy/loc
 
 ## Tasks
 
-- T1 [ ] — S1, S2: bound PostgreSQL, Caddy and backup memory, tune PostgreSQL from the host size, enlarge /dev/shm, and divide the API budget by the replica count (audit B10). Route: inline. Commit: pending.
+- T1 [x] — S1, S2: bound PostgreSQL, Caddy and backup memory, tune PostgreSQL from the host size, enlarge /dev/shm, and divide the API budget by the replica count (audit B10). Route: inline. Commit: pending.
 - T2 [ ] — S1, S2: calendar retention (14 daily, 8 weekly, 12 monthly, pre-update backups apart), a catch-up backup at start when the newest is older than 24 h, and `status` warning past 26 h (audit B4). Route: inline. Commit: pending.
 - T3 [ ] — S1, S2: `status` warns on every run until a backup copy folder is set; optional off-site push of the sealed folders (audit B2). Route: inline; the destination is the owner's. Commit: pending.
 - T4 [ ] — S1, S2: `./sipges recovery-kit`, a printable sheet with the confirmation of the passphrase's last 4 characters, and a `status` warning until done (audit B5). Route: inline. Commit: pending.
@@ -27,3 +27,4 @@ Branch per task from `origin/main`; delivery `ask-on-risk`; runners: `deploy/loc
 
 - L1 — Owner's request, verbatim: S1, then S2.
 - L2 — 2026-11-21. Audit workflow wf_9834d280-144: 9 agents, read-only, current web sources. Scores: ux-product 52, security-privacy 72, reliability-ops 66, performance-ram 72, accessibility-mobile 76, data-domain 54, ai-analyst 62, engineering-quality 68; overall 62%. RAM at idle 160–250 MiB for the stack on a 7.2 GiB laptop: memory is not the problem. Server-side conversations (audit B14) stay out: the owner's delegated decision kept them in the browser (chat-first-ui T11). Next: T1.
+- L3 — Memoria acotada: 2026-11-21. size_host reparte el cuarto de las APIs entre réplicas y da a PostgreSQL su propio cuarto (1–4 GiB) con shared_buffers ¼, effective_cache_size ½, maintenance_work_mem 1/16 y work_mem calculado de las conexiones reales (4–64 MB); compose: mem_limit de db, caddy 256m y backup 512m, shm_size 256m. RED→GREEN en deploy/local/test/unit.sh (195 ok), shellcheck limpio, compose config válido. Verificador independiente (ítem 5, instalador): sin bloqueantes; corregidos en una tanda sus avisos (work_mem que pasaba 1 GiB con dos APIs en la laptop, effective_cache_size optimista, comentarios, aviso de reinicio de la base en la guía); recheck 195 ok.

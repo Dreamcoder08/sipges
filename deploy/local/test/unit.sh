@@ -586,14 +586,14 @@ check '8 GiB is the first size above 1 GiB' env_is SIPGES_API_MEMORY 2g
 sized 2 4
 check 'a small machine gives PostgreSQL 1 GiB' env_is SIPGES_DB_MEMORY 1g
 check 'and a quarter of it as shared_buffers' env_is SIPGES_DB_SHARED_BUFFERS 256MB
-check 'and three quarters as the cache estimate' env_is SIPGES_DB_EFFECTIVE_CACHE_SIZE 768MB
-check 'and work_mem that 80 connections cannot push past the limit' env_is SIPGES_DB_WORK_MEM 8MB
+check 'and half of it as the cache estimate' env_is SIPGES_DB_EFFECTIVE_CACHE_SIZE 512MB
+check 'and work_mem from what is left for its 6 connections, each running a hash step at twice it' env_is SIPGES_DB_WORK_MEM 41MB
 check 'and maintenance_work_mem of a sixteenth' env_is SIPGES_DB_MAINTENANCE_WORK_MEM 64MB
 sized 16 32
 check 'a large machine gives PostgreSQL up to 4 GiB' env_is SIPGES_DB_MEMORY 4g
 check 'with 1 GiB of shared_buffers' env_is SIPGES_DB_SHARED_BUFFERS 1024MB
-check 'a 3 GiB cache estimate' env_is SIPGES_DB_EFFECTIVE_CACHE_SIZE 3072MB
-check 'and 32 MB of work_mem' env_is SIPGES_DB_WORK_MEM 32MB
+check 'a 2 GiB cache estimate' env_is SIPGES_DB_EFFECTIVE_CACHE_SIZE 2048MB
+check 'and 59 MB of work_mem for 18 connections' env_is SIPGES_DB_WORK_MEM 59MB
 
 # Two APIs share the API budget instead of taking it twice (world-class-local T1).
 two_apis
@@ -605,6 +605,10 @@ two_apis
 printf '4 %s\n' "$((7 * GIB))" >"$FAKE/machine"
 run install
 check 'two APIs on 7 GiB keep the 1 GiB floor each' env_is SIPGES_API_MEMORY 1g
+two_apis
+printf '12 %s\n' "$((7 * GIB))" >"$FAKE/machine"
+run install
+check 'on the owner'"'"'s laptop, two APIs of 12 connections leave 6 MB of work_mem, inside 1 GiB' env_is SIPGES_DB_WORK_MEM 6MB
 
 # A hand-edited .env: no final newline, and a line whose name only starts like a sized one.
 fresh

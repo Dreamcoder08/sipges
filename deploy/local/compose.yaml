@@ -84,7 +84,7 @@ services:
       - -c
       - shared_buffers=${SIPGES_DB_SHARED_BUFFERS:-256MB}
       - -c
-      - effective_cache_size=${SIPGES_DB_EFFECTIVE_CACHE_SIZE:-768MB}
+      - effective_cache_size=${SIPGES_DB_EFFECTIVE_CACHE_SIZE:-512MB}
       - -c
       - work_mem=${SIPGES_DB_WORK_MEM:-8MB}
       - -c
