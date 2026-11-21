@@ -85,67 +85,76 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
                   <IrsaPendingBadge status={config.data?.status} />
                 </p>
               ) : null}
-              <div className={styles.split}>
-                <div className={styles.radar}>
-                  <RadarChart
-                    caption="Puntuación IRSA por dimensión (0 a 100)"
-                    data={dimensions.map((d) => ({
-                      key: d,
-                      label: dimensionLabel(d),
-                      value: data.scores[d],
-                    }))}
-                    renderLabel={(d) => d.key}
-                  />
-                  {/* The axes keep the letter; the names sit beside them here (functional-10 T3). */}
-                  <ul className={styles.legend} aria-label="Dimensiones del gráfico">
-                    {dimensions.map((d) => (
-                      <li key={d}>{dimensionLabel(d)}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div
-                  className={styles.table}
-                  tabIndex={0}
-                  role="region"
-                  aria-label="Puntuaciones por dimensión"
-                >
-                  <table>
-                    <caption>
-                      <span className={styles.captionText}>
-                        Puntuación y disponibilidad por dimensión
-                      </span>
-                    </caption>
-                    <thead>
-                      <tr>
-                        <th scope="col">Dimensión</th>
-                        <th scope="col">Puntuación</th>
-                        <th scope="col">Peso</th>
-                        <th scope="col">Disponibilidad</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {dimensions.map((d, index) => (
-                        <tr key={d}>
-                          <th scope="row">{dimensionLabel(d)}</th>
-                          <td>{formatIndex(data.scores[d])}</td>
-                          <td>{weightShares(data.weights)[index]}</td>
-                          <td>{formatPercent(data.availability[d])}</td>
-                        </tr>
+              {/* An empty project computes zeros and full availability; shown, they would read as real
+                  scores (world-class-local T7). */}
+              {data.insufficient_data ? (
+                <p>
+                  El desglose por dimensión y los factores aparecen cuando el proyecto tiene
+                  registros.
+                </p>
+              ) : (
+                <div className={styles.split}>
+                  <div className={styles.radar}>
+                    <RadarChart
+                      caption="Puntuación IRSA por dimensión (0 a 100)"
+                      data={dimensions.map((d) => ({
+                        key: d,
+                        label: dimensionLabel(d),
+                        value: data.scores[d],
+                      }))}
+                      renderLabel={(d) => d.key}
+                    />
+                    {/* The axes keep the letter; the names sit beside them here (functional-10 T3). */}
+                    <ul className={styles.legend} aria-label="Dimensiones del gráfico">
+                      {dimensions.map((d) => (
+                        <li key={d}>{dimensionLabel(d)}</li>
                       ))}
-                      <tr>
-                        <th scope="row">Total</th>
-                        <td />
-                        <td>
-                          {formatPercent(
-                            dimensions.reduce((sum, d) => sum + (data.weights[d] ?? 0), 0) * 100,
-                          )}
-                        </td>
-                        <td />
-                      </tr>
-                    </tbody>
-                  </table>
+                    </ul>
+                  </div>
+                  <div
+                    className={styles.table}
+                    tabIndex={0}
+                    role="region"
+                    aria-label="Puntuaciones por dimensión"
+                  >
+                    <table>
+                      <caption>
+                        <span className={styles.captionText}>
+                          Puntuación y disponibilidad por dimensión
+                        </span>
+                      </caption>
+                      <thead>
+                        <tr>
+                          <th scope="col">Dimensión</th>
+                          <th scope="col">Puntuación</th>
+                          <th scope="col">Peso</th>
+                          <th scope="col">Disponibilidad</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dimensions.map((d, index) => (
+                          <tr key={d}>
+                            <th scope="row">{dimensionLabel(d)}</th>
+                            <td>{formatIndex(data.scores[d])}</td>
+                            <td>{weightShares(data.weights)[index]}</td>
+                            <td>{formatPercent(data.availability[d])}</td>
+                          </tr>
+                        ))}
+                        <tr>
+                          <th scope="row">Total</th>
+                          <td />
+                          <td>
+                            {formatPercent(
+                              dimensions.reduce((sum, d) => sum + (data.weights[d] ?? 0), 0) * 100,
+                            )}
+                          </td>
+                          <td />
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
+              )}
               {/* The badge above is the one caveat; how the index is computed waits here. */}
               <details>
                 <summary>Cómo se calcula</summary>
@@ -159,20 +168,22 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
                   precisión científica.
                 </p>
               </details>
-              <details>
-                <summary>Factores que explican el índice</summary>
-                {data.drivers.length ? (
-                  <ul>
-                    {data.drivers.map((driver) => (
-                      <li key={`${driver.dimension}/${driver.id}`}>
-                        {driver.id} · {driver.label}: {formatIndex(driver.points)} puntos
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p>No hay factores calculables.</p>
-                )}
-              </details>
+              {data.insufficient_data ? null : (
+                <details>
+                  <summary>Factores que explican el índice</summary>
+                  {data.drivers.length ? (
+                    <ul>
+                      {data.drivers.map((driver) => (
+                        <li key={`${driver.dimension}/${driver.id}`}>
+                          {driver.id} · {driver.label}: {formatIndex(driver.points)} puntos
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p>No hay factores calculables.</p>
+                  )}
+                </details>
+              )}
               <details>
                 <summary>Ver todos los indicadores</summary>
                 <IndicatorTable items={data.indicators} />

@@ -217,6 +217,18 @@ describe('Indicadores e IRSA', () => {
     ).toBeVisible();
     expect(current).not.toHaveTextContent('7,0 / 100');
     expect(current).not.toHaveTextContent('Verde');
+    // An empty project computes zeros and full availability: shown, they read as real scores
+    // (world-class-local T7).
+    expect(
+      within(current).queryByRole('table', { name: 'Puntuación y disponibilidad por dimensión' }),
+    ).not.toBeInTheDocument();
+    expect(within(current).queryByText('Puntuación IRSA por dimensión (0 a 100)')).toBeNull();
+    expect(
+      within(current).getByText(
+        'El desglose por dimensión y los factores aparecen cuando el proyecto tiene registros.',
+      ),
+    ).toBeVisible();
+    expect(within(current).queryByText(/puntos$/)).toBeNull();
   });
   it('con datos muestra el valor y el nivel, sin el aviso de falta de datos (S3, S5)', async () => {
     renderPage(<IrsaPage {...context} />);
