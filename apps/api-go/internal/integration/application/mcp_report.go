@@ -195,6 +195,9 @@ func reportCSV(r reportJSON) string {
 		_ = w.Write([]string{"Total"})
 		_ = w.Write([]string{strconv.Itoa(r.Total)})
 	}
+	if r.Truncated {
+		_ = w.Write([]string{"Aviso", "conteo parcial: se leyó el máximo de registros"})
+	}
 	w.Flush()
 	return b.String()
 }

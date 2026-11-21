@@ -26,3 +26,15 @@ func TestReportCSVNeutralisesFormulas(t *testing.T) {
 		t.Errorf("csv\n got %q\nwant %q", got, want)
 	}
 }
+
+// A count cut at its read limit says so in the sheet too, or the total reads as complete.
+func TestReportCSVSaysWhenTheCountWasCut(t *testing.T) {
+	t.Parallel()
+	by := "mes"
+	r := reportJSON{By: &by, Total: 20000, Truncated: true, Series: []reportPointJSON{{Period: "2026-01", Count: 20000}}}
+	got := strings.TrimPrefix(reportCSV(r), csvBOM)
+	want := "mes,cantidad\r\n2026-01,20000\r\nTotal,20000\r\nAviso,conteo parcial: se leyó el máximo de registros\r\n"
+	if got != want {
+		t.Errorf("csv\n got %q\nwant %q", got, want)
+	}
+}
