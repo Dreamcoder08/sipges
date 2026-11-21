@@ -3,6 +3,7 @@ import './cesium-base.ts';
 import {
   BoundingSphere,
   type Camera,
+  type Scene,
   Cartesian3,
   CesiumWidget,
   Color,
@@ -36,6 +37,7 @@ import { columnsOf, COLUMN_RADIUS, METRES_PER_RECORD } from './columns.ts';
 import { type PaintTheme, type PaintToken, paintColour } from './paint.ts';
 import { GRID, RELIEF, sampleHeights, sourceTile } from './terrarium.ts';
 import type { CanvasConcession, CanvasPoint, Focus } from './types.ts';
+import { HOME_RANGE, zoomLimits, zoomStep } from './zoom.ts';
 import styles from './GeoCanvas.module.css';
 
 /** Same tile services as the 2D map, as CesiumJS URL templates. */
@@ -99,12 +101,19 @@ const tint = (theme: PaintTheme) => {
 /** Frames an extent from above at the 3D view's heading and tilt. */
 const frameExtent = (camera: Camera, extent: Extent, duration: number, heading = VIEW.heading) => {
   const sphere = sphereOf(extent);
-  const offset = new HeadingPitchRange(heading, VIEW.pitch, sphere.radius * 2.6);
+  const offset = new HeadingPitchRange(heading, VIEW.pitch, sphere.radius * HOME_RANGE);
   if (duration) camera.flyToBoundingSphere(sphere, { offset, duration });
   else {
     camera.lookAt(sphere.center, offset);
     camera.lookAtTransform(Matrix4.IDENTITY);
   }
+};
+
+/** Keeps the wheel and pinch zoom between a close look and a few home frames away. */
+const limitZoom = (scene: Scene, home: Extent) => {
+  const limits = zoomLimits(sphereOf(home).radius);
+  scene.screenSpaceCameraController.minimumZoomDistance = limits.minimum;
+  scene.screenSpaceCameraController.maximumZoomDistance = limits.maximum;
 };
 
 /**
@@ -238,6 +247,7 @@ const CesiumCanvas = ({
     scene.verticalExaggeration = 1.5;
     scene.canvas.setAttribute('aria-describedby', hint);
     scene.renderError.addEventListener(() => handlers.current.onFailure());
+    limitZoom(scene, initial.current.home);
     frameExtent(instance.camera, initial.current.home, 0);
     const clicks = new ScreenSpaceEventHandler(scene.canvas);
     clicks.setInputAction((event: { position: Parameters<typeof scene.pick>[0] }) => {
@@ -362,8 +372,10 @@ const CesiumCanvas = ({
 
   const homeKey = home.join(',');
   useEffect(() => {
-    const camera = widget.current?.camera;
-    if (camera) frameExtent(camera, home, 0.8);
+    const instance = widget.current;
+    if (!instance) return;
+    limitZoom(instance.scene, home);
+    frameExtent(instance.camera, home, 0.8);
     // `homeKey` stands for the four numbers of `home`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [homeKey]);
@@ -384,8 +396,9 @@ const CesiumCanvas = ({
     if (!instance) return;
     const { camera } = instance;
     const height = camera.positionCartographic.height;
-    if (action === 'in') camera.zoomIn(height * 0.4);
-    else if (action === 'out') camera.zoomOut(height * 0.6);
+    const limits = zoomLimits(sphereOf(home).radius);
+    if (action === 'in') camera.zoomIn(zoomStep('in', height, limits));
+    else if (action === 'out') camera.zoomOut(zoomStep('out', height, limits));
     else if (action === 'home') frameExtent(camera, home, 0.8);
     else
       camera.flyTo({
