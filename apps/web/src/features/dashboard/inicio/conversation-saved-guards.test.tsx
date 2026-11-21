@@ -47,6 +47,38 @@ it('saves nothing for an answer that arrives after sign-out', async () => {
   expect(Object.keys(localStorage)).toEqual([]);
 });
 
+it('saves nothing for an answer that arrives after sign-out, before the screen leaves', async () => {
+  pending.defer = true;
+  const { result } = renderHook(() => useThreadState('ACME/NORTE', 'ana'));
+  let done!: Promise<boolean>;
+  act(() => {
+    done = result.current.ask('¿Algo reservado?');
+  });
+  await vi.waitFor(() => expect(pending.resolve).toBeTruthy());
+  forgetSavedConversations();
+  await act(async () => {
+    pending.resolve?.({ answer: 'Tarde.', sources: [], blocks: [] });
+    await done;
+  });
+  expect(Object.keys(localStorage)).toEqual([]);
+});
+
+it('saves a question asked after a sign-out again', async () => {
+  pending.defer = true;
+  forgetSavedConversations();
+  const { result } = renderHook(() => useThreadState('ACME/NORTE', 'ana'));
+  let done!: Promise<boolean>;
+  act(() => {
+    done = result.current.ask('¿Luego?');
+  });
+  await vi.waitFor(() => expect(pending.resolve).toBeTruthy());
+  await act(async () => {
+    pending.resolve?.({ answer: 'Sí.', sources: [], blocks: [] });
+    await done;
+  });
+  expect(Object.keys(localStorage)).toHaveLength(1);
+});
+
 it('keeps person "a:b" in project "c" apart from person "a" in project "b:c"', () => {
   const now = Date.now();
   saveConversation(
