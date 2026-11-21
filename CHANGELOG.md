@@ -6,6 +6,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ### Rendimiento
 
+- Instalación local: PostgreSQL tiene su propio límite de memoria (un cuarto de la máquina, de 1 a 4 GiB) y sus ajustes (`shared_buffers`, `effective_cache_size`, `work_mem`, `maintenance_work_mem`) salen de ese límite; `/dev/shm` sube a 256 MiB. Caddy y el respaldo tienen límites fijos (256 y 512 MiB), así el kernel nunca elige la base de datos para liberar memoria. Con dos APIs, el cuarto de memoria de las APIs se reparte entre ellas en vez de duplicarse.
 - Catálogo GEOCATMIN (INGEMMET) en el backend Go: una sola consulta llena la caché aunque lleguen muchas personas a la vez (agrupación de peticiones; antes 20 personas con la caché vencida hacían 280 consultas, ahora 14), y al vencer los 5 minutos se sigue respondiendo con el catálogo anterior mientras una sola actualización corre en segundo plano, así nadie vuelve a esperar al servicio externo. Un catálogo vacío se sigue guardando 30 s (caché negativa). Quien cancela su pedido recibe «no disponible» al instante sin cortar la consulta de los demás.
 
 ### Corregido

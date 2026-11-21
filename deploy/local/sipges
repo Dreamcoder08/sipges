@@ -221,29 +221,51 @@ ensure_push_keys() {
 }
 
 # Follows the machine Docker runs on (local-qa-findings T16): on Windows and macOS that is Docker's
-# virtual machine, the real limit. The API gets a quarter of its memory, from 1 GiB below 8 GiB (as
-# before) up to 4 GiB, and a database pool of one connection per CPU, at least 4 as pgx chooses, at
-# most 40, so two APIs stay under PostgreSQL's 100 connections. SIPGES_SIZING=manual in the .env
-# keeps the operator's own SIPGES_API_MEMORY, SIPGES_API_GOMEMLIMIT and SIPGES_DB_POOL_MAX; a Docker that cannot say its
-# size leaves the compose defaults.
+# virtual machine, the real limit. The APIs share a quarter of its memory, 1 to 4 GiB each, with a
+# database pool of one connection per CPU, at least 4 as pgx chooses, at most 40, so two APIs stay
+# under PostgreSQL's 100 connections. PostgreSQL gets another quarter, 1 to 4 GiB, and its settings
+# from it (world-class-local T1). SIPGES_SIZING=manual in the .env keeps the operator's own values of
+# every SIPGES_API_* and SIPGES_DB_* setting written here; a Docker that cannot say its size leaves
+# the compose defaults. A changed size restarts the database at the next start or update.
 size_host() {
   [[ $(env_value SIPGES_SIZING) != manual ]] || return 0
-  local cpus bytes gib memory pool
+  local cpus bytes gib memory pool replicas db db_mib
   read -r cpus bytes < <(docker info --format '{{.NCPU}} {{.MemTotal}}' 2>/dev/null) || true
   [[ ${cpus:-} =~ ^[1-9][0-9]*$ && ${bytes:-} =~ ^[1-9][0-9]*$ ]] || return 0
+  replicas=$(api_replicas) || exit 1
   gib=$((bytes / 1024 / 1024 / 1024))
-  memory=$((gib / 4))
+  # The APIs share a quarter of the machine, up to 4 GiB each and never under 1 GiB each.
+  memory=$((gib / 4 / replicas))
   ((memory >= 2)) || memory=1
   ((memory <= 4)) || memory=4
   pool=$((cpus < 4 ? 4 : cpus))
   ((pool <= 40)) || pool=40
-  sed -i '/^SIPGES_API_MEMORY=/d; /^SIPGES_API_GOMEMLIMIT=/d; /^SIPGES_DB_POOL_MAX=/d; /^# Sized by .\/sipges/d' "$ENV_FILE"
+  # PostgreSQL gets its own quarter, 1 to 4 GiB, so the kernel never picks it to free memory
+  # for an unbounded neighbour; its settings follow that limit (world-class-local T1).
+  db=$((gib / 4))
+  ((db >= 1)) || db=1
+  ((db <= 4)) || db=4
+  db_mib=$((db * 1024))
+  sed -i '/^SIPGES_API_MEMORY=/d; /^SIPGES_API_GOMEMLIMIT=/d; /^SIPGES_DB_POOL_MAX=/d; /^SIPGES_DB_MEMORY=/d; /^SIPGES_DB_SHARED_BUFFERS=/d; /^SIPGES_DB_EFFECTIVE_CACHE_SIZE=/d; /^SIPGES_DB_WORK_MEM=/d; /^SIPGES_DB_MAINTENANCE_WORK_MEM=/d; /^# Sized by .\/sipges/d' "$ENV_FILE"
   [[ ! -s $ENV_FILE || -z $(tail -c 1 "$ENV_FILE") ]] || printf '\n' >>"$ENV_FILE"
   # Go does not read the container's limit: its own target (the image's 800MiB for 1 GiB) grows
   # with it, or the larger limit would sit unused while Go collected garbage as if it had 1 GiB.
   printf '# Sized by ./sipges for %s CPUs and %s GiB; SIPGES_SIZING=manual keeps your own values.\nSIPGES_API_MEMORY=%sg\nSIPGES_API_GOMEMLIMIT=%sMiB\nSIPGES_DB_POOL_MAX=%s\n' \
     "$cpus" "$gib" "$memory" "$((memory * 800))" "$pool" >>"$ENV_FILE"
-  say "Sized for $cpus CPUs and $gib GiB: the API may use ${memory} GiB and $pool database connections."
+  # work_mem is per sort or hash step, per connection, and a hash step takes twice it: what is left
+  # of the limit after shared_buffers, three autovacuum workers' maintenance_work_mem and about 8 MB
+  # per connection (30 MB for the background processes), shared by every connection of every API
+  # plus migrate and backup, each running one hash step. 4 to 64 MB.
+  local shared maintenance connections work
+  shared=$((db_mib / 4))
+  maintenance=$((db_mib / 16))
+  connections=$((replicas * pool + 2))
+  work=$(((db_mib - shared - 3 * maintenance - 8 * connections - 30) / (2 * connections)))
+  ((work >= 4)) || work=4
+  ((work <= 64)) || work=64
+  printf 'SIPGES_DB_MEMORY=%sg\nSIPGES_DB_SHARED_BUFFERS=%sMB\nSIPGES_DB_EFFECTIVE_CACHE_SIZE=%sMB\nSIPGES_DB_WORK_MEM=%sMB\nSIPGES_DB_MAINTENANCE_WORK_MEM=%sMB\n' \
+    "$db" "$shared" "$((db_mib / 2))" "$work" "$maintenance" >>"$ENV_FILE"
+  say "Sized for $cpus CPUs and $gib GiB: each API may use ${memory} GiB, the database ${db} GiB, with $pool database connections."
 }
 
 start() {

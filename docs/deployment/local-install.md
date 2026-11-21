@@ -149,15 +149,21 @@ If that file is missing, `./sipges` stops with `SIPGES_COMPOSE_OVERRIDE names <p
 
 ### Sized to the computer
 
-`./sipges install`, `start` and `update` read the processors and memory Docker has (on Windows and macOS, Docker's own virtual machine) and write three lines to `.env`, after the comment `# Sized by ./sipges`:
+`./sipges install`, `start` and `update` read the processors and memory Docker has (on Windows and macOS, Docker's own virtual machine) and write these lines to `.env`, after the comment `# Sized by ./sipges`:
 
 | Setting | Value |
 | --- | --- |
-| `SIPGES_API_MEMORY` | A quarter of the memory, from `1g` (below 8 GiB, as before) up to `4g` |
+| `SIPGES_API_MEMORY` | Each API's limit: a quarter of the memory, shared between the APIs (`SIPGES_API_REPLICAS`), from `1g` up to `4g` each |
 | `SIPGES_API_GOMEMLIMIT` | Go's own memory target, 800 MiB for each GiB of `SIPGES_API_MEMORY` (`800MiB`, as before, for `1g`). Go does not read the container's limit, so without it a larger limit would sit unused |
 | `SIPGES_DB_POOL_MAX` | One database connection per processor, at least 4 and at most 40, so two APIs stay under PostgreSQL's 100 |
+| `SIPGES_DB_MEMORY` | PostgreSQL's own limit: another quarter of the memory, from `1g` up to `4g`. Without a limit the kernel could pick the database to free memory for a neighbour |
+| `SIPGES_DB_SHARED_BUFFERS`, `SIPGES_DB_EFFECTIVE_CACHE_SIZE`, `SIPGES_DB_WORK_MEM`, `SIPGES_DB_MAINTENANCE_WORK_MEM` | PostgreSQL settings from that limit: a quarter, a half, and a sixteenth; `work_mem` is what is left after those, three autovacuum workers and about 8 MB per connection, shared by every connection of every API (a hash step takes twice it), from 4 to 64 MB |
 
-The command says what it chose (`Sized for 16 CPUs and 32 GiB: …`). A bigger computer, or more memory for Docker, is picked up by the next `./sipges start` or `update`. To keep your own values, add `SIPGES_SIZING=manual` to `.env` with your `SIPGES_API_MEMORY`, `SIPGES_API_GOMEMLIMIT` and `SIPGES_DB_POOL_MAX`. If Docker cannot say its size, nothing is written and each API keeps 1 GiB, Go's 800 MiB and 4 connections (before sizing existed, the pool was one per processor). With `SIPGES_SIZING=manual`, set all three values.
+Caddy and the backup service have fixed limits (256 MiB and 512 MiB), and PostgreSQL gets 256 MiB of `/dev/shm` for parallel queries.
+
+A changed size restarts PostgreSQL at the next `start` or `update`: for a few seconds both APIs wait for the database, and nothing is lost.
+
+The command says what it chose (`Sized for 16 CPUs and 32 GiB: …`). A bigger computer, or more memory for Docker, is picked up by the next `./sipges start` or `update`. To keep your own values, add `SIPGES_SIZING=manual` to `.env` with your own values of these settings. If Docker cannot say its size, nothing is written: each API keeps 1 GiB, Go's 800 MiB and 4 connections, and PostgreSQL 1 GiB with 256 MB of shared buffers. With `SIPGES_SIZING=manual`, set every value you want to differ from those defaults.
 
 ### Two API replicas
 
