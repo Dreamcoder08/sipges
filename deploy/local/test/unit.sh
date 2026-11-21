@@ -821,6 +821,19 @@ copy_step "$work/backups" "$copies" 20261121T070000Z
 check 'the new copy stays when a clock ahead named older ones later' test -d "$copies/20261121T070000Z"
 check 'and with it SIPGES_BACKUP_KEEP of them remain, not one more' test "$(find "$copies" -mindepth 1 -maxdepth 1 -type d -name '20*Z' | wc -l)" -eq 2
 
+# --- a warning until backups have a copy on another disk (world-class-local T3)
+
+fresh
+mkdir "$work/backups/20261121T070000Z"
+run status || true
+check 'status warns while the backups live only on this disk' said 'WARNING: the backups are only on this computer'
+check 'and says how to fix it' said './sipges copy-backups-to'
+fresh
+mkdir -p "$work/backups/20261121T070000Z" "$work/disk"
+printf 'SIPGES_BACKUP_COPY_DIR=%s\n' "$work/disk" >>"$SIPGES_ENV_FILE"
+run status || true
+check 'with a copy folder set it does not' said_not 'the backups are only on this computer'
+
 command rm -rf "$root"
 if ((failures > 0)); then
   printf '%d failed\n' "$failures"
