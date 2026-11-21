@@ -42,12 +42,15 @@ open_sealed "$partial/uploads.tar.gpg" | tar -tf - >/dev/null
 chown -R "$SIPGES_HOST_OWNER" "$partial"
 mv -T "$partial" "$final"
 
-# The one just written is set aside first, so a clock that moved back cannot sort it out of the
-# kept set. Only finished backups match the name.
-find /backups -mindepth 1 -maxdepth 1 -type d -name '20*Z' ! -name "$stamp" -printf '%f\n' | sort -r |
-  tail -n "+$keep" | while read -r old; do
-  rm -rf -- "/backups/${old:?}"
-done
+# Calendar retention (world-class-local T2): the newest of each of the last SIPGES_BACKUP_KEEP days,
+# SIPGES_BACKUP_KEEP_WEEKLY weeks and SIPGES_BACKUP_KEEP_MONTHLY months. The one just written is the
+# newest, so it is always kept; only finished backups match the name.
+find /backups -mindepth 1 -maxdepth 1 -type d -name '20*Z' -printf '%f\n' |
+  bash /ops/retain.sh "$keep" "${SIPGES_BACKUP_KEEP_WEEKLY:-8}" "${SIPGES_BACKUP_KEEP_MONTHLY:-12}" |
+  while read -r old; do
+    [[ $old != "$stamp" ]] || continue
+    rm -rf -- "/backups/${old:?}"
+  done
 rm -f /backups/.last-failure
 echo "backup finished: $stamp"
 

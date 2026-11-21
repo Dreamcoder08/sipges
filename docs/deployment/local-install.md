@@ -77,7 +77,9 @@ Check `./sipges status` once a week. It is how you find out a nightly backup fai
 
 ## Backups
 
-SIPGES backs itself up every night at 2:00, Lima time, and keeps the latest 14. A backup holds the database and every evidence file, encrypted. It counts only after SIPGES has read it back.
+SIPGES backs itself up every night at 2:00, Lima time. It keeps the latest 14, plus the newest backup of each of the last 8 weeks and of each of the last 12 months, so you can go back up to a year. A backup holds the database and every evidence file, encrypted. It counts only after SIPGES has read it back.
+
+If the computer was off or asleep at 2:00, SIPGES backs up as soon as it starts again, whenever the newest backup is more than a day old. `./sipges status` warns when the newest backup is more than 26 hours old.
 
 Backups are in `deploy/local/backups`. **A backup on the same computer does not protect you from a dead disk.** Let SIPGES copy each one to a folder on another disk (an encrypted external disk, or another computer's shared folder mounted here):
 
@@ -87,7 +89,7 @@ Backups are in `deploy/local/backups`. **A backup on the same computer does not 
 ./sipges backup
 ```
 
-The folder must exist. SIPGES marks it with a `.sipges-backup-copy` file, copies every backup there after it is read back, checks the copy against its checksums and keeps as many as `SIPGES_BACKUP_KEEP`. It copies only into the marked folder: with the disk unplugged, nothing goes to this computer's disk in its place, the backup itself still counts, and `./sipges status` says the copy failed and why. Plug the disk back in and run `./sipges start`: a running service keeps seeing the empty folder it started with, and start gives it the disk again, so the next backup is copied. `copy-backups-to` warns when the folder is on the same disk as the backups, as happens when it was made while the other disk was unplugged. To stop the copies, remove the `SIPGES_BACKUP_COPY_DIR` line from `.env` and run `./sipges start`.
+The folder must exist. SIPGES marks it with a `.sipges-backup-copy` file, copies every backup there after it is read back, checks the copy against its checksums and keeps the same ones as the backup folder (the latest, weekly and monthly). It copies only into the marked folder: with the disk unplugged, nothing goes to this computer's disk in its place, the backup itself still counts, and `./sipges status` says the copy failed and why. Plug the disk back in and run `./sipges start`: a running service keeps seeing the empty folder it started with, and start gives it the disk again, so the next backup is copied. `copy-backups-to` warns when the folder is on the same disk as the backups, as happens when it was made while the other disk was unplugged. To stop the copies, remove the `SIPGES_BACKUP_COPY_DIR` line from `.env` and run `./sipges start`.
 
 | Command | What it does |
 | --- | --- |
@@ -95,7 +97,7 @@ The folder must exist. SIPGES marks it with a `.sipges-backup-copy` file, copies
 | `./sipges backups` | Lists the backups by date. |
 | `./sipges restore 20261106T193243Z` | Replaces everything with that backup. Asks you to type RESTORE. |
 
-To change the hour, the number kept or the time zone, edit `SIPGES_BACKUP_HOUR`, `SIPGES_BACKUP_KEEP` and `SIPGES_TIMEZONE` in `.env`, then run `./sipges start`.
+To change the hour, the numbers kept or the time zone, edit `SIPGES_BACKUP_HOUR`, `SIPGES_BACKUP_KEEP` (latest backups), `SIPGES_BACKUP_KEEP_WEEKLY`, `SIPGES_BACKUP_KEEP_MONTHLY` and `SIPGES_TIMEZONE` in `.env`, then run `./sipges start`.
 
 A restore loads the backup into a separate database first. With a wrong passphrase or a damaged file it stops, and SIPGES comes back with the data it had. If it stops later, for example in a power cut, SIPGES stays off and says so: run the same `./sipges restore` again and it finishes. Until then, no other backup can be restored. What was replaced stays on the disk until the next restore. Sign in afterwards with the authenticator codes you already use.
 

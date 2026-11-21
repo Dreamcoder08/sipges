@@ -14,10 +14,39 @@ seconds_until() {
   echo $((target - now))
 }
 
-# `bash schedule.sh --next HOUR` prints the wait, so a test can check the arithmetic.
+# Yes when no finished backup is under a day old: a laptop off or asleep at the backup hour gets
+# its backup as soon as SIPGES starts again (world-class-local T2).
+backups=${SIPGES_BACKUPS_PATH:-/backups}
+due() {
+  if [[ -n $(find "$backups" -mindepth 1 -maxdepth 1 -type d -name '20*Z' -mmin -1440 -print -quit 2>/dev/null) ]]; then
+    echo no
+  else
+    echo yes
+  fi
+}
+
+# `bash schedule.sh --next HOUR` prints the wait and `--due` whether a backup is owed, so a test
+# can check both.
 if [[ ${1:-} == --next ]]; then
   seconds_until "$2"
   exit 0
+fi
+if [[ ${1:-} == --due ]]; then
+  due
+  exit 0
+fi
+
+run_backup() {
+  if ! bash /ops/backup.sh; then
+    date -u +%Y-%m-%dT%H:%M:%SZ >/backups/.last-failure
+    chown "$SIPGES_HOST_OWNER" /backups/.last-failure
+    echo "backup failed" >&2
+  fi
+}
+
+if [[ $(due) == yes ]]; then
+  echo 'no backup in the last day: backing up now'
+  run_backup
 fi
 
 while true; do
@@ -25,9 +54,5 @@ while true; do
   echo "next backup in $wait_seconds seconds"
   sleep "$wait_seconds" &
   wait $!
-  if ! bash /ops/backup.sh; then
-    date -u +%Y-%m-%dT%H:%M:%SZ >/backups/.last-failure
-    chown "$SIPGES_HOST_OWNER" /backups/.last-failure
-    echo "backup failed" >&2
-  fi
+  run_backup
 done
