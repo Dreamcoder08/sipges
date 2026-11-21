@@ -25,10 +25,22 @@ due() {
   fi
 }
 
-# `bash schedule.sh --next HOUR` prints the wait and `--due` whether a backup is owed, so a test
-# can check both.
+# The loop wakes at least every hour: a laptop asleep at the backup hour keeps this container
+# running, so only a check on waking finds the backup it owes.
+nap() {
+  local wait_seconds
+  wait_seconds=$(seconds_until "$1")
+  echo $((wait_seconds < 3600 ? wait_seconds : 3600))
+}
+
+# `bash schedule.sh --next HOUR`, `--nap HOUR` and `--due` print the wait to the backup hour, the
+# next sleep and whether a backup is owed, so a test can check them.
 if [[ ${1:-} == --next ]]; then
   seconds_until "$2"
+  exit 0
+fi
+if [[ ${1:-} == --nap ]]; then
+  nap "$2"
   exit 0
 fi
 if [[ ${1:-} == --due ]]; then
@@ -50,9 +62,14 @@ if [[ $(due) == yes ]]; then
 fi
 
 while true; do
-  wait_seconds=$(seconds_until "${SIPGES_BACKUP_HOUR:-2}")
+  hour=${SIPGES_BACKUP_HOUR:-2}
+  wait_seconds=$(seconds_until "$hour")
+  sleep_seconds=$(nap "$hour")
   echo "next backup in $wait_seconds seconds"
-  sleep "$wait_seconds" &
+  sleep "$sleep_seconds" &
   wait $!
-  run_backup
+  # The backup hour, or a wake-up with no backup in the last day.
+  if ((sleep_seconds == wait_seconds)) || [[ $(due) == yes ]]; then
+    run_backup
+  fi
 done

@@ -19,7 +19,8 @@ declare -A weeks=() months=()
 index=0
 while read -r name; do
   [[ $name =~ ^(20[0-9]{2})([0-9]{2})([0-9]{2})T[0-9]{6}Z$ ]] || continue
-  week=$(date -u -d "${BASH_REMATCH[1]}-${BASH_REMATCH[2]}-${BASH_REMATCH[3]}" +%G%V)
+  # A name with an impossible date (20261399T…) is not a backup this script made: left alone.
+  week=$(date -u -d "${BASH_REMATCH[1]}-${BASH_REMATCH[2]}-${BASH_REMATCH[3]}" +%G%V 2>/dev/null) || continue
   month=${name:0:6}
   keep=no
   ((index >= newest)) || keep=yes

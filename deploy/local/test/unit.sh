@@ -785,6 +785,9 @@ check 'one about 10 months old survives as its month'"'"'s newest' grep -qx 2026
 check 'one 13 months old goes' grep -qx 20251031T070000Z <<<"$removed"
 check 'at most 14 + 8 + 12 are kept' test "$(printf '%s\n' "$kept" | wc -l)" -le 34
 check 'names that are not backups are never listed' test -z "$(printf 'notes\n2025 photos Z\n' | retain 14 8 12)"
+check 'a name with an impossible date is skipped, not a failure of the backup' test "$(printf '20261399T070000Z\n20261121T070000Z\n' | retain 1 0 0; echo "exit=$?")" = 'exit=0'
+check 'the wait between checks is at most an hour, so a laptop that slept through 02:00 catches up within an hour of waking' \
+  test "$(bash "$(dirname "$script")/ops/schedule.sh" --nap 2)" -le 3600
 
 due() { # backups folder -> prints yes or no
   SIPGES_BACKUPS_PATH=$1 bash "$(dirname "$script")/ops/schedule.sh" --due
