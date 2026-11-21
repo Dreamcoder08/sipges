@@ -16,6 +16,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ### Corregido
 
+- Identidad: una persona puede cambiar su propia contraseña con `POST /system/auth/password` y `sipgesctl password` (lee las contraseñas por la entrada o sin eco, nunca como argumento). La nueva debe tener de 12 a 128 caracteres y no ser el usuario, la actual ni una de 300 contraseñas comunes filtradas (lista del NCSC del Reino Unido). Un intento con la contraseña actual equivocada cuenta para el mismo bloqueo que el inicio de sesión; al cambiarla se cierran las otras sesiones de la persona y queda en la auditoría.
 - Análisis › IRSA: con un proyecto sin registros ya no se muestran el gráfico, la tabla por dimensión ni los factores (ceros, un 33,3 y disponibilidades de 83 a 100 %, que se leían como puntajes reales); en su lugar dice «El desglose por dimensión y los factores aparecen cuando el proyecto tiene registros.». El valor sigue diciendo «Sin datos suficientes».
 - Registros: un proyecto sin ningún registro ya no dice «Ningún registro coincide con estos filtros.» (no había filtros); dice «Todavía no hay registros en este proyecto.» y cómo cargar los primeros con «Importar» o «Nuevo registro».
 - Instalación local: `./sipges rollback` vuelve a la versión anterior sin tocar los datos (antes había que editar `.env` y restaurar un respaldo, perdiendo lo escrito después). `./sipges update` y `./sipges backup` no arrancan con menos de 5 GB libres en el disco de los respaldos y dicen cuánto queda, en vez de fallar a mitad de camino.
