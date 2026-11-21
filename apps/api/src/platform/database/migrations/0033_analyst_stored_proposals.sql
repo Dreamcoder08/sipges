@@ -1,4 +1,4 @@
--- Proposals the Inicio analyst made (odd/tasks/agentic-analyst.md S4): a create_record or
+-- Proposals the Inicio analyst made (odd/archive/agentic-analyst.md S4): a create_record or
 -- link_records the model proposed, kept until a person decides it. Nothing is written by
 -- proposing; a decision goes through proposal_decisions (fingerprint 'stored:<id>') and its
 -- audit row, as for computed proposals, so this table is insert-only and a proposal is pending

@@ -12,7 +12,7 @@ import (
 	situations "github.com/Dreamcoder08/sipges/apps/api-go/internal/situations/domain"
 )
 
-// count_records (odd/tasks/reporting-mcp.md S3, S4): the records of one module, optionally grouped
+// count_records (odd/archive/reporting-mcp.md S3, S4): the records of one module, optionally grouped
 // by a field whose allowlist policy is `clear` and bounded by dates on the module's date field. Every
 // record read passes through the guard's session, which also logs it; withheld ones are not counted.
 // The count never runs in SQL, where it would see restricted records and could key on a name.

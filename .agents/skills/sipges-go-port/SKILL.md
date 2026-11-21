@@ -30,7 +30,7 @@ repositories) and its row in `odd/tasks/go-rust-stack.md`. Never touch another c
    writing new ones; record TypeScript outputs on synthetic inputs (`testdata/generate.mjs` with
    `--check`) and pin them in a Go test.
 5. **Register the routes from a file of their own:** `apps/api-go/internal/app/context_<ctx>.go`
-   (spec S3 of `odd/tasks/conflict-free-delivery.md`). Follow the registration hook that file pattern
+   (spec S3 of `odd/archive/conflict-free-delivery.md`). Follow the registration hook that file pattern
    uses in `internal/app`; do not add lines to a list another PR also edits. If the hook has not landed
    on `main` yet, add one call next to the other contexts in `app.go` and expect an additive merge.
 6. **Parity cases in a new file:** `apps/parity/src/contexts/<ctx>.ts` exporting `cases` (names

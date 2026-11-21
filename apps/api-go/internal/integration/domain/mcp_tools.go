@@ -87,7 +87,7 @@ var inputs = []struct {
 }
 
 // goOnlyInputs are tools the Go API has and the frozen TypeScript API does not (ADR 0032;
-// odd/tasks/reporting-mcp.md S8). Their descriptors live in mcp_tools_go.json, written by hand, so
+// odd/archive/reporting-mcp.md S8). Their descriptors live in mcp_tools_go.json, written by hand, so
 // mcp_tools.json stays what testdata/mcp.mjs generates from TypeScript.
 var goOnlyInputs = []struct {
 	name  string

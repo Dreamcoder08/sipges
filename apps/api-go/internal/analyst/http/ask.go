@@ -18,7 +18,7 @@ import (
 	tenancyhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/http"
 )
 
-// POST /system/analyst/ask (odd/tasks/agentic-analyst.md S2): one question from the Inicio box,
+// POST /system/analyst/ask (odd/archive/agentic-analyst.md S2): one question from the Inicio box,
 // answered by the tool loop with cited sources. The session, project scope and role gate ran
 // before (internal/app); the question writes no record, like /system/analyze, and files a pending
 // proposal only for a person who may write its module (S4).

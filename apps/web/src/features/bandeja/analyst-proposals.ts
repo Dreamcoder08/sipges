@@ -2,7 +2,7 @@ import { queryOptions } from '@tanstack/react-query';
 import { z } from 'zod';
 import { requestJson } from '../../shared/api/client.ts';
 
-// Proposals the Inicio analyst made (odd/tasks/agentic-analyst.md S4). Their text comes from a
+// Proposals the Inicio analyst made (odd/archive/agentic-analyst.md S4). Their text comes from a
 // model: it is rendered as plain text, never as HTML, and the server bounds every field.
 
 const End = z.object({ module: z.string(), id: z.string() });

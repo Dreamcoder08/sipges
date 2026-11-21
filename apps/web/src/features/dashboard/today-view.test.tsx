@@ -8,7 +8,7 @@ import { DashboardPage } from './DashboardPage.tsx';
 
 /*
  * Panel ejecutivo on a phone (TodayView) and its IRSA card, as the visit-rc14 gallery saw them
- * (odd/tasks/functional-10.md T14): alerts that share a title must read apart, and the dimension
+ * (odd/archive/functional-10.md T14): alerts that share a title must read apart, and the dimension
  * scores must carry their names, not only their letters.
  */
 const renderLink = (to: string, children: ReactNode) => <a href={to}>{children}</a>;

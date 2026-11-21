@@ -4,7 +4,7 @@ import { watchNetwork } from '../support/network.ts';
 import { splitPieces } from './split-pieces.ts';
 
 /**
- * What the visit-rc13 gallery found at 1440 px (odd/tasks/functional-10.md T13, F30–F31). Runs
+ * What the visit-rc13 gallery found at 1440 px (odd/archive/functional-10.md T13, F30–F31). Runs
  * last in the desktop project because it adds an automation rule's audit rows to the shared project.
  */
 const headers = { 'X-SIPGES-Scope': DEFAULT_SCOPE };

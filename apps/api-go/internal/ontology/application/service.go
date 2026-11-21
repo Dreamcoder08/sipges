@@ -625,7 +625,7 @@ func (s Service) Fuse(ctx context.Context, found Lexical, refs []NodeRef) ([]Hit
 	return hits, nil
 }
 
-// Countable reads the records of t a count needs (odd/tasks/reporting-mcp.md S3): field's value
+// Countable reads the records of t a count needs (odd/archive/reporting-mcp.md S3): field's value
 // when field is set and, with dated, only records whose date field holds an ISO day in [from, to],
 // the bounds DayBound already expanded. It never aggregates in SQL: the caller counts what the
 // egress guard lets through, so a restricted record is never counted.

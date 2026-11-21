@@ -14,7 +14,7 @@ import (
 	sanitised "github.com/Dreamcoder08/sipges/apps/api-go/internal/privacy/domain"
 )
 
-// report_period (odd/tasks/reporting-mcp.md S7–S9): count_records with the period said in words,
+// report_period (odd/archive/reporting-mcp.md S7–S9): count_records with the period said in words,
 // resolved to Lima days here, and a series by day or month on the module's date field. Like
 // count_records it counts in code what the guard's session lets through, never in SQL.
 

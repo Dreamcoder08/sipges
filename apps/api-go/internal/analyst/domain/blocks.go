@@ -9,7 +9,7 @@ import (
 	"unicode/utf8"
 )
 
-// Typed answer blocks (odd/tasks/agentic-analyst.md S3): next to its text, the analyst may ask the
+// Typed answer blocks (odd/archive/agentic-analyst.md S3): next to its text, the analyst may ask the
 // screen to show a record card, an alert card, a map focus or a timeline excerpt. The model names a
 // kind and a source number, never markup; the screen draws each kind with its own components.
 // A block is kept only when its kind is known, its source is a record a tool returned during this

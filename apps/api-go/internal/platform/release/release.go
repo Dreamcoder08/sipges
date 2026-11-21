@@ -1,4 +1,4 @@
-// Package release names the SIPGES release this build belongs to (odd/tasks/functional-10.md
+// Package release names the SIPGES release this build belongs to (odd/archive/functional-10.md
 // T8). The version has one source, the root package.json; TypeScript reads the same value from
 // SIPGES_VERSION in packages/contracts/src/health.ts, and a test on each side pins it there.
 package release

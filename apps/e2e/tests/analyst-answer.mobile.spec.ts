@@ -2,7 +2,7 @@ import { analyzeAccessibility } from '../support/accessibility.ts';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
 
 /*
- * The Inicio analyst's answer on a phone (odd/tasks/agentic-analyst.md T1d, T2): text, sources and
+ * The Inicio analyst's answer on a phone (odd/archive/agentic-analyst.md T1d, T2): text, sources and
  * the four block kinds, with long titles, at 360 and 412 px in light and dark. This e2e API has no
  * analyst (only the Go API does), so the browser answers the question with a synthetic reply, and
  * the project settings say external AI is on.

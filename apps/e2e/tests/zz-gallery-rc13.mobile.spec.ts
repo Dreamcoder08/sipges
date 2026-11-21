@@ -4,7 +4,7 @@ import { watchNetwork } from '../support/network.ts';
 import { splitPieces, widerGlyphs } from './split-pieces.ts';
 
 /**
- * What the visit-rc13 gallery found at 360 px (odd/tasks/functional-10.md T13, F30–F31). Runs last
+ * What the visit-rc13 gallery found at 360 px (odd/archive/functional-10.md T13, F30–F31). Runs last
  * in the phone project because it adds synthetic alerts to the shared project.
  */
 const headers = { 'X-SIPGES-Scope': DEFAULT_SCOPE };

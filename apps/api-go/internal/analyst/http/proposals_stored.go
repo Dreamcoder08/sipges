@@ -15,7 +15,7 @@ import (
 	tenancyhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/http"
 )
 
-// The Inicio analyst's stored proposals (odd/tasks/agentic-analyst.md S4), for Bandeja and
+// The Inicio analyst's stored proposals (odd/archive/agentic-analyst.md S4), for Bandeja and
 // sipgesctl:
 //
 //   - GET /system/analyst/proposals: the project's pending proposals;

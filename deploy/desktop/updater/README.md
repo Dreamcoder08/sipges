@@ -2,7 +2,7 @@
 
 Signed, local, recoverable updates of the package built by `deploy/desktop/package/builder.mjs`.
 Nothing is published or downloaded: a release is a directory on this computer. Decisions are in
-`odd/tasks/desktop-updates.md` (Design).
+`odd/archive/desktop-updates.md` (Design).
 
 ## Release
 

@@ -1,7 +1,7 @@
 import { formatDateTime, formatDay, limaDay } from '../lib/format.ts';
 
 /**
- * A stored day or instant as people read it (odd/tasks/functional-10.md T1): the Lima day in
+ * A stored day or instant as people read it (odd/archive/functional-10.md T1): the Lima day in
  * Spanish, with the Lima time when `time` is set. `<time datetime>` keeps the stored value for
  * machines; text that is not a date (a narrative deadline) stays plain text.
  */

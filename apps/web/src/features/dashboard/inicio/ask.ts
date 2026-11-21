@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { requestJson } from '../../../shared/api/client.ts';
 
 /**
- * The Inicio analyst (odd/tasks/agentic-analyst.md S2, T1d): one question, answered with
+ * The Inicio analyst (odd/archive/agentic-analyst.md S2, T1d): one question, answered with
  * citations [n] to the records SIPGES's own tools returned. The answer is plain text; the
  * model never sends markup.
  */

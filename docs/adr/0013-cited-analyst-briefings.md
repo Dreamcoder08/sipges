@@ -46,7 +46,7 @@ territorial data to an external service is a decision for the data owner, not a 
 
 ## Addendum — provider choice (model-agnostic narrator)
 
-Task: `odd/tasks/model-agnostic-analyst.md`. The owner asked for the Inicio analyst to work with
+Task: `odd/archive/model-agnostic-analyst.md`. The owner asked for the Inicio analyst to work with
 models other than Claude (Codex, DeepSeek and more), so the `Narrator` port gets a second
 adapter, `SIPGES_ANALYST_PROVIDER=openai-compatible`. It speaks the OpenAI Chat Completions
 protocol (`POST {base}/v1/chat/completions`, or `/chat/completions` when the base URL already
@@ -74,7 +74,7 @@ ends in `/v1`), which OpenAI, DeepSeek, Ollama, OpenRouter, Groq and vLLM share.
 
 ## Addendum — proposals from the Inicio analyst (agentic analyst S4)
 
-Task: `odd/tasks/agentic-analyst.md` T3. The Inicio analyst may now propose writes, never make
+Task: `odd/archive/agentic-analyst.md` T3. The Inicio analyst may now propose writes, never make
 them. Decision 8 kept open proposals computed, not stored; a proposal a model made cannot be
 recomputed, so these are the one exception.
 

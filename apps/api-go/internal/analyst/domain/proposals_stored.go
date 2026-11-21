@@ -7,7 +7,7 @@ import (
 	"unicode"
 )
 
-// Proposals the Inicio analyst stores (odd/tasks/agentic-analyst.md S4). Their content comes from
+// Proposals the Inicio analyst stores (odd/archive/agentic-analyst.md S4). Their content comes from
 // a model, so it is untrusted: every text is bounded and checked here before any store sees it,
 // and the write rules of the owning contexts run on top (the composition root's job).
 

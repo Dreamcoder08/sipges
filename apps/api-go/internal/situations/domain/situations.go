@@ -690,7 +690,7 @@ func DecodeObject(raw []byte) (map[string]any, error) {
 }
 
 // plural and decimalComma match the TypeScript helpers byte for byte: counts agree with their
-// noun and decimals use a comma (odd/tasks/functional-10.md T2 and T4).
+// noun and decimals use a comma (odd/archive/functional-10.md T2 and T4).
 func plural(n int, one, many string) string {
 	if n == 1 {
 		return one

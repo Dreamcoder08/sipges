@@ -11,7 +11,7 @@ import (
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/analyst/domain"
 )
 
-// Proposals the Inicio analyst stores (odd/tasks/agentic-analyst.md S4). Proposing stores a
+// Proposals the Inicio analyst stores (odd/archive/agentic-analyst.md S4). Proposing stores a
 // pending proposal and writes nothing else; a person decides it later through Deciding, with the
 // same actions, decision row and audit as a computed proposal.
 

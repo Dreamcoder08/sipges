@@ -11,7 +11,7 @@ import { AnswerText } from './AnswerText.tsx';
 import styles from './AnalystAnswer.module.css';
 
 /**
- * What the Inicio analyst answered (odd/tasks/agentic-analyst.md T1d), as one turn of the
+ * What the Inicio analyst answered (odd/archive/agentic-analyst.md T1d), as one turn of the
  * conversation (chat-first-ui T5): each [n] links to its source in this turn and each source to its
  * record; when the analyst cannot answer here the question can still search the records, or be
  * asked again. The text is formatted safely (chat-first-ui T8, `AnswerText.tsx`). It holds no live

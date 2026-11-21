@@ -1,5 +1,5 @@
 /**
- * Update notice of a managed desktop install (odd/tasks/desktop-updates.md T3). The desktop
+ * Update notice of a managed desktop install (odd/archive/desktop-updates.md T3). The desktop
  * launcher verifies the local release (signature with the installed key, newer version) and
  * owns the update; the API only reports what it verified and passes on an explicit request.
  */

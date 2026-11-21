@@ -5,7 +5,7 @@ import { brokenWords } from '../support/text-fit.ts';
 import { widerGlyphs } from './split-pieces.ts';
 
 /**
- * The visit-rc14 gallery dudas on phones and tablets (odd/tasks/functional-10.md T14). Runs last in
+ * The visit-rc14 gallery dudas on phones and tablets (odd/archive/functional-10.md T14). Runs last in
  * the phone project because it adds synthetic records to the shared project.
  */
 const headers = { 'X-SIPGES-Scope': DEFAULT_SCOPE };

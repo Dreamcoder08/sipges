@@ -1,7 +1,7 @@
 import { isValidCalendarDate, limaToday } from '@sipges/kernel';
 
 /**
- * How SIPGES writes dates and numbers for people (odd/tasks/functional-10.md T1 and T2). Every
+ * How SIPGES writes dates and numbers for people (odd/archive/functional-10.md T1 and T2). Every
  * screen goes through these helpers, so one page never mixes `2026-11-14`, «15 nov.» and
  * `2026-11-15T03:33:35Z`, or `10.75` next to «0,02». Machine values (`<time datetime>`, CSV
  * exports, form inputs) keep their stored form.

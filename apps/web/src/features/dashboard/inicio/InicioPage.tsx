@@ -43,7 +43,7 @@ const PHONE_QUERY = '(max-width: 40rem)';
  * composer names what it does with its «Buscar | Preguntar» switch (T3): «Buscar» searches the
  * project's records (`onAsk`); «Preguntar», there only while external AI is on and the
  * installation has an analyst, asks the analyst, who answers with citations to the records it read
- * (odd/tasks/agentic-analyst.md T1d). The status line states what the reader should know before
+ * (odd/archive/agentic-analyst.md T1d). The status line states what the reader should know before
  * trusting the page: offline, AI, IRSA caveat. Once a question is asked the thread owns the column
  * with the composer docked below it, and the urgent items move to a «Necesita tu atención N» button
  * in the top bar, beside the destination's tabs (`tabs`). The view follows new turns only while the

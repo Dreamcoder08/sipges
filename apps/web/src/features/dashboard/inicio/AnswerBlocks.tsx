@@ -74,7 +74,7 @@ const Block = ({ block }: { block: AnalystBlock }) => {
 };
 
 /**
- * The typed blocks of an analyst answer (odd/tasks/agentic-analyst.md S3): a record card, an alert
+ * The typed blocks of an analyst answer (odd/archive/agentic-analyst.md S3): a record card, an alert
  * card, a record on the map and a timeline excerpt, each drawn from data, never from markup.
  */
 export const AnswerBlocks = ({ blocks }: { blocks: readonly AnalystBlock[] }) =>

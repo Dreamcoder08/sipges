@@ -30,7 +30,7 @@ const report = {
 };
 
 /**
- * One source for the pending-methodology badge (odd/tasks/irsa-insufficient-data.md L3, L4): the
+ * One source for the pending-methodology badge (odd/archive/irsa-insufficient-data.md L3, L4): the
  * Dashboard and Análisis › IRSA read the same text, so it cannot drift between the two screens.
  */
 describe('IRSA pending-methodology badge', () => {
