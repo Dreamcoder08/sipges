@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/domain"
@@ -90,6 +91,9 @@ func (s *Service) ChangePassword(ctx context.Context, actor *domain.Principal, c
 		return PasswordChangeResult{Failure: PasswordWrongCurrent}, nil
 	case PasswordSessionGone: // another change or a revoke ended this session first
 		return PasswordChangeResult{Failure: PasswordSessionEnded}, nil
+	case PasswordReplaced:
+		return PasswordChangeResult{}, nil
+	default: // an outcome this service does not know is never taken as success
+		return PasswordChangeResult{}, fmt.Errorf("identity: unknown password replacement %q", replaced)
 	}
-	return PasswordChangeResult{}, nil
 }
