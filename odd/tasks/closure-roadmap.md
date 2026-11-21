@@ -83,7 +83,7 @@ Phase 3, interface (no external blocker; fills gaps between the other phases):
 
 - T16 [x] — S2: close Territorio and Análisis as tabbed views (workspace-architecture T5). Route: inline. Done: PR #402.
 - T17 [x] — S2: reconcile Configuración by sections (compact-sidebar T4). Route: inline. Done: PR #402 (remainder: Cuenta section, owner decides).
-- T18 [ ] — S2: mobile visual pass and compact-sidebar T2. Route: inline. Commit: pending.
+- T18 [x] — S2: mobile visual pass and compact-sidebar T2. Route: inline. Commit: pending.
 - T19 [x] — S2: one source for the IRSA pending-badge text. Route: inline. Done: PR #402.
 
 Phase 4, real data and owner decisions:
@@ -846,3 +846,4 @@ Not chosen in S2. Each stays open in its own document.
   autenticación inválido» before a code is typed).
 - L36 — claude-desktop-mcp: Rehearsed T36 on Linux with synthetic data: the desktop TypeScript API on a scratch PGlite folder (port 8123, MFA off for the drill only), a read-only key from POST /system/integrations/api-keys, then MCP. Switch off: tools/list gives six read-only tools, list_object_types answers, search_records returns «El envío a IA externa está desactivado para este proyecto». Switch on (PUT /system/v4/settings {"external_ai":{"enabled":true}}): npx mcp-remote@0.15.2 (pinned, older than two weeks) over stdio to http://127.0.0.1:8123/mcp with --header Authorization:${SIPGES_AUTH} connected through StreamableHTTPClientTransport, answered initialize, tools/list and search_records. Not rehearsed: Claude Desktop itself and Windows. Earlier advice in this session about Docker, Caddy and WSL 2 did not apply: the laptop runs the desktop install. S8 recorded as T37, waiting on the owner for the first slice.
 - L37 — T37: T37 first slice done: odd/tasks/reporting-mcp.md (count_records, read-only reports over MCP in both APIs, merged as 31c737af). Not yet deployed (Neon quota, T12). The rest of S8 (setup by chat, big-number dashboards) stays to be planned as its own features.
+- L38 — Pasada móvil: 2026-11-21. compact-sidebar T2 cerrada (aceptación delegada por el dueño: «te autorizo todo y avanza»). Hubs, /objeto y hojas a 360 y 412 px los cubre hubs.mobile.spec.ts en CI; menú y mapa revisados en 8 capturas sin desborde.
