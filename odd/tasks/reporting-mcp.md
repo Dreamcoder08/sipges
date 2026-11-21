@@ -1,8 +1,7 @@
 # Reporting MCP: aggregate counts over the read-only MCP
 
-Objective: one read-only MCP tool that counts records of a module, optionally grouped by a closed-list field and
-bounded by dates, so an agent can build reports without reading every record. Branch `docs/claude-desktop-mcp`
-(closure-roadmap T37, first slice). Delivery: `ask-on-risk`. Runners: Vitest (`apps/api`), `go test` (`apps/api-go`),
+Objective: read-only MCP tools for reports without reading every record: `count_records` (first slice, branch
+`docs/claude-desktop-mcp`, closure-roadmap T37) and `report_period` (second slice, branch `feat/report-period`). Delivery: `ask-on-risk`. Runners: Vitest (`apps/api`), `go test` (`apps/api-go`),
 `pnpm parity`.
 
 ## Specs
@@ -36,6 +35,28 @@ bounded by dates, so an agent can build reports without reading every record. Br
   hides them; every counted record passes through the guard's session and its access log.
 - S5 — Same behaviour in the TypeScript API (used by the desktop install) and the Go API, proved by parity cases.
 
+- S6 — Owner (2026-11-20), verbatim: «yes confirmo te autorizo and continue», accepting the proposal after the
+  analysis of an MCP-for-reports business video: «como siguiente porción del MCP de reportes, una herramienta de
+  reportes por período con fechas en lenguaje natural y exportación CSV. Es trabajo local, encaja con tu regla de
+  terminar lo local primero». The proposal named: «Fechas en lenguaje natural del lado del servidor … («hoy», «este
+  mes», «este año» → rango en hora de Lima, calculado en código) baja tokens y errores» and «Exportar a Excel o PDF
+  … Una herramienta que devuelva el CSV exacto sería determinista».
+- S7 — Contract of `report_period` (design, derived from S6; not asked for literally):
+  - `module` (required); `period`, one of «hoy», «ayer», «esta semana», «semana pasada», «este mes», «mes pasado»,
+    «este año», «año pasado», «últimos N días» (N 1–366), case- and accent-insensitive; or `from`/`to` as
+    `count_records` takes them; neither means the whole record. Weeks run Monday to Sunday, in Lima time (UTC-5).
+  - Either `group_by` (a closed-list field, as `count_records`) or `by` («dia» or «mes», a series on the module's
+    date field), not both in this slice.
+  - `format`: «json» (default) or «csv», a CSV string of the same rows with a header.
+  - The answer names the resolved range (`from`, `to`) and the words it came from, so the person sees what «este
+    mes» meant.
+- S8 — Decision (2026-11-20, parent, from ADR 0032 and agentic-analyst L2 «the TypeScript API gets no new route»):
+  `report_period` exists in the Go API only. Its descriptor lives in `mcp_tools_go.json`, apart from the descriptors
+  generated from TypeScript; parity and the recorded TypeScript fixtures leave Go-only tools out by name. S5 still
+  holds for `count_records`. The desktop install moves to Go at the laptop visit (go-rust-stack T72).
+- S9 — Privacy as S4: refused while «Envío a IA externa» is off; every record read passes through the guard's
+  session and its access log; restricted records are not counted; group and series keys are only `clear` fields.
+
 ## Tasks
 
 - T1 [x] — S3, S4: TypeScript `count_records` (store query, ontology service, MCP tool, tests). Route: delegated,
@@ -46,6 +67,12 @@ bounded by dates, so an agent can build reports without reading every record. Br
   (`mcp.mjs --check` on the merged code). Route: inline, after T1 and T2.
 - T4 [x] — S1: docs (MCP instructions text, desktop README tool list, CHANGELOG). Route: inline.
 - T5 [x] — S4: independent verification. Risk item 2 (data leaving through the egress guard). Route: verifier.
+- T6 [ ] — S7: period resolver in Go (`integration/domain`), pure, injected clock, Lima time. Route: inline.
+- T7 [ ] — S7–S9: `report_period` MCP tool in Go (Go-only descriptor file, dispatch, groups and series, analyst
+  label, parity and fixture exclusion, PostgreSQL integration test). Route: inline.
+- T8 [ ] — S6, S7: `format: "csv"`. Route: inline.
+- T9 [ ] — S6, S9: docs (desktop README, integrations tool table with the missing `count_records` row, sipgesctl
+  example through `call POST /mcp`, CHANGELOG) and an independent verifier (risk item 2). Route: inline + verifier.
 
 ## Log
 
@@ -65,3 +92,6 @@ bounded by dates, so an agent can build reports without reading every record. Br
 - L6 — T5: T5 independent verifier: S1, S2, S4 PASS (no leak: only clear fields group, values scrubbed, restricted never counted, RLS and tenant hold, one access-log row of ids and counts); S3/S5 FAIL on blank and one-sided arguments (Go did not trim, TS echoed open bounds). One correction batch a77b0ca0, RED then GREEN in both APIs, recheck by six parity probes: match. Advisories kept open: grouping by id or date fields can return up to 20000 groups; total is a lower bound when truncated.
 - L7 — T4: T4 done: MCP instructions name count_records in both APIs (TS 2ae7d362, Go 2a7dc674); deploy/desktop/README*.md list seven read-only tools with count_records.
 - L8 — landing: Landed with the owners word («Sí, mergeá y desplegá»): PR #520 merged as 31c737af (it carried #522, which GitHub marked merged). Deploy Workers run 44251963830 failed at «Apply database migrations» on the Neon quota («Your account or project has exceeded the quota»), the same outage as closure-roadmap T12; count_records is on main but not in production until the quota is resolved.
+- L9 — 2026-11-20: second slice opened on `feat/report-period` (S6–S9, T6–T9) after the owner accepted the
+  proposal quoted in S6. Map: Go `count_records` in `integration/application/mcp_count.go`, descriptors generated
+  from TypeScript (`testdata/mcp.mjs --check`), tools/list compared by `pnpm parity`; Go-only decision in S8.
