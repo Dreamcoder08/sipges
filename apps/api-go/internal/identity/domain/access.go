@@ -65,6 +65,8 @@ var selfServicePosts = map[string]bool{
 	"/system/notifications/push/test":        true,
 	// Signing one's own other devices out (Cuenta).
 	"/system/auth/sessions/revoke-others": true,
+	// Changing one's own password.
+	"/system/auth/password": true,
 }
 
 const ownSessions = "/system/auth/sessions/"
