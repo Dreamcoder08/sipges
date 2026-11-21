@@ -44,6 +44,9 @@ SIPGES_DB_BACKUP_PASSWORD=$(hex)
 SIPGES_HOST_OWNER=$(id -u):$(id -g)
 SIPGES_BACKUP_DIR=$work/backups
 SIPGES_BACKUP_KEEP=2
+# Count retention only: the weekly and monthly points are tested in unit.sh (ops/retain.sh).
+SIPGES_BACKUP_KEEP_WEEKLY=0
+SIPGES_BACKUP_KEEP_MONTHLY=0
 SIPGES_BIND_ADDRESS=127.0.0.1
 SIPGES_HTTP_PORT=$((https_port - 1))
 SIPGES_HTTPS_PORT=$https_port

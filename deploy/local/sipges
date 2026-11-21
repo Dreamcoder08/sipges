@@ -511,6 +511,10 @@ cmd_status() {
   fi
   latest=$(find "$dir" -mindepth 1 -maxdepth 1 -type d -name '20*Z' -printf '%f\n' 2>/dev/null | sort | tail -n 1)
   say "Latest backup: ${latest:-none yet}"
+  # 26 hours: a day plus the time a nightly backup may take (world-class-local T2).
+  if [[ -n $latest && -z $(find "$dir/$latest" -maxdepth 0 -mmin -1560 2>/dev/null) ]]; then
+    say 'WARNING: the newest backup is more than 26 hours old. Is the computer often off at the backup hour? See ./sipges logs backup'
+  fi
   if [[ -f $dir/.last-failure ]]; then
     say "WARNING: the nightly backup failed at $(cat "$dir/.last-failure"). See ./sipges logs backup"
   fi
