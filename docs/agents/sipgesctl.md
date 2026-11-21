@@ -134,6 +134,17 @@ session:
 SIPGES_MACHINE_TOKEN=$(cat ~/.config/sipges/bot-key) ./sipgesctl call POST /mcp --body request.json
 ```
 
+A report over a period said in words, as Claude Desktop would ask it (`report_period`, Go API only; a read key is
+enough):
+
+```sh
+printf '%s' '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"report_period",
+  "arguments":{"module":"eventos","period":"este mes","group_by":"Tipo_Evento","format":"csv"}}}' |
+  SIPGES_MACHINE_TOKEN=$(cat ~/.config/sipges/read-key) ./sipgesctl call POST /mcp --body -
+```
+
+The answer names the range «este mes» became (`period.from`, `period.to`, in Lima days) and carries the CSV in `csv`.
+
 **Adding a route.** `TestEveryRouteHasACLIPath` in `internal/app` reads the routes off the real
 mux and fails CI when one is missing from the inventory, or listed and no longer served. Add an
 entry to `routes.json`. Give it `command` and `summary` to make it a typed command: its path values
