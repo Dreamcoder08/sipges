@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
-  <title id="title">SIPGES — Territorial Eye, monochrome</title>
-  <desc id="desc">An open territorial lens and central focus, in one colour on transparency.</desc>
-  <g fill="currentColor">
-    <path fill-rule="evenodd" d="M88 256c48-96 108-128 168-128s120 32 168 128c-48 96-108 128-168 128S136 352 88 256Zm64 0c32-48 64-64 104-64s72 16 104 64c-32 48-64 64-104 64s-72-16-104-64Z"/>
-    <circle cx="256" cy="256" r="32"/>
-  </g>
-</svg>

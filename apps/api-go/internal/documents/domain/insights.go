@@ -42,9 +42,6 @@ var docActions = map[string]string{
 	"Territorio y ambiente":               "Solicitar contraste técnico territorial y distinguir percepciones de impactos confirmados.",
 }
 
-// DocAction is DOC_ACTIONS[theme] ?? ”.
-func DocAction(theme string) string { return docActions[theme] }
-
 // TextChunk is one located text section, e.g. `Página 3` or `Tabla 1, fila 2`.
 type TextChunk struct {
 	Location string

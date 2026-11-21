@@ -62,7 +62,7 @@ La configuración IRSA y los snapshots pasan a SQL. Los adjuntos usan el adaptad
 | T14 | Paridad E2E y preparación del despliegue completadas |
 | Ontología T1–T11 | Historial, vínculos tipados e inferidos, búsqueda, grafo, observabilidad, clasificación, importación CSV, analista con citas, cronología y E2E |
 
-La implementación nueva es TypeScript; Python permanece en `reference/python` como referencia de comportamiento y fixtures de paridad, sin ser dependencia de ejecución. El estado de tareas proviene del ODD; T1–T14 están completos; la publicación de la demo se comprueba por separado. La validación científica externa del IRSA sigue siendo un proceso separado.
+Este documento describe la API TypeScript; el backend se migra a Go con motores en Rust (ADR 0032), y la instalación local ya corre solo con Go. Python permanece en `reference/python` como referencia de comportamiento y fixtures de paridad, sin ser dependencia de ejecución. El estado de tareas proviene del ODD; T1–T14 están completos; la publicación de la demo se comprueba por separado. La validación científica externa del IRSA sigue siendo un proceso separado.
 
 La revisión territorial añade catálogo/intersecciones, señales verificables, ejecución por eventos y sondeo autorizado. La evidencia del gate y del despliegue corresponde al cierre de su ODD; este diagrama documenta el código fijado y no certifica recepción móvil ni disponibilidad de proveedores externos.
 

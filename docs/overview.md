@@ -30,7 +30,7 @@ Versión publicada: **v1.1.0** (ver [CHANGELOG](../CHANGELOG.md) y las releases 
 - Seguridad: MFA, entrada con Google para cuentas invitadas, comprobación de origen, aislamiento por proyecto con RLS y marcas de clasificación.
 - Solo datos reales del proyecto: el caso académico sintético se retiró de la base y del código (migración 0019).
 
-El runtime usa únicamente TypeScript; la referencia Python congelada en [`reference/python`](../reference/python/README.md) se conserva para pruebas de paridad y del migrador. La validación científica externa del IRSA sigue siendo un proceso separado.
+La interfaz es TypeScript; el backend se migra a Go con motores en Rust (ADR 0032): la instalación local ya corre solo con Go, y la API TypeScript sigue sirviendo a producción y al instalador de escritorio hasta su retiro (go-rust-stack T44, T72, T73). La referencia Python congelada en [`reference/python`](../reference/python/README.md) se conserva para pruebas de paridad y del migrador. La validación científica externa del IRSA sigue siendo un proceso separado.
 
 ## Desarrollo local
 

@@ -92,9 +92,6 @@ func serve(ctx context.Context, ex exchanger) (*Server, error) {
 // Addr is the loopback address clients connect to.
 func (s *Server) Addr() *net.TCPAddr { return s.ln.Addr().(*net.TCPAddr) }
 
-// Port is Addr's port.
-func (s *Server) Port() int { return s.Addr().Port }
-
 // Password is the random per-run password every client must send (cleartext, over loopback only).
 // Pass it only to the clients this run starts, never on a command line: PGPASSWORD in a child's
 // environment, or the pgx config's Password.
