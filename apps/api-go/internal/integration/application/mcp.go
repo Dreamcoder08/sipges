@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strconv"
+	"time"
 
 	analyst "github.com/Dreamcoder08/sipges/apps/api-go/internal/analyst/application"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/integration/domain"
@@ -64,6 +65,8 @@ type MCP struct {
 	Creator  MCPCreator
 	Analyst  MCPBriefings
 	Guard    Egress
+	// Now is the clock period words are read against; nil reads the system clock.
+	Now func() time.Time
 }
 
 // ErrToolUnavailable is a tool without a handler; the route answers as a tool failure.
@@ -130,6 +133,8 @@ func (m MCP) runRead(ctx context.Context, tool domain.Tool, request privacy.Requ
 		data, refusal, err = call.timeline(ctx)
 	case domain.ToolCountRecords:
 		data, refusal, err = call.count(ctx)
+	case domain.ToolReportPeriod:
+		data, refusal, err = call.report(ctx)
 	case domain.ToolGetBriefing:
 		data, refusal, err = call.briefing(ctx)
 	default:

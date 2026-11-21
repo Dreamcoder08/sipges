@@ -28,6 +28,7 @@ const (
 	ToolGetLinks        = "get_links"
 	ToolGetTimeline     = "get_timeline"
 	ToolCountRecords    = "count_records"
+	ToolReportPeriod    = "report_period"
 	ToolGetBriefing     = "get_briefing"
 	ToolCreateRecord    = "create_record"
 	ToolLinkRecords     = "link_records"
@@ -85,15 +86,52 @@ var inputs = []struct {
 	}},
 }
 
+// goOnlyInputs are tools the Go API has and the frozen TypeScript API does not (ADR 0032;
+// odd/tasks/reporting-mcp.md S8). Their descriptors live in mcp_tools_go.json, written by hand, so
+// mcp_tools.json stays what testdata/mcp.mjs generates from TypeScript.
+var goOnlyInputs = []struct {
+	name  string
+	kind  ToolKind
+	input schema
+}{
+	{ToolReportPeriod, ToolRead, objectSchema{
+		{"module", module},
+		{"period", defaultSchema{stringSchema{length{max: 40}}, ""}},
+		{"from", defaultSchema{stringSchema{length{max: 10}}, ""}},
+		{"to", defaultSchema{stringSchema{length{max: 10}}, ""}},
+		{"group_by", defaultSchema{stringSchema{length{max: 80}}, ""}},
+		{"by", defaultSchema{stringSchema{length{max: 10}}, ""}},
+		{"format", defaultSchema{stringSchema{length{max: 10}}, "json"}},
+	}},
+}
+
+// GoOnlyTools names the tools only the Go API lists, for parity and the recorded fixtures.
+func GoOnlyTools() []string {
+	names := make([]string, len(goOnlyInputs))
+	for i, in := range goOnlyInputs {
+		names[i] = in.name
+	}
+	return names
+}
+
 //go:embed mcp_tools.json
 var descriptorsJSON []byte
 
-// Tools is MCP_TOOLS, in its order.
-var Tools = func() []Tool {
-	parsed, err := records.ParseBody(descriptorsJSON)
+//go:embed mcp_tools_go.json
+var goOnlyDescriptorsJSON []byte
+
+// Tools is MCP_TOOLS, in its order, then the Go-only tools.
+var Tools = append(toolsOf("mcp_tools.json", descriptorsJSON, inputs), toolsOf("mcp_tools_go.json", goOnlyDescriptorsJSON, goOnlyInputs)...)
+
+func toolsOf(file string, descriptors []byte, inputs []struct {
+	name  string
+	kind  ToolKind
+	input schema
+}) []Tool {
+	parsed, err := records.ParseBody(descriptors)
 	list, ok := parsed.([]any)
 	if err != nil || !ok || len(list) != len(inputs) {
-		panic("integration: mcp_tools.json does not match the tools")
+		panic("integration: " + file + " does not match the tools")
 	}
 	tools := make([]Tool, len(inputs))
 	for i, in := range inputs {
@@ -103,12 +141,12 @@ var Tools = func() []Tool {
 		descriptor, _ := value.(*records.Object)
 		name, _ := descriptor.Get("name")
 		if name != in.name || write != (in.kind == ToolWrite) {
-			panic(fmt.Sprintf("integration: mcp_tools.json entry %d is not %s", i, in.name))
+			panic(fmt.Sprintf("integration: %s entry %d is not %s", file, i, in.name))
 		}
 		tools[i] = Tool{Name: in.name, Kind: in.kind, Descriptor: descriptor, input: in.input}
 	}
 	return tools
-}()
+}
 
 // ToolsFor is toolsFor: write tools only for write keys.
 func ToolsFor(p Principal) []Tool {

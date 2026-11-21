@@ -12,3 +12,10 @@ func TestCountRecordsHasItsFixedSpanishLabel(t *testing.T) {
 		t.Fatalf("label = %q", got)
 	}
 }
+
+func TestReportPeriodHasItsFixedSpanishLabel(t *testing.T) {
+	t.Parallel()
+	if got := domain.ToolStepLabel("report_period"); got != "Preparando el reporte…" {
+		t.Fatalf("label = %q", got)
+	}
+}

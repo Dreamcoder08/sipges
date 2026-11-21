@@ -153,6 +153,12 @@ ON CONFLICT DO NOTHING;
 
 const PATH = '/mcp';
 
+/**
+ * Tools only the Go API lists (apps/api-go/internal/integration/domain/mcp_tools_go.json): the
+ * TypeScript API is frozen (ADR 0032, odd/tasks/reporting-mcp.md S8).
+ */
+const GO_ONLY_TOOLS = { list: 'result.tools', names: ['report_period'] } as const;
+
 const post = (name: string, key: Key | null, body: unknown, more: Partial<ParityCase> = {}) => ({
   name: `mcp ${name}`,
   method: 'POST' as const,
@@ -229,10 +235,14 @@ const transport: readonly ParityCase[] = [
   post('tools/list, read key', 'read', rpc('tools/list'), {
     present: ['search_records'],
     absent: ['create_record'],
+    goOnly: GO_ONLY_TOOLS,
   }),
-  post('tools/list, write key', 'write', rpc('tools/list'), { present: ['create_record'] }),
-  post('tools/list, limited clearance', 'limited', rpc('tools/list')),
-  post('tools/list, another project', 'other', rpc('tools/list')),
+  post('tools/list, write key', 'write', rpc('tools/list'), {
+    present: ['create_record'],
+    goOnly: GO_ONLY_TOOLS,
+  }),
+  post('tools/list, limited clearance', 'limited', rpc('tools/list'), { goOnly: GO_ONLY_TOOLS }),
+  post('tools/list, another project', 'other', rpc('tools/list'), { goOnly: GO_ONLY_TOOLS }),
 ];
 
 const catalogue: readonly ParityCase[] = [

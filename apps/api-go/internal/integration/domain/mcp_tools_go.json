@@ -1,0 +1,54 @@
+[
+  {
+    "write": false,
+    "descriptor": {
+      "name": "report_period",
+      "title": "Reporte por período",
+      "description": "Reporte de un tipo de objeto en un período dicho en palabras («hoy», «este mes», «el año pasado»…), que el servidor convierte a días en hora de Lima: el total, agrupado por un campo de lista cerrada o en serie por día o mes, en JSON o CSV. Úsalo para reportes por fecha en lugar de calcular el calendario.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "module": {
+            "type": "string",
+            "maxLength": 40,
+            "description": "Tipo de objeto: actores, eventos, demandas, compromisos, narrativas, fuentes, alertas, acciones, directorio, intereses, dialogos, oportunidades, hechos, aarc, buzon, lecciones"
+          },
+          "period": {
+            "default": "",
+            "description": "hoy, ayer, esta semana, semana pasada, este mes, mes pasado, este año, año pasado o últimos N días (1 a 366); vacío = todo el registro. No se combina con from/to",
+            "type": "string",
+            "maxLength": 40
+          },
+          "from": {
+            "default": "",
+            "description": "En lugar de period: AAAA, AAAA-MM o AAAA-MM-DD sobre el campo de fecha del tipo",
+            "type": "string",
+            "maxLength": 10
+          },
+          "to": { "default": "", "type": "string", "maxLength": 10 },
+          "group_by": {
+            "default": "",
+            "description": "Campo por el que agrupar: solo campos de lista cerrada, códigos, fechas o números. No se combina con by",
+            "type": "string",
+            "maxLength": 80
+          },
+          "by": {
+            "default": "",
+            "description": "Serie en el tiempo sobre el campo de fecha del tipo: «dia» o «mes»",
+            "type": "string",
+            "maxLength": 10
+          },
+          "format": {
+            "default": "json",
+            "description": "«json» o «csv»: csv agrega el reporte como texto CSV con encabezado, listo para guardar",
+            "type": "string",
+            "maxLength": 10
+          }
+        },
+        "required": ["module"]
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    }
+  }
+]

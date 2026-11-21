@@ -14,6 +14,7 @@ var toolSteps = map[string]string{
 	"get_links":         "Revisando vínculos…",
 	"get_timeline":      "Leyendo la línea de tiempo…",
 	"count_records":     "Contando registros…",
+	"report_period":     "Preparando el reporte…",
 	"get_briefing":      "Leyendo el resumen del proyecto…",
 	"list_object_types": "Revisando los tipos de registro…",
 }

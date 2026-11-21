@@ -33,6 +33,12 @@ export type ParityCase = {
    */
   readonly normalize?: readonly string[];
   /**
+   * Entries of a list that only the Go API answers, such as a tool the frozen TypeScript API never
+   * gets (ADR 0032): left out of Go's answer before comparing. TypeScript naming one is still a
+   * difference.
+   */
+  readonly goOnly?: { readonly list: string; readonly names: readonly string[] };
+  /**
    * For a text answer whose values differ per process: a regular expression; only the lines it
    * matches are compared, in order. The schema of a metrics text, for example.
    */
