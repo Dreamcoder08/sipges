@@ -528,6 +528,66 @@ cmd_status() {
     # One dead disk loses the data and every backup beside it (world-class-local T3).
     say 'WARNING: the backups are only on this computer: a dead disk loses them with the data. Plug in a second disk and run ./sipges copy-backups-to <folder on it>'
   fi
+  kit_confirmed ||
+    say 'WARNING: no recovery kit confirmed: without SIPGES_DATA_KEY and SIPGES_BACKUP_PASSPHRASE no backup can be opened. Run ./sipges recovery-kit'
+}
+
+# The recovery kit (world-class-local T4): without SIPGES_DATA_KEY and SIPGES_BACKUP_PASSPHRASE no
+# backup can be opened, by anyone, so the owner keeps them on paper away from this computer. What is
+# recorded once confirmed is a fingerprint of both, never the secrets: a changed secret needs a new
+# kit, and status says so until then.
+recovery_mark() { printf '%s/.sipges-recovery-kit' "$(dirname "$ENV_FILE")"; }
+secrets_fingerprint() {
+  local hash
+  hash=$(printf '%s\n%s' "$(env_value SIPGES_DATA_KEY)" "$(env_value SIPGES_BACKUP_PASSPHRASE)" |
+    { sha256sum 2>/dev/null || shasum -a 256; })
+  printf '%s' "${hash%% *}"
+}
+# An empty fingerprint (no sha256sum or shasum here) never counts as confirmed.
+kit_confirmed() {
+  local fingerprint
+  fingerprint=$(secrets_fingerprint)
+  [[ -n $fingerprint && -f $(recovery_mark) && $(cat "$(recovery_mark)") == "$fingerprint" ]]
+}
+cmd_recovery_kit() {
+  need_env
+  local file=${1:-sipges-recovery-kit.txt} pass key answer
+  pass=$(env_value SIPGES_BACKUP_PASSPHRASE)
+  key=$(env_value SIPGES_DATA_KEY)
+  [[ -n $pass && -n $key ]] || die "SIPGES_BACKUP_PASSPHRASE and SIPGES_DATA_KEY must be in $ENV_FILE"
+  # Its last 4 characters confirm the paper, so a shorter one would confirm with nothing typed.
+  ((${#pass} >= 4)) || die "SIPGES_BACKUP_PASSPHRASE is shorter than 4 characters: install writes 64. Set a long one in $ENV_FILE first"
+  [[ -n $(secrets_fingerprint) ]] || die 'this computer has neither sha256sum nor shasum, so the kit cannot be confirmed'
+  (
+    umask 077
+    cat >"$file" <<KIT
+SIPGES recovery kit - $(date -u +%Y-%m-%d)
+Keep this sheet on paper, away from this computer. Anyone holding it and a backup can read the data.
+
+Site:            $(env_value SIPGES_SITE_HOST)
+Backups folder:  $(env_value SIPGES_BACKUP_DIR)
+Copy folder:     $(env_value SIPGES_BACKUP_COPY_DIR)
+
+SIPGES_DATA_KEY=$key
+SIPGES_BACKUP_PASSPHRASE=$pass
+
+To restore on another computer:
+1. Install SIPGES there: ./sipges install
+2. In its .env, replace SIPGES_DATA_KEY and SIPGES_BACKUP_PASSPHRASE with the two lines above.
+3. Copy a backup folder (such as 20261121T070000Z) into its backups folder.
+4. Run ./sipges restore <that folder name>
+KIT
+    chmod 600 "$file"
+  )
+  say "Wrote $file. Print it, keep the paper somewhere safe, then delete the file."
+  say 'Type the last 4 characters of SIPGES_BACKUP_PASSPHRASE from the paper to confirm:'
+  read -r answer || true
+  [[ -n $answer && $answer == "${pass: -4}" ]] || die 'that does not match the end of the passphrase: nothing was recorded'
+  (
+    umask 077
+    secrets_fingerprint >"$(recovery_mark)"
+  )
+  say 'Recovery kit confirmed.'
 }
 
 # A copy of every backup on a second disk (local-qa-findings T15): a dead disk loses the data and
@@ -644,6 +704,7 @@ backup) need_env; compose exec -T backup bash /ops/backup.sh ;;
 backups) cmd_backups ;;
 copy-backups-to) shift; cmd_copy_backups_to "$@" ;;
 restore) shift; cmd_restore "$@" ;;
+recovery-kit) shift; cmd_recovery_kit "$@" ;;
 update) cmd_update ;;
 ca) need_env; compose cp caddy:/data/caddy/pki/authorities/local/root.crt sipges-root-ca.crt; say 'Wrote sipges-root-ca.crt' ;;
 wipe) shift; cmd_wipe "$@" ;;
@@ -660,6 +721,7 @@ help | -h | --help)
 ./sipges backups           List the backups.
 ./sipges copy-backups-to <dir>  Also copy every backup to a folder on another disk.
 ./sipges restore <name>    Replace all data with a backup.
+./sipges recovery-kit [file]  Write the sheet with the backup secrets to print, and confirm it.
 ./sipges update            Back up, get the new version, rebuild, restart.
 ./sipges ca                Export the certificate each computer must trust.
 ./sipges wipe              Delete all data on this machine. Backups and .env stay.

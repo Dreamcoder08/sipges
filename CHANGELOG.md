@@ -11,6 +11,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ### Corregido
 
+- Instalación local: `./sipges recovery-kit` escribe una hoja para imprimir con `SIPGES_DATA_KEY` y `SIPGES_BACKUP_PASSPHRASE` (sin ellos ningún respaldo se puede abrir) y cómo restaurar en otra computadora, y se confirma tecleando los últimos 4 caracteres de la frase. `./sipges status` avisa hasta que el kit esté confirmado y otra vez si cambia algún secreto; solo se guarda una huella de los secretos.
 - Instalación local: `./sipges status` avisa en cada corrida mientras los respaldos no tienen copia en un segundo disco, y dice cómo configurarla (`./sipges copy-backups-to`): un disco que muere se lleva los datos y todos los respaldos que están a su lado.
 - Instalación local, puente del analista con la suscripción de Claude: la guía documenta el contenedor endurecido (sistema de archivos de solo lectura, sin capacidades, 512 MiB, 256 procesos, registros rotados) y aclara que el puente es solo para datos de demostración; con datos reales corresponde una clave de la consola de Anthropic con límite de gasto.
 - Instalación local, respaldos: además de los 14 últimos se guardan el más nuevo de cada una de las últimas 8 semanas y de cada uno de los últimos 12 meses (antes el punto más antiguo tenía unos 4 días). Si la computadora estaba apagada a las 2:00, SIPGES respalda apenas arranca cuando el último respaldo tiene más de un día, y `./sipges status` avisa cuando tiene más de 26 horas. La copia en el segundo disco sigue la misma retención.

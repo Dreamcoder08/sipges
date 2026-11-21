@@ -834,6 +834,36 @@ printf 'SIPGES_BACKUP_COPY_DIR=%s\n' "$work/disk" >>"$SIPGES_ENV_FILE"
 run status || true
 check 'with a copy folder set it does not' said_not 'the backups are only on this computer'
 
+# --- the recovery kit for the backup secrets (world-class-local T4)
+
+fresh
+printf 'SIPGES_DATA_KEY=synthetic-data-key-0000\nSIPGES_BACKUP_PASSPHRASE=synthetic-passphrase-a1b2\n' >>"$SIPGES_ENV_FILE"
+run install
+pass=$(sed -n 's/^SIPGES_BACKUP_PASSPHRASE=//p' "$SIPGES_ENV_FILE")
+key=$(sed -n 's/^SIPGES_DATA_KEY=//p' "$SIPGES_ENV_FILE")
+run status || true
+check 'status warns until a recovery kit is confirmed' said 'WARNING: no recovery kit confirmed'
+if run recovery-kit "$work/kit.txt" <<<"zzzz"; then fail 'a wrong confirmation is refused'; else ok 'a wrong confirmation is refused'; fi
+check 'and records nothing' test ! -e "$work/.sipges-recovery-kit"
+check 'the sheet holds the backup passphrase' grep -qF "$pass" "$work/kit.txt"
+check 'and the data key' grep -qF "$key" "$work/kit.txt"
+check 'and how to restore on another computer' grep -qF './sipges restore' "$work/kit.txt"
+check 'only its owner may read it' test "$(stat -c %a "$work/kit.txt")" = 600
+run recovery-kit "$work/kit.txt" <<<"${pass: -4}"
+check 'the last 4 characters confirm it' test -s "$work/.sipges-recovery-kit"
+check 'what is recorded is not the passphrase' bash -c "! grep -qF '$pass' '$work/.sipges-recovery-kit'"
+run status || true
+check 'then status no longer warns' said_not 'no recovery kit confirmed'
+sed -i "s/^SIPGES_BACKUP_PASSPHRASE=.*/SIPGES_BACKUP_PASSPHRASE=changed${pass:7}/" "$SIPGES_ENV_FILE"
+run status || true
+check 'a changed passphrase needs a new kit' said 'WARNING: no recovery kit confirmed'
+
+# An empty answer never confirms, not even for a passphrase shorter than 4 characters.
+fresh
+printf 'SIPGES_DATA_KEY=synthetic-data-key-0000\nSIPGES_BACKUP_PASSPHRASE=ab\n' >>"$SIPGES_ENV_FILE"
+if run recovery-kit "$work/kit.txt" <<<""; then fail 'an empty answer does not confirm a short passphrase'; else ok 'an empty answer does not confirm a short passphrase'; fi
+check 'and nothing is recorded' test ! -e "$work/.sipges-recovery-kit"
+
 command rm -rf "$root"
 if ((failures > 0)); then
   printf '%d failed\n' "$failures"
