@@ -1,6 +1,17 @@
-import { useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { loadConversationView } from './answer-view.tsx';
 import { historyOf } from './history.ts';
+import {
+  type SavedTurn,
+  deleteAllSaved,
+  deleteSaved,
+  parseSaved,
+  purgeExpired,
+  saveConversation,
+  savedSnapshot,
+  subscribeSaved,
+} from './saved.ts';
+import { forgetOtherPeople, signOutGeneration } from '../../../shared/lib/saved-conversations.ts';
 import type { Turn } from './turn.ts';
 
 /** What the page's one status region says: the start and the end of each answer, once each. */
@@ -14,21 +25,63 @@ export const ANNOUNCE = {
 const NO_TURNS: readonly Turn[] = [];
 
 /**
- * Inicio's conversation (odd/tasks/chat-first-ui.md T5): turns kept in memory only, never in
- * browser storage (T11 decides what is saved), and only for the project they were asked in.
+ * A conversation's id. crypto.randomUUID exists only in secure contexts (HTTPS, localhost): the
+ * desktop install opened by its address over plain http on the local network still saves.
+ */
+const newConversationId = () => {
+  try {
+    return crypto.randomUUID();
+  } catch {
+    return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+  }
+};
+
+/**
+ * Inicio's conversation (odd/tasks/chat-first-ui.md T5): turns kept in memory, and only for the
+ * project they were asked in. With a person, each answered conversation is also saved in this
+ * browser under that person and project (T11, saved.ts), and earlier ones can be opened again.
  * Stopping aborts the request (T7) and a replaced one is aborted too; a result that still arrives
  * is dropped. The shell holds one (`thread-context.tsx`, T19), so Inicio and the sidebar's
  * «Conversaciones» share it.
  */
-export const useThreadState = (scope: string) => {
-  const [thread, setThread] = useState<{ scope: string; turns: readonly Turn[] }>({
-    scope,
+export const useThreadState = (scope: string, person?: string) => {
+  // Whose conversation it is: the person and the project. Another person on the same screen (T11)
+  // starts with none, as another project does.
+  const owner = JSON.stringify([person ?? null, scope]);
+  const [thread, setThread] = useState<{ owner: string; turns: readonly Turn[] }>({
+    owner,
     turns: NO_TURNS,
   });
+  // T11 (L20): the open conversation, by project; a new project opens none until it asks.
+  const [opened, setOpened] = useState<{ owner: string; id: string } | null>(null);
+  const currentId = opened?.owner === owner ? opened.id : null;
+  const snapshot = useSyncExternalStore(subscribeSaved, () =>
+    person ? savedSnapshot(person, scope) : '',
+  );
+  const all = useMemo(() => parseSaved(snapshot), [snapshot]);
+  // The person's earlier conversations of this project, without the one open now («Anteriores»).
+  const saved = useMemo(() => all.filter((c) => c.id !== currentId), [all, currentId]);
+  useEffect(() => {
+    if (!person) return;
+    // A shared computer: someone else's conversations, left by a session that simply expired, go.
+    forgetOtherPeople(person);
+    purgeExpired(person, scope, Date.now());
+  }, [person, scope]);
   const [announcement, setAnnouncement] = useState('');
   const active = useRef<{ id: number; question: string; controller: AbortController } | null>(null);
+  // Bumped by «Borrar historial», as a sign-out bumps its generation.
+  const cleared = useRef(0);
+  // The screen holding the thread goes (sign-out leaves for /login): its open request stops.
+  useEffect(() => {
+    const request = active;
+    return () => {
+      const pending = request.current;
+      request.current = null;
+      pending?.controller.abort();
+    };
+  }, []);
   const sequence = useRef(0);
-  const turns = thread.scope === scope ? thread.turns : NO_TURNS;
+  const turns = thread.owner === owner ? thread.turns : NO_TURNS;
 
   const settle = (id: number, turn: Turn) =>
     setThread((current) => ({
@@ -57,6 +110,15 @@ export const useThreadState = (scope: string) => {
     // One answer at a time: one still pending is stopped, not left waiting forever.
     // The thread as it stood before this question: its answered turns are the follow-up's history.
     const history = historyOf(turns);
+    const before = turns;
+    // A sign-out or «Borrar historial» while the answer is on its way: it arrives, and is not saved (T11).
+    const generation = signOutGeneration();
+    const clearedBefore = cleared.current;
+    let savingId = currentId;
+    if (!savingId) {
+      savingId = newConversationId();
+      setOpened({ owner, id: savingId });
+    }
     const previous = release();
     if (previous)
       settle(previous.id, { id: previous.id, question: previous.question, state: 'stopped' });
@@ -64,9 +126,9 @@ export const useThreadState = (scope: string) => {
     const controller = new AbortController();
     active.current = { id, question, controller };
     setThread((current) => ({
-      scope,
+      owner,
       turns: [
-        ...(current.scope === scope ? current.turns : []),
+        ...(current.owner === owner ? current.turns : []),
         { id, question, state: 'pending' },
       ],
     }));
@@ -98,6 +160,22 @@ export const useThreadState = (scope: string) => {
     active.current = null;
     settle(id, next);
     setAnnouncement(ANNOUNCE[next.state]);
+    if (
+      next.state === 'answered' &&
+      person &&
+      generation === signOutGeneration() &&
+      clearedBefore === cleared.current
+    ) {
+      const answered: SavedTurn[] = [...before, next].flatMap((turn) =>
+        turn.state === 'answered' ? [{ question: turn.question, answer: turn.answer }] : [],
+      );
+      saveConversation(
+        person,
+        scope,
+        { id: savingId, updatedAt: Date.now(), turns: answered },
+        Date.now(),
+      );
+    }
     return next.state === 'answered';
   };
 
@@ -113,10 +191,45 @@ export const useThreadState = (scope: string) => {
     return pending.question;
   };
 
+  /** «Nueva pregunta»: the open conversation stays saved, and a new one starts. */
   const clear = () => {
     release();
-    setThread({ scope, turns: NO_TURNS });
+    setOpened(null);
+    setThread({ owner, turns: NO_TURNS });
     setAnnouncement('');
+  };
+
+  /** Brings a saved conversation back as the open one; follow-ups go on from its turns. */
+  const open = (id: string) => {
+    const conversation = all.find((c) => c.id === id);
+    if (!conversation) return;
+    release();
+    setOpened({ owner, id: conversation.id });
+    setThread({
+      owner,
+      turns: conversation.turns.map((turn) => ({
+        id: ++sequence.current,
+        question: turn.question,
+        state: 'answered' as const,
+        answer: turn.answer,
+      })),
+    });
+    setAnnouncement('');
+  };
+
+  /** Deletes a saved conversation; the open one, deleted, is saved again only on its next answer. */
+  const remove = (id: string) => {
+    if (!person) return;
+    deleteSaved(person, scope, id);
+    if (id === currentId) setOpened(null);
+  };
+
+  /** Deletes every saved conversation of the person in this project («Borrar historial»). */
+  const removeAll = () => {
+    if (!person) return;
+    cleared.current++;
+    deleteAllSaved(person, scope);
+    setOpened(null);
   };
 
   return {
@@ -127,6 +240,10 @@ export const useThreadState = (scope: string) => {
     stop,
     announce,
     clear,
+    saved,
+    open,
+    remove,
+    removeAll,
   };
 };
 

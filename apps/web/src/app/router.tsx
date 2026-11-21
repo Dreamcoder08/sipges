@@ -314,7 +314,7 @@ const appRoute = createRoute({
     }
   },
   component: function AppLayout() {
-    const { scope, queryClient } = appRoute.useRouteContext();
+    const { scope, me, queryClient } = appRoute.useRouteContext();
     const router = useRouter();
     // Subscribed, so the header shows the project's name once the list arrives.
     const scopes = useQuery(scopesQuery).data;
@@ -336,7 +336,7 @@ const appRoute = createRoute({
       <ProjectSettingsProvider value={settings}>
         <NavigateProvider value={(href) => void router.navigate({ href })}>
           {/* Inicio's conversation, shared with the sidebar's «Conversaciones» (chat-first-ui T19). */}
-          <AnalystThreadProvider scope={scope.scope}>
+          <AnalystThreadProvider scope={scope.scope} person={me.username}>
             <AppShell
               {...(missing ? { title: MISSING_PAGE_TITLE } : {})}
               projectLabel={projectLabel}

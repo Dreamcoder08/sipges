@@ -19,7 +19,8 @@ const plainClick = (event: MouseEvent) =>
  * «Nueva pregunta» first, then search and the bell (it opens Bandeja › Avisos and counts the
  * unread ones, functional-closure S9), the five destinations and Integraciones, then this
  * session's questions under «Conversaciones» while a conversation exists, or the last screens
- * opened («Recientes») otherwise, and the project and the account menu at the foot. A
+ * opened («Recientes») otherwise, then the conversations saved in this browser («Anteriores», T11),
+ * and the project and the account menu at the foot. A
  * destination is current on its hub and on the old screens it absorbs. Every other tool of the
  * shell lives here too, so the top bar keeps the title only. Phones and tablets show the same
  * sidebar inside the menu drawer (`inDrawer`), whose header names it.
@@ -61,6 +62,8 @@ export const Sidebar = ({
   const recents = useRecents(projectKey);
   const shared = useSharedThread();
   const questions = shared?.thread.turns ?? [];
+  // Earlier conversations kept in this browser for the person and project (chat-first-ui T11).
+  const saved = shared?.thread.saved ?? [];
   const fresh = GLOBAL_SHORTCUTS.newQuestion;
   // Without the shell's conversation (a test rendering the sidebar alone) the links just navigate.
   const pick = (action: () => void) => (event: MouseEvent) => {
@@ -172,6 +175,45 @@ export const Sidebar = ({
                 </li>
               ))}
             </ul>
+          </section>
+        ) : null}
+        {saved.length > 0 ? (
+          <section aria-labelledby={`${ids}-saved`}>
+            <p id={`${ids}-saved`} className={styles.groupLabel}>
+              Anteriores
+            </p>
+            <ul>
+              {saved.map((conversation) => {
+                const title = conversation.turns[0]?.question ?? '';
+                return (
+                  <li key={conversation.id} className={styles.savedRow}>
+                    <a
+                      href={INICIO_HREF}
+                      className={`${styles.link} ${styles.small}`}
+                      title={title}
+                      onClick={pick(() => shared?.openConversation(conversation.id))}
+                    >
+                      <span className={`${shell.text} ${styles.question}`}>{title}</span>
+                    </a>
+                    <button
+                      type="button"
+                      className={styles.forget}
+                      aria-label={`Borrar la conversación «${title}»`}
+                      onClick={() => shared?.thread.remove(conversation.id)}
+                    >
+                      <Icon name="close" />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            <button
+              type="button"
+              className={styles.forgetAll}
+              onClick={() => shared?.thread.removeAll()}
+            >
+              Borrar historial
+            </button>
           </section>
         ) : null}
       </nav>

@@ -19,7 +19,7 @@ export type InicioHandle = {
   showTurn: (id: number) => void;
 };
 
-type Request = { kind: 'new' } | { kind: 'turn'; id: number };
+type Request = { kind: 'new' } | { kind: 'turn'; id: number } | { kind: 'saved' };
 
 type SharedThread = {
   thread: ThreadState;
@@ -27,6 +27,8 @@ type SharedThread = {
   newQuestion: () => void;
   /** One question of the conversation, brought into view on Inicio. */
   showTurn: (id: number) => void;
+  /** A saved conversation («Anteriores», T11) opened on Inicio. */
+  openConversation: (id: string) => void;
   /** Inicio says it is on screen; the returned function says it left. */
   attach: (handle: InicioHandle) => () => void;
 };
@@ -45,18 +47,21 @@ export const isNewQuestionKey = (event: KeyboardEvent) =>
 /**
  * The conversation held by the shell (odd/tasks/chat-first-ui.md T19), so Inicio and the
  * sidebar's «Conversaciones» read the same turns and the thread outlives a visit to another
- * screen. Still memory only and per project: nothing reaches browser storage (T11 decides what is
- * saved). From another screen, «Nueva pregunta» and a conversation entry open Inicio first and
+ * screen. Per project; each answered conversation is also saved in this browser for the person
+ * signed in (T11), and the sidebar lists the earlier ones under «Anteriores». From another screen, «Nueva pregunta» and a conversation entry open Inicio first and
  * the request waits until Inicio is on screen.
  */
 export const AnalystThreadProvider = ({
   scope,
+  person,
   children,
 }: {
   scope: string;
+  /** The person signed in, whose conversations are saved in this browser (T11). */
+  person?: string;
   children: ReactNode;
 }) => {
-  const thread = useThreadState(scope);
+  const thread = useThreadState(scope, person);
   const navigate = useInternalNavigate();
   const inicio = useRef<InicioHandle | null>(null);
   const waiting = useRef<Request | null>(null);
@@ -64,7 +69,7 @@ export const AnalystThreadProvider = ({
     const handle = inicio.current;
     if (handle) {
       if (request.kind === 'new') handle.newConversation();
-      else handle.showTurn(request.id);
+      else if (request.kind === 'turn') handle.showTurn(request.id);
       return;
     }
     if (request.kind === 'new') thread.clear();
@@ -72,19 +77,25 @@ export const AnalystThreadProvider = ({
     navigate(INICIO_HREF);
   };
   const latest = useRef(run);
+  const latestOpen = useRef(thread.open);
   useLayoutEffect(() => {
     latest.current = run;
+    latestOpen.current = thread.open;
   });
   // Stable, so Inicio attaches once.
   const [actions] = useState<Omit<SharedThread, 'thread'>>(() => ({
     newQuestion: () => latest.current({ kind: 'new' }),
     showTurn: (id) => latest.current({ kind: 'turn', id }),
+    openConversation: (id) => {
+      latest.current({ kind: 'saved' });
+      latestOpen.current(id);
+    },
     attach: (handle) => {
       inicio.current = handle;
       const request = waiting.current;
       waiting.current = null;
       if (request?.kind === 'new') handle.newConversation();
-      else if (request) handle.showTurn(request.id);
+      else if (request?.kind === 'turn') handle.showTurn(request.id);
       return () => {
         if (inicio.current === handle) inicio.current = null;
       };

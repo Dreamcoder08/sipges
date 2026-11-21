@@ -187,9 +187,8 @@ describe('«Conversaciones»', () => {
     );
   });
 
-  it('keeps «Recientes» while no conversation exists, and the questions out of storage', async () => {
+  it("keeps «Recientes» while no conversation exists, and a question only in the person's own saved list", async () => {
     withAnalyst();
-    const writes = vi.spyOn(Storage.prototype, 'setItem');
     const { nav, user } = await renderAt('/registros?tipo=actores');
     await user.click(within(nav).getByRole('link', { name: 'Inicio' }));
     await waitFor(() =>
@@ -197,9 +196,73 @@ describe('«Conversaciones»', () => {
     );
     await ask('pregunta privada');
     await visit(nav, 'Registros', user);
-    expect(writes.mock.calls.flat().join(' ')).not.toContain('pregunta privada');
-    expect(JSON.stringify({ ...localStorage, ...sessionStorage })).not.toContain(
-      'pregunta privada',
+    // T11 (L20): kept for this person and project, nowhere else in the browser.
+    const holding = Object.keys(localStorage).filter((key) =>
+      String(localStorage.getItem(key)).includes('pregunta privada'),
+    );
+    expect(holding).toHaveLength(1);
+    expect(holding[0]).toMatch(/^sipges\.conversations\.v1:persona:/);
+    expect(JSON.stringify({ ...sessionStorage })).not.toContain('pregunta privada');
+  });
+});
+
+describe('«Anteriores» (T11, decision L20)', () => {
+  it('lists a closed conversation, opens it on Inicio, and deletes it', async () => {
+    withAnalyst();
+    const { sidebar, user } = await renderAt('/inicio');
+    await ask('¿Qué pasó en el norte?');
+    await user.click(within(sidebar).getByRole('link', { name: 'Nueva pregunta' }));
+    const earlier = await within(sidebar).findByRole('region', { name: 'Anteriores' });
+    const entry = within(earlier).getByRole('link', { name: '¿Qué pasó en el norte?' });
+    await user.click(entry);
+    const log = await screen.findByRole('log', LOG);
+    expect(within(log).getByText('Respuesta a ¿Qué pasó en el norte?')).toBeVisible();
+    // Open again, it is the conversation of Inicio, not an earlier one.
+    await waitFor(() =>
+      expect(within(sidebar).queryByRole('region', { name: 'Anteriores' })).toBeNull(),
+    );
+    await user.click(within(sidebar).getByRole('link', { name: 'Nueva pregunta' }));
+    const listed = await within(sidebar).findByRole('region', { name: 'Anteriores' });
+    await user.click(
+      within(listed).getByRole('button', {
+        name: 'Borrar la conversación «¿Qué pasó en el norte?»',
+      }),
+    );
+    await waitFor(() =>
+      expect(within(sidebar).queryByRole('region', { name: 'Anteriores' })).toBeNull(),
+    );
+    expect(
+      Object.keys(localStorage).some((key) => key.startsWith('sipges.conversations.v1:')),
+    ).toBe(false);
+  });
+
+  it('deletes the whole history with «Borrar historial»', async () => {
+    withAnalyst();
+    const { sidebar, user } = await renderAt('/inicio');
+    await ask('¿Uno?');
+    await user.click(within(sidebar).getByRole('link', { name: 'Nueva pregunta' }));
+    await ask('¿Dos?');
+    await user.click(within(sidebar).getByRole('link', { name: 'Nueva pregunta' }));
+    const earlier = await within(sidebar).findByRole('region', { name: 'Anteriores' });
+    expect(within(earlier).getAllByRole('link')).toHaveLength(2);
+    await user.click(within(earlier).getByRole('button', { name: 'Borrar historial' }));
+    await waitFor(() =>
+      expect(within(sidebar).queryByRole('region', { name: 'Anteriores' })).toBeNull(),
+    );
+  });
+
+  it('forgets every saved conversation when the person signs out', async () => {
+    withAnalyst();
+    server.use(http.post('/logout', () => new HttpResponse(null, { status: 204 })));
+    const { sidebar, user } = await renderAt('/inicio');
+    await ask('¿Algo privado?');
+    localStorage.setItem('sipges.conversations.v1:otra:OTRO/PROY', '[]');
+    await user.click(within(sidebar).getByRole('button', { name: /^Cuenta de / }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Cerrar sesión' }));
+    await waitFor(() =>
+      expect(
+        Object.keys(localStorage).filter((key) => key.startsWith('sipges.conversations.v1:')),
+      ).toEqual([]),
     );
   });
 });
