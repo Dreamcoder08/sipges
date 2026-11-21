@@ -858,6 +858,12 @@ sed -i "s/^SIPGES_BACKUP_PASSPHRASE=.*/SIPGES_BACKUP_PASSPHRASE=changed${pass:7}
 run status || true
 check 'a changed passphrase needs a new kit' said 'WARNING: no recovery kit confirmed'
 
+# An empty answer never confirms, not even for a passphrase shorter than 4 characters.
+fresh
+printf 'SIPGES_DATA_KEY=synthetic-data-key-0000\nSIPGES_BACKUP_PASSPHRASE=ab\n' >>"$SIPGES_ENV_FILE"
+if run recovery-kit "$work/kit.txt" <<<""; then fail 'an empty answer does not confirm a short passphrase'; else ok 'an empty answer does not confirm a short passphrase'; fi
+check 'and nothing is recorded' test ! -e "$work/.sipges-recovery-kit"
+
 command rm -rf "$root"
 if ((failures > 0)); then
   printf '%d failed\n' "$failures"

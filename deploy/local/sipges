@@ -543,13 +543,21 @@ secrets_fingerprint() {
     { sha256sum 2>/dev/null || shasum -a 256; })
   printf '%s' "${hash%% *}"
 }
-kit_confirmed() { [[ -f $(recovery_mark) && $(cat "$(recovery_mark)") == "$(secrets_fingerprint)" ]]; }
+# An empty fingerprint (no sha256sum or shasum here) never counts as confirmed.
+kit_confirmed() {
+  local fingerprint
+  fingerprint=$(secrets_fingerprint)
+  [[ -n $fingerprint && -f $(recovery_mark) && $(cat "$(recovery_mark)") == "$fingerprint" ]]
+}
 cmd_recovery_kit() {
   need_env
   local file=${1:-sipges-recovery-kit.txt} pass key answer
   pass=$(env_value SIPGES_BACKUP_PASSPHRASE)
   key=$(env_value SIPGES_DATA_KEY)
   [[ -n $pass && -n $key ]] || die "SIPGES_BACKUP_PASSPHRASE and SIPGES_DATA_KEY must be in $ENV_FILE"
+  # Its last 4 characters confirm the paper, so a shorter one would confirm with nothing typed.
+  ((${#pass} >= 4)) || die "SIPGES_BACKUP_PASSPHRASE is shorter than 4 characters: install writes 64. Set a long one in $ENV_FILE first"
+  [[ -n $(secrets_fingerprint) ]] || die 'this computer has neither sha256sum nor shasum, so the kit cannot be confirmed'
   (
     umask 077
     cat >"$file" <<KIT
@@ -574,7 +582,7 @@ KIT
   say "Wrote $file. Print it, keep the paper somewhere safe, then delete the file."
   say 'Type the last 4 characters of SIPGES_BACKUP_PASSPHRASE from the paper to confirm:'
   read -r answer || true
-  [[ $answer == "${pass: -4}" ]] || die 'that does not match the end of the passphrase: nothing was recorded'
+  [[ -n $answer && $answer == "${pass: -4}" ]] || die 'that does not match the end of the passphrase: nothing was recorded'
   (
     umask 077
     secrets_fingerprint >"$(recovery_mark)"
