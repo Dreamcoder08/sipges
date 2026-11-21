@@ -316,12 +316,15 @@ On this computer the Inicio analyst can answer through your claude.ai account by
 - It lives in `~/.local/share/sipges-claude-bridge`. That folder holds a secret: do not share it or copy it to another machine.
 - It runs as the Docker container `sipges-claude-bridge`, on the network `sipges_frontend`, with no published ports.
 - It uses your claude.ai login stored in `~/.claude`.
+- It runs locked down (world-class-local T5): read-only filesystem with small in-memory folders for `/tmp` and its caches, no Linux capabilities, `no-new-privileges`, 512 MiB of memory, at most 256 processes and rotated logs. It still mounts `~/.claude`, because the Claude login renews itself there.
+- **Synthetic or demo data only.** Anthropic's terms do not allow a Pro or Max subscription to serve a product's traffic, and the bridge can read the Claude Code history in `~/.claude`. For real data use an Anthropic Console key with a spend limit (`SIPGES_ANALYST_PROVIDER=anthropic`, see the table above).
 
 | To | Run |
 | --- | --- |
 | Check that it is running | `docker ps --filter name=sipges-claude-bridge` |
 | Start it | `docker start sipges-claude-bridge` |
 | Stop it | `docker stop sipges-claude-bridge` |
+| Create it again, locked down | `docker stop sipges-claude-bridge && docker rm sipges-claude-bridge`, then `docker run -d --name sipges-claude-bridge --restart unless-stopped --user 1000:1000 -w /app --network sipges_frontend --env-file ~/.local/share/sipges-claude-bridge/bridge.env -e HOME=/home/bridge -v ~/.local/share/sipges-claude-bridge:/app:ro -v ~/.claude:/home/bridge/.claude -v ~/.claude.json:/home/bridge/.claude.json --read-only --tmpfs /tmp:rw,size=256m --tmpfs /home/bridge/.cache:rw,size=128m,uid=1000,gid=1000 --tmpfs /home/bridge/.config:rw,size=16m,uid=1000,gid=1000 --tmpfs /home/bridge/.npm:rw,size=64m,uid=1000,gid=1000 --cap-drop ALL --security-opt no-new-privileges:true --memory 512m --pids-limit 256 --log-opt max-size=10m --log-opt max-file=3 node:22-bookworm-slim node bridge.mjs` |
 | Sign in again after the login expired | Run `claude` on the computer (not in the container), sign in again, then `docker restart sipges-claude-bridge` |
 
 When the bridge is stopped, your login expired or your subscription quota ran out, Inicio shows «El analista no respondió: el servicio de IA no está disponible. Prueba de nuevo en unos minutos o avisa a quien administra SIPGES.» and offers to search the records for the question. Search keeps working.
