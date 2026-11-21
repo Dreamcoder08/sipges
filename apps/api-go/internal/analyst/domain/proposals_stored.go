@@ -2,6 +2,7 @@ package domain
 
 import (
 	"encoding/json"
+	"regexp"
 	"strings"
 	"unicode"
 )
@@ -50,10 +51,15 @@ func validText(s string, limit int) bool {
 	return strings.TrimSpace(s) != "" && len(units(s)) <= limit && printable(s)
 }
 
+// citationMarkers are the answer's [n] markers with the spaces before them.
+var citationMarkers = regexp.MustCompile(`\s*(?:\[\d+\])+`)
+
 // ProposalReason is the model's reason, collapsed and cut; "" when it gave none.
 func ProposalReason(reason string) string {
 	// PostgreSQL text refuses NUL; it carries nothing a person reads.
 	reason = strings.ReplaceAll(reason, "\x00", "")
+	// Bandeja shows the reason without the answer's sources, so its [n] markers point nowhere.
+	reason = citationMarkers.ReplaceAllString(reason, "")
 	if strings.TrimSpace(reason) == "" {
 		return ""
 	}

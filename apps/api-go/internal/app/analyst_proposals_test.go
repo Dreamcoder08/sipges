@@ -85,6 +85,8 @@ func TestProposalToolsRefuseInvalidProposalsAndRolesThatMayNotWrite(t *testing.T
 		{"another project", "propose_record", `{"module":"eventos","fields":{"Descripcion_Hecho":"x","Proyecto_ID":"PRJ-SECHURA"},"reason":"r"}`, identity.RoleAnalyst},
 		{"link the ontology refuses", "propose_link", `{"link_type":"participa_en","source":{"module":"eventos","id":"E"},"target":{"module":"actores","id":"A"},"reason":"r"}`, identity.RoleAnalyst},
 		{"malformed", "propose_link", `{"link_type":3}`, identity.RoleAnalyst},
+		{"redacted e-mail in a field", "propose_record", `{"module":"acciones","fields":{"Accion":"Escribir a [correo]"},"reason":"r"}`, identity.RoleAnalyst},
+		{"pseudonym in a field", "propose_record", `{"module":"acciones","fields":{"Accion":"Visitar a Persona-3FA9C1"},"reason":"r"}`, identity.RoleAnalyst},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

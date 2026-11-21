@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -182,6 +183,23 @@ func readHistory(raw json.RawMessage) ([]application.Exchange, error) {
 }
 
 func askFailure(err error) (int, string) {
+	status, detail := askFailureBase(err)
+	var pending *application.PendingProposalsError
+	if errors.As(err, &pending) && pending.Count > 0 {
+		detail += ". " + pendingProposalsNote(pending.Count)
+	}
+	return status, detail
+}
+
+// pendingProposalsNote tells the person that the failed question left proposals in Bandeja.
+func pendingProposalsNote(count int) string {
+	if count == 1 {
+		return "Antes de fallar dejó 1 propuesta pendiente de aprobación en Bandeja."
+	}
+	return fmt.Sprintf("Antes de fallar dejó %d propuestas pendientes de aprobación en Bandeja.", count)
+}
+
+func askFailureBase(err error) (int, string) {
 	switch {
 	case errors.Is(err, errInvalidQuestion):
 		return http.StatusUnprocessableEntity, askInvalid
