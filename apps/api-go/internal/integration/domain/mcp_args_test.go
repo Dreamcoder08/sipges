@@ -57,10 +57,11 @@ func TestArgumentsAnswerAsZod(t *testing.T) {
 }
 
 func TestReadKeysSeeNoWriteTool(t *testing.T) {
-	if got := len(domain.ToolsFor(domain.Principal{Access: "read"})); got != 7 {
+	// 7 read tools of the TypeScript catalogue plus report_period, Go only (reporting-mcp S8).
+	if got := len(domain.ToolsFor(domain.Principal{Access: "read"})); got != 8 {
 		t.Errorf("read key: %d tools", got)
 	}
-	if got := len(domain.ToolsFor(domain.Principal{Access: "write"})); got != 9 {
+	if got := len(domain.ToolsFor(domain.Principal{Access: "write"})); got != 10 {
 		t.Errorf("write key: %d tools", got)
 	}
 }

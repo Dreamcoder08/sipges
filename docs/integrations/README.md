@@ -222,6 +222,8 @@ contenedor con `ocrmypdf` y los paquetes de idioma.
 | `get_record` | lectura | Campos y clasificación de un registro. |
 | `get_links` | lectura | Vista 360°: vínculos explícitos e inferidos. |
 | `get_timeline` | lectura | Registros fechados en un rango. |
+| `count_records` | lectura | Totales y conteos agrupados por un campo de lista cerrada, acotados por fechas. |
+| `report_period` | lectura | Solo API Go. Reporte de un período dicho en palabras («hoy», «este mes», «año pasado», «últimos 30 días»), convertido a días de Lima en el código: total, grupos o serie por día o mes, en JSON o CSV (con BOM y CRLF; las celdas que empiezan con `=`, `+`, `-` o `@` llevan un apóstrofo). |
 | `get_briefing` | lectura | Informe extractivo con citas. |
 | `create_record` | escritura | Crea un registro. |
 | `link_records` | escritura | Crea un vínculo tipado. |

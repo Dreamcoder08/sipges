@@ -49,6 +49,7 @@ func mcpTools(d Deps) (integration.MCP, ontologyhttp.Deps, error) {
 		Records:  records.Service{Store: recordssql.Records{DB: d.Pool}},
 		Creator:  records.Writes{Store: recordssql.Records{DB: d.Pool}, Now: mcpClock(d), RandomHex: randomHexUpper},
 		Analyst:  mcpBriefings{d, assisted},
+		Now:      mcpClock(d),
 	}
 	guard, err := egressGuard(d)
 	switch {

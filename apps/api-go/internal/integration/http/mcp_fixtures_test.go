@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 
@@ -96,7 +97,7 @@ func TestMCPAnswersAsTheTypeScriptRoutes(t *testing.T) {
 			if rec.Code != c.Status {
 				t.Errorf("status %d, want %d", rec.Code, c.Status)
 			}
-			if got := strings.TrimSuffix(rec.Body.String(), "\n"); got != c.Response {
+			if got := withoutGoOnlyTools(t, strings.TrimSuffix(rec.Body.String(), "\n")); got != c.Response {
 				t.Errorf("body\n got %s\nwant %s", got, c.Response)
 			}
 			if got, want := rec.Header().Get("Content-Type"), deref(c.ContentType); got != want {
@@ -107,6 +108,33 @@ func TestMCPAnswersAsTheTypeScriptRoutes(t *testing.T) {
 			}
 		})
 	}
+}
+
+// withoutGoOnlyTools takes the tools TypeScript does not have out of a tools/list answer, byte for
+// byte, so the rest still compares exactly with the recorded TypeScript answer (reporting-mcp S8).
+func withoutGoOnlyTools(t *testing.T, body string) string {
+	t.Helper()
+	var answer struct {
+		Result struct {
+			Tools []json.RawMessage `json:"tools"`
+		} `json:"result"`
+	}
+	if json.Unmarshal([]byte(body), &answer) != nil {
+		return body
+	}
+	for _, raw := range answer.Result.Tools {
+		var tool struct {
+			Name string `json:"name"`
+		}
+		if json.Unmarshal(raw, &tool) != nil || !slices.Contains(domain.GoOnlyTools(), tool.Name) {
+			continue
+		}
+		if !strings.Contains(body, ","+string(raw)) {
+			t.Fatalf("%s is not the last tools of the list", tool.Name)
+		}
+		body = strings.Replace(body, ","+string(raw), "", 1)
+	}
+	return body
 }
 
 func deref(s *string) string {

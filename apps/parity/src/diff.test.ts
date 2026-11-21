@@ -116,3 +116,29 @@ test('compareLines compares only the matching lines of a text answer', () => {
   assert.equal(compare(text('# T a\nx 1'), text('# T b\nx 1'), [], '^# T ').length, 1);
   assert.equal(compare(text('x 1'), text('x 2')).length, 1);
 });
+
+// odd/tasks/reporting-mcp.md S8: a tool only the Go API has is left out of Go's list, and nothing else.
+test('goOnly drops the named entries of a list from the Go answer only', () => {
+  const ts = json(200, { result: { tools: [{ name: 'a' }, { name: 'b' }] } });
+  const go = json(200, { result: { tools: [{ name: 'a' }, { name: 'b' }, { name: 'go_tool' }] } });
+  const goOnly = { list: 'result.tools', names: ['go_tool'] };
+  assert.deepEqual(compare(ts, go, [], undefined, goOnly), []);
+  // Without it, the extra tool is a difference; and a missing shared tool still is one with it.
+  assert.notDeepEqual(compare(ts, go), []);
+  const missing = json(200, { result: { tools: [{ name: 'a' }, { name: 'go_tool' }] } });
+  assert.notDeepEqual(compare(ts, missing, [], undefined, goOnly), []);
+  // TypeScript naming the tool is still a difference: only Go may have it.
+  const tsWithTool = json(200, {
+    result: { tools: [{ name: 'a' }, { name: 'b' }, { name: 'go_tool' }] },
+  });
+  assert.notDeepEqual(
+    compare(
+      tsWithTool,
+      json(200, { result: { tools: [{ name: 'a' }, { name: 'b' }] } }),
+      [],
+      undefined,
+      goOnly,
+    ),
+    [],
+  );
+});

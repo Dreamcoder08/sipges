@@ -368,7 +368,10 @@ Detalle de las variables: [docs/deployment/local-install.es.md](../../docs/deplo
 
 SIPGES responde MCP en `http://127.0.0.1:8000/mcp` con siete herramientas de solo lectura (`list_object_types`,
 `search_records`, `get_record`, `get_links`, `get_timeline`, `count_records`, `get_briefing`). `count_records`
-da totales y conteos agrupados por un campo de lista cerrada, para reportes, sin leer registro por registro. Claude Desktop llega a ellas mediante
+da totales y conteos agrupados por un campo de lista cerrada, para reportes, sin leer registro por registro. En la API Go (la
+instalación de escritorio pasa a ella en la visita a la laptop) una octava herramienta, `report_period`, recibe el período en
+palabras («este mes», «el año pasado»), lo convierte en días de Lima en el código y puede responder una serie por día o mes o un
+CSV listo para guardar. Claude Desktop llega a ellas mediante
 el puente `mcp-remote`, que corre en este computador. A diferencia de la búsqueda semántica, **esto envía datos del
 proyecto a Anthropic**: los nombres van seudonimizados y solo salen los campos permitidos
 ([ADR 0030](../../docs/adr/0030-external-ai-egress-guard.md)), pero siguen siendo datos personales según la

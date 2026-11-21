@@ -82,12 +82,44 @@ const linesOf = (body: Body, pattern: RegExp | undefined): Body =>
       }
     : body;
 
-/** Every difference between the two responses, after normalizing the declared JSON paths. */
+/** Entries of a list only the Go API has: `list` is a dotted JSON path, entries match by `name`. */
+export type GoOnly = { readonly list: string; readonly names: readonly string[] };
+
+/** value without the Go-only entries of its list; any other value is returned as it is. */
+const withoutGoOnly = (value: unknown, goOnly?: GoOnly): unknown => {
+  if (!goOnly) return value;
+  const parts = goOnly.list.split('.');
+  const drop = (node: unknown, depth: number): unknown => {
+    if (depth === parts.length) {
+      return Array.isArray(node)
+        ? node.filter(
+            (entry) =>
+              !(
+                typeof entry === 'object' &&
+                entry !== null &&
+                goOnly.names.includes(String((entry as { name?: unknown }).name))
+              ),
+          )
+        : node;
+    }
+    if (typeof node !== 'object' || node === null || Array.isArray(node)) return node;
+    const key = parts[depth] as string;
+    if (!(key in node)) return node;
+    return { ...node, [key]: drop((node as Record<string, unknown>)[key], depth + 1) };
+  };
+  return drop(value, 0);
+};
+
+/**
+ * Every difference between the two responses, after normalizing the declared JSON paths and
+ * leaving out of Go's answer the entries only Go has (odd/tasks/reporting-mcp.md S8).
+ */
 export const compare = (
   tsAnswer: Observed,
   goAnswer: Observed,
   normalized: readonly string[] = [],
   compareLines?: string,
+  goOnly?: GoOnly,
 ): Mismatch[] => {
   const pattern = compareLines === undefined ? undefined : new RegExp(compareLines);
   const ts = { ...tsAnswer, body: linesOf(tsAnswer.body, pattern) };
@@ -99,7 +131,7 @@ export const compare = (
   if (ts.body.kind === 'json' && go.body.kind === 'json') {
     diffValues(
       normalize(ts.body.value, normalized),
-      normalize(go.body.value, normalized),
+      normalize(withoutGoOnly(go.body.value, goOnly), normalized),
       '$',
       out,
     );

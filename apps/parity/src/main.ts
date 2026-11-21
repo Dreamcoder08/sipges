@@ -95,7 +95,7 @@ const compareCases = async (
       const rows = await proof.ledger.drain();
       if (isWriteCase(c)) proof.routes.record(c, ts.status, go.status, rows);
     }
-    const mismatches = compare(ts, go, c.normalize, c.compareLines);
+    const mismatches = compare(ts, go, c.normalize, c.compareLines, c.goOnly);
     const promises = [
       ...checkText(ts.body, c.present, c.absent).map((m) => `  ts: ${m}`),
       ...checkText(go.body, c.present, c.absent).map((m) => `  go: ${m}`),
