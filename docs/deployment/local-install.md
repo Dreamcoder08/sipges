@@ -65,11 +65,21 @@ Until you do this, browsers show a warning, and the app cannot install itself or
 
 **Do not share port 443 with the internet.** This setup is for a private network. If people need it from outside, use a VPN.
 
+## Keep the recovery kit
+
+Without `SIPGES_DATA_KEY` and `SIPGES_BACKUP_PASSPHRASE` from `.env`, no backup can be opened, by anyone, including you after a dead disk. Right after installing:
+
+1. Run `./sipges recovery-kit`. It writes `sipges-recovery-kit.txt` (only you can read it) with both secrets and how to restore on another computer.
+2. Print it and keep the paper somewhere safe, away from this computer. Then delete the file.
+3. Type the last 4 characters of the passphrase from the paper when asked. That confirms the kit.
+
+`./sipges status` warns until the kit is confirmed, and again if either secret changes. SIPGES records only a fingerprint of the secrets, never the secrets themselves.
+
 ## Every day
 
 | Command | What it does |
 | --- | --- |
-| `./sipges status` | Shows what is running, the latest backup, and any backup failure. |
+| `./sipges status` | Shows what is running, the latest backup, any backup failure, and what still protects your data poorly (no copy on a second disk, no recovery kit). |
 | `./sipges stop` / `./sipges start` | Stops or starts everything. It also starts by itself after a restart of the computer. |
 | `./sipges logs api` | Shows recent activity. Other parts: `db`, `caddy`, `backup`. |
 
