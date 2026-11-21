@@ -100,16 +100,15 @@ Phase C — backend (CLI first):
     S2), and streaming would show claims that may then be rejected;
   - the CLI prints the steps.
   Risk: item 4 (a long-lived connection; cancellation). Route: inline + verifier. Commit: pending.
-- T11 [ ] — S1, S2: saved conversations for a history list in the sidebar:
-  - two tables, conversations and turns, scoped by project and by the person who asked, under RLS;
-  - retention limit, with delete by the person;
-  - routes list, get and delete, and the matching CLI;
-  - real data in questions and answers is stored, so it needs an ADR and the owner's decision first (see T18).
-  Risk: items 1 and 2 (migration, tenant isolation, stored real data). Route: ADR, then inline + independent verifier,
-  own commit. Commit: pending.
-
-Phase D — shell:
-
+- T11 [ ] — S1, S2: saved conversations for a history list in the sidebar, kept in the person's browser (decision L20):
+  - every answered conversation is saved in `localStorage` under the person and the project, and listed under
+    «Anteriores» below «Conversaciones»; opening one brings its turns back to Inicio, where follow-ups (T9) go on;
+  - «Nueva pregunta» keeps the conversation it closes;
+  - at most 20 conversations, each kept 30 days after its last answer; delete one or all;
+  - signing out forgets every saved conversation of the browser, so a shared computer keeps none;
+  - nothing is stored on the server, no ADR, no migration.
+  Risk: item 1 (a conversation shown in another project or to another person). Route: inline + independent
+  verifier. Commit: pending.
 - T12 [x] — S2: on wide screens the sidebar can be hidden with a button and Ctrl+B; the choice is kept in
   `localStorage`. Hidden means gone, with the button left in the top bar, not an icon rail (S3). Route: inline.
   Commit: pending.
@@ -381,3 +380,11 @@ T18(b) → T16 → T17. Phases A, B and D change no API and no stored data.
   only, nothing is stored on the server, and the history passes the egress guard. T18(b), saving conversations (T11),
   stays open.
 - L19 — T9 closed: Commits 0d48ebbb, 07870880 and 215893e6 (owner decision L18). POST /system/analyst/ask and /ask/stream take an optional history (6 turns, 8,000 runes; 422 otherwise, before any release); the question and history are scrubbed and released as one logged release (integration test on PostgreSQL: one EGRESS row, emails scrubbed; switch off or no data key: 409 and no model call); history answers lose their [n] markers and a record named only there cannot be cited. Claude and OpenAI-compatible adapters send earlier turns as alternating user/assistant text. sipgesctl analyst ask --follow-up FILE. Inicio sends the answered turns of the open thread. Independent verifier: V2, V3 passed; three blockers (marker-only answer, --steps refusal order, null file) fixed in one batch and rechecked as passed. Web suite 923/923.
+
+- L20 — 2026-11-21, owner, answering the open decision T18(b) «whether conversations are saved on the server (T11),
+  for how long, and whether administrators may read them»: «tu decide y avanza». Parent decision: saved in the
+  person's browser, not on the server. Why: a server store of questions and answers that name people is a new store of
+  real data (Ley 29733), with retention, administrator access and an ADR, for a history the person reads on their own
+  computer; the browser gives the same list with no new server data, and local first (local-before-cloud). Kept per
+  person and project, 20 conversations, 30 days, delete one or all, forgotten at sign-out. Administrators read none.
+  T11 rewritten accordingly; T18(b) answered.

@@ -239,3 +239,70 @@
 .sidebar[data-drawer='true'] .hint {
   display: none;
 }
+
+/* A saved conversation («Anteriores», chat-first-ui T11): its link, then a delete button that stays
+ * visible (touch and keyboard have no hover to reveal it), at least 24 px, the touch target on touch. */
+.savedRow {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.savedRow > .link {
+  flex: 1;
+  min-width: 0;
+}
+
+.forget {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.forget svg {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.forgetAll {
+  min-height: 24px;
+  margin: var(--space-1) var(--space-3) 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: var(--text-xs);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@media (pointer: coarse) {
+  .forget {
+    min-width: var(--touch-target);
+    min-height: var(--touch-target);
+  }
+
+  .forgetAll {
+    min-height: var(--touch-target);
+  }
+}
+
+@media (hover: hover) {
+  .forget:hover,
+  .forgetAll:hover {
+    color: var(--color-text);
+  }
+
+  .forget:hover {
+    background: var(--color-fill);
+  }
+}
