@@ -524,6 +524,9 @@ cmd_status() {
     say "WARNING: the copy to the second disk failed at $when: $reason"
   elif [[ -n $(env_value SIPGES_BACKUP_COPY_DIR) ]]; then
     say "Backups copied to: $(env_value SIPGES_BACKUP_COPY_DIR)"
+  else
+    # One dead disk loses the data and every backup beside it (world-class-local T3).
+    say 'WARNING: the backups are only on this computer: a dead disk loses them with the data. Plug in a second disk and run ./sipges copy-backups-to <folder on it>'
   fi
 }
 

@@ -79,7 +79,7 @@ Check `./sipges status` once a week. It is how you find out a nightly backup fai
 
 SIPGES backs itself up every night at 2:00, Lima time. It keeps the latest 14, plus the newest backup of each of the last 8 weeks and of each of the last 12 months, so you can go back up to a year. A backup holds the database and every evidence file, encrypted. It counts only after SIPGES has read it back.
 
-If the computer was off or asleep at 2:00, SIPGES backs up as soon as it starts again, whenever the newest backup is more than a day old. `./sipges status` warns when the newest backup is more than 26 hours old.
+If the computer was off or asleep at 2:00, SIPGES backs up as soon as it starts again, whenever the newest backup is more than a day old. `./sipges status` warns when the newest backup is more than 26 hours old, and on every run while the backups have no copy on a second disk (see below).
 
 Backups are in `deploy/local/backups`. **A backup on the same computer does not protect you from a dead disk.** Let SIPGES copy each one to a folder on another disk (an encrypted external disk, or another computer's shared folder mounted here):
 
