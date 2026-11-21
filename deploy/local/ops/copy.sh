@@ -48,10 +48,9 @@ chown -R "${SIPGES_HOST_OWNER:-}" "$copy/$name" 2>/dev/null || true
 prune() {
   local old
   find "$copy" -mindepth 1 -maxdepth 1 -type d -regextype posix-extended \
-    -regex '.*/20[0-9]{6}T[0-9]{6}Z' -printf '%f\n' |
-    bash "$(dirname "${BASH_SOURCE[0]}")/retain.sh" "$keep" "${SIPGES_BACKUP_KEEP_WEEKLY:-8}" "${SIPGES_BACKUP_KEEP_MONTHLY:-12}" |
+    -regex '.*/20[0-9]{6}T[0-9]{6}Z' ! -name "$name" -printf '%f\n' |
+    bash "$(dirname "${BASH_SOURCE[0]}")/retain.sh" "$((keep - 1))" "${SIPGES_BACKUP_KEEP_WEEKLY:-8}" "${SIPGES_BACKUP_KEEP_MONTHLY:-12}" |
     while read -r old; do
-      [[ $old != "$name" ]] || continue
       rm -rf -- "${copy:?}/${old:?}" || return 1
     done
 }

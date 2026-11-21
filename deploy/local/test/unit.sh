@@ -810,6 +810,17 @@ mkdir "$work/backups/20261121T070000Z"
 run status || true
 check 'and not when it is recent' said_not 'more than 26 hours old'
 
+# The backup just written counts among the SIPGES_BACKUP_KEEP newest, even when older ones carry
+# names from a clock ahead (the drill's 2099 folders): as before, it plus KEEP-1 others remain.
+fresh
+copies=$work/disk
+mkdir -p "$copies/20991231T235959Z" "$copies/20991231T235958Z" "$copies/20991231T235957Z"
+touch "$copies/.sipges-backup-copy"
+a_backup "$work/backups" 20261121T070000Z
+copy_step "$work/backups" "$copies" 20261121T070000Z
+check 'the new copy stays when a clock ahead named older ones later' test -d "$copies/20261121T070000Z"
+check 'and with it SIPGES_BACKUP_KEEP of them remain, not one more' test "$(find "$copies" -mindepth 1 -maxdepth 1 -type d -name '20*Z' | wc -l)" -eq 2
+
 command rm -rf "$root"
 if ((failures > 0)); then
   printf '%d failed\n' "$failures"
