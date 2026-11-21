@@ -3,6 +3,7 @@ import { loadConversationView } from './answer-view.tsx';
 import { historyOf } from './history.ts';
 import {
   type SavedTurn,
+  deleteAllSaved,
   deleteSaved,
   parseSaved,
   purgeExpired,
@@ -10,6 +11,7 @@ import {
   savedSnapshot,
   subscribeSaved,
 } from './saved.ts';
+import { forgetOtherPeople, signOutGeneration } from '../../../shared/lib/saved-conversations.ts';
 import type { Turn } from './turn.ts';
 
 /** What the page's one status region says: the start and the end of each answer, once each. */
@@ -31,13 +33,16 @@ const NO_TURNS: readonly Turn[] = [];
  * «Conversaciones» share it.
  */
 export const useThreadState = (scope: string, person?: string) => {
-  const [thread, setThread] = useState<{ scope: string; turns: readonly Turn[] }>({
-    scope,
+  // Whose conversation it is: the person and the project. Another person on the same screen (T11)
+  // starts with none, as another project does.
+  const owner = JSON.stringify([person ?? null, scope]);
+  const [thread, setThread] = useState<{ owner: string; turns: readonly Turn[] }>({
+    owner,
     turns: NO_TURNS,
   });
   // T11 (L20): the open conversation, by project; a new project opens none until it asks.
-  const [opened, setOpened] = useState<{ scope: string; id: string } | null>(null);
-  const currentId = opened?.scope === scope ? opened.id : null;
+  const [opened, setOpened] = useState<{ owner: string; id: string } | null>(null);
+  const currentId = opened?.owner === owner ? opened.id : null;
   const snapshot = useSyncExternalStore(subscribeSaved, () =>
     person ? savedSnapshot(person, scope) : '',
   );
@@ -45,12 +50,24 @@ export const useThreadState = (scope: string, person?: string) => {
   // The person's earlier conversations of this project, without the one open now («Anteriores»).
   const saved = useMemo(() => all.filter((c) => c.id !== currentId), [all, currentId]);
   useEffect(() => {
-    if (person) purgeExpired(person, scope, Date.now());
+    if (!person) return;
+    // A shared computer: someone else's conversations, left by a session that simply expired, go.
+    forgetOtherPeople(person);
+    purgeExpired(person, scope, Date.now());
   }, [person, scope]);
   const [announcement, setAnnouncement] = useState('');
   const active = useRef<{ id: number; question: string; controller: AbortController } | null>(null);
+  // The screen holding the thread goes (sign-out leaves for /login): its open request stops.
+  useEffect(() => {
+    const request = active;
+    return () => {
+      const pending = request.current;
+      request.current = null;
+      pending?.controller.abort();
+    };
+  }, []);
   const sequence = useRef(0);
-  const turns = thread.scope === scope ? thread.turns : NO_TURNS;
+  const turns = thread.owner === owner ? thread.turns : NO_TURNS;
 
   const settle = (id: number, turn: Turn) =>
     setThread((current) => ({
@@ -80,10 +97,12 @@ export const useThreadState = (scope: string, person?: string) => {
     // The thread as it stood before this question: its answered turns are the follow-up's history.
     const history = historyOf(turns);
     const before = turns;
+    // A sign-out while the answer is on its way: it arrives, and is not saved (T11).
+    const generation = signOutGeneration();
     let savingId = currentId;
     if (!savingId) {
       savingId = crypto.randomUUID();
-      setOpened({ scope, id: savingId });
+      setOpened({ owner, id: savingId });
     }
     const previous = release();
     if (previous)
@@ -92,9 +111,9 @@ export const useThreadState = (scope: string, person?: string) => {
     const controller = new AbortController();
     active.current = { id, question, controller };
     setThread((current) => ({
-      scope,
+      owner,
       turns: [
-        ...(current.scope === scope ? current.turns : []),
+        ...(current.owner === owner ? current.turns : []),
         { id, question, state: 'pending' },
       ],
     }));
@@ -126,7 +145,7 @@ export const useThreadState = (scope: string, person?: string) => {
     active.current = null;
     settle(id, next);
     setAnnouncement(ANNOUNCE[next.state]);
-    if (next.state === 'answered' && person) {
+    if (next.state === 'answered' && person && generation === signOutGeneration()) {
       const answered: SavedTurn[] = [...before, next].flatMap((turn) =>
         turn.state === 'answered' ? [{ question: turn.question, answer: turn.answer }] : [],
       );
@@ -156,7 +175,7 @@ export const useThreadState = (scope: string, person?: string) => {
   const clear = () => {
     release();
     setOpened(null);
-    setThread({ scope, turns: NO_TURNS });
+    setThread({ owner, turns: NO_TURNS });
     setAnnouncement('');
   };
 
@@ -165,9 +184,9 @@ export const useThreadState = (scope: string, person?: string) => {
     const conversation = all.find((c) => c.id === id);
     if (!conversation) return;
     release();
-    setOpened({ scope, id: conversation.id });
+    setOpened({ owner, id: conversation.id });
     setThread({
-      scope,
+      owner,
       turns: conversation.turns.map((turn) => ({
         id: ++sequence.current,
         question: turn.question,
@@ -188,7 +207,7 @@ export const useThreadState = (scope: string, person?: string) => {
   /** Deletes every saved conversation of the person in this project («Borrar historial»). */
   const removeAll = () => {
     if (!person) return;
-    for (const conversation of all) deleteSaved(person, scope, conversation.id);
+    deleteAllSaved(person, scope);
     setOpened(null);
   };
 

@@ -1,8 +1,5 @@
 import { z } from 'zod';
-import {
-  SAVED_CONVERSATIONS_PREFIX as PREFIX,
-  forgetSavedConversations,
-} from '../../../shared/lib/saved-conversations.ts';
+import { forgetSavedConversations, savedKeyOf } from '../../../shared/lib/saved-conversations.ts';
 import { AnalystAnswer } from './ask.ts';
 
 /**
@@ -25,7 +22,7 @@ const SavedConversation = z.object({
 export type SavedTurn = z.infer<typeof SavedTurn>;
 export type SavedConversation = z.infer<typeof SavedConversation>;
 
-const keyOf = (person: string, scope: string) => `${PREFIX}${person}:${scope}`;
+const keyOf = (person: string, scope: string) => savedKeyOf(person, scope);
 
 const read = (key: string): SavedConversation[] => {
   try {
@@ -119,6 +116,9 @@ export const deleteSaved = (person: string, scope: string, id: string) => {
     read(key).filter((c) => c.id !== id),
   );
 };
+
+/** Deletes every saved conversation of the person in the project, readable or not. */
+export const deleteAllSaved = (person: string, scope: string) => write(keyOf(person, scope), []);
 
 /** Forgets every saved conversation of this browser, of every person and project (sign-out). */
 export const forgetAllSaved = forgetSavedConversations;
