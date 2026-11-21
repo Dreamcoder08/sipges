@@ -122,6 +122,7 @@ check() {
   if "$@"; then ok "$name"; else fail "$name"; fi
 }
 said() { grep -qF -- "$1" "$work/out"; }
+said_not() { ! grep -qF -- "$1" "$work/out"; }
 called() { grep -qF -- "$1" "$FAKE/calls"; }
 said_not_refused() { called ' up -d'; }
 never_built() { ! called ' build ' && ! grep -q '^build' "$FAKE/calls"; }
@@ -687,7 +688,7 @@ check 'status shows the failed copy' said 'the copy to the second disk failed at
 
 # The copy step itself (ops/copy.sh), on folders of this test instead of the container's.
 copy_step() { # backups folder, copy folder, name
-  SIPGES_BACKUPS_PATH=$1 SIPGES_COPY_PATH=$2 SIPGES_BACKUP_COPY=/media/disk SIPGES_BACKUP_KEEP=2 \
+  SIPGES_BACKUPS_PATH=$1 SIPGES_COPY_PATH=$2 SIPGES_BACKUP_COPY=/media/disk SIPGES_BACKUP_KEEP=2 SIPGES_BACKUP_KEEP_WEEKLY=0 SIPGES_BACKUP_KEEP_MONTHLY=0 \
     bash "$(dirname "$script")/ops/copy.sh" "$3" >"$work/out" 2>&1
 }
 a_backup() { # folder name
@@ -767,9 +768,63 @@ fresh
 run install || true
 check 'without one it does not' no_call 'force-recreate'
 
+# --- calendar retention, catch-up and stale warning (world-class-local T2)
+
+retain() { # daily weekly monthly < names -> names to remove
+  bash "$(dirname "$script")/ops/retain.sh" "$@"
+}
+# Nightly backups for 400 days up to 2026-11-21, plus a second one on the last day (an update).
+names=$(for i in $(seq 0 399); do date -u -d "2026-11-21 -$i days" +%Y%m%dT070000Z; done; echo 20261121T150000Z)
+removed=$(printf '%s\n' "$names" | retain 14 8 12)
+kept=$(printf '%s\n' "$names" | grep -vxF -f <(printf '%s\n' "$removed"))
+check 'retention keeps the 14 newest, as before' test -z "$(printf '%s\n' "$names" | sort -r | head -n 14 | grep -vxF -f <(printf '%s\n' "$kept"))"
+check 'both backups of the last day among them' grep -qx 20261121T070000Z <<<"$kept"
+check 'an older night that is not its week'"'"'s newest goes' grep -qx 20261107T070000Z <<<"$removed"
+check 'a backup about 6 weeks old survives as its week'"'"'s newest' grep -qx 20261011T070000Z <<<"$kept"
+check 'one about 10 months old survives as its month'"'"'s newest' grep -qx 20260131T070000Z <<<"$kept"
+check 'one 13 months old goes' grep -qx 20251031T070000Z <<<"$removed"
+check 'at most 14 + 8 + 12 are kept' test "$(printf '%s\n' "$kept" | wc -l)" -le 34
+check 'names that are not backups are never listed' test -z "$(printf 'notes\n2025 photos Z\n' | retain 14 8 12)"
+check 'a name with an impossible date is skipped, not a failure of the backup' test "$(printf '20261399T070000Z\n20261121T070000Z\n' | retain 1 0 0; echo "exit=$?")" = 'exit=0'
+check 'the wait between checks is at most an hour, so a laptop that slept through 02:00 catches up within an hour of waking' \
+  test "$(bash "$(dirname "$script")/ops/schedule.sh" --nap 2)" -le 3600
+
+due() { # backups folder -> prints yes or no
+  SIPGES_BACKUPS_PATH=$1 bash "$(dirname "$script")/ops/schedule.sh" --due
+}
+fresh
+check 'with no backup yet, one is due at start' test "$(due "$work/backups")" = yes
+mkdir "$work/backups/20261120T070000Z"
+touch -d '25 hours ago' "$work/backups/20261120T070000Z"
+check 'a laptop that slept through 02:00 backs up at start' test "$(due "$work/backups")" = yes
+mkdir "$work/backups/20261121T070000Z"
+check 'a backup from the last day makes none due' test "$(due "$work/backups")" = no
+
+fresh
+mkdir "$work/backups/20261119T070000Z"
+touch -d '30 hours ago' "$work/backups/20261119T070000Z"
+run status || true
+check 'status warns when the newest backup is over 26 hours old' said 'WARNING: the newest backup is more than 26 hours old'
+fresh
+mkdir "$work/backups/20261121T070000Z"
+run status || true
+check 'and not when it is recent' said_not 'more than 26 hours old'
+
+# The backup just written counts among the SIPGES_BACKUP_KEEP newest, even when older ones carry
+# names from a clock ahead (the drill's 2099 folders): as before, it plus KEEP-1 others remain.
+fresh
+copies=$work/disk
+mkdir -p "$copies/20991231T235959Z" "$copies/20991231T235958Z" "$copies/20991231T235957Z"
+touch "$copies/.sipges-backup-copy"
+a_backup "$work/backups" 20261121T070000Z
+copy_step "$work/backups" "$copies" 20261121T070000Z
+check 'the new copy stays when a clock ahead named older ones later' test -d "$copies/20261121T070000Z"
+check 'and with it SIPGES_BACKUP_KEEP of them remain, not one more' test "$(find "$copies" -mindepth 1 -maxdepth 1 -type d -name '20*Z' | wc -l)" -eq 2
+
 command rm -rf "$root"
 if ((failures > 0)); then
   printf '%d failed\n' "$failures"
   exit 1
 fi
 printf 'all passed\n'
+
