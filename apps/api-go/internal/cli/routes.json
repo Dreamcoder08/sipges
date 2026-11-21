@@ -185,6 +185,13 @@
     "command": "session",
     "summary": "Who is signed in"
   },
+  {
+    "method": "POST",
+    "path": "/system/auth/password",
+    "access": "session",
+    "command": "password",
+    "summary": "Change your own password"
+  },
   { "method": "GET", "path": "/system/auth/providers", "access": "public" },
   {
     "method": "GET",

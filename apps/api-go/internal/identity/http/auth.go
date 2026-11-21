@@ -84,6 +84,7 @@ func RegisterAuth(mux *http.ServeMux, deps AuthDeps) {
 	mux.HandleFunc("GET /system/auth/sessions", h.listSessions)
 	mux.HandleFunc("DELETE /system/auth/sessions/{id}", h.endSession)
 	mux.HandleFunc("POST /system/auth/sessions/revoke-others", h.revokeOtherSessions)
+	mux.HandleFunc("POST /system/auth/password", h.changePassword)
 	if deps.Google != nil {
 		mux.HandleFunc("GET "+googleStart, h.googleBegin)
 		mux.HandleFunc("GET "+googleReturn, h.googleCallback)

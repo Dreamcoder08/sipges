@@ -46,6 +46,10 @@ type SessionStore interface {
 	// keepTokenHash, the ones ListSessions shows, and appends the audit row for the count,
 	// atomically. Expired rows are left to the purge. No audit row when the count is 0.
 	EndOtherSessions(ctx context.Context, username, keepTokenHash string, at time.Time, tenantID string, audit func(count int) SessionAudit) (int, error)
+	// ReplacePassword stores the new hash of an active user, ends every other session the way
+	// EndOtherSessions does and appends the audit row for the count, always, atomically. False
+	// when no active user has that name (nothing written).
+	ReplacePassword(ctx context.Context, username, passwordHash, keepTokenHash string, at time.Time, tenantID string, audit func(count int) SessionAudit) (bool, error)
 }
 
 // sessionID is the shape of SessionTokens.PublicID; anything else cannot name a session.
@@ -110,15 +114,20 @@ func (s *Service) EndOtherSessions(ctx context.Context, actor *domain.Principal,
 	at := s.now()
 	return s.deps.Sessions.EndOtherSessions(ctx, actor.Username, s.deps.Tokens.Hash(currentToken), at, tenantID,
 		func(count int) SessionAudit {
-			noun := "sesiones cerradas"
-			if count == 1 {
-				noun = "sesión cerrada"
-			}
 			return SessionAudit{
 				Action:   "SESSIONS_END_OTHERS",
 				RecordID: actor.Username,
-				Detail:   strconv.Itoa(count) + " " + noun + " en otros dispositivos por " + actor.Username,
+				Detail:   endedElsewhere(count) + " por " + actor.Username,
 				At:       at,
 			}
 		})
+}
+
+// endedElsewhere is the count of sessions ended on other devices, in words.
+func endedElsewhere(count int) string {
+	noun := "sesiones cerradas"
+	if count == 1 {
+		noun = "sesión cerrada"
+	}
+	return strconv.Itoa(count) + " " + noun + " en otros dispositivos"
 }

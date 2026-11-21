@@ -38,6 +38,13 @@ Run `sipgesctl help` for every command.
 - Passwords and codes have no flag. The password comes from `SIPGES_PASSWORD` or the first line of
   stdin, typed unseen at a `Password:` prompt on a terminal (through `stty`; without it, set the
   variable); the code from `--totp-secret-file`, `SIPGES_TOTP` or the next line of stdin.
+- `sipgesctl password` changes your own password. The current and the new password come from stdin,
+  one per line, or are typed unseen at the `Current password:` and `New password:` prompts; never
+  from a flag or a variable. The API (`POST /system/auth/password`) answers 204, keeps this session
+  and ends your other sessions. A wrong current password answers `Credenciales inválidas` (exit 6)
+  and counts toward the sign-in throttle. The new password must have 12 to 128 characters and
+  must not be your username, your current password or a common password; each refusal says which
+  rule failed (exit 6).
 - The TOTP secret goes to a new private file and is never printed.
 - Fields that hold a credential (`token`, `secret`, `password` and others) print as `[redacted]`
   on every command, the generic call included. `apikey create --secret-file FILE` keeps a new key,

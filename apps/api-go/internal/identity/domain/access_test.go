@@ -48,6 +48,10 @@ func TestCheckRoleAccess(t *testing.T) {
 		{"consulta", "DELETE", "/system/auth/sessions/abc/", denied("Rol de consulta: solo lectura")},
 		{"consulta", "DELETE", "/system/auth/sessions//abc", denied("Rol de consulta: solo lectura")},
 		{"consulta", "POST", "/system/auth/sessions/revoke-others/", denied("Rol de consulta: solo lectura")},
+		// Changing one's own password is personal account security as well.
+		{"consulta", "POST", "/system/auth/password", allowed},
+		{"coordinador", "POST", "/system/auth/password", allowed},
+		{"consulta", "POST", "/system/auth/password/", denied("Rol de consulta: solo lectura")},
 		{"analista", "PATCH", "/system/v4/settings", denied("Requiere rol administrador")},
 		{"analista", "GET", "/system/v4/media/sources", allowed},
 		{"consulta", "POST", "/system/notifications/push/test", allowed},

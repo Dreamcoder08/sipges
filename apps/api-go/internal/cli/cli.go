@@ -25,6 +25,7 @@ Session
   logout                  end the session and remove the saved one
   session                 who is signed in, with which role and project
   mfa enroll              enrol TOTP; the secret goes to --secret-file only
+  password                change your password; current and new on stdin, unseen on a terminal
   project list            the projects this account may use
   project switch ID       choose the project of this session
   apikey create           issue a machine key; it goes to --secret-file only
@@ -143,6 +144,7 @@ func (a *app) builtins() map[string]command {
 		"logout":          a.logout,
 		"session":         a.sessionState,
 		"mfa enroll":      a.mfaEnroll,
+		"password":        a.password,
 		"project list":    a.projectList,
 		"project switch":  a.projectSwitch,
 		"apikey create":   a.apiKeyCreate,
