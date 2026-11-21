@@ -672,10 +672,43 @@ cmd_restore() {
   fi
 }
 
+# A backup and a build both need room: a full disk halfway through either leaves a partial behind
+# and the old version running, so both stop first and say why (world-class-local T6).
+MIN_FREE_KB=$((5 * 1024 * 1024))
+need_free_disk() {
+  local dir free
+  dir=$(env_value SIPGES_BACKUP_DIR)
+  dir=${dir:-./backups}
+  mkdir -p "$dir"
+  free=$(df -Pk "$dir" | awk 'NR == 2 { print $4 }')
+  [[ $free =~ ^[0-9]+$ ]] || return 0
+  ((free >= MIN_FREE_KB)) ||
+    die "only $((free / 1024 / 1024)) GB free on the disk of $dir: 5 GB are needed. Free some space, or move the backups with SIPGES_BACKUP_DIR"
+}
+
+cmd_backup() {
+  need_env
+  need_free_disk
+  compose exec -T backup bash /ops/backup.sh
+}
+
+# Back to the build before the last update, without touching the data (world-class-local T6): every
+# migration keeps the previous version working, which is what lets the APIs roll one at a time.
+cmd_rollback() {
+  need_env
+  need_docker
+  docker image inspect sipges-local:previous >/dev/null 2>&1 ||
+    die 'no previous version to go back to: this install was never updated'
+  docker tag sipges-local:previous sipges-local:current
+  start
+  say 'Back on the previous version. The data is as it was. ./sipges update returns to the latest.'
+}
+
 cmd_update() {
   need_env
   need_docker
   preflight
+  need_free_disk
   compose exec -T backup bash /ops/backup.sh
   if git -C "$REPO_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     git -C "$REPO_ROOT" pull --ff-only
@@ -708,7 +741,8 @@ start) need_env; start ;;
 stop) need_env; compose stop ;;
 status) cmd_status ;;
 logs) need_env; shift; compose logs --tail=200 "$@" ;;
-backup) need_env; compose exec -T backup bash /ops/backup.sh ;;
+backup) cmd_backup ;;
+rollback) cmd_rollback ;;
 backups) cmd_backups ;;
 copy-backups-to) shift; cmd_copy_backups_to "$@" ;;
 restore) shift; cmd_restore "$@" ;;
@@ -731,6 +765,7 @@ help | -h | --help)
 ./sipges restore <name>    Replace all data with a backup.
 ./sipges recovery-kit [file]  Write the sheet with the backup secrets to print, and confirm it.
 ./sipges update            Back up, get the new version, rebuild, restart.
+./sipges rollback          Go back to the version before the last update. The data stays.
 ./sipges ca                Export the certificate each computer must trust.
 ./sipges wipe              Delete all data on this machine. Backups and .env stay.
 HELP

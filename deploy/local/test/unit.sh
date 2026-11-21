@@ -872,6 +872,44 @@ check 'the image is labelled with the commit it was built from (unknown without 
 run status || true
 check 'status says which build is running' said 'Build: '
 
+# --- rollback to the previous build and a free-disk guard (world-class-local T6)
+
+# A stand-in df: the free space a test sets in $FAKE/df-free (1K blocks), else the real one.
+cat >"$root/df" <<'DF'
+#!/usr/bin/env bash
+if [[ -f $FAKE/df-free ]]; then
+  printf 'Filesystem 1024-blocks Used Available Capacity Mounted\n/dev/x 100 0 %s 1%% /\n' "$(cat "$FAKE/df-free")"
+else
+  command -p df "$@"
+fi
+DF
+chmod +x "$root/df"
+
+fresh
+run install
+if run rollback; then fail 'rollback with no previous build is refused'; else ok 'rollback with no previous build is refused'; fi
+check 'and says why' said 'no previous version to go back to'
+echo 'sha256:old' >"$FAKE/images/sipges-local_previous"
+: >"$FAKE/calls"
+run rollback
+check 'rollback puts the previous build back' test "$(cat "$FAKE/images/sipges-local_current")" = 'sha256:old'
+check 'and starts it' called ' up -d'
+check 'and does not touch the data: no restore, no backup' test -z "$(grep -E 'restore|backup.sh' "$FAKE/calls" || true)"
+check 'and says how to return to the latest' said './sipges update'
+
+fresh
+run install
+echo 1048576 >"$FAKE/df-free"
+: >"$FAKE/calls"
+if run update; then fail 'update with 1 GB free is refused'; else ok 'update with 1 GB free is refused'; fi
+check 'before it backs up or builds' test -z "$(grep -E 'backup.sh|^build' "$FAKE/calls" || true)"
+check 'and says how much is free' said 'only 1 GB free'
+if run backup; then fail 'a backup with 1 GB free is refused'; else ok 'a backup with 1 GB free is refused'; fi
+echo 20971520 >"$FAKE/df-free"
+run backup
+check 'with 20 GB free the backup runs' called 'backup.sh'
+rm -f "$FAKE/df-free"
+
 command rm -rf "$root"
 if ((failures > 0)); then
   printf '%d failed\n' "$failures"
