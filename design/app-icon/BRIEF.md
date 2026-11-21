@@ -43,7 +43,7 @@ Three distinct directions, each one strong metaphor, as hand-written SVG:
 - Valid XML; each file under 4 KB.
 - Write only inside this directory.
 
-## Round 2 feedback (owner and reviewer) — round 1 is in round1/
+## Round 2 feedback (owner and reviewer)
 
 - 01 horizon reads as a hat/UFO; unreadable at 16 px. Rejected.
 - 02 eye reads well but means surveillance: wrong message for community relations in social

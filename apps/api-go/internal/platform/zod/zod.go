@@ -56,11 +56,6 @@ func (p *Issues) AddContinue(code, message string) {
 	*p = append(*p, issue{code: code, message: message, continues: true})
 }
 
-// AddAt is Add for an issue that names its own path, such as a record's invalid key.
-func (p *Issues) AddAt(key any, code, message string) {
-	*p = append(*p, issue{code: code, message: message, path: []any{key}})
-}
-
 // Aborted is util.aborted: some issue stops later checks without `when`.
 func (p Issues) Aborted() bool {
 	for _, iss := range p {

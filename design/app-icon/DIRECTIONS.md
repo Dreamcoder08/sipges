@@ -57,4 +57,4 @@ Measurements use the 50% alpha boundary and subtract one pixel from the nearest 
 
 **Structural checks:** all six parse as XML, declare `width="512"`, `height="512"` and `viewBox="0 0 512 512"`, and are **696–910 bytes** each, below 4,000 bytes. No fonts, raster images, external resources, scripts, gradients or filters. Safe-zone checks include every nonzero-alpha stroke pixel. No application code changed; behavioural RED/GREEN tests do not apply to these passive assets.
 
-**Previews and temporary checks:** `/tmp/sipges-icon-round2-review/` (including `round2-review-v1.png`, the regenerated final contact sheet). PNGs and checking scripts are outside the deliverable directory. `round1/` was read only and is unchanged.
+**Previews and temporary checks:** `/tmp/sipges-icon-round2-review/` (including `round2-review-v1.png`, the regenerated final contact sheet). PNGs and checking scripts are outside the deliverable directory.
