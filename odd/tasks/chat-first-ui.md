@@ -100,7 +100,7 @@ Phase C — backend (CLI first):
     S2), and streaming would show claims that may then be rejected;
   - the CLI prints the steps.
   Risk: item 4 (a long-lived connection; cancellation). Route: inline + verifier. Commit: pending.
-- T11 [ ] — S1, S2: saved conversations for a history list in the sidebar, kept in the person's browser (decision L20):
+- T11 [x] — S1, S2: saved conversations for a history list in the sidebar, kept in the person's browser (decision L20):
   - every answered conversation is saved in `localStorage` under the person and the project, and listed under
     «Anteriores» below «Conversaciones»; opening one brings its turns back to Inicio, where follow-ups (T9) go on;
   - «Nueva pregunta» keeps the conversation it closes;
@@ -388,3 +388,4 @@ T18(b) → T16 → T17. Phases A, B and D change no API and no stored data.
   computer; the browser gives the same list with no new server data, and local first (local-before-cloud). Kept per
   person and project, 20 conversations, 30 days, delete one or all, forgotten at sign-out. Administrators read none.
   T11 rewritten accordingly; T18(b) answered.
+- L21 — T11 closed: Commits bfec3457, d855a6c7 and the regression tests after them (decision L20). Answered conversations are kept in localStorage per person and project (encoded key), listed under «Anteriores», reopened on Inicio with follow-ups; Nueva pregunta keeps the closed one; 20 conversations, 30 days, delete one or all; every sign-out forgets them and an answer on its way after a sign-out is not saved; someone signing in forgets other people's conversations; nothing on the server. Web suite 941+, lint, typecheck, boundaries. Independent verifier: I1, I3-I6 met; blocker B1 (an answer arriving after sign-out saved the conversation again) fixed with a sign-out generation and an abort on unmount, rechecked as passed including the window before /login; advisories taken: encoded keys, person change on one mount, forget other people on sign-in, Borrar historial clears an unreadable entry.
