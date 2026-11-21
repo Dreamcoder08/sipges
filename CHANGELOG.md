@@ -15,6 +15,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ### Corregido
 
+- Instalación local: `./sipges rollback` vuelve a la versión anterior sin tocar los datos (antes había que editar `.env` y restaurar un respaldo, perdiendo lo escrito después). `./sipges update` y `./sipges backup` no arrancan con menos de 5 GB libres en el disco de los respaldos y dicen cuánto queda, en vez de fallar a mitad de camino.
 - Instalación local: `./sipges status` dice qué build corre (el commit del que salió la imagen), y la API deja de registrar cada chequeo de salud `/health/ready` que pasa (Caddy y Docker lo consultan cada pocos segundos y eran el 82% de las líneas); uno que falla se sigue registrando.
 - Cadena de suministro: `pnpm-workspace.yaml` exige que una versión lleve 7 días publicada antes de instalarla (`minimumReleaseAge: 10080`, antes solo el día implícito de pnpm) y prohíbe dependencias desde git o URLs de tarball (`blockExoticSubdeps`). `trustPolicy: no-downgrade` queda fuera porque marca como robo a `semver@6.3.1`, publicado en 2023 antes de que npm firmara la procedencia.
 - Cadena de suministro: `pnpm-workspace.yaml` exige que una versión lleve 7 días publicada antes de instalarla (`minimumReleaseAge: 10080`, antes solo el día implícito de pnpm) y prohíbe que las dependencias transitivas vengan de git o de URLs de tarball (`blockExoticSubdeps`). `trustPolicy: no-downgrade` queda fuera porque marca como robo a `semver@6.3.1`, publicado en 2023 antes de que npm firmara la procedencia.

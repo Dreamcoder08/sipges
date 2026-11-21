@@ -144,11 +144,10 @@ It takes a backup, gets the new version, rebuilds and restarts. Database changes
 
 `previous` is the last version that really started, so a failed update, even retried, never replaces it. If an update goes wrong:
 
-1. Run `./sipges backups` and note the backup taken just before the update.
-2. Add `SIPGES_IMAGE_TAG=previous` to `.env`.
-3. Run `./sipges restore <that backup>`.
+1. Run `./sipges rollback`. It puts the previous version back and keeps the data: every database change must keep the previous version working, which is also what lets two APIs update one at a time. `./sipges update` returns to the latest version once it is fixed.
+2. Only if the previous version does not start either, restore the backup taken just before the update: note it with `./sipges backups`, add `SIPGES_IMAGE_TAG=previous` to `.env`, and run `./sipges restore <that backup>`. Anything written after that backup is lost. Remove the line from `.env` when the fixed version is out.
 
-The restore matters: database changes only go forward, so the old version needs the old database. Remove the line from `.env` when the fixed version is out.
+`update` and `backup` stop before they begin when the disk of the backups has less than 5 GB free, and say how much is left.
 
 ### Local overrides
 
