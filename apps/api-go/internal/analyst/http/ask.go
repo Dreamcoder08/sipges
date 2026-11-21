@@ -122,8 +122,10 @@ func logAskFailure(r *http.Request, opts Options, status int, err error) {
 	opts.Logger.LogAttrs(r.Context(), slog.LevelWarn, "analyst_ask_failed", attrs...)
 }
 
-// maxAskBody bounds the body: a question and a full history, every character escaped as \uXXXX.
-const maxAskBody = 64 << 10
+// maxAskBody bounds the body: a question and a full history at their character limits, each
+// character outside the BMP written as a JSON surrogate pair (\uXXXX\uXXXX, twelve bytes), with
+// the keys around them. 8,500 × 12 is about 100 KB.
+const maxAskBody = 128 << 10
 
 // askRequest is a read body: the question, the earlier turns of a follow-up, or why it is refused.
 type askRequest struct {
