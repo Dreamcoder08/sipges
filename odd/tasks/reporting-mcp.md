@@ -67,11 +67,11 @@ Objective: read-only MCP tools for reports without reading every record: `count_
   (`mcp.mjs --check` on the merged code). Route: inline, after T1 and T2.
 - T4 [x] — S1: docs (MCP instructions text, desktop README tool list, CHANGELOG). Route: inline.
 - T5 [x] — S4: independent verification. Risk item 2 (data leaving through the egress guard). Route: verifier.
-- T6 [ ] — S7: period resolver in Go (`integration/domain`), pure, injected clock, Lima time. Route: inline.
-- T7 [ ] — S7–S9: `report_period` MCP tool in Go (Go-only descriptor file, dispatch, groups and series, analyst
+- T6 [x] — S7: period resolver in Go (`integration/domain`), pure, injected clock, Lima time. Route: inline.
+- T7 [x] — S7–S9: `report_period` MCP tool in Go (Go-only descriptor file, dispatch, groups and series, analyst
   label, parity and fixture exclusion, PostgreSQL integration test). Route: inline.
-- T8 [ ] — S6, S7: `format: "csv"`. Route: inline.
-- T9 [ ] — S6, S9: docs (desktop README, integrations tool table with the missing `count_records` row, sipgesctl
+- T8 [x] — S6, S7: `format: "csv"`. Route: inline.
+- T9 [x] — S6, S9: docs (desktop README, integrations tool table with the missing `count_records` row, sipgesctl
   example through `call POST /mcp`, CHANGELOG) and an independent verifier (risk item 2). Route: inline + verifier.
 
 ## Log
@@ -95,3 +95,7 @@ Objective: read-only MCP tools for reports without reading every record: `count_
 - L9 — 2026-11-20: second slice opened on `feat/report-period` (S6–S9, T6–T9) after the owner accepted the
   proposal quoted in S6. Map: Go `count_records` in `integration/application/mcp_count.go`, descriptors generated
   from TypeScript (`testdata/mcp.mjs --check`), tools/list compared by `pnpm parity`; Go-only decision in S8.
+- L10 — T6 closed: Commit for T6 on feat/report-period: T6 a8a5eb12, T7 55e21cb6, T8 a54b2113; correction a0ccde9b. Evidence in the T9 entry.
+- L11 — T7 closed: Commit for T7 on feat/report-period: T6 a8a5eb12, T7 55e21cb6, T8 a54b2113; correction a0ccde9b. Evidence in the T9 entry.
+- L12 — T8 closed: Commit for T8 on feat/report-period: T6 a8a5eb12, T7 55e21cb6, T8 a54b2113; correction a0ccde9b. Evidence in the T9 entry.
+- L13 — T9 closed: report_period on feat/report-period: T6 a8a5eb12 (period words to Lima days, weeks Monday to Sunday), T7 55e21cb6 (Go-only tool: groups or series through the egress guard, mcp_tools_go.json, fixture and parity goOnly, analyst label), T8 a54b2113 (CSV with BOM, CRLF, formula cells neutralised), T9 aee62222 (docs) and a0ccde9b (correction). Checks: Go suites with PostgreSQL integration, golangci-lint 0, mcp.mjs --check unchanged, parity diff tests, full pnpm parity 2752/2752 against a throwaway PostgreSQL. Independent verifier: P1-P5 PASS; blocker B1 (the description and guides used «el año pasado», which was refused) fixed by accepting a leading article and rechecked as passed; advisories taken: blank format is json, formulas after spaces neutralised, series counting only dated records documented, a test keeps the parity Go-only list in step.
