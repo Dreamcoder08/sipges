@@ -16,6 +16,7 @@ import { Card } from '../../shared/ui/Card.tsx';
 import { ConfirmDialog } from '../../shared/ui/ConfirmDialog.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import styles from './AccountSection.module.css';
+import { PasswordCard } from './PasswordCard.tsx';
 
 const ROLE_LABELS: Readonly<Record<Role, string>> = {
   admin: 'Administración',
@@ -204,6 +205,7 @@ export const AccountSection = ({
         </QueryState>
         {notice ? <Alert tone={notice.tone}>{notice.text}</Alert> : null}
       </Card>
+      <PasswordCard scope={scope} onChanged={() => void reload()} />
     </>
   );
 };
