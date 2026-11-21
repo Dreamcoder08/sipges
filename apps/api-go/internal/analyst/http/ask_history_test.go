@@ -130,3 +130,61 @@ func TestAskAcceptsAFullHistoryLargerThanTheOldBodyLimit(t *testing.T) {
 		t.Fatalf("status = %d, body = %s", res.Code, res.Body)
 	}
 }
+
+// The stream refuses a history beyond its limits as /ask does: one error event with 422, before
+// any model call or release.
+func TestAskStreamRefusesAHistoryBeyondItsLimitsWithA422Event(t *testing.T) {
+	t.Parallel()
+	seven := make([]map[string]string, application.MaxHistoryTurns+1)
+	for i := range seven {
+		seven[i] = map[string]string{"question": "¿Algo?", "answer": "Nada."}
+	}
+	model := &earlierModel{}
+	_, events := askStream(t, earlierAnalyst(model), historyBody(t, seven))
+	var failure *sseEvent
+	for i := range events {
+		if events[i].name == "error" {
+			failure = &events[i]
+		}
+	}
+	if failure == nil {
+		t.Fatalf("no error event in %+v", events)
+	}
+	var data struct {
+		Status int    `json:"status"`
+		Detail string `json:"detail"`
+	}
+	if err := json.Unmarshal([]byte(failure.data), &data); err != nil {
+		t.Fatal(err)
+	}
+	if data.Status != http.StatusUnprocessableEntity || !strings.Contains(data.Detail, "El historial admite") {
+		t.Fatalf("error event = %+v", data)
+	}
+	if model.asks != 0 {
+		t.Fatalf("the model was asked %d times", model.asks)
+	}
+}
+
+// The worst case the limits allow fits the body: 500 + 8,000 characters outside the BMP, each
+// written as a JSON surrogate pair (😀, twelve bytes).
+func TestAskAcceptsAFullHistoryOfAstralCharactersWrittenAsEscapes(t *testing.T) {
+	t.Parallel()
+	history := make([]map[string]string, application.MaxHistoryTurns)
+	per := application.MaxHistoryChars / application.MaxHistoryTurns
+	for i := range history {
+		history[i] = map[string]string{"question": "X", "answer": strings.Repeat("X", per-1)}
+	}
+	raw, err := json.Marshal(map[string]any{"question": strings.Repeat("X", 500), "history": history})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Built in parts so the file holds the escape, not the character: \ud83d\ude00.
+	surrogates := `\` + "ud83d" + `\` + "ude00"
+	body := strings.ReplaceAll(string(raw), "X", surrogates)
+	if len(body) <= 64<<10 {
+		t.Fatalf("body is %d bytes, want more than 64 KiB", len(body))
+	}
+	if res := ask(t, earlierAnalyst(&earlierModel{}), body); res.Code != http.StatusOK {
+		t.Fatalf("status = %d, body = %s", res.Code, res.Body)
+	}
+}
