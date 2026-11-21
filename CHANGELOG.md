@@ -10,6 +10,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ### Corregido
 
+- Territorio, vista 3D: la rueda, el pellizco y los botones «Acercar» y «Alejar» ya no llevan la cámara al suelo, donde todo se veía gris, ni al espacio, donde la provincia desaparecía en negro. La cámara queda entre 250 m del terreno y tres veces la distancia del encuadre inicial.
 - Analista de Inicio: una pregunta de seguimiento con el historial completo de caracteres fuera del plano básico (emoji, por ejemplo) escritos como escapes JSON ya no se rechaza con «Escribe una pregunta de 1 a 500 caracteres»: el cuerpo admite hasta 128 KiB, lo que ocupa el peor caso de los límites.
 - Inicio: en un proyecto con el envío a IA externa apagado, la caja ya no queda como buscador sin explicación. Si la instalación tiene analista, la ayuda dice «La IA externa está desactivada en este proyecto: Enter busca. Se activa en Configuración → Privacidad y datos.»
 

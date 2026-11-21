@@ -440,6 +440,14 @@
       "sessions": 21,
       "memories": 127,
       "prompts": 0
+    },
+    {
+      "id": "a91a9489",
+      "created_by": "dreamcoder08",
+      "created_at": "2026-11-21T06:22:36.76780879Z",
+      "sessions": 13,
+      "memories": 68,
+      "prompts": 0
     }
   ]
 }
