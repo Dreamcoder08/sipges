@@ -79,7 +79,7 @@ Without `SIPGES_DATA_KEY` and `SIPGES_BACKUP_PASSPHRASE` from `.env`, no backup 
 
 | Command | What it does |
 | --- | --- |
-| `./sipges status` | Shows what is running, the latest backup, any backup failure, and what still protects your data poorly (no copy on a second disk, no recovery kit). |
+| `./sipges status` | Shows what is running, which build (the commit it came from), the latest backup, any backup failure, and what still protects your data poorly (no copy on a second disk, no recovery kit). |
 | `./sipges stop` / `./sipges start` | Stops or starts everything. It also starts by itself after a restart of the computer. |
 | `./sipges logs api` | Shows recent activity. Other parts: `db`, `caddy`, `backup`. |
 

@@ -80,14 +80,19 @@ func (s *statusRecorder) Write(b []byte) (int, error) {
 // Unwrap lets http.ResponseController reach the underlying writer (flush, deadlines).
 func (s *statusRecorder) Unwrap() http.ResponseWriter { return s.ResponseWriter }
 
-// AccessLog writes one line per request: method, path without query string, status, duration
-// and request id. No headers, query strings or bodies: they may carry tokens or record data.
+// AccessLog writes one line per request, except a passing /health/ready check: method, path
+// without query string, status, duration and request id. No headers, query strings or bodies: they may carry tokens or record data.
 func AccessLog(log *slog.Logger) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
 			rec := &statusRecorder{ResponseWriter: w}
 			next.ServeHTTP(rec, r)
+			// Caddy and Docker poll readiness every few seconds; a passing check is not news, and
+			// logging it would push real requests out of the rotated log. A failing one is.
+			if r.URL.Path == "/health/ready" && rec.status >= 200 && rec.status < 300 {
+				return
+			}
 			log.LogAttrs(r.Context(), slog.LevelInfo, "request",
 				slog.String("request_id", RequestIDFrom(r.Context())),
 				slog.String("method", r.Method),

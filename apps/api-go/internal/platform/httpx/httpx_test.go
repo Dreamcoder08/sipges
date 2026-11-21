@@ -154,6 +154,24 @@ func TestAccessLogHasNoQueryStringOrHeaders(t *testing.T) {
 	}
 }
 
+// Caddy and Docker poll /health/ready every few seconds: a passing check would fill the log and
+// push real requests out of rotation (world-class-local T6). A failing one is still logged.
+func TestAccessLogSkipsPassingReadinessChecks(t *testing.T) {
+	t.Parallel()
+	h, logs := newHandler(t, Options{Ready: func(context.Context) error { return nil }, AccessLog: true})
+	do(h, http.MethodGet, "/health/ready", nil)
+	if logs.Len() != 0 {
+		t.Fatalf("a passing readiness check was logged: %s", logs)
+	}
+	failing, failLogs := newHandler(t, Options{Ready: func(context.Context) error { return errors.New("synthetic outage") }, AccessLog: true})
+	if rec := do(failing, http.MethodGet, "/health/ready", nil); rec.Code == http.StatusOK {
+		t.Fatalf("readiness answered %d with a failing check", rec.Code)
+	}
+	if !strings.Contains(failLogs.String(), `"path":"/health/ready"`) {
+		t.Fatalf("a failing readiness check was not logged: %s", failLogs)
+	}
+}
+
 func TestAccessLogOff(t *testing.T) {
 	t.Parallel()
 	h, logs := newHandler(t, Options{Ready: func(context.Context) error { return nil }})

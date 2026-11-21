@@ -437,7 +437,7 @@ info
 compose --env-file W/env -p sipges -f compose.yaml config -q
 compose --env-file W/env -p sipges -f compose.yaml exec -T backup bash /ops/backup.sh
 build -f ../../apps/api-go/Dockerfile -t sipges-api-go:local ../..
-build -f Dockerfile -t sipges-local:new ../..
+build -f Dockerfile --label org.opencontainers.image.revision=unknown -t sipges-local:new ../..
 image inspect -f {{.Id}} sipges-local:current
 image inspect -f {{.Id}} sipges-local:ready
 image inspect -f {{.Id}} sipges-local:new
@@ -863,6 +863,14 @@ fresh
 printf 'SIPGES_DATA_KEY=synthetic-data-key-0000\nSIPGES_BACKUP_PASSPHRASE=ab\n' >>"$SIPGES_ENV_FILE"
 if run recovery-kit "$work/kit.txt" <<<""; then fail 'an empty answer does not confirm a short passphrase'; else ok 'an empty answer does not confirm a short passphrase'; fi
 check 'and nothing is recorded' test ! -e "$work/.sipges-recovery-kit"
+
+# --- which build is running (world-class-local T6)
+
+fresh
+run install
+check 'the image is labelled with the commit it was built from (unknown without git)' called 'build -f Dockerfile --label org.opencontainers.image.revision=unknown -t sipges-local:new'
+run status || true
+check 'status says which build is running' said 'Build: '
 
 command rm -rf "$root"
 if ((failures > 0)); then

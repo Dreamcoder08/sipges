@@ -11,6 +11,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ### Corregido
 
+- Instalación local: `./sipges status` dice qué build corre (el commit del que salió la imagen), y la API deja de registrar cada chequeo de salud `/health/ready` que pasa (Caddy y Docker lo consultan cada pocos segundos y eran el 82% de las líneas); uno que falla se sigue registrando.
 - Instalación local: `./sipges recovery-kit` escribe una hoja para imprimir con `SIPGES_DATA_KEY` y `SIPGES_BACKUP_PASSPHRASE` (sin ellos ningún respaldo se puede abrir) y cómo restaurar en otra computadora, y se confirma tecleando los últimos 4 caracteres de la frase. `./sipges status` avisa hasta que el kit esté confirmado y otra vez si cambia algún secreto; solo se guarda una huella de los secretos.
 - Instalación local: `./sipges status` avisa en cada corrida mientras los respaldos no tienen copia en un segundo disco, y dice cómo configurarla (`./sipges copy-backups-to`): un disco que muere se lleva los datos y todos los respaldos que están a su lado.
 - Instalación local, puente del analista con la suscripción de Claude: la guía documenta el contenedor endurecido (sistema de archivos de solo lectura, sin capacidades, 512 MiB, 256 procesos, registros rotados) y aclara que el puente es solo para datos de demostración; con datos reales corresponde una clave de la consola de Anthropic con límite de gasto.

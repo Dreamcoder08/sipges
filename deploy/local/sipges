@@ -108,7 +108,10 @@ build() {
   # The drill's way to test install without touching images a real install may share.
   [[ -z ${SIPGES_SKIP_BUILD:-} ]] || return 0
   docker build -f "$REPO_ROOT/apps/api-go/Dockerfile" -t sipges-api-go:local "$REPO_ROOT"
-  docker build -f Dockerfile -t sipges-local:new "$REPO_ROOT"
+  # The commit the build comes from, so ./sipges status can say which one runs (world-class-local T6).
+  local revision
+  revision=$(git -C "$REPO_ROOT" rev-parse --short=12 HEAD 2>/dev/null) || revision=unknown
+  docker build -f Dockerfile --label "org.opencontainers.image.revision=$revision" -t sipges-local:new "$REPO_ROOT"
   # `previous` is the way back, so only a build that really started may become it: a real change
   # moves it only off the image `ready` vouches for, and a failed update can be retried freely.
   local running new started
@@ -509,6 +512,11 @@ cmd_status() {
   else
     say 'Application: NOT READY'
   fi
+  local build
+  build=$(docker image inspect -f '{{index .Config.Labels "org.opencontainers.image.revision"}}' sipges-local:current 2>/dev/null) || true
+  # An image built before the label existed answers <no value>.
+  [[ -n $build && $build != '<no value>' ]] || build=unknown
+  say "Build: $build"
   latest=$(find "$dir" -mindepth 1 -maxdepth 1 -type d -name '20*Z' -printf '%f\n' 2>/dev/null | sort | tail -n 1)
   say "Latest backup: ${latest:-none yet}"
   # 26 hours: a day plus the time a nightly backup may take (world-class-local T2).
