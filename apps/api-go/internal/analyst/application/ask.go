@@ -54,7 +54,22 @@ type ToolOutput struct {
 	Data    privacy.Sanitised[any]
 	Records []domain.RecordRef
 	Refusal string
+	// Proposal is the id of a proposal the call filed, pending a person's decision in Bandeja.
+	Proposal string
 }
+
+// PendingProposalsError is a question that failed after it filed proposals: they stay pending in
+// Bandeja (a person approves or rejects them as always), and the person asking must be told so.
+type PendingProposalsError struct {
+	Count int
+	Err   error
+}
+
+func (e *PendingProposalsError) Error() string {
+	return fmt.Sprintf("%v (after filing %d proposals)", e.Err, e.Count)
+}
+
+func (e *PendingProposalsError) Unwrap() error { return e.Err }
 
 // ToolTurn is a tool's answer as the model sees it, with the numbers of its records.
 type ToolTurn struct {
@@ -140,6 +155,15 @@ func (a Ask) AnswerWithProgress(ctx context.Context, question string, progress P
 // before the question. They are context only: citations still number only this question's tool
 // results, so a record named in the history must be fetched again to be cited.
 func (a Ask) AnswerFollowUp(ctx context.Context, question string, history []Exchange, progress Progress) (domain.CitedAnswer, error) {
+	filed := 0
+	answer, err := a.answer(ctx, question, history, progress, &filed)
+	if err != nil && filed > 0 {
+		return domain.CitedAnswer{}, &PendingProposalsError{Count: filed, Err: err}
+	}
+	return answer, err
+}
+
+func (a Ask) answer(ctx context.Context, question string, history []Exchange, progress Progress, filed *int) (domain.CitedAnswer, error) {
 	if err := CheckHistory(history); err != nil {
 		return domain.CitedAnswer{}, err
 	}
@@ -201,6 +225,9 @@ func (a Ask) AnswerFollowUp(ctx context.Context, question string, history []Exch
 					return domain.CitedAnswer{}, ctx.Err()
 				}
 				return domain.CitedAnswer{}, err
+			}
+			if out.Proposal != "" {
+				*filed++
 			}
 			numbered := make([]domain.Cited, 0, len(out.Records))
 			for _, ref := range out.Records {

@@ -16,6 +16,7 @@ import (
 	integrationdomain "github.com/Dreamcoder08/sipges/apps/api-go/internal/integration/domain"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/config"
 	privacy "github.com/Dreamcoder08/sipges/apps/api-go/internal/privacy/application"
+	privacydomain "github.com/Dreamcoder08/sipges/apps/api-go/internal/privacy/domain"
 	records "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/domain"
 )
 
@@ -194,6 +195,8 @@ func recordRefs(data privacy.Sanitised[any]) ([]analystdomain.RecordRef, error) 
 const (
 	proposeRecord = "propose_record"
 	proposeLink   = "propose_link"
+	// withheldField is the refusal of a field that holds a pseudonym or a placeholder, not the datum.
+	withheldField = "Un campo lleva un seudónimo o un dato oculto ([correo], [teléfono], [DNI], [RUC]): propón sin ese dato y la persona lo completa al aprobar"
 	// proposedState is what the model reads back with the id: the proposal's id and that it waits for a person.
 	proposedState = "pendiente de aprobación en Bandeja"
 )
@@ -263,6 +266,10 @@ func draftOf(name string, args *records.Object) (analystdomain.Proposal, string)
 	payload := make([]analystdomain.Field, 0, len(fields.Keys()))
 	for _, key := range fields.Keys() {
 		v, _ := fields.Get(key)
+		// The model saw pseudonyms and placeholders, never the data: approving one would store it.
+		if text, isText := v.(string); isText && privacydomain.Withheld(text) {
+			return analystdomain.Proposal{}, withheldField
+		}
 		payload = append(payload, analystdomain.Field{Key: key, Value: v})
 	}
 	return analystdomain.RecordDraft(analystdomain.ProposedRecord{Slug: module, Payload: payload}, reason)
@@ -292,5 +299,5 @@ func (a askTools) proposal(ctx context.Context, name string, input json.RawMessa
 		return analyst.ToolOutput{Refusal: refusal}, err
 	}
 	ack := map[string]string{"propuesta": id, "estado": proposedState}
-	return analyst.ToolOutput{OK: true, Data: privacy.ExemptPayload[any](ack, privacy.ExemptAcknowledgement)}, nil
+	return analyst.ToolOutput{OK: true, Data: privacy.ExemptPayload[any](ack, privacy.ExemptAcknowledgement), Proposal: id}, nil
 }

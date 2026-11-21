@@ -112,3 +112,19 @@ func TestProposalReasonDropsNUL(t *testing.T) {
 		t.Fatalf("reason = %q", got)
 	}
 }
+
+// Bandeja shows the reason without the answer's source list, so its [n] markers point nowhere.
+func TestProposalReasonDropsCitationMarkers(t *testing.T) {
+	t.Parallel()
+	cases := map[string]string{
+		"La reunión ocurrió el lunes [1] y la pidió la comunidad [2][3].": "La reunión ocurrió el lunes y la pidió la comunidad.",
+		"Según el acta [12], hubo acuerdo.":                               "Según el acta, hubo acuerdo.",
+		"Sin marcas [a] ni [ ] numéricas.":                                "Sin marcas [a] ni [ ] numéricas.",
+		"[1]":                                                             "",
+	}
+	for in, want := range cases {
+		if got := ProposalReason(in); got != want {
+			t.Errorf("ProposalReason(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
