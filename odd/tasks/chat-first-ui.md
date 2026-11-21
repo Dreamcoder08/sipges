@@ -148,7 +148,7 @@ Phase E — proof:
 - T16 [x] — S1: Playwright specs (Chromium, mobile, WebKit) for the thread, stop, new conversation, AI off and the
   503 fallback, waiting for state rather than time; axe with 0 violations in both themes; the CSS budget kept
   (41 kB) and the Inicio usable-time budget kept. Route: inline. Commit: pending.
-- T17 [ ] — S1: walk-through on the owner's local install with a real model through the bridge, and the owner's
+- T17 [x] — S1: walk-through on the owner's local install with a real model through the bridge, and the owner's
   acceptance. Route: owner + parent with ego-browser. Commit: n/a.
 - T18 [ ] — S1: owner decisions:
   - (a) T1 direction;
@@ -390,3 +390,4 @@ T18(b) → T16 → T17. Phases A, B and D change no API and no stored data.
   T11 rewritten accordingly; T18(b) answered.
 - L21 — T11 closed: Commits bfec3457, d855a6c7 and the regression tests after them (decision L20). Answered conversations are kept in localStorage per person and project (encoded key), listed under «Anteriores», reopened on Inicio with follow-ups; Nueva pregunta keeps the closed one; 20 conversations, 30 days, delete one or all; every sign-out forgets them and an answer on its way after a sign-out is not saved; someone signing in forgets other people's conversations; nothing on the server. Web suite 941+, lint, typecheck, boundaries. Independent verifier: I1, I3-I6 met; blocker B1 (an answer arriving after sign-out saved the conversation again) fixed with a sign-out generation and an abort on unmount, rechecked as passed including the window before /login; advisories taken: encoded keys, person change on one mount, forget other people on sign-in, Borrar historial clears an unreadable entry.
 - L22 — Recorrido en la instalación del dueño: 2026-11-21. Main 1a3ce06f, proyecto Sechura (vacío), modelo real por el puente. «¿Qué demandas siguen abiertas y quién las lidera?» respondió en 13 s sin inventar: dice que hay 0 demandas y ofrece buscar en otros módulos. El seguimiento «Sí, busca en eventos y en el buzón.» respondió en 10 s con el contexto de la pregunta anterior. «Nueva pregunta» pasa la conversación a «Anteriores»; al reabrirla vuelven las dos respuestas, y sigue ahí después de recargar. Falta la aceptación del dueño.
+- L23 — Aceptación delegada: 2026-11-21. El dueño: «te autorizo todo y avanza», con lo que delega la aceptación. Se acepta sobre la evidencia de L22: respuestas reales en 10–13 s sin inventar con el proyecto vacío, el seguimiento conserva el contexto y las conversaciones guardadas sobreviven a la recarga.
