@@ -23,7 +23,7 @@ func TestPasswordSendsBothLinesAndKeepsThemOutOfEverything(t *testing.T) {
 		w.WriteHeader(http.StatusNoContent)
 	}))
 	h.signIn()
-	got := h.run(syntheticPassword+"\n"+syntheticNewPassword+"\n", "password", "--json")
+	got := h.run(syntheticPassword+"\n"+syntheticNewPassword+"\n"+syntheticNewPassword+"\n", "password", "--json")
 	if got.code != ExitOK {
 		t.Fatalf("%+v", got)
 	}
@@ -56,7 +56,10 @@ func TestPasswordNeedsBothLinesBeforeItSendsAnything(t *testing.T) {
 	sent := false
 	h := newHarness(t, fakeLogin(func(http.ResponseWriter, *http.Request) { sent = true }))
 	h.signIn()
-	for name, stdin := range map[string]string{"nothing": "", "current only": syntheticPassword + "\n", "empty new": syntheticPassword + "\n\n"} {
+	for name, stdin := range map[string]string{
+		"nothing": "", "current only": syntheticPassword + "\n", "empty new": syntheticPassword + "\n\n\n",
+		"no confirmation": syntheticPassword + "\n" + syntheticNewPassword + "\n",
+	} {
 		if got := h.run(stdin, "password"); got.code != ExitUsage {
 			t.Errorf("%s: %+v", name, got)
 		}
@@ -71,8 +74,25 @@ func TestPasswordReportsTheAPIRefusal(t *testing.T) {
 		jsonAnswer(w, http.StatusBadRequest, `{"detail":"Credenciales inválidas"}`)
 	}))
 	h.signIn()
-	got := h.run("wrong-password\n"+syntheticNewPassword+"\n", "password", "--json")
+	got := h.run("wrong-password\n"+syntheticNewPassword+"\n"+syntheticNewPassword+"\n", "password", "--json")
 	if got.code != ExitRejected || !strings.Contains(got.stdout, "Credenciales inválidas") {
 		t.Fatalf("%+v", got)
+	}
+}
+
+// The new password is read twice; two different lines stop the command before the API.
+func TestPasswordRefusesANewPasswordThatDoesNotMatchItsConfirmation(t *testing.T) {
+	sent := false
+	h := newHarness(t, fakeLogin(func(http.ResponseWriter, *http.Request) { sent = true }))
+	h.signIn()
+	got := h.run(syntheticPassword+"\n"+syntheticNewPassword+"\n"+syntheticNewPassword+"-typo\n", "password")
+	if got.code != ExitUsage || !strings.Contains(got.stderr, passwordMismatch) {
+		t.Fatalf("%+v", got)
+	}
+	if sent {
+		t.Fatal("a request went out with a mismatched confirmation")
+	}
+	if strings.Contains(got.stdout+got.stderr, syntheticNewPassword) {
+		t.Fatal("a password reached the output")
 	}
 }

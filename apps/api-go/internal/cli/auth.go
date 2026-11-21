@@ -52,7 +52,7 @@ func (a *app) credentials(ctx context.Context, secretFile string) (password, cod
 		return strings.TrimRight(line, "\r\n")
 	}
 	if password = a.env("SIPGES_PASSWORD"); password == "" {
-		if password, err = a.typedPassword(ctx, "Password: ", readLine); err != nil {
+		if password, err = a.typedPassword(ctx, "Password: ", loginNoStty, readLine); err != nil {
 			return "", "", "", err
 		}
 	}

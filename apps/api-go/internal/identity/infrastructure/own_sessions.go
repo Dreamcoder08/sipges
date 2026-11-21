@@ -56,21 +56,35 @@ func (s Store) EndOtherSessions(ctx context.Context, username, keepTokenHash str
 
 // ReplacePassword stores the new hash of an active user and ends its other sessions as
 // EndOtherSessions does, auditing the change in tenantID, in one transaction: a password that
-// changed while another device stayed signed in would leave that device a way back.
-func (s Store) ReplacePassword(ctx context.Context, username, passwordHash, keepTokenHash string, at time.Time, tenantID string, audit func(int) application.SessionAudit) (bool, error) {
-	return transaction(ctx, s.DB, func(tx pgx.Tx) (bool, error) {
-		tag, err := tx.Exec(ctx, `UPDATE users SET password_hash = $2 WHERE username = $1 AND active`, username, passwordHash)
+// changed while another device stayed signed in would leave that device a way back. The user row
+// is locked before the kept session is looked up, so of two changes at once the second waits and
+// then finds its session ended by the first, and writes nothing. The lookup is a statement of its
+// own: under READ COMMITTED it takes its snapshot after the lock, so it sees the first change.
+func (s Store) ReplacePassword(ctx context.Context, username, passwordHash, keepTokenHash string, at time.Time, tenantID string, audit func(int) application.SessionAudit) (application.PasswordReplacement, error) {
+	return transaction(ctx, s.DB, func(tx pgx.Tx) (application.PasswordReplacement, error) {
+		tag, err := tx.Exec(ctx, `SELECT 1 FROM users WHERE username = $1 AND active FOR UPDATE`, username)
 		if err != nil {
-			return false, fmt.Errorf("replace password: %w", err)
+			return "", fmt.Errorf("lock user for password: %w", err)
 		}
 		if tag.RowsAffected() == 0 {
-			return false, nil
+			return application.PasswordUserInactive, nil
+		}
+		var kept bool
+		if err := tx.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM sessions
+		  WHERE username = $1 AND token_hash = $2 AND expires_at > $3::timestamptz)`, username, keepTokenHash, at).Scan(&kept); err != nil {
+			return "", fmt.Errorf("find kept session: %w", err)
+		}
+		if !kept {
+			return application.PasswordSessionGone, nil
+		}
+		if _, err := tx.Exec(ctx, `UPDATE users SET password_hash = $2 WHERE username = $1`, username, passwordHash); err != nil {
+			return "", fmt.Errorf("replace password: %w", err)
 		}
 		count, err := endOtherSessions(ctx, tx, username, keepTokenHash, at)
 		if err != nil {
-			return false, err
+			return "", err
 		}
-		return true, appendAudit(ctx, tx, tenantID, "Cuentas", audit(count))
+		return application.PasswordReplaced, appendAudit(ctx, tx, tenantID, "Cuentas", audit(count))
 	})
 }
 

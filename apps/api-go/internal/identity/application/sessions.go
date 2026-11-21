@@ -47,10 +47,21 @@ type SessionStore interface {
 	// atomically. Expired rows are left to the purge. No audit row when the count is 0.
 	EndOtherSessions(ctx context.Context, username, keepTokenHash string, at time.Time, tenantID string, audit func(count int) SessionAudit) (int, error)
 	// ReplacePassword stores the new hash of an active user, ends every other session the way
-	// EndOtherSessions does and appends the audit row for the count, always, atomically. False
-	// when no active user has that name (nothing written).
-	ReplacePassword(ctx context.Context, username, passwordHash, keepTokenHash string, at time.Time, tenantID string, audit func(count int) SessionAudit) (bool, error)
+	// EndOtherSessions does and appends the audit row for the count, always, atomically. Nothing
+	// is written when no active user has that name, or when keepTokenHash no longer names one of
+	// the user's active sessions (another change or a revoke ended it first).
+	ReplacePassword(ctx context.Context, username, passwordHash, keepTokenHash string, at time.Time, tenantID string, audit func(count int) SessionAudit) (PasswordReplacement, error)
 }
+
+// PasswordReplacement is the outcome of SessionStore.ReplacePassword.
+type PasswordReplacement string
+
+// The outcomes of ReplacePassword; only PasswordReplaced wrote anything.
+const (
+	PasswordReplaced     PasswordReplacement = "replaced"
+	PasswordUserInactive PasswordReplacement = "user_inactive"
+	PasswordSessionGone  PasswordReplacement = "session_gone"
+)
 
 // sessionID is the shape of SessionTokens.PublicID; anything else cannot name a session.
 var sessionID = regexp.MustCompile(`^[0-9a-f]{32}$`)
