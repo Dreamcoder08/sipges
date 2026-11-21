@@ -117,7 +117,7 @@ test('compareLines compares only the matching lines of a text answer', () => {
   assert.equal(compare(text('x 1'), text('x 2')).length, 1);
 });
 
-// odd/tasks/reporting-mcp.md S8: a tool only the Go API has is left out of Go's list, and nothing else.
+// odd/archive/reporting-mcp.md S8: a tool only the Go API has is left out of Go's list, and nothing else.
 test('goOnly drops the named entries of a list from the Go answer only', () => {
   const ts = json(200, { result: { tools: [{ name: 'a' }, { name: 'b' }] } });
   const go = json(200, { result: { tools: [{ name: 'a' }, { name: 'b' }, { name: 'go_tool' }] } });

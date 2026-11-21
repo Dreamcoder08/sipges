@@ -89,7 +89,7 @@ One guard, `contexts/privacy`, in front of every egress path.
 
 ## Amendment (2026-11-19): the Inicio analyst and its follow-ups
 
-The Inicio analyst (`POST /system/analyst/ask`, `odd/tasks/agentic-analyst.md`) came after this
+The Inicio analyst (`POST /system/analyst/ask`, `odd/archive/agentic-analyst.md`) came after this
 decision and follows it: the question is scrubbed and released on the analyst channel before the
 model sees it, each read tool releases its own result, and with the switch off nothing is sent.
 Follow-up questions (`odd/tasks/chat-first-ui.md` T9, owner decision L18) add the earlier questions

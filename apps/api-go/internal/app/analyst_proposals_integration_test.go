@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// The analyst's proposals end to end (odd/tasks/agentic-analyst.md S4): real router, session, RLS
+// The analyst's proposals end to end (odd/archive/agentic-analyst.md S4): real router, session, RLS
 // and decision flow, with the scripted model of analyst_ask_integration_test.go.
 
 const storedProposals = "/system/analyst/proposals"

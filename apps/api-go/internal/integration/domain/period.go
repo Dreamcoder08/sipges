@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// Period words for reports (odd/tasks/reporting-mcp.md S7): a person says «este mes», the code turns
+// Period words for reports (odd/archive/reporting-mcp.md S7): a person says «este mes», the code turns
 // it into days, so no model has to work out a calendar. Days are Lima's (UTC-5 all year); weeks run
 // Monday to Sunday, as in Peru.
 

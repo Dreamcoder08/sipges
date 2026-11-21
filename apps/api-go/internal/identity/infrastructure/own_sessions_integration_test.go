@@ -143,7 +143,7 @@ func TestEndSessionAuditsOnlyInTheChosenProject(t *testing.T) {
 }
 
 // The MFA reset clears the factor and the sessions before it audits; a failing audit row must
-// undo both (odd/tasks/go-context-ports.md T2, found by its independent verifier).
+// undo both (odd/archive/go-context-ports.md T2, found by its independent verifier).
 func TestMFAResetRollsBackWhenTheAuditRowFails(t *testing.T) {
 	pool, store := sessionsDatabase(t)
 	ctx := t.Context()

@@ -90,7 +90,7 @@ func (m MCP) Run(ctx context.Context, tool domain.Tool, principal domain.Princip
 }
 
 // ToolNotForAnalyst is the refusal of a write tool asked for by the Inicio analyst, which only
-// proposes writes (odd/tasks/agentic-analyst.md S4).
+// proposes writes (odd/archive/agentic-analyst.md S4).
 const ToolNotForAnalyst = "Herramienta no disponible para el analista"
 
 // RunAsAnalyst runs a read tool for the analyst of the Inicio box, in the tenant of the person's

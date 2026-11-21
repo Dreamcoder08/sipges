@@ -7,7 +7,7 @@ import (
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/integration/domain"
 )
 
-// odd/tasks/reporting-mcp.md S7: period words resolve to a day range in Lima time (UTC-5), in code.
+// odd/archive/reporting-mcp.md S7: period words resolve to a day range in Lima time (UTC-5), in code.
 // 03:00 UTC on 2026-11-20 is 22:00 on Thursday 2026-11-19 in Lima: «hoy» is the 19th.
 var thursdayNight = time.Date(2026, 11, 20, 3, 0, 0, 0, time.UTC)
 

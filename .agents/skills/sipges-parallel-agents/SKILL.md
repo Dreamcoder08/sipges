@@ -48,7 +48,7 @@ the first match, which suits Monitor.
 
 Merge one PR at a time (`sipges-task-pr`, land step): after each merge, the next PR merges
 `origin/main` again and waits for green CI. Then the orchestrator alone records each unit's Log entry
-and task close in the feature document (spec S6 of `odd/tasks/conflict-free-delivery.md`).
+and task close in the feature document (spec S6 of `odd/archive/conflict-free-delivery.md`).
 
 ## Report
 

@@ -14,7 +14,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// The Inicio analyst end to end (odd/tasks/agentic-analyst.md S2): real router, session, RLS and
+// The Inicio analyst end to end (odd/archive/agentic-analyst.md S2): real router, session, RLS and
 // egress guard, with a scripted OpenAI-compatible model on loopback that keeps every request.
 
 type scriptedModel struct {

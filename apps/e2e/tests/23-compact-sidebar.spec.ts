@@ -4,7 +4,7 @@ import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixture
 import { watchNetwork } from '../support/network.ts';
 
 /**
- * Compact desktop sidebar (odd/tasks/compact-sidebar.md, S1–S5): it fits a 1440×900 screen with
+ * Compact desktop sidebar (odd/archive/compact-sidebar.md, S1–S5): it fits a 1440×900 screen with
  * the largest section open, and the tools that used to crowd the top bar now live in it.
  * Set SIPGES_SCREENSHOT_DIR to also save the light and dark captures of /eventos.
  */

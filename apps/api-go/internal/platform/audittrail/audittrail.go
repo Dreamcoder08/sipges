@@ -1,7 +1,7 @@
 // Package audittrail is the one writer of the audit table: appendAudit of
 // apps/api/src/platform/database/audit-trail.ts. The audit trail is cross-cutting, not a
 // context, so every context appends through this package instead of writing the table itself
-// (ADR 0002; odd/tasks/go-context-ports.md T1).
+// (ADR 0002; odd/archive/go-context-ports.md T1).
 package audittrail
 
 import (

@@ -230,7 +230,7 @@ export const qualityItems = (observations: readonly QualityObservation[]): Pendi
 };
 
 /**
- * Proposals the Inicio analyst made (odd/tasks/agentic-analyst.md S4). Nothing was written:
+ * Proposals the Inicio analyst made (odd/archive/agentic-analyst.md S4). Nothing was written:
  * approving creates the record or link through the owning screen's write, discarding writes nothing.
  * Every text comes from a model and is shown as plain text.
  */

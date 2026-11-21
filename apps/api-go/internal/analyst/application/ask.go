@@ -11,7 +11,7 @@ import (
 	privacy "github.com/Dreamcoder08/sipges/apps/api-go/internal/privacy/application"
 )
 
-// Ask is the analyst behind the Inicio box (odd/tasks/agentic-analyst.md S2): a bounded loop in
+// Ask is the analyst behind the Inicio box (odd/archive/agentic-analyst.md S2): a bounded loop in
 // which a model calls SIPGES's own read tools and then answers, citing only records those tools
 // returned. It holds no data logic: the tools are the MCP read tools, run with the person's
 // project and clearance, and their results reach the model only as the egress guard sealed them.

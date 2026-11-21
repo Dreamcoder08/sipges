@@ -3,7 +3,7 @@ import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixture
 import { watchNetwork } from '../support/network.ts';
 
 /**
- * The visit-rc14 gallery dudas at 1440 px (odd/tasks/functional-10.md T14). Runs last in the desktop
+ * The visit-rc14 gallery dudas at 1440 px (odd/archive/functional-10.md T14). Runs last in the desktop
  * project, after the specs that seed the shared project.
  */
 const atDesktop = async (page: Page, admin: { username: string; password: string }) => {

@@ -155,7 +155,7 @@ const PATH = '/mcp';
 
 /**
  * Tools only the Go API lists (apps/api-go/internal/integration/domain/mcp_tools_go.json): the
- * TypeScript API is frozen (ADR 0032, odd/tasks/reporting-mcp.md S8).
+ * TypeScript API is frozen (ADR 0032, odd/archive/reporting-mcp.md S8).
  */
 const GO_ONLY_TOOLS = { list: 'result.tools', names: ['report_period'] } as const;
 

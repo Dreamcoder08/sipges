@@ -6,6 +6,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ### Limpieza
 
+- Los 14 documentos ODD sin tareas abiertas pasan a `odd/archive/`, como pide `AGENTS.md`, con sus enlaces actualizados en 72 archivos; `pnpm odd:status` muestra solo trabajo vivo.
 - Se borra lo que ya no usa nada, con evidencia: los archivos de despliegue de Render de la referencia Python (Render se retiró), los borradores del ícono de la app (`design/app-icon/preview` y `round1`; quedan los SVG de las tres direcciones), tres funciones de Go sin ningún llamador (`DocAction`, `pglitewasm.Server.Port`, `zod.Issues.AddAt`) y dos entradas viejas de `.gitignore` (`work_uploads*/`, `.turbo/`). Dos textos dejan de decir que el runtime es solo TypeScript. La API TypeScript y lo que depende de ella (referencia Python, paridad, migraciones que copia `deploy/local`) siguen hasta su retiro (go-rust-stack T44, T72, T73).
 
 ### Rendimiento

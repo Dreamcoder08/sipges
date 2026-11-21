@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// report_period against PostgreSQL (odd/tasks/reporting-mcp.md S7–S9): period words become Lima days
+// report_period against PostgreSQL (odd/archive/reporting-mcp.md S7–S9): period words become Lima days
 // in code, the answer names the range, and only what the guard lets through is counted.
 func TestMCPReportPeriod(t *testing.T) {
 	mcpSeed(t)
@@ -87,7 +87,7 @@ func TestMCPReportPeriodIsListedAndGuarded(t *testing.T) {
 }
 
 // format «csv» adds the same rows as CSV text, with a header and the total, ready to save: a byte
-// order mark and CRLF so a spreadsheet opens it in UTF-8 (odd/tasks/reporting-mcp.md S6, T8).
+// order mark and CRLF so a spreadsheet opens it in UTF-8 (odd/archive/reporting-mcp.md S6, T8).
 func TestMCPReportPeriodAsCSV(t *testing.T) {
 	mcpSeed(t)
 	t.Setenv("SIPGES_DATA_KEY", dataKey)

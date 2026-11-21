@@ -20,7 +20,7 @@ visible choices, no frequency-based priority and a heavy navy panel.
   works. The old routes keep working as deep links, with no redirects until a later task replaces
   a screen. A destination is current on its hub and on the old screens it absorbs. No data,
   permission or API change.
-- **Compact sidebar above 60rem** (`odd/tasks/compact-sidebar.md`, S1–S5). It holds every tool of
+- **Compact sidebar above 60rem** (`odd/archive/compact-sidebar.md`, S1–S5). It holds every tool of
   the shell, so the top bar keeps the project eyebrow and the title only: brand, the project
   selector, the search composer («Ctrl K») with the notification bell (it opens Bandeja › «Avisos», see the
   addendum of 2026-11-02), the five destinations,

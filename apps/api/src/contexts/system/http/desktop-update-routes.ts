@@ -16,7 +16,7 @@ const adminOnly: MiddlewareHandler<AppEnv> = async (c, next) => {
 };
 
 /**
- * Update notice of a managed desktop install (odd/tasks/desktop-updates.md T3). Nothing is
+ * Update notice of a managed desktop install (odd/archive/desktop-updates.md T3). Nothing is
  * downloaded or installed until POST, which only asks the launcher for the release it verified.
  */
 export const desktopUpdateRoutes = (updates: DesktopUpdateService) =>

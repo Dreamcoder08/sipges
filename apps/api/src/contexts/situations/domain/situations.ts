@@ -189,7 +189,7 @@ export const toneShift = (signals: readonly Signal[], windowDays: number) => {
 };
 
 // People read counts with their noun in agreement and decimals with a comma
-// (odd/tasks/functional-10.md T2 and T4); the Go port writes the same bytes.
+// (odd/archive/functional-10.md T2 and T4); the Go port writes the same bytes.
 const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 const decimalComma = (n: number) => String(n).replace('.', ',');
 

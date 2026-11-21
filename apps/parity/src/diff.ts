@@ -112,7 +112,7 @@ const withoutGoOnly = (value: unknown, goOnly?: GoOnly): unknown => {
 
 /**
  * Every difference between the two responses, after normalizing the declared JSON paths and
- * leaving out of Go's answer the entries only Go has (odd/tasks/reporting-mcp.md S8).
+ * leaving out of Go's answer the entries only Go has (odd/archive/reporting-mcp.md S8).
  */
 export const compare = (
   tsAnswer: Observed,

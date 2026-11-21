@@ -63,7 +63,7 @@ const useRestartWatch = (
 };
 
 /**
- * Update notice of the managed desktop app (odd/tasks/desktop-updates.md T3): the new version,
+ * Update notice of the managed desktop app (odd/archive/desktop-updates.md T3): the new version,
  * what changed and an explicit «Actualizar». Nothing is downloaded or installed before the click;
  * «Ahora no» hides it until SIPGES starts again. Administrators only; any refusal shows nothing.
  */

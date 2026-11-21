@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-// The analyst's free-text answers (odd/tasks/agentic-analyst.md S2): every record a tool returns
+// The analyst's free-text answers (odd/archive/agentic-analyst.md S2): every record a tool returns
 // gets a number, and an answer may cite only those numbers.
 
 // RecordRef is a record a tool returned: enough to number it and link to its screen.

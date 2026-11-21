@@ -264,7 +264,7 @@ func TestMCPReadToolsAreRefusedWithoutADataKey(t *testing.T) {
 }
 
 // count_records against PostgreSQL: the total, the groups and the date bounds count only what the
-// guard lets through, and every refusal keeps its fixed wording (odd/tasks/reporting-mcp.md S3, S4).
+// guard lets through, and every refusal keeps its fixed wording (odd/archive/reporting-mcp.md S3, S4).
 func TestMCPCountRecords(t *testing.T) {
 	mcpSeed(t)
 	t.Setenv("SIPGES_DATA_KEY", dataKey)

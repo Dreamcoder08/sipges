@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 /**
  * Test-only filesystem guard: the repository `data/` directory holds real reference datasets
- * (incident L12 in odd/tasks/desktop-updates.md). Test files that may reach the legacy file
+ * (incident L12 in odd/archive/desktop-updates.md). Test files that may reach the legacy file
  * reader mock `node:fs` and `node:fs/promises` with these wrappers, so any call that names a
  * path inside `data/` is refused before the real filesystem is touched. A test may register
  * synthetic content for one legacy path; only `readFile`/`readFileSync` return it.

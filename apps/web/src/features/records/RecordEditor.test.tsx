@@ -7,7 +7,7 @@ import { MODULES, type RecordModule } from './modules.ts';
 import { RecordEditor } from './RecordEditor.tsx';
 
 /**
- * In-page form errors (odd/tasks/functional-10.md T7, F22): a failed save marks each invalid
+ * In-page form errors (odd/archive/functional-10.md T7, F22): a failed save marks each invalid
  * field with aria-invalid, ties a message to it with aria-describedby, lists the errors in a
  * summary above the fields and moves focus to the first invalid field. The native constraints
  * (`required`, `min`, `max`) stay on the fields and decide what is invalid.

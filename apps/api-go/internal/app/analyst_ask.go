@@ -20,7 +20,7 @@ import (
 	records "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/domain"
 )
 
-// The Inicio analyst (odd/tasks/agentic-analyst.md S2) composed here, because integration
+// The Inicio analyst (odd/archive/agentic-analyst.md S2) composed here, because integration
 // already depends on analyst: the loop reads through the MCP read tools, on the analyst channel.
 
 // askFactory builds the analyst of one project; nil when no provider is configured.
@@ -190,7 +190,7 @@ func recordRefs(data privacy.Sanitised[any]) ([]analystdomain.RecordRef, error) 
 	return refs, nil
 }
 
-// The proposal tools (odd/tasks/agentic-analyst.md S4). Their descriptions are how the model
+// The proposal tools (odd/archive/agentic-analyst.md S4). Their descriptions are how the model
 // learns them; the system prompt stays as it is.
 const (
 	proposeRecord = "propose_record"

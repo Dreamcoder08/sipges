@@ -13,7 +13,7 @@ import (
 // tableOwners maps a table to the only package allowed to write it, as a path prefix from the
 // module root (ADR 0002: contexts talk through exported application APIs, never through each
 // other's tables). Other packages reach these writes through ports wired in this composition
-// root (odd/tasks/go-context-ports.md). The audit trail is cross-cutting, so its writer is the
+// root (odd/archive/go-context-ports.md). The audit trail is cross-cutting, so its writer is the
 // platform package audittrail, as platform/database/audit-trail.ts is in TypeScript.
 var tableOwners = map[string]string{
 	"audit":              "internal/platform/audittrail/",
@@ -22,7 +22,7 @@ var tableOwners = map[string]string{
 }
 
 // pendingWriters are files still allowed to write a table they do not own, each with the task
-// that removes it. Empty: every write goes through its owner (odd/tasks/go-context-ports.md).
+// that removes it. Empty: every write goes through its owner (odd/archive/go-context-ports.md).
 var pendingWriters = map[string]string{}
 
 // scannedDirs are the module directories holding production code.
@@ -94,7 +94,7 @@ func code(src string) string {
 }
 
 // keptRecordReaders are the files outside records allowed to read module_records directly, with
-// their verdict (odd/tasks/go-context-ports.md T5). Each is a read model of its own context: a
+// their verdict (odd/archive/go-context-ports.md T5). Each is a read model of its own context: a
 // projection no records query returns, run under row-level security in the caller's tenant
 // transaction. A new reader needs a verdict here, or a records port.
 var keptRecordReaders = map[string]string{

@@ -2,7 +2,7 @@
 
 Turn the Inicio box into an analyst that answers with citations by calling SIPGES's own MCP tools,
 renders existing components in its answers, and writes only through human-approved proposals.
-Builds on odd/tasks/model-agnostic-analyst.md (provider-neutral narrator).
+Builds on odd/archive/model-agnostic-analyst.md (provider-neutral narrator).
 
 ## Specs
 

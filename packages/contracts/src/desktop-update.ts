@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 /**
- * GET /system/desktop/update — managed desktop installs only (odd/tasks/desktop-updates.md T3).
+ * GET /system/desktop/update — managed desktop installs only (odd/archive/desktop-updates.md T3).
  * `available` is a newer release the desktop launcher already verified with the installed
  * update key; `dismissed` is true after «Ahora no» until the next start.
  */

@@ -6,7 +6,7 @@ import { headingSkips, smallTargets } from './target-size.ts';
 
 /**
  * Pointer targets, heading order and axe on every screen at a phone, a laptop and a wide desktop
- * width (odd/tasks/functional-10.md T7, F20–F21): each link and button outside a sentence is at
+ * width (odd/archive/functional-10.md T7, F20–F21): each link and button outside a sentence is at
  * least 24×24 px (WCAG 2.2 SC 2.5.8, measured without the spacing exception), no heading skips a
  * level, the WCAG 2.2 AA rules of axe pass and the page never scrolls sideways (T11: the same walk
  * on WebKit and at 360 px). Runs after the CRUD specs, so lists hold records.
