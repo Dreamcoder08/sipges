@@ -15,7 +15,7 @@ allowBuilds:
   workerd: true
 
 # Supply-chain quarantine (world-class-local T6): a version must be public for 7 days before it
-# can be installed, and dependencies may not come from git or tarball URLs. Pin an older version
+# can be installed, and transitive dependencies may not come from git or tarball URLs. Pin an older version
 # when a fresh one is refused; never add exclusions. trustPolicy: no-downgrade is left out: it
 # flags semver@6.3.1, published in 2023 before npm provenance existed, as a takeover.
 minimumReleaseAge: 10080
