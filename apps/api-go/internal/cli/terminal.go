@@ -27,8 +27,8 @@ func stty(terminal *os.File, args ...string) (string, error) {
 
 // typedPassword reads one password line after prompt. On a terminal the kernel would echo it, so
 // echo goes off until the line arrives, or until the command is interrupted. Anything else echoes
-// nothing.
-func (a *app) typedPassword(ctx context.Context, prompt string, readLine func() string) (string, error) {
+// nothing. A terminal that cannot be silenced refuses with noStty, which says how else to send it.
+func (a *app) typedPassword(ctx context.Context, prompt, noStty string, readLine func() string) (string, error) {
 	terminal, ok := a.stdin.(*os.File)
 	if !ok || !a.stdinIsTerminal() {
 		return readLine(), nil
@@ -38,7 +38,7 @@ func (a *app) typedPassword(ctx context.Context, prompt string, readLine func() 
 		_, err = stty(terminal, "-echo")
 	}
 	if err != nil {
-		return "", localError("cannot hide a typed password without a working stty: set SIPGES_PASSWORD")
+		return "", localError("%s", noStty)
 	}
 	defer func() { _, _ = stty(terminal, saved) }()
 	_, _ = fmt.Fprint(a.stderr, prompt)

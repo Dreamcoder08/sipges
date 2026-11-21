@@ -3,6 +3,8 @@ package cli
 import (
 	"bytes"
 	"context"
+	"encoding/json"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -171,8 +173,72 @@ func TestATerminalWithoutSttyRefusesThePrompt(t *testing.T) {
 	_, terminal := openPTY(t)
 	h := newHarness(t, nil)
 	stderr := &lockedBuffer{}
-	if code := <-loginOnTerminal(t.Context(), h, terminal, stderr); code != ExitLocal || !strings.Contains(stderr.String(), "SIPGES_PASSWORD") {
+	if code := <-loginOnTerminal(t.Context(), h, terminal, stderr); code != ExitLocal ||
+		!strings.Contains(stderr.String(), "cannot hide a typed password without a working stty: set SIPGES_PASSWORD") {
 		t.Fatalf("exit %d: %s", code, stderr.String())
+	}
+}
+
+// password ignores SIPGES_PASSWORD, so without stty it points at stdin instead.
+func TestPasswordWithoutSttyPointsAtStdin(t *testing.T) {
+	t.Setenv("PATH", "")
+	_, terminal := openPTY(t)
+	h := newHarness(t, nil)
+	stderr := &lockedBuffer{}
+	if code := <-passwordOnTerminal(t.Context(), h, terminal, stderr); code != ExitLocal ||
+		!strings.Contains(stderr.String(), passwordNoStty) || strings.Contains(stderr.String(), "SIPGES_PASSWORD") {
+		t.Fatalf("exit %d: %s", code, stderr.String())
+	}
+}
+
+// passwordOnTerminal runs password with stdin on a terminal, and returns the exit code's channel.
+func passwordOnTerminal(ctx context.Context, h *harness, terminal *os.File, stderr *lockedBuffer) <-chan int {
+	exit := make(chan int, 1)
+	go func() {
+		exit <- Run(ctx, []string{"password"}, IO{
+			Stdin: terminal, Stdout: &bytes.Buffer{}, Stderr: stderr,
+			Env: func(name string) string { return h.env[name] },
+		})
+	}()
+	return exit
+}
+
+// typeAt waits for prompt to appear, then types line on the terminal.
+func typeAt(t *testing.T, controller *os.File, stderr *lockedBuffer, prompt, line string) {
+	t.Helper()
+	waitFor(t, prompt, func() bool { return strings.Contains(stderr.String(), prompt) })
+	if _, err := controller.WriteString(line + "\n"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// On a terminal the new password is asked twice: a match sends it, a mismatch sends nothing.
+func TestPasswordOnATerminalAsksForTheNewOneTwice(t *testing.T) {
+	for _, again := range []string{syntheticNewPassword, syntheticNewPassword + "-typo"} {
+		controller, terminal := openPTY(t)
+		go func() { _, _ = io.Copy(io.Discard, controller) }()
+		var sent map[string]string
+		h := newHarness(t, fakeLogin(func(w http.ResponseWriter, r *http.Request) {
+			raw, _ := io.ReadAll(r.Body)
+			_ = json.Unmarshal(raw, &sent)
+			w.WriteHeader(http.StatusNoContent)
+		}))
+		h.signIn()
+		stderr := &lockedBuffer{}
+		exit := passwordOnTerminal(t.Context(), h, terminal, stderr)
+		typeAt(t, controller, stderr, "Current password: ", syntheticPassword)
+		typeAt(t, controller, stderr, "New password: ", syntheticNewPassword)
+		typeAt(t, controller, stderr, "New password again: ", again)
+		code := <-exit
+		if again == syntheticNewPassword {
+			if code != ExitOK || sent["new_password"] != syntheticNewPassword {
+				t.Fatalf("match: exit %d, sent %v: %s", code, sent, stderr.String())
+			}
+			continue
+		}
+		if code != ExitUsage || sent != nil || !strings.Contains(stderr.String(), passwordMismatch) {
+			t.Fatalf("mismatch: exit %d, sent %v: %s", code, sent, stderr.String())
+		}
 	}
 }
 

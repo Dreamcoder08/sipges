@@ -61,15 +61,20 @@ func (m *memorySessions) EndOtherSessions(_ context.Context, username, keep stri
 	return count, nil
 }
 
-// ReplacePassword ends the other sessions as EndOtherSessions does and always audits; the
-// password change itself is proved against PostgreSQL in internal/app.
-func (m *memorySessions) ReplacePassword(_ context.Context, username, _, keep string, at time.Time, _ string, audit func(int) application.SessionAudit) (bool, error) {
+// ReplacePassword ends the other sessions as EndOtherSessions does and always audits, unless the
+// kept session is gone; the password change itself is proved against PostgreSQL in internal/app.
+func (m *memorySessions) ReplacePassword(_ context.Context, username, _, keep string, at time.Time, _ string, audit func(int) application.SessionAudit) (application.PasswordReplacement, error) {
+	if !slices.ContainsFunc(m.rows, func(s session) bool {
+		return s.username == username && s.TokenHash == keep && s.ExpiresAt.After(at)
+	}) {
+		return application.PasswordSessionGone, nil
+	}
 	before := len(m.rows)
 	m.rows = slices.DeleteFunc(m.rows, func(s session) bool {
 		return s.username == username && s.TokenHash != keep && s.ExpiresAt.After(at)
 	})
 	m.audit = append(m.audit, audit(before-len(m.rows)))
-	return true, nil
+	return application.PasswordReplaced, nil
 }
 
 type tokens struct{}

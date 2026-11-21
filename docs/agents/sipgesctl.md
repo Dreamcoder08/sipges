@@ -38,10 +38,14 @@ Run `sipgesctl help` for every command.
 - Passwords and codes have no flag. The password comes from `SIPGES_PASSWORD` or the first line of
   stdin, typed unseen at a `Password:` prompt on a terminal (through `stty`; without it, set the
   variable); the code from `--totp-secret-file`, `SIPGES_TOTP` or the next line of stdin.
-- `sipgesctl password` changes your own password. The current and the new password come from stdin,
-  one per line, or are typed unseen at the `Current password:` and `New password:` prompts; never
-  from a flag or a variable. The API (`POST /system/auth/password`) answers 204, keeps this session
-  and ends your other sessions. A wrong current password answers `Credenciales inválidas` (exit 6)
+- `sipgesctl password` changes your own password. The current password, the new one and the new one
+  again come from stdin, one per line, or are typed unseen at the `Current password:`,
+  `New password:` and `New password again:` prompts; never from a flag or a variable. If the two
+  new ones differ it stops before the API with `las dos contraseñas nuevas no coinciden; no se
+  cambió nada` (exit 2). A terminal without `stty` is refused (exit 9) with a hint to send the three
+  lines on stdin. The API (`POST /system/auth/password`) answers 204, keeps this session and ends
+  your other sessions; if this session already ended (another change or a sign-out won the race),
+  it answers 401 and changes nothing. A wrong current password answers `Credenciales inválidas` (exit 6)
   and counts toward the sign-in throttle. The new password must have 12 to 128 characters and
   must not be your username, your current password or a common password; each refusal says which
   rule failed (exit 6).

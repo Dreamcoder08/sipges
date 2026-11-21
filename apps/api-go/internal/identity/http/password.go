@@ -24,7 +24,12 @@ func (h authHandlers) changePassword(w http.ResponseWriter, r *http.Request) {
 		h.fail(w, r, "password change failed")
 		return
 	}
+	// The session to keep is the cookie's; without it the change would end every session.
 	token, _ := httpx.Cookie(r, SessionCookie)
+	if token == "" {
+		httpx.WriteError(w, http.StatusUnauthorized, SignInDetail)
+		return
+	}
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), loginTimeout)
 	defer cancel()
 	result, err := h.Identity.ChangePassword(ctx, p, token, application.PasswordChange{
@@ -40,6 +45,8 @@ func (h authHandlers) changePassword(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteError(w, http.StatusTooManyRequests, loginDetails[application.Throttled])
 	case result.Failure == application.PasswordWrongCurrent:
 		httpx.WriteError(w, http.StatusBadRequest, loginDetails[application.InvalidCredentials])
+	case result.Failure == application.PasswordSessionEnded:
+		httpx.WriteError(w, http.StatusUnauthorized, SignInDetail)
 	case result.Failure == application.PasswordRejected:
 		httpx.WriteError(w, http.StatusUnprocessableEntity, result.Detail)
 	default:

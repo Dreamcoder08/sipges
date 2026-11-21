@@ -18,6 +18,9 @@ const (
 	PasswordThrottled    PasswordChangeFailure = "throttled"
 	// PasswordRejected is a new password the policy refuses; Detail says which rule.
 	PasswordRejected PasswordChangeFailure = "rejected"
+	// PasswordSessionEnded is a request whose session ended before the change was written:
+	// nothing changed, and the caller is signed out.
+	PasswordSessionEnded PasswordChangeFailure = "session_ended"
 )
 
 // PasswordChange is the input of ChangePassword.
@@ -82,8 +85,11 @@ func (s *Service) ChangePassword(ctx context.Context, actor *domain.Principal, c
 	if err != nil {
 		return PasswordChangeResult{}, err
 	}
-	if !replaced { // deactivated between the check and the write
+	switch replaced {
+	case PasswordUserInactive: // deactivated between the check and the write
 		return PasswordChangeResult{Failure: PasswordWrongCurrent}, nil
+	case PasswordSessionGone: // another change or a revoke ended this session first
+		return PasswordChangeResult{Failure: PasswordSessionEnded}, nil
 	}
 	return PasswordChangeResult{}, nil
 }
