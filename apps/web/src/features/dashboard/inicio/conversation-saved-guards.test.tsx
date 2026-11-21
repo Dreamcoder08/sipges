@@ -135,3 +135,32 @@ it('«Borrar historial» also clears an entry it could not read', () => {
   act(() => result.current.removeAll());
   expect(localStorage.getItem(key)).toBeNull();
 });
+
+it('still asks and saves where crypto.randomUUID is missing (plain http on the local network)', async () => {
+  vi.spyOn(crypto, 'randomUUID').mockImplementation(() => {
+    throw new TypeError('crypto.randomUUID is only available in secure contexts');
+  });
+  const { result } = renderHook(() => useThreadState('P', 'ana'));
+  let answered = false;
+  await act(async () => {
+    answered = await result.current.ask('¿Por http?');
+  });
+  expect(answered).toBe(true);
+  expect(loadSaved('ana', 'P', Date.now())).toHaveLength(1);
+});
+
+it('saves nothing for an answer that arrives after «Borrar historial»', async () => {
+  pending.defer = true;
+  const { result } = renderHook(() => useThreadState('P', 'ana'));
+  let done!: Promise<boolean>;
+  act(() => {
+    done = result.current.ask('¿Algo?');
+  });
+  await vi.waitFor(() => expect(pending.resolve).toBeTruthy());
+  act(() => result.current.removeAll());
+  await act(async () => {
+    pending.resolve?.({ answer: 'Tarde.', sources: [], blocks: [] });
+    await done;
+  });
+  expect(loadSaved('ana', 'P', Date.now())).toEqual([]);
+});

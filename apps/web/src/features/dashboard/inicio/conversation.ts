@@ -25,6 +25,18 @@ export const ANNOUNCE = {
 const NO_TURNS: readonly Turn[] = [];
 
 /**
+ * A conversation's id. crypto.randomUUID exists only in secure contexts (HTTPS, localhost): the
+ * desktop install opened by its address over plain http on the local network still saves.
+ */
+const newConversationId = () => {
+  try {
+    return crypto.randomUUID();
+  } catch {
+    return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+  }
+};
+
+/**
  * Inicio's conversation (odd/tasks/chat-first-ui.md T5): turns kept in memory, and only for the
  * project they were asked in. With a person, each answered conversation is also saved in this
  * browser under that person and project (T11, saved.ts), and earlier ones can be opened again.
@@ -57,6 +69,8 @@ export const useThreadState = (scope: string, person?: string) => {
   }, [person, scope]);
   const [announcement, setAnnouncement] = useState('');
   const active = useRef<{ id: number; question: string; controller: AbortController } | null>(null);
+  // Bumped by «Borrar historial», as a sign-out bumps its generation.
+  const cleared = useRef(0);
   // The screen holding the thread goes (sign-out leaves for /login): its open request stops.
   useEffect(() => {
     const request = active;
@@ -97,11 +111,12 @@ export const useThreadState = (scope: string, person?: string) => {
     // The thread as it stood before this question: its answered turns are the follow-up's history.
     const history = historyOf(turns);
     const before = turns;
-    // A sign-out while the answer is on its way: it arrives, and is not saved (T11).
+    // A sign-out or «Borrar historial» while the answer is on its way: it arrives, and is not saved (T11).
     const generation = signOutGeneration();
+    const clearedBefore = cleared.current;
     let savingId = currentId;
     if (!savingId) {
-      savingId = crypto.randomUUID();
+      savingId = newConversationId();
       setOpened({ owner, id: savingId });
     }
     const previous = release();
@@ -145,7 +160,12 @@ export const useThreadState = (scope: string, person?: string) => {
     active.current = null;
     settle(id, next);
     setAnnouncement(ANNOUNCE[next.state]);
-    if (next.state === 'answered' && person && generation === signOutGeneration()) {
+    if (
+      next.state === 'answered' &&
+      person &&
+      generation === signOutGeneration() &&
+      clearedBefore === cleared.current
+    ) {
       const answered: SavedTurn[] = [...before, next].flatMap((turn) =>
         turn.state === 'answered' ? [{ question: turn.question, answer: turn.answer }] : [],
       );
@@ -207,6 +227,7 @@ export const useThreadState = (scope: string, person?: string) => {
   /** Deletes every saved conversation of the person in this project («Borrar historial»). */
   const removeAll = () => {
     if (!person) return;
+    cleared.current++;
     deleteAllSaved(person, scope);
     setOpened(null);
   };
