@@ -272,7 +272,9 @@ sleep 1
 sipges backup
 after=$(sipges backups | tail -n 1)
 [[ ! -e $work/second-disk/$after ]] || { echo 'copied into an unmarked folder'; exit 1; }
-sipges status | grep -q 'the copy to the second disk failed' || { echo 'status did not say the copy failed'; exit 1; }
+# The whole output first: grep -q stops reading at its match, and status prints more after it.
+status=$(sipges status)
+grep -q 'the copy to the second disk failed' <<<"$status" || { echo 'status did not say the copy failed'; exit 1; }
 echo 'ok - an unplugged disk gets nothing, the backup still counts, and status says so'
 # Plugged back in: start gives the backup service the disk again, and the next backup is copied.
 touch "$work/second-disk/.sipges-backup-copy"
@@ -281,6 +283,7 @@ sleep 1
 sipges backup
 back=$(sipges backups | tail -n 1)
 [[ -f $work/second-disk/$back/SHA256SUMS ]] || { echo 'no copy after plugging the disk back in and starting'; exit 1; }
-sipges status | grep -q 'the copy to the second disk failed' && { echo 'status still says the copy failed'; exit 1; }
+status=$(sipges status)
+grep -q 'the copy to the second disk failed' <<<"$status" && { echo 'status still says the copy failed'; exit 1; }
 echo 'ok - plugged back in and started, the next backup is copied and the warning is gone'
 step 'drill passed'
