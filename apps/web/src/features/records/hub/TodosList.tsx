@@ -282,6 +282,11 @@ export const TodosList = ({
             </tbody>
           </table>
         </div>
+      ) : rows.length === 0 ? (
+        // Nothing to filter yet: say so, and where the first records come from (world-class-local T7).
+        <EmptyState title="Todavía no hay registros en este proyecto.">
+          Cárgalos con «Importar» o crea el primero con «Nuevo registro».
+        </EmptyState>
       ) : (
         <EmptyState
           title="Ningún registro coincide con estos filtros."

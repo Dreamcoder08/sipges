@@ -717,3 +717,19 @@ it('counts «1 de 1 registro» in the singular', async () => {
   await within(status).findByText(/^1 de/);
   expect(status).toHaveTextContent(/^1 de 1 registro$/);
 });
+
+// A project with no records yet has nothing to filter: it says so, and where the first ones come
+// from (world-class-local T7).
+it('an empty project explains how to add the first records instead of blaming filters', async () => {
+  resetApi();
+  installRecordsApi({});
+  renderHub('todos');
+  expect(await screen.findByText('Todavía no hay registros en este proyecto.')).toBeInTheDocument();
+  expect(
+    screen.getByText('Cárgalos con «Importar» o crea el primero con «Nuevo registro».'),
+  ).toBeInTheDocument();
+  expect(screen.queryByText('Ningún registro coincide con estos filtros.')).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole('button', { name: 'Mostrar todos los registros' }),
+  ).not.toBeInTheDocument();
+});
