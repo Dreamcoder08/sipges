@@ -18,9 +18,10 @@ func TestReportCSVNeutralisesFormulas(t *testing.T) {
 		{Value: &sanitised.Value{Text: "-2"}, Count: 1},
 		{Value: &sanitised.Value{Text: "@SUM(A1)"}, Count: 1},
 		{Value: &sanitised.Value{Number: -3, IsNumber: true}, Count: 1},
+		{Value: &sanitised.Value{Text: "  =1+1"}, Count: 1},
 	}}
 	got := strings.TrimPrefix(reportCSV(r), csvBOM)
-	want := "Codigo,cantidad\r\n\"'=HYPERLINK(\"\"http://x\"\")\",1\r\n'+1,1\r\n'-2,1\r\n'@SUM(A1),1\r\n-3,1\r\nTotal,5\r\n"
+	want := "Codigo,cantidad\r\n\"'=HYPERLINK(\"\"http://x\"\")\",1\r\n'+1,1\r\n'-2,1\r\n'@SUM(A1),1\r\n-3,1\r\n'  =1+1,1\r\nTotal,5\r\n"
 	if got != want {
 		t.Errorf("csv\n got %q\nwant %q", got, want)
 	}

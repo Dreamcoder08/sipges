@@ -16,7 +16,7 @@
           },
           "period": {
             "default": "",
-            "description": "hoy, ayer, esta semana, semana pasada, este mes, mes pasado, este año, año pasado o últimos N días (1 a 366); vacío = todo el registro. No se combina con from/to",
+            "description": "hoy, ayer, esta semana, (la) semana pasada, este mes, (el) mes pasado, este año, (el) año pasado o (los) últimos N días (1 a 366); vacío = todo el registro. No se combina con from/to",
             "type": "string",
             "maxLength": 40
           },
@@ -35,7 +35,7 @@
           },
           "by": {
             "default": "",
-            "description": "Serie en el tiempo sobre el campo de fecha del tipo: «dia» o «mes»",
+            "description": "Serie en el tiempo sobre el campo de fecha del tipo: «dia» o «mes». Solo cuenta registros con fecha, aun sin period",
             "type": "string",
             "maxLength": 10
           },

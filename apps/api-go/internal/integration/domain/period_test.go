@@ -27,6 +27,11 @@ func TestPeriodWordsResolveToLimaDayRanges(t *testing.T) {
 		{"  Este   AÑO ", "2026-01-01", "2026-12-31", "este año"},
 		{"ESTE MES", "2026-11-01", "2026-11-30", "este mes"},
 		{"últimos 007 días", "2026-11-13", "2026-11-19", "últimos 7 días"},
+		// As people say them, with the article (the tool description's own examples).
+		{"el año pasado", "2025-01-01", "2025-12-31", "año pasado"},
+		{"el mes pasado", "2026-10-01", "2026-10-31", "mes pasado"},
+		{"la semana pasada", "2026-11-09", "2026-11-15", "semana pasada"},
+		{"los últimos 7 días", "2026-11-13", "2026-11-19", "últimos 7 días"},
 	}
 	for _, c := range cases {
 		got, ok := domain.ResolvePeriod(c.words, thursdayNight)
@@ -63,7 +68,7 @@ func TestPeriodsCrossMonthAndYearEdges(t *testing.T) {
 
 func TestUnknownPeriodWordsAreRefused(t *testing.T) {
 	t.Parallel()
-	for _, words := range []string{"", "mañana", "la semana que viene", "últimos 0 días", "últimos 367 días", "últimos x días", "últimos 7"} {
+	for _, words := range []string{"", "el", "la hoy hoy", "mañana", "la semana que viene", "últimos 0 días", "últimos 367 días", "últimos x días", "últimos 7"} {
 		if got, ok := domain.ResolvePeriod(words, thursdayNight); ok {
 			t.Errorf("%q resolved to %+v, want a refusal", words, got)
 		}

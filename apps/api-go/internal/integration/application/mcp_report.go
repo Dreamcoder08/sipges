@@ -61,6 +61,9 @@ func (c readCall) report(ctx context.Context) (any, string, error) {
 	field := domain.TrimJS(c.text("group_by"))
 	by := domain.Fold(domain.TrimJS(c.text("by")))
 	format := domain.Fold(domain.TrimJS(c.text("format")))
+	if format == "" {
+		format = "json" // blank, as every blank argument, is the default
+	}
 	t, known := ontology.ObjectTypeForSlug(slug)
 	switch {
 	case !known:
@@ -150,9 +153,12 @@ const csvBOM = "\uFEFF"
 const noValue = "(sin valor)"
 
 // asCSVText keeps text a spreadsheet would run as a formula as text (OWASP CSV injection): a
-// leading =, +, -, @, tab or carriage return gets an apostrophe in front.
+// leading =, +, -, @, tab or carriage return, even after spaces, gets an apostrophe in front.
 func asCSVText(text string) string {
-	if text != "" && strings.ContainsRune("=+-@\t\r", rune(text[0])) {
+	if text != "" && strings.ContainsRune("\t\r", rune(text[0])) {
+		return "'" + text
+	}
+	if rest := strings.TrimLeft(text, " "); rest != "" && strings.ContainsRune("=+-@", rune(rest[0])) {
 		return "'" + text
 	}
 	return text

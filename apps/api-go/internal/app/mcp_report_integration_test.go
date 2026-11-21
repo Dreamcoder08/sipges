@@ -32,6 +32,9 @@ func TestMCPReportPeriod(t *testing.T) {
 		{"explicit dates, as count_records takes them", `{"module":"eventos","from":"2026-01","to":"2026-02"}`,
 			`{"module":"eventos","period":{"label":"2026-01 a 2026-02","from":"2026-01-01","to":"2026-02-31"},"group_by":null,"by":null,` +
 				`"total":1,"truncated":false,"groups":[],"series":[]}`},
+		{"a blank format is json, as every blank argument is empty", `{"module":"eventos","period":"hoy","format":"  "}`,
+			`{"module":"eventos","period":{"label":"hoy","from":"2026-03-15","to":"2026-03-15"},"group_by":null,"by":null,` +
+				`"total":0,"truncated":false,"groups":[],"series":[]}`},
 		{"no period is the whole record", `{"module":"actores","group_by":"Tipo_Actor"}`,
 			`{"module":"actores","period":null,"group_by":"Tipo_Actor","by":null,` +
 				`"total":1,"truncated":false,"groups":[{"value":"comunidad","count":1}],"series":[]}`},
@@ -43,7 +46,7 @@ func TestMCPReportPeriod(t *testing.T) {
 	before := mcpEgressRows(t, "MCP/CNT")
 	for args, want := range map[string]string{
 		`{"module":"otro","period":"hoy"}`:                         "Módulo no válido",
-		`{"module":"eventos","period":"mañana"}`:                   "Período no válido: use hoy, ayer, esta semana, semana pasada, este mes, mes pasado, este año, año pasado, últimos N días (1 a 366)",
+		`{"module":"eventos","period":"mañana"}`:                   "Período no válido: use hoy, ayer, esta semana, (la) semana pasada, este mes, (el) mes pasado, este año, (el) año pasado, (los) últimos N días (1 a 366)",
 		`{"module":"eventos","period":"hoy","from":"2026"}`:        "Use un período o fechas, no ambos",
 		`{"module":"eventos","group_by":"Tipo_Evento","by":"mes"}`: "Use group_by o by, no ambos",
 		`{"module":"eventos","by":"semana"}`:                       "by debe ser «dia» o «mes»",
