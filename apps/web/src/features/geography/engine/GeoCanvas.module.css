@@ -25,6 +25,28 @@
   outline: 3px solid var(--color-focus);
   outline-offset: -3px;
 }
+.loading {
+  position: absolute;
+  top: var(--space-3, 0.75rem);
+  left: 50%;
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  max-width: calc(100% - 2 * var(--space-3, 0.75rem));
+  margin: 0;
+  padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-chip);
+  pointer-events: none;
+}
+.loadingBar {
+  inline-size: 4rem;
+  accent-color: var(--color-focus);
+}
 .credits {
   position: absolute;
   right: var(--space-2, 0.5rem);
