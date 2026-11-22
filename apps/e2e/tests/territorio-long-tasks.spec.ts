@@ -27,12 +27,17 @@ const drain = (page: Page) =>
 const sum = (values: readonly number[]) => values.reduce((a, b) => a + b, 0);
 
 /**
- * Waits until half a second passes without a long task. A layer's first draw is a one-time cost
- * of opening the map; it must be paid before the switch is measured, not counted against it.
+ * Waits until `quietMs` pass without a long task. A layer's first draw is a one-time cost of opening
+ * the map; it must be paid before the switch is measured, not counted against it. A page that never
+ * rests (a globe re-rendering every frame) never passes, and the guard fails here.
  */
-const settle = (page: Page) =>
+const settle = (page: Page, quietMs = 500) =>
   expect
-    .poll(async () => (await drain(page)).length, { intervals: [500], timeout: 30_000 })
+    .poll(async () => (await drain(page)).length, {
+      message: `no ${quietMs} ms without a long task: the page never rests`,
+      intervals: [quietMs],
+      timeout: 30_000,
+    })
     .toBe(0);
 
 test('Territorio switches between 2D and 3D without long main-thread freezes', async ({
@@ -58,10 +63,12 @@ test('Territorio switches between 2D and 3D without long main-thread freezes', a
   await page.getByRole('button', { name: 'Vista 3D' }).click();
   const terrain = page.locator('[data-map-engine="cesium"]');
   await expect(terrain).toHaveAttribute('aria-busy', 'false', { timeout: 30_000 });
-  // The globe draws only when something changes: once the relief has settled it stays idle.
-  // A fixed window is the measurement itself, not a wait for state.
-  await page.waitForTimeout(1_000);
-  await drain(page);
+  // The globe draws only when something changes: once the relief has settled it stays idle. The
+  // relief refines for a few frames after it reports loaded; on a slow CI runner each frame takes
+  // 300–400 ms and those frames outlasted a fixed one-second wait (main, runs 45073984924 and
+  // 45080755271). So wait for a full second at rest, then measure. A fixed window is the
+  // measurement itself, not a wait for state.
+  await settle(page, 1_000);
   await page.waitForTimeout(2_000);
   const idle = await drain(page);
   expect(sum(idle), `idle 3D long tasks [${idle.join(', ')}] ms`).toBeLessThan(IDLE_3D_TOTAL_MS);
