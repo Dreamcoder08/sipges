@@ -1,0 +1,85 @@
+{
+  "description": "One search returning two records; the answer cites both.",
+  "records": [
+    {
+      "module": "conflictos",
+      "id": "CF-0101",
+      "title": "Bloqueo de la vía Norte",
+      "text": "Comuneros bloquean la vía de acceso al campamento desde el 2 de marzo."
+    },
+    {
+      "module": "conflictos",
+      "id": "CF-0102",
+      "title": "Paro de transportistas",
+      "text": "Paro de 48 horas anunciado por la asociación de transportistas del valle."
+    },
+    {
+      "module": "compromisos",
+      "id": "CM-0201",
+      "title": "Mesa de diálogo con la comunidad Alta",
+      "text": "Compromiso de instalar la mesa de diálogo antes del 15 de abril."
+    },
+    {
+      "module": "actores",
+      "id": "AC-0301",
+      "title": "Asociación de Transportistas del Valle",
+      "text": "Gremio que convoca el paro."
+    },
+    {
+      "module": "alertas",
+      "id": "AL-0401",
+      "title": "Alerta roja por bloqueo",
+      "text": "Alerta roja abierta por el bloqueo de la vía Norte."
+    }
+  ],
+  "question": "¿Hay alertas por el bloqueo?",
+  "turns": [
+    {
+      "id": "msg_01EvalTworecords03",
+      "type": "message",
+      "role": "assistant",
+      "model": "claude-opus-5-5",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01B1",
+          "name": "search_records",
+          "input": {
+            "query": "bloqueo"
+          }
+        }
+      ],
+      "stop_reason": "tool_use",
+      "stop_sequence": null,
+      "usage": {
+        "input_tokens": 118,
+        "cache_creation_input_tokens": 2900,
+        "cache_read_input_tokens": 0,
+        "output_tokens": 40
+      }
+    },
+    {
+      "id": "msg_01EvalTworecords04",
+      "type": "message",
+      "role": "assistant",
+      "model": "claude-opus-5-5",
+      "content": [
+        {
+          "type": "text",
+          "text": "Sí: hay una alerta roja abierta [2] por el bloqueo de la vía Norte [1]."
+        }
+      ],
+      "stop_reason": "end_turn",
+      "stop_sequence": null,
+      "usage": {
+        "input_tokens": 520,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 2900,
+        "output_tokens": 44
+      }
+    }
+  ],
+  "expect": {
+    "cited": ["conflictos/CF-0101", "alertas/AL-0401"]
+  }
+}

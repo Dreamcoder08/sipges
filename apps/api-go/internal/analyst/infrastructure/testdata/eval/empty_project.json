@@ -1,0 +1,59 @@
+{
+  "description": "A project with no records: the search finds nothing and the answer says so without markers.",
+  "records": [],
+  "question": "¿Qué alertas rojas siguen abiertas?",
+  "turns": [
+    {
+      "id": "msg_01EvalEmptyproje22",
+      "type": "message",
+      "role": "assistant",
+      "model": "claude-opus-5-5",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "Busco alertas.",
+          "signature": "7fbHj1qrlvruR9CWl6snZF3ul5rsza9T28epNf0600ft9sePWquW+u5H0JaXqydkXe6XmuzNr1Pbx6k1/TrTRw=="
+        },
+        {
+          "type": "tool_use",
+          "id": "toolu_01J1",
+          "name": "search_records",
+          "input": {
+            "query": "alerta roja"
+          }
+        }
+      ],
+      "stop_reason": "tool_use",
+      "stop_sequence": null,
+      "usage": {
+        "input_tokens": 117,
+        "cache_creation_input_tokens": 2900,
+        "cache_read_input_tokens": 0,
+        "output_tokens": 50
+      }
+    },
+    {
+      "id": "msg_01EvalEmptyproje23",
+      "type": "message",
+      "role": "assistant",
+      "model": "claude-opus-5-5",
+      "content": [
+        {
+          "type": "text",
+          "text": "No encontré alertas rojas abiertas en los registros del proyecto."
+        }
+      ],
+      "stop_reason": "end_turn",
+      "stop_sequence": null,
+      "usage": {
+        "input_tokens": 160,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 2900,
+        "output_tokens": 20
+      }
+    }
+  ],
+  "expect": {
+    "cited": []
+  }
+}
