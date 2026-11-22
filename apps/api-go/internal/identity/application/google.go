@@ -100,7 +100,7 @@ func (s *Service) LoginWithGoogle(ctx context.Context, rawEmail string) (LoginRe
 	if err != nil {
 		return LoginResult{}, err
 	}
-	expires := now.Add(SessionSeconds * time.Second)
+	expires := now.Add(IdleSeconds * time.Second)
 	created, err := s.deps.Store.CreateSession(ctx, s.deps.Tokens.Hash(token), user.Username, expires, now, true)
 	if err != nil {
 		return LoginResult{}, err

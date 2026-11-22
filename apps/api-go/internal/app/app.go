@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	geographyhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/geography/http"
+	identityapp "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/application"
 	identityhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/http"
 	identity "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/infrastructure"
 	integrationhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/integration/http"
@@ -88,6 +89,7 @@ func NewHandler(pool *pgxpool.Pool, opts Options) (http.Handler, error) {
 				Sessions:   sessions,
 				RequireMFA: opts.RequireMFA,
 				Logger:     opts.Logger,
+				Activity:   identityapp.SessionActivity{Sessions: sessions, Tokens: identity.Tokens{}, Now: opts.Now},
 			}),
 			// Geography's 100 kB body limit runs before the project scope reads the body, as
 			// geographyRequestLimit does in apps/api/src/app.ts.

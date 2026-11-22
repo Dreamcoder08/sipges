@@ -11,8 +11,12 @@ import (
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/domain"
 )
 
-// SessionSeconds is SESSION_SECONDS: a session lives 8 hours.
+// SessionSeconds is SESSION_SECONDS: a session lives at most 8 hours after sign-in.
 const SessionSeconds = 8 * 3600
+
+// IdleSeconds is the idle timeout of world-class-local T8f: a session ends 60 minutes after its
+// last user activity, and never later than SessionSeconds after sign-in (ADR 0004).
+const IdleSeconds = 60 * 60
 
 // dummyPassword is DUMMY_HASH_INPUT. Verifying it for unknown users keeps response timing uniform.
 const dummyPassword = "timing-equalizer-password"
@@ -255,7 +259,7 @@ func (s *Service) Login(ctx context.Context, input LoginInput) (LoginResult, err
 	if err != nil {
 		return LoginResult{}, err
 	}
-	expires := now.Add(SessionSeconds * time.Second)
+	expires := now.Add(IdleSeconds * time.Second)
 	created, err := s.deps.Store.CreateSession(ctx, s.deps.Tokens.Hash(token), username, expires, now, false)
 	if err != nil {
 		return LoginResult{}, err

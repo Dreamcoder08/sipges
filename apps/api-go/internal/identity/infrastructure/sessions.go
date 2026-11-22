@@ -13,6 +13,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/application"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/domain"
 )
 
@@ -67,4 +68,22 @@ func (s Sessions) Authenticate(ctx context.Context, token string) (*domain.Princ
 	p.Role = domain.Role(role)
 	p.MFAEnabled = totp || viaGoogle
 	return &p, nil
+}
+
+// ExtendSession runs the sliding idle expiry of application.SessionRenewal as one conditional
+// UPDATE on the token hash: an expired session, one with enough time left, or one the absolute
+// cap holds is not written.
+func (s Sessions) ExtendSession(ctx context.Context, tokenHash string, r application.SessionRenewal) (bool, error) {
+	var one int
+	err := s.DB.QueryRow(ctx,
+		`UPDATE sessions
+		    SET expires_at = LEAST(created_at + make_interval(secs => $4::int), $3::timestamptz)
+		  WHERE token_hash = $1::text AND expires_at > $2::timestamptz AND expires_at < $5::timestamptz
+		    AND LEAST(created_at + make_interval(secs => $4::int), $3::timestamptz) > expires_at
+		RETURNING 1`,
+		tokenHash, r.At, r.IdleUntil, r.AbsoluteSeconds, r.RenewBefore).Scan(&one)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	return err == nil, err
 }

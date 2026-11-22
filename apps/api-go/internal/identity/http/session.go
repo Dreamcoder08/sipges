@@ -54,6 +54,17 @@ type Authenticator interface {
 	Authenticate(ctx context.Context, token string) (*domain.Principal, error)
 }
 
+// BackgroundHeader marks a request the web sends on its own (automatic polling): with the value
+// "1" it authenticates normally but is not user activity, so it does not extend the session
+// (world-class-local T8f).
+const BackgroundHeader = "X-SIPGES-Background"
+
+// ActivityRecorder extends a session after a request that is user activity;
+// application.SessionActivity satisfies it.
+type ActivityRecorder interface {
+	Touch(ctx context.Context, token string) error
+}
+
 type principalKey struct{}
 
 // PrincipalFrom returns the identity of the request's session, if it had one.
@@ -72,6 +83,9 @@ type SessionOptions struct {
 	Sessions   Authenticator
 	RequireMFA bool
 	Logger     *slog.Logger
+	// Activity, when set, slides the idle expiry of every authenticated request that is not a
+	// background one.
+	Activity ActivityRecorder
 }
 
 // Session is sessionMiddleware (app.py enforce_auth steps 1-3): public routes, the session,
@@ -116,6 +130,15 @@ func Session(opts SessionOptions) httpx.Middleware {
 			if opts.RequireMFA && !principal.MFAEnabled && !mfaEnrollmentPaths[path] {
 				httpx.WriteJSON(w, http.StatusForbidden, mfaRequired{Detail: MFARequiredDetail, MFARequired: true})
 				return
+			}
+
+			if opts.Activity != nil && r.Header.Get(BackgroundHeader) != "1" {
+				// A failed extension leaves the session valid until its stored expiry, so the
+				// request goes on.
+				if err := opts.Activity.Touch(r.Context(), token); err != nil && opts.Logger != nil {
+					opts.Logger.LogAttrs(r.Context(), slog.LevelError, "session extension failed",
+						slog.String("request_id", httpx.RequestIDFrom(r.Context())))
+				}
 			}
 
 			ctx := WithPrincipal(r.Context(), principal)
