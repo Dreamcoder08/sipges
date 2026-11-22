@@ -61,7 +61,8 @@ Run `sipgesctl help` for every command.
   Another role answers 403 (exit 4), your own account 422 (exit 6, use `sipgesctl password`), an
   unknown or deactivated account 404 (exit 5), an account outside the project 403.
   The password is printed before the session file is saved: if that save fails, it still prints,
-  with a warning on stderr (`data.warning` with `--json`) and exit 9.
+  with a warning on stderr (`data.warning` with `--json`) and exit 9. That is the one answer where
+  `ok` stays `true` with a non-zero exit: the reset happened, only the local session was not kept.
 - The TOTP secret goes to a new private file and is never printed.
 - Fields that hold a credential (`token`, `secret`, `password` and others) print as `[redacted]`
   on every command, the generic call included. `apikey create --secret-file FILE` keeps a new key,

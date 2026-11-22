@@ -118,9 +118,10 @@ func TestResetPasswordKeepsTheTemporaryPasswordWhenTheSessionCannotBeSaved(t *te
 
 	_ = os.Chmod(filepath.Dir(h.session), 0o700)
 	got = h.run("", "users", "reset-password", "luis.gomez", "--json")
-	data, _ := decode(t, got.stdout)["data"].(map[string]any)
+	body := decode(t, got.stdout)
+	data, _ := body["data"].(map[string]any)
 	warning, _ := data["warning"].(string)
-	if got.code != ExitLocal || data["temporary_password"] != syntheticTemporary ||
+	if got.code != ExitLocal || body["ok"] != true || got.stderr != "" || data["temporary_password"] != syntheticTemporary ||
 		!strings.HasPrefix(warning, "the password was reset, but the session could not be saved") {
 		t.Fatalf("%+v", got)
 	}

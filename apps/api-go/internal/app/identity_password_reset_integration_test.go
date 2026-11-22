@@ -207,7 +207,8 @@ func TestPasswordResetLiftsTheLockoutOfThePersonOnly(t *testing.T) {
 	}
 	expect(t, f.login(t, target, loginPassword).reply, http.StatusTooManyRequests, tooManyLogins)
 
-	got, _ := f.reset(t, target, admin)
+	// The administrator types the name as people do: the stored, normalised key still clears.
+	got, _ := f.reset(t, strings.ToUpper(target), admin)
 	match := temporaryBody.FindStringSubmatch(strings.TrimSpace(got.body))
 	if got.status != http.StatusOK || match == nil {
 		t.Fatalf("got %d %s, want 200 and one temporary password", got.status, got.body)
