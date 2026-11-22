@@ -66,7 +66,9 @@ func (a SessionActivity) Record(ctx context.Context, token string, expires time.
 		now = a.Now
 	}
 	renewal := NewSessionRenewal(now())
-	if !userActivity {
+	// A background request never renews; neither does a session the write rule would leave
+	// unchanged, so most requests cost no write attempt at all.
+	if !userActivity || (!expires.IsZero() && !expires.Before(renewal.RenewBefore)) {
 		return RemainingSeconds(expires, renewal.At), nil
 	}
 	extended, ok, err := a.Sessions.ExtendSession(ctx, a.Tokens.Hash(token), renewal)

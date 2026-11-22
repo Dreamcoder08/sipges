@@ -146,7 +146,7 @@ func Session(opts SessionOptions) httpx.Middleware {
 				// request goes on and tells that remainder.
 				if err != nil && opts.Logger != nil {
 					opts.Logger.LogAttrs(r.Context(), slog.LevelError, "session extension failed",
-						slog.String("request_id", httpx.RequestIDFrom(r.Context())))
+						slog.String("request_id", httpx.RequestIDFrom(r.Context())), slog.String("error", err.Error()))
 				}
 				// A source that does not tell the expiry sends no header rather than a wrong one.
 				if !principal.SessionExpiresAt.IsZero() {

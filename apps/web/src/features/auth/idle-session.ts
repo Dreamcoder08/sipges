@@ -11,6 +11,8 @@ export const KEEPALIVE_AFTER_MS = 5 * 60_000;
 export const KEEPALIVE_PATH = '/system/auth/sessions';
 /** The longest the check sleeps; it also runs on every request answer and on tab wake. */
 const MAX_TICK_MS = 30_000;
+/** A check the server does not answer in this long is dropped, and the tab decides alone. */
+export const CHECK_TIMEOUT_MS = 10_000;
 const ACTIVITY_EVENTS = ['pointerdown', 'keydown', 'wheel', 'touchstart'] as const;
 
 export type IdlePhase = 'active' | 'warning' | 'expired';
@@ -51,6 +53,11 @@ export const watchIdleSession = (
   let warned = false;
   let ended = false;
   let sending = false;
+  // The deadline the server last confirmed when this tab was about to warn or end; another tab's
+  // activity moves the server's deadline without this tab hearing of it.
+  // Keyed by phase as well: a deadline confirmed for the warning is asked again at its end.
+  let confirmed: string | undefined;
+  let probing = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
 
   const end = () => {
@@ -82,6 +89,7 @@ export const watchIdleSession = (
     if (ended || deadline === undefined) return;
     const now = Date.now();
     const phase = idlePhase(now, deadline);
+    if (phase !== 'active' && confirmed !== `${phase}:${deadline}`) return confirm();
     if (phase === 'expired') return end();
     if (phase === 'warning' && !warned) {
       warned = true;
@@ -93,6 +101,32 @@ export const watchIdleSession = (
     }
     const next = phase === 'active' ? deadline - WARNING_MS : deadline;
     timer = setTimeout(check, Math.min(Math.max(next - now, 0), MAX_TICK_MS));
+  };
+
+  /**
+   * Asks the server before warning or ending: a background request that does not extend the
+   * session but tells its remaining time, so a hidden tab follows another tab's activity. A 401
+   * ends it; a failed request leaves the deadline this tab already had.
+   */
+  const confirm = () => {
+    if (probing) return;
+    probing = true;
+    const abort = new AbortController();
+    const giveUp = setTimeout(() => abort.abort(), CHECK_TIMEOUT_MS);
+    void request(KEEPALIVE_PATH, { background: true, signal: abort.signal })
+      .then(() => undefined)
+      .catch((error: unknown) => {
+        if (isApiError(error, 401)) end();
+      })
+      .finally(() => {
+        clearTimeout(giveUp);
+        probing = false;
+        // The deadline after the answer, which may have moved it to another phase; check() only
+        // asks with a deadline, and nothing clears it.
+        confirmed =
+          deadline === undefined ? undefined : `${idlePhase(Date.now(), deadline)}:${deadline}`;
+        check();
+      });
   };
 
   const onActivity = () => {

@@ -30,16 +30,29 @@ const sessionAnswer = ({ request: req }: { request: Request }) => {
     { headers: { [SESSION_REMAINING_HEADER]: String(remainingNow()) } },
   );
 };
-/** An answer that tells a fixed remainder, as another tab's activity would have left it. */
-const tells = (seconds: number) => () =>
-  HttpResponse.json({ ok: true }, { headers: { [SESSION_REMAINING_HEADER]: String(seconds) } });
+/**
+ * An answer that tells a fixed remainder, as another tab's activity would have left it: the
+ * synthetic server's own expiry moves with it, so a later check by this tab hears the same.
+ */
+const tells = (seconds: number) => () => {
+  expiresAt = Date.now() + seconds * 1000;
+  return HttpResponse.json(
+    { ok: true },
+    { headers: { [SESSION_REMAINING_HEADER]: String(seconds) } },
+  );
+};
 
-/** Keepalives sent: GET /system/auth/sessions, with their background header. */
+/**
+ * GET /system/auth/sessions sent: keepalives (no background header, recorded as such) and the
+ * background checks a tab makes before warning or ending, counted apart.
+ */
 const keepalives: (string | null)[] = [];
+let checks = 0;
 const record = ({ request }: { request: Request }) => {
-  if (new URL(request.url).pathname === '/system/auth/sessions') {
-    keepalives.push(request.headers.get(BACKGROUND_HEADER));
-  }
+  if (new URL(request.url).pathname !== '/system/auth/sessions') return;
+  const background = request.headers.get(BACKGROUND_HEADER);
+  if (background === '1') checks += 1;
+  else keepalives.push(background);
 };
 
 // jsdom has no modal dialogs nor `method="dialog"` forms; these stand in for the browser.
@@ -73,6 +86,7 @@ beforeEach(() => {
   vi.useFakeTimers({ shouldAdvanceTime: true });
   resetApi({ me: { username: 'persona', full_name: 'Persona Sintética', role: 'admin' } });
   keepalives.length = 0;
+  checks = 0;
   server.events.on('request:start', record);
   expiresAt = Date.now() + TIMEOUT_SECONDS * 1000;
   server.use(
@@ -266,6 +280,51 @@ describe('idle session (world-class-local T8f)', () => {
     expect(expired).not.toHaveBeenCalled();
   });
 
+  it('asks the server before warning or ending, as a hidden tab while another one is active', async () => {
+    withTimeout(TIMEOUT_SECONDS);
+    const expired = await mount();
+    // Another tab keeps working: the server's deadline moves and this tab hears nothing of it.
+    await wait(20 * MINUTE);
+    expiresAt = Date.now() + TIMEOUT_SECONDS * 1000;
+    await wait(8 * MINUTE + 10 * 1000);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    await wait(2 * MINUTE + 20 * 1000);
+    expect(expired).not.toHaveBeenCalled();
+    expect(checks).toBeGreaterThan(0);
+    expect(keepalives).toEqual([]);
+    // Once the server's deadline itself passes, the tab ends.
+    await wait(TIMEOUT_SECONDS * 1000);
+    expect(expired).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks again at the deadline when another tab extended the session during the warning', async () => {
+    withTimeout(TIMEOUT_SECONDS);
+    const expired = await mount();
+    await wait(28 * MINUTE + 10 * 1000);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    // Another tab works during this tab's warning.
+    expiresAt = Date.now() + TIMEOUT_SECONDS * 1000;
+    await wait(2 * MINUTE);
+    expect(expired).not.toHaveBeenCalled();
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('decides alone when the server does not answer its check', async () => {
+    withTimeout(TIMEOUT_SECONDS);
+    server.use(
+      http.get('/system/auth/sessions', ({ request: req }) =>
+        req.headers.get(BACKGROUND_HEADER) === '1'
+          ? new Promise<never>(() => undefined)
+          : sessionAnswer({ request: req }),
+      ),
+    );
+    const expired = await mount();
+    await wait(28 * MINUTE + 30 * 1000);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    await wait(2 * MINUTE);
+    expect(expired).toHaveBeenCalledTimes(1);
+  });
+
   it('ends the session at the deadline with no activity', async () => {
     withTimeout(TIMEOUT_SECONDS);
     const expired = await mount();
@@ -284,6 +343,8 @@ describe('idle session (world-class-local T8f)', () => {
     act(() => {
       document.dispatchEvent(new Event('visibilitychange'));
     });
+    // It asks the server first, which answers 401 for the session that ran out.
+    await wait(50);
     expect(expired).toHaveBeenCalledTimes(1);
   });
 
