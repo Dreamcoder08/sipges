@@ -1,3 +1,4 @@
+import type { Role } from '@sipges/contracts';
 import { useQuery } from '@tanstack/react-query';
 import {
   type ReactNode,
@@ -26,6 +27,7 @@ import { AttentionPopover } from './AttentionPopover.tsx';
 import { preloadAnswerView } from './answer-view.tsx';
 import { analystStatusQuery } from './ask.ts';
 import { attentionItems } from './attention.ts';
+import { FirstSteps } from './FirstSteps.tsx';
 import { useAnalystThread, useSharedThread } from './thread-context.tsx';
 import { Thread } from './Thread.tsx';
 import { starterQuestions } from './starters.ts';
@@ -54,6 +56,8 @@ export const InicioPage = ({
   projectId,
   projectLabel,
   fullName,
+  username,
+  role,
   onAsk,
   tabs,
 }: {
@@ -61,6 +65,9 @@ export const InicioPage = ({
   projectId: string;
   projectLabel: string;
   fullName: string;
+  /** The signed-in person, for «Primeros pasos»: without both the list is not shown. */
+  username?: string;
+  role?: Role;
   onAsk: (text: string) => void;
   /** The destination's tabs («Inicio | Panel | Centro gerencial»), at the start of the top bar. */
   tabs?: ReactNode;
@@ -311,6 +318,11 @@ export const InicioPage = ({
           </p>
         </header>
 
+        {conversation || !role || !username ? null : (
+          <div className={styles.firstSteps}>
+            <FirstSteps scope={scope} username={username} role={role} />
+          </div>
+        )}
         {conversation ? null : (
           <div className={styles.attention}>
             <AttentionCards query={attentionQuery} />

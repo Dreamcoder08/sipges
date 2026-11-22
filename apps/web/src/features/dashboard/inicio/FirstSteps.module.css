@@ -1,0 +1,126 @@
+/* Inicio's «Primeros pasos» (world-class-local T7): one compact bordered block, a short ordered list. */
+
+.steps {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+}
+
+.head h2 {
+  margin: 0;
+  font-size: var(--text-md);
+  letter-spacing: var(--tracking-tight);
+}
+
+.count {
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Native bar, limited styling only: accent-color and size keep the platform rendering. */
+.progress {
+  flex: 1 1 4rem;
+  min-width: 3rem;
+  max-width: 8rem;
+  accent-color: var(--color-success);
+}
+
+.hide {
+  min-height: var(--touch-target);
+  margin-inline-start: auto;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.hide:hover {
+  background: var(--color-fill);
+  color: var(--color-text);
+}
+
+.list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The mark in its own column; title, line and link stack beside it. */
+.step {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  column-gap: var(--space-2);
+  row-gap: var(--space-0);
+  align-items: start;
+}
+
+.step > :not(.mark) {
+  grid-column: 2;
+}
+
+.mark {
+  display: inline-grid;
+  grid-row: 1 / span 3;
+  place-items: center;
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  margin-block-start: 0.0625rem;
+  border: 1.5px solid var(--color-hairline-strong);
+  border-radius: 50%;
+}
+
+.mark svg {
+  inline-size: 0.875rem;
+  block-size: 0.875rem;
+}
+
+.step[data-done] .mark {
+  border-color: var(--color-success);
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+.title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  overflow-wrap: anywhere;
+}
+
+.step[data-done] .title {
+  color: var(--color-muted);
+  font-weight: var(--weight-regular);
+}
+
+.line {
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.action {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  color: var(--color-accent-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}

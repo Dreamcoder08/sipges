@@ -409,6 +409,8 @@ const InicioScreen = ({ tabs, ...context }: FeatureContext & { tabs?: ReactNode 
     projectId={context.projectId}
     projectLabel={context.projectLabel}
     fullName={context.fullName}
+    username={context.username}
+    role={context.role}
     onAsk={openSearch}
     tabs={tabs}
   />
