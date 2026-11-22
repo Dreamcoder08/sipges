@@ -2,6 +2,8 @@ package cli
 
 import (
 	"net/http"
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -90,5 +92,36 @@ func TestTheReadOnlySweepCoversThePasswordReset(t *testing.T) {
 	}
 	if slices.Contains(viewerWrites, route.Path) {
 		t.Fatal("the read-only role must not be allowed to reset passwords")
+	}
+}
+
+func TestResetPasswordKeepsTheTemporaryPasswordWhenTheSessionCannotBeSaved(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root writes into a read-only folder")
+	}
+	var h *harness
+	h = newHarness(t, fakeLogin(func(w http.ResponseWriter, _ *http.Request) {
+		// The session folder turns read-only before the answer arrives.
+		if err := os.Chmod(filepath.Dir(h.session), 0o500); err != nil {
+			t.Error(err)
+		}
+		jsonAnswer(w, http.StatusOK, `{"temporary_password":"`+syntheticTemporary+`"}`)
+	}))
+	h.signIn()
+	t.Cleanup(func() { _ = os.Chmod(filepath.Dir(h.session), 0o700) })
+
+	got := h.run("", "users", "reset-password", "luis.gomez")
+	if got.code != ExitLocal || strings.Count(got.stdout, syntheticTemporary) != 1 ||
+		!strings.Contains(got.stderr, "the password was reset, but the session could not be saved") {
+		t.Fatalf("%+v", got)
+	}
+
+	_ = os.Chmod(filepath.Dir(h.session), 0o700)
+	got = h.run("", "users", "reset-password", "luis.gomez", "--json")
+	data, _ := decode(t, got.stdout)["data"].(map[string]any)
+	warning, _ := data["warning"].(string)
+	if got.code != ExitLocal || data["temporary_password"] != syntheticTemporary ||
+		!strings.HasPrefix(warning, "the password was reset, but the session could not be saved") {
+		t.Fatalf("%+v", got)
 	}
 }

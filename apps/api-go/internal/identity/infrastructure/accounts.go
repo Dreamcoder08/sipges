@@ -183,7 +183,7 @@ func revokeSessions(ctx context.Context, tx pgx.Tx, username string) error {
 }
 
 // ResetPasswordInTenant stores the new hash of an active user granted tenantID, ends all of its
-// sessions and appends the audit row to that tenant's trail. The user row is locked first, so a
+// sessions, forgets its per-user failed sign-ins and appends the audit row to that tenant's trail. The user row is locked first, so a
 // deactivation or a change at the same time waits; global writes come before the audit, because
 // entering the tenant drops to the role that cannot see them.
 func (s Store) ResetPasswordInTenant(ctx context.Context, username, passwordHash, tenantID string, audit application.SessionAudit) (application.AccountOutcome, error) {
@@ -208,6 +208,11 @@ func (s Store) ResetPasswordInTenant(ctx context.Context, username, passwordHash
 		}
 		if err := revokeSessions(ctx, tx, username); err != nil {
 			return "", err
+		}
+		// A person locked out by failed sign-ins gets the temporary password to use now, not after
+		// the throttle window: only their own per-user failures go, the address limit stays.
+		if _, err := tx.Exec(ctx, `DELETE FROM login_failures WHERE subject = $1`, domain.UserSubject(username)); err != nil {
+			return "", fmt.Errorf("clear login failures: %w", err)
 		}
 		return "", appendAudit(ctx, tx, tenantID, "Cuentas", audit)
 	})
