@@ -67,7 +67,7 @@ func TestClaudeNextSendsToolsAndToolResults(t *testing.T) {
 	if len(tools) != 1 || tools[0].(map[string]any)["name"] != "search_records" || tools[0].(map[string]any)["input_schema"] == nil {
 		t.Fatalf("tools = %v", body["tools"])
 	}
-	if !strings.Contains(body["system"].(string), "[n]") {
+	if system, _ := body["system"].([]any); len(system) != 1 || !strings.Contains(system[0].(map[string]any)["text"].(string), "[n]") {
 		t.Fatalf("system = %v", body["system"])
 	}
 	messages, _ := body["messages"].([]any)
@@ -184,4 +184,75 @@ func TestAskPromptTeachesTheBlocksTheDomainReads(t *testing.T) {
 	if text != "Texto [1]." || len(kinds) != 4 {
 		t.Fatalf("text = %q, blocks = %+v; want the four kinds", text, blocks)
 	}
+}
+
+// rawCapture records every request body as sent, byte for byte, and answers each with answer.
+func rawCapture(t *testing.T, answer string) (*httptest.Server, *[][]byte) {
+	t.Helper()
+	var bodies [][]byte
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		bodies = append(bodies, raw)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(answer))
+	}))
+	t.Cleanup(srv.Close)
+	return srv, &bodies
+}
+
+// The tools and the system prompt are the same for every turn of every question, so they end in a
+// cache breakpoint (the last system block caches tools and system together), and the conversation
+// so far ends in a second one, so the next turn of the loop reads it from the cache.
+func TestClaudeNextCachesTheStablePrefixAndTheConversation(t *testing.T) {
+	t.Parallel()
+	srv, bodies := rawCapture(t, `{"stop_reason":"end_turn","content":[{"type":"text","text":"Nada."}]}`)
+	c := NewClaude("claude-opus-5-5", environment(map[string]string{"ANTHROPIC_BASE_URL": srv.URL, "ANTHROPIC_API_KEY": "synthetic-test-value"}))
+	other := []application.Turn{{Question: privacy.ExemptPayload("¿Hay paros en el sur?", privacy.ExemptConstant)}}
+	for _, turns := range [][]application.Turn{askTurns(), other} {
+		if _, err := c.Next(t.Context(), askTools, turns); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var first, second map[string]json.RawMessage
+	if json.Unmarshal((*bodies)[0], &first) != nil || json.Unmarshal((*bodies)[1], &second) != nil {
+		t.Fatal("unreadable bodies")
+	}
+	for _, key := range []string{"tools", "system", "model", "max_tokens"} {
+		if string(first[key]) != string(second[key]) {
+			t.Fatalf("%s differs between questions:\n%s\n%s", key, first[key], second[key])
+		}
+	}
+	var system []map[string]any
+	if err := json.Unmarshal(first["system"], &system); err != nil || len(system) != 1 {
+		t.Fatalf("system = %s", first["system"])
+	}
+	if system[0]["type"] != "text" || system[0]["text"] != askPrompt || !isEphemeral(system[0]["cache_control"]) {
+		t.Fatalf("system block = %v", system[0])
+	}
+	var messages []map[string]any
+	_ = json.Unmarshal(first["messages"], &messages)
+	breakpoints := 0
+	for i, m := range messages {
+		blocks := m["content"].([]any)
+		for j, b := range blocks {
+			if _, marked := b.(map[string]any)["cache_control"]; marked {
+				breakpoints++
+				if i != len(messages)-1 || j != len(blocks)-1 {
+					t.Fatalf("breakpoint on message %d block %d, want only the last block of the last message", i, j)
+				}
+			}
+		}
+	}
+	last := messages[len(messages)-1]["content"].([]any)
+	if breakpoints != 1 || !isEphemeral(last[len(last)-1].(map[string]any)["cache_control"]) {
+		t.Fatalf("messages = %s", first["messages"])
+	}
+	if strings.Count(string((*bodies)[0]), "cache_control") > 4 {
+		t.Fatal("more than four breakpoints")
+	}
+}
+
+func isEphemeral(v any) bool {
+	m, ok := v.(map[string]any)
+	return ok && m["type"] == "ephemeral" && len(m) == 1
 }

@@ -106,7 +106,30 @@ func answerQuestion(ctx context.Context, opts Options, req askRequest, progress 
 	if err != nil {
 		return domain.CitedAnswer{}, err
 	}
-	return analyst.AnswerFollowUp(ctx, req.question, req.history, progress)
+	metered := *analyst
+	metered.Report = logAskUsage(opts.Logger, httpx.RequestIDFrom(ctx))
+	return metered.AnswerFollowUp(ctx, req.question, req.history, progress)
+}
+
+// logAskUsage logs what each question cost, one line across the loop's turns: token counts, the
+// model, the turns, the duration and the request id. Never the question, a record or the answer.
+func logAskUsage(logger *slog.Logger, requestID string) func(context.Context, application.AskReport) {
+	if logger == nil {
+		return nil
+	}
+	return func(ctx context.Context, r application.AskReport) {
+		logger.LogAttrs(ctx, slog.LevelInfo, "analyst_ask_usage",
+			slog.String("request_id", requestID),
+			slog.String("model", r.Model),
+			slog.Int("turns", r.Turns),
+			slog.Int("tool_calls", r.ToolCalls),
+			slog.Int("input_tokens", r.Usage.Input),
+			slog.Int("output_tokens", r.Usage.Output),
+			slog.Int("cache_creation_input_tokens", r.Usage.CacheCreation),
+			slog.Int("cache_read_input_tokens", r.Usage.CacheRead),
+			slog.Int64("duration_ms", r.Duration.Milliseconds()),
+			slog.Bool("ok", r.OK))
+	}
 }
 
 // logAskFailure logs a server-side failure of a question; the client's own failures are not logged.

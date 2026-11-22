@@ -41,12 +41,17 @@ type ToolSpec struct {
 	InputSchema json.RawMessage
 }
 
-// ToolCall is one call the model asked for.
+// ToolCall is one call the model asked for. Malformed is a call whose arguments are not a JSON
+// object: the loop answers it with MalformedArguments and never runs the tool on a guess.
 type ToolCall struct {
-	ID    string
-	Name  string
-	Input json.RawMessage
+	ID        string
+	Name      string
+	Input     json.RawMessage
+	Malformed bool
 }
+
+// MalformedArguments is the refusal the model reads for a call whose arguments did not parse.
+const MalformedArguments = "Argumentos no válidos: no son un objeto JSON" //nolint:misspell // Spanish, as the MCP server words its refusals.
 
 // ToolOutput is a tool's answer: sealed data and the records found in it, or a fixed refusal.
 type ToolOutput struct {
@@ -85,13 +90,52 @@ type Turn struct {
 	Question privacy.Sanitised[string]
 	Earlier  *EarlierTurn
 	Calls    []ToolCall
-	Result   *ToolTurn
+	// Reply is the model's turn with Calls exactly as its provider sent it, for an adapter that must
+	// send it back unchanged (Claude's thinking blocks); empty when the adapter keeps none.
+	Reply  json.RawMessage
+	Result *ToolTurn
 }
 
-// Step is the model's next move: tool calls, or (with no calls) its final answer.
+// Step is the model's next move: tool calls, or (with no calls) its final answer. Model and Usage
+// say which model answered and what the call cost; an adapter returns them with its error too,
+// since a refused or cut answer is billed as well.
 type Step struct {
 	Text  string
 	Calls []ToolCall
+	// Reply is the provider's own form of a turn with calls, kept for the next step (Turn.Reply).
+	Reply json.RawMessage
+	Model string
+	Usage Usage
+}
+
+// Usage counts the tokens of model calls, as Claude reports them: Input is what was read
+// uncached, CacheCreation what was written to the prompt cache, CacheRead what was read from it.
+type Usage struct {
+	Input         int
+	Output        int
+	CacheCreation int
+	CacheRead     int
+}
+
+// Plus is u and o added up.
+func (u Usage) Plus(o Usage) Usage {
+	return Usage{
+		Input: u.Input + o.Input, Output: u.Output + o.Output,
+		CacheCreation: u.CacheCreation + o.CacheCreation, CacheRead: u.CacheRead + o.CacheRead,
+	}
+}
+
+// AskReport is what one question cost, for the operator: counts only, never its texts.
+type AskReport struct {
+	// Model is the model that answered the last call, empty when no call answered.
+	Model string
+	// Turns counts the model calls, ToolCalls the tool calls of the loop.
+	Turns     int
+	ToolCalls int
+	Usage     Usage
+	Duration  time.Duration
+	// OK says the question ended in a cited answer.
+	OK bool
 }
 
 // ToolModel is an external model able to call tools.
@@ -116,6 +160,8 @@ type Ask struct {
 	Tools   ToolRunner
 	Seal    Seal
 	Timeout time.Duration
+	// Report hears once what each question that reached the model cost; nil reports nothing.
+	Report func(ctx context.Context, report AskReport)
 }
 
 // finalAnswer splits the model's last text into the cited answer and its blocks (S3): the blocks
@@ -183,6 +229,21 @@ func (a Ask) answer(ctx context.Context, question string, history []Exchange, pr
 	if len(sealed) != 1+2*len(history) {
 		return domain.CitedAnswer{}, fmt.Errorf("analyst: seal returned %d texts for %d", len(sealed), 1+2*len(history))
 	}
+	report := AskReport{}
+	if a.Report != nil {
+		start := time.Now()
+		defer func() {
+			report.Duration = time.Since(start)
+			a.Report(context.WithoutCancel(ctx), report)
+		}()
+	}
+	answer, err := a.loop(ctx, sealed, history, progress, filed, &report)
+	report.OK = err == nil
+	return answer, err
+}
+
+// loop runs the model and the tools until a final answer, counting what it spends in report.
+func (a Ask) loop(ctx context.Context, sealed []privacy.Sanitised[string], history []Exchange, progress Progress, filed *int, report *AskReport) (domain.CitedAnswer, error) {
 	specs := a.Tools.Specs()
 	turns := make([]Turn, 0, len(history)+1)
 	for i := range history {
@@ -196,6 +257,11 @@ func (a Ask) answer(ctx context.Context, question string, history []Exchange, pr
 			return domain.CitedAnswer{}, err
 		}
 		step, err := a.Model.Next(ctx, specs, turns)
+		report.Turns++
+		report.Usage = report.Usage.Plus(step.Usage)
+		if step.Model != "" {
+			report.Model = step.Model
+		}
 		if err != nil {
 			if ctx.Err() != nil {
 				return domain.CitedAnswer{}, ctx.Err()
@@ -206,7 +272,7 @@ func (a Ask) answer(ctx context.Context, question string, history []Exchange, pr
 		if len(step.Calls) == 0 {
 			return finalAnswer(step.Text, &sources)
 		}
-		turns = append(turns, Turn{Calls: step.Calls})
+		turns = append(turns, Turn{Calls: step.Calls, Reply: step.Reply})
 		for _, c := range step.Calls {
 			if calls == MaxToolCalls {
 				return domain.CitedAnswer{}, ErrTooManyToolCalls
@@ -215,6 +281,11 @@ func (a Ask) answer(ctx context.Context, question string, history []Exchange, pr
 				return domain.CitedAnswer{}, err
 			}
 			calls++
+			report.ToolCalls = calls
+			if c.Malformed {
+				turns = append(turns, Turn{Result: &ToolTurn{Call: c, Output: ToolOutput{Refusal: MalformedArguments}}})
+				continue
+			}
 			if progress != nil {
 				progress.ToolStep(domain.ToolStepLabel(c.Name))
 			}

@@ -66,3 +66,16 @@ func TestCiteAcceptsAnAnswerWithoutRecordsOnlyWhenNoneWasFound(t *testing.T) {
 		t.Fatalf("err = %v, want ErrUncited", err)
 	}
 }
+
+// A marker past four digits, or zero, still names no returned record: it is refused, not left in
+// the text as an unchecked citation.
+func TestCiteRefusesANumberNoToolReturnedWhateverItsLength(t *testing.T) {
+	t.Parallel()
+	var s domain.Sources
+	s.Add(domain.RecordRef{Slug: "conflictos", ID: "C-1", Title: "Bloqueo de vía"})
+	for _, text := range []string{"Sigue [1] y hubo heridos [12345].", "Sigue [0].", "Sigue [99999999999999999999999]."} {
+		if _, err := domain.Cite(text, &s); !errors.Is(err, domain.ErrUnresolvedCitation) {
+			t.Fatalf("%q: err = %v, want ErrUnresolvedCitation", text, err)
+		}
+	}
+}

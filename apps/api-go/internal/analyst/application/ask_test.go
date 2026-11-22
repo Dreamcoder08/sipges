@@ -248,3 +248,33 @@ func TestAskRefusesAnAnswerThatIsOnlyBlocks(t *testing.T) {
 		t.Fatalf("err = %v, want ErrModel", err)
 	}
 }
+
+// A call whose arguments did not parse never reaches the tool: the model is told so and may retry.
+func TestAskAnswersAMalformedCallWithoutRunningIt(t *testing.T) {
+	t.Parallel()
+	tools := &fakeTools{answers: map[string][]domain.RecordRef{}}
+	bad := application.Step{Calls: []application.ToolCall{{ID: "1", Name: "search_records", Input: json.RawMessage(`{}`), Malformed: true}}}
+	model := &scriptedModel{steps: []application.Step{bad, {Text: "No encontré registros."}}}
+	if _, err := (application.Ask{Model: model, Tools: tools, Seal: sealed}).Answer(t.Context(), "¿Algo?"); err != nil {
+		t.Fatal(err)
+	}
+	last := model.seen[1]
+	r := last[len(last)-1].Result
+	if len(tools.calls) != 0 || r == nil || r.Output.OK || r.Output.Refusal != application.MalformedArguments {
+		t.Fatalf("tool calls = %v, result = %+v", tools.calls, r)
+	}
+}
+
+// The model's whole turn goes back to it unchanged on the next step (thinking blocks included).
+func TestAskKeepsTheModelsReplyForTheNextStep(t *testing.T) {
+	t.Parallel()
+	reply := json.RawMessage(`[{"type":"thinking","thinking":"x","signature":"s"},{"type":"tool_use","id":"1","name":"search_records","input":{}}]`)
+	first := application.Step{Calls: []application.ToolCall{{ID: "1", Name: "search_records"}}, Reply: reply}
+	model := &scriptedModel{steps: []application.Step{first, {Text: "No encontré registros."}}}
+	if _, err := (application.Ask{Model: model, Tools: &fakeTools{answers: map[string][]domain.RecordRef{}}, Seal: sealed}).Answer(t.Context(), "¿Algo?"); err != nil {
+		t.Fatal(err)
+	}
+	if got := model.seen[1][1]; string(got.Reply) != string(reply) || len(got.Calls) != 1 {
+		t.Fatalf("assistant turn = %+v", got)
+	}
+}
