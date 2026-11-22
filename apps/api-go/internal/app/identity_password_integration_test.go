@@ -178,3 +178,18 @@ func TestPasswordChangeNeedsTheOriginCheckAndASession(t *testing.T) {
 		body: `{"current_password":"x"}`}), http.StatusUnprocessableEntity,
 		`{"detail":[{"type":"missing","loc":["body","new_password"],"msg":"Field required"}]}`)
 }
+
+// The web asks whether this API offers the change by posting an empty body (world-class-local T8c):
+// it must answer 422 before reading credentials, so the probe never fills the login throttle.
+func TestAnEmptyPasswordChangeIsRefusedBeforeTheThrottle(t *testing.T) {
+	f := newLoginFixture(t, "pw-probe")
+	user, _ := f.passwordAccount(t, "user")
+	jsonType := map[string]string{"Content-Type": "application/json"}
+	for range 8 { // beyond the five failures that throttle a sign-in
+		got := f.s.do(t, req{method: http.MethodPost, path: passwordPath, user: user, sameOrigin: true, headers: jsonType, body: `{}`})
+		if got.status != http.StatusUnprocessableEntity {
+			t.Fatalf("empty body answered %d %s, want 422", got.status, got.body)
+		}
+	}
+	expect(t, f.changePassword(t, user, loginPassword, newPassword), http.StatusNoContent, "")
+}
