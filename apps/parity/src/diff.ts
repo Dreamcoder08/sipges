@@ -82,12 +82,21 @@ const linesOf = (body: Body, pattern: RegExp | undefined): Body =>
       }
     : body;
 
-/** Entries of a list only the Go API has: `list` is a dotted JSON path, entries match by `name`. */
-export type GoOnly = { readonly list: string; readonly names: readonly string[] };
+/**
+ * What only the Go API answers: entries of a list (`list` is a dotted JSON path, entries match by
+ * `name`), or top-level `keys` of an object, such as a capability TypeScript does not offer.
+ */
+export type GoOnly =
+  | { readonly list: string; readonly names: readonly string[] }
+  | { readonly keys: readonly string[] };
 
-/** value without the Go-only entries of its list; any other value is returned as it is. */
+/** value without what only Go has; any other value is returned as it is. */
 const withoutGoOnly = (value: unknown, goOnly?: GoOnly): unknown => {
   if (!goOnly) return value;
+  if ('keys' in goOnly) {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) return value;
+    return Object.fromEntries(Object.entries(value).filter(([key]) => !goOnly.keys.includes(key)));
+  }
   const parts = goOnly.list.split('.');
   const drop = (node: unknown, depth: number): unknown => {
     if (depth === parts.length) {

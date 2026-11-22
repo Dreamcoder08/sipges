@@ -142,3 +142,32 @@ test('goOnly drops the named entries of a list from the Go answer only', () => {
     [],
   );
 });
+
+test('a top-level key only the Go API has is left out of the comparison', () => {
+  const goOnly = { keys: ['password_change'] };
+  assert.deepEqual(
+    compare(
+      json(200, { google: false }),
+      json(200, { google: false, password_change: true }),
+      [],
+      undefined,
+      goOnly,
+    ),
+    [],
+  );
+  // Any other difference still shows, and the key is only ignored where it is declared.
+  assert.deepEqual(
+    compare(
+      json(200, { google: false }),
+      json(200, { google: true, password_change: true }),
+      [],
+      undefined,
+      goOnly,
+    ),
+    [{ field: 'body', path: '$.google', ts: false, go: true }],
+  );
+  assert.notDeepEqual(
+    compare(json(200, { google: false }), json(200, { google: false, password_change: true })),
+    [],
+  );
+});

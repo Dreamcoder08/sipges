@@ -309,7 +309,7 @@ func TestGoogleRoutesAreHiddenWithoutAClient(t *testing.T) {
 	f := newAccountsFixture(t, "googlehidden")
 	expect(t, f.s.do(t, req{path: "/auth/google"}), http.StatusNotFound, notFound)
 	expect(t, f.s.do(t, req{path: "/auth/google/callback?state=a&code=b"}), http.StatusNotFound, notFound)
-	expect(t, f.s.do(t, req{path: "/system/auth/providers"}), http.StatusOK, `{"google":false}`)
+	expect(t, f.s.do(t, req{path: "/system/auth/providers"}), http.StatusOK, `{"google":false,"password_change":true}`)
 	admin := f.session(t, "admin", "admin", true)
 	user := f.session(t, "user", "analista", true)
 	expect(t, f.send(t, "/system/auth/accounts/"+user+"/google", admin, `{"email":"x@example.com"}`), http.StatusOK,

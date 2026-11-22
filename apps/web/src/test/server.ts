@@ -161,6 +161,11 @@ export const handlers = [
       }),
     ),
   ),
+  // Changing a password lives in the Go API only; like the TypeScript API, the double has no
+  // such route, and tests that need it answer the Go route's empty-body 422 themselves.
+  http.post('/system/auth/password', () =>
+    HttpResponse.json({ detail: 'Not Found' }, { status: 404 }),
+  ),
   // The Inicio analyst lives in the Go API only; tests that ask say it is there.
   http.get('/system/analyst', () => signedIn(() => HttpResponse.json({ available: false }))),
   // An older server: no streamed ask, so Inicio asks /ask (chat-first-ui T21). Stream tests

@@ -51,7 +51,11 @@ export const TotpSetupResponse = z.object({
 export const TotpEnableRequest = z.object({ code: z.string() });
 
 /** GET /system/auth/providers: which optional sign-in methods this installation offers. */
-export const AuthProviders = z.object({ google: z.boolean() });
+// password_change: only the Go API changes a password (world-class-local T8); TypeScript omits it.
+export const AuthProviders = z.object({
+  google: z.boolean(),
+  password_change: z.boolean().optional(),
+});
 export type AuthProviders = z.infer<typeof AuthProviders>;
 
 /** POST /system/auth/accounts/:username/google — an empty address unlinks Google. */
