@@ -2,6 +2,7 @@ package domain
 
 import (
 	"errors"
+	"regexp"
 	"slices"
 	"strconv"
 )
@@ -56,12 +57,16 @@ var (
 	ErrUncited = errors.New("analyst: the answer cites none of the records it read")
 )
 
+// askCitation is any bracketed number. The narrative's citation stops at four digits, as in
+// TypeScript; here a longer number would stay in the text unchecked, so it is read and refused.
+var askCitation = regexp.MustCompile(`\[([0-9]+)\]`)
+
 // Cite checks text against the numbered records. Every marker must name a returned record; an
 // answer that cites nothing is accepted only when the tools returned no record (it can then only
 // say that nothing was found).
 func Cite(text string, s *Sources) (CitedAnswer, error) {
 	var numbers []int
-	for _, match := range citation.FindAllStringSubmatch(text, -1) {
+	for _, match := range askCitation.FindAllStringSubmatch(text, -1) {
 		n, err := strconv.Atoi(match[1])
 		if err != nil || n < 1 || n > len(s.refs) {
 			return CitedAnswer{}, ErrUnresolvedCitation

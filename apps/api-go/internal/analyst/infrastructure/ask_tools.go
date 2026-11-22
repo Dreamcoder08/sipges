@@ -101,63 +101,82 @@ func input(raw json.RawMessage) json.RawMessage {
 	return raw
 }
 
+// claudeBlock is a content block the adapter writes: text, a tool call or a tool result.
+type claudeBlock struct {
+	Type      string          `json:"type"`
+	Text      string          `json:"text,omitempty"`
+	ID        string          `json:"id,omitempty"`
+	Name      string          `json:"name,omitempty"`
+	Input     json.RawMessage `json:"input,omitempty"`
+	ToolUseID string          `json:"tool_use_id,omitempty"`
+	Content   string          `json:"content,omitempty"`
+	IsError   bool            `json:"is_error,omitempty"`
+	// CacheControl marks the end of the conversation so far (see askSystem).
+	CacheControl *cacheControl `json:"cache_control,omitempty"`
+}
+
+// claudeMessage is a turn: blocks the adapter wrote, or an assistant turn sent back as Claude
+// wrote it (reply), thinking blocks and all.
+type claudeMessage struct {
+	Role    string
+	Content []claudeBlock
+	reply   json.RawMessage
+}
+
+func (m claudeMessage) MarshalJSON() ([]byte, error) {
+	var content any = m.Content
+	if len(m.reply) > 0 {
+		content = m.reply
+	}
+	return json.Marshal(struct {
+		Role    string `json:"role"`
+		Content any    `json:"content"`
+	}{m.Role, content})
+}
+
 // Next is one step of the loop on Claude: the tools, then the question and every call and result
 // so far as alternating assistant and user turns.
 func (c *Claude) Next(ctx context.Context, tools []application.ToolSpec, turns []application.Turn) (application.Step, error) {
 	if c.credential == "" {
 		return application.Step{}, unavailable("narrator: no credential")
 	}
-	type block struct {
-		Type      string          `json:"type"`
-		Text      string          `json:"text,omitempty"`
-		ID        string          `json:"id,omitempty"`
-		Name      string          `json:"name,omitempty"`
-		Input     json.RawMessage `json:"input,omitempty"`
-		ToolUseID string          `json:"tool_use_id,omitempty"`
-		Content   string          `json:"content,omitempty"`
-		IsError   bool            `json:"is_error,omitempty"`
-		// CacheControl marks the end of the conversation so far (cacheBreakpoint).
-		CacheControl *cacheControl `json:"cache_control,omitempty"`
-	}
-	type message struct {
-		Role    string  `json:"role"`
-		Content []block `json:"content"`
-	}
 	type tool struct {
 		Name        string          `json:"name"`
 		Description string          `json:"description"`
 		InputSchema json.RawMessage `json:"input_schema"`
 	}
-	var messages []message
+	var messages []claudeMessage
 	// Every result of one assistant turn goes back in the next user turn.
-	push := func(role string, b block) {
+	push := func(role string, b claudeBlock) {
 		if n := len(messages); n > 0 && messages[n-1].Role == role && role == "user" && b.Type == "tool_result" &&
-			messages[n-1].Content[0].Type == "tool_result" {
+			len(messages[n-1].Content) > 0 && messages[n-1].Content[0].Type == "tool_result" {
 			messages[n-1].Content = append(messages[n-1].Content, b)
 			return
 		}
-		messages = append(messages, message{Role: role, Content: []block{b}})
+		messages = append(messages, claudeMessage{Role: role, Content: []claudeBlock{b}})
 	}
 	for _, turn := range turns {
 		switch {
 		case turn.Earlier != nil:
-			push("user", block{Type: textBlock, Text: turn.Earlier.Question.Value()})
-			messages = append(messages, message{Role: "assistant", Content: []block{{Type: textBlock, Text: turn.Earlier.Answer.Value()}}})
+			push("user", claudeBlock{Type: textBlock, Text: turn.Earlier.Question.Value()})
+			messages = append(messages, claudeMessage{Role: "assistant", Content: []claudeBlock{{Type: textBlock, Text: turn.Earlier.Answer.Value()}}})
 		case turn.Result != nil:
-			push("user", block{Type: "tool_result", ToolUseID: turn.Result.Call.ID, Content: toolResultContent(turn.Result), IsError: !turn.Result.Output.OK})
+			push("user", claudeBlock{Type: "tool_result", ToolUseID: turn.Result.Call.ID, Content: toolResultContent(turn.Result), IsError: !turn.Result.Output.OK})
+		case len(turn.Reply) > 0:
+			messages = append(messages, claudeMessage{Role: "assistant", reply: turn.Reply})
 		case len(turn.Calls) > 0:
-			uses := make([]block, 0, len(turn.Calls))
+			uses := make([]claudeBlock, 0, len(turn.Calls))
 			for _, call := range turn.Calls {
-				uses = append(uses, block{Type: "tool_use", ID: call.ID, Name: call.Name, Input: input(call.Input)})
+				uses = append(uses, claudeBlock{Type: "tool_use", ID: call.ID, Name: call.Name, Input: input(call.Input)})
 			}
-			messages = append(messages, message{Role: "assistant", Content: uses})
+			messages = append(messages, claudeMessage{Role: "assistant", Content: uses})
 		default:
-			push("user", block{Type: textBlock, Text: turn.Question.Value()})
+			push("user", claudeBlock{Type: textBlock, Text: turn.Question.Value()})
 		}
 	}
 	// The last block of the last turn is a breakpoint: the next step of the loop resends this whole
 	// conversation with its own turns after it, and reads it from the cache.
-	if n := len(messages); n > 0 {
+	if n := len(messages); n > 0 && len(messages[n-1].Content) > 0 {
 		last := messages[n-1].Content
 		last[len(last)-1].CacheControl = &ephemeral
 	}
@@ -179,43 +198,68 @@ func (c *Claude) Next(ctx context.Context, tools []application.ToolSpec, turns [
 	}, claudeStep)
 }
 
-// claudeStep reads Claude's answer: its tool calls, or its text when it called none.
+// Stop reasons that end a turn without a usable answer, besides a refusal and max_tokens.
+const (
+	stopPauseTurn     = "pause_turn"
+	stopContextWindow = "model_context_window_exceeded"
+)
+
+// claudeStep reads Claude's answer: its tool calls, or its text when it called none. Blocks other
+// than text and tool_use (thinking, redacted thinking, any new type) are skipped here and kept in
+// Reply, which goes back unchanged when the loop continues.
 func claudeStep(raw []byte) (application.Step, error) {
 	var answer *struct {
-		Model      string      `json:"model"`
-		StopReason string      `json:"stop_reason"`
-		Usage      claudeUsage `json:"usage"`
-		Content    []struct {
-			Type  string          `json:"type"`
-			Text  string          `json:"text"`
-			ID    string          `json:"id"`
-			Name  string          `json:"name"`
-			Input json.RawMessage `json:"input"`
-		} `json:"content"`
+		Model      string          `json:"model"`
+		StopReason string          `json:"stop_reason"`
+		Usage      claudeUsage     `json:"usage"`
+		Content    json.RawMessage `json:"content"`
 	}
 	if err := json.Unmarshal(raw, &answer); err != nil || answer == nil {
 		return application.Step{}, errors.New("narrator: unreadable answer")
+	}
+	var blocks []struct {
+		Type  string          `json:"type"`
+		Text  string          `json:"text"`
+		ID    string          `json:"id"`
+		Name  string          `json:"name"`
+		Input json.RawMessage `json:"input"`
+	}
+	if len(answer.Content) > 0 && string(answer.Content) != "null" {
+		if err := json.Unmarshal(answer.Content, &blocks); err != nil {
+			return application.Step{}, errors.New("narrator: unreadable answer")
+		}
 	}
 	step := application.Step{Model: answer.Model, Usage: answer.Usage.counts()}
 	switch answer.StopReason {
 	case stopRefusal:
 		return step, errors.New("narrator: the model declined the question")
-	case stopMaxTokens:
+	case stopMaxTokens, stopContextWindow:
 		return step, errors.New("narrator: the answer was truncated")
+	case stopPauseTurn:
+		// Only server tools pause a turn, and the loop offers none: its text is no final answer.
+		return step, errors.New("narrator: the model paused its turn")
 	}
 	var text strings.Builder
-	for _, b := range answer.Content {
+	for _, b := range blocks {
 		switch b.Type {
 		case "tool_use":
-			step.Calls = append(step.Calls, application.ToolCall{ID: b.ID, Name: b.Name, Input: input(b.Input)})
+			step.Calls = append(step.Calls, application.ToolCall{ID: b.ID, Name: b.Name, Input: input(b.Input), Malformed: !jsonObject(input(b.Input))})
 		case textBlock:
 			text.WriteString(b.Text)
 		}
 	}
-	if len(step.Calls) == 0 {
+	if len(step.Calls) > 0 {
+		step.Reply = answer.Content
+	} else {
 		step.Text = js.TrimJS(text.String())
 	}
 	return step, nil
+}
+
+// jsonObject says raw parses as a JSON object, as tool arguments must.
+func jsonObject(raw json.RawMessage) bool {
+	var object map[string]json.RawMessage
+	return json.Unmarshal(raw, &object) == nil && object != nil
 }
 
 // claudeUsage is the usage of a Claude answer; input_tokens excludes the cached tokens.
@@ -341,11 +385,14 @@ func completionStep(raw []byte) (application.Step, error) {
 		}
 	}
 	for _, call := range choice.Message.ToolCalls {
-		args := json.RawMessage(call.Function.Arguments)
-		if !json.Valid(args) {
+		// Arguments arrive as a string of JSON. One that is not an object is kept out of the
+		// request (an invalid raw message cannot be sent back) and marked, so no tool runs on it.
+		args := input(json.RawMessage(strings.TrimSpace(call.Function.Arguments)))
+		malformed := !jsonObject(args)
+		if malformed {
 			args = json.RawMessage(`{}`)
 		}
-		step.Calls = append(step.Calls, application.ToolCall{ID: call.ID, Name: call.Function.Name, Input: input(args)})
+		step.Calls = append(step.Calls, application.ToolCall{ID: call.ID, Name: call.Function.Name, Input: args, Malformed: malformed})
 	}
 	if len(step.Calls) == 0 && choice.Message.Content != nil {
 		step.Text = js.TrimJS(*choice.Message.Content)

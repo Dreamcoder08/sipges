@@ -41,12 +41,17 @@ type ToolSpec struct {
 	InputSchema json.RawMessage
 }
 
-// ToolCall is one call the model asked for.
+// ToolCall is one call the model asked for. Malformed is a call whose arguments are not a JSON
+// object: the loop answers it with MalformedArguments and never runs the tool on a guess.
 type ToolCall struct {
-	ID    string
-	Name  string
-	Input json.RawMessage
+	ID        string
+	Name      string
+	Input     json.RawMessage
+	Malformed bool
 }
+
+// MalformedArguments is the refusal the model reads for a call whose arguments did not parse.
+const MalformedArguments = "Argumentos no válidos: no son un objeto JSON" //nolint:misspell // Spanish, as the MCP server words its refusals.
 
 // ToolOutput is a tool's answer: sealed data and the records found in it, or a fixed refusal.
 type ToolOutput struct {
@@ -85,7 +90,10 @@ type Turn struct {
 	Question privacy.Sanitised[string]
 	Earlier  *EarlierTurn
 	Calls    []ToolCall
-	Result   *ToolTurn
+	// Reply is the model's turn with Calls exactly as its provider sent it, for an adapter that must
+	// send it back unchanged (Claude's thinking blocks); empty when the adapter keeps none.
+	Reply  json.RawMessage
+	Result *ToolTurn
 }
 
 // Step is the model's next move: tool calls, or (with no calls) its final answer. Model and Usage
@@ -94,6 +102,8 @@ type Turn struct {
 type Step struct {
 	Text  string
 	Calls []ToolCall
+	// Reply is the provider's own form of a turn with calls, kept for the next step (Turn.Reply).
+	Reply json.RawMessage
 	Model string
 	Usage Usage
 }
@@ -262,7 +272,7 @@ func (a Ask) loop(ctx context.Context, sealed []privacy.Sanitised[string], histo
 		if len(step.Calls) == 0 {
 			return finalAnswer(step.Text, &sources)
 		}
-		turns = append(turns, Turn{Calls: step.Calls})
+		turns = append(turns, Turn{Calls: step.Calls, Reply: step.Reply})
 		for _, c := range step.Calls {
 			if calls == MaxToolCalls {
 				return domain.CitedAnswer{}, ErrTooManyToolCalls
@@ -272,6 +282,10 @@ func (a Ask) loop(ctx context.Context, sealed []privacy.Sanitised[string], histo
 			}
 			calls++
 			report.ToolCalls = calls
+			if c.Malformed {
+				turns = append(turns, Turn{Result: &ToolTurn{Call: c, Output: ToolOutput{Refusal: MalformedArguments}}})
+				continue
+			}
 			if progress != nil {
 				progress.ToolStep(domain.ToolStepLabel(c.Name))
 			}
