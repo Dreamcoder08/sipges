@@ -152,7 +152,11 @@ The stream sends `event: step` `{"label": …}` per tool call, then one `event: 
 `/ask` answers or one `event: error` `{"status": …, "detail": …}` (409, 422, 502, 503 or 504), then
 `event: done`, with a `: ping` comment after 15 s of quiet. The answer text is never streamed as
 the model writes it: its citations are checked on the whole answer first. A client that leaves
-stops the loop, and the API logs it as 499.
+stops the loop, and the API logs it as 499. Every question that reaches the model logs one
+`analyst_ask_usage` line with its token counts summed over the loop's turns (input, output, cache
+creation and cache read), the model, the turns, the tool calls, the duration and the request id;
+never the question, a record or the answer. On Claude the tools and system prompt are a cached
+prefix, so from the second turn on `cache_read_input_tokens` should carry most of the input.
 
 Machine routes (`/mcp`, `/hooks/*`, the cron route) take `SIPGES_MACHINE_TOKEN` and never the
 session:

@@ -88,10 +88,44 @@ type Turn struct {
 	Result   *ToolTurn
 }
 
-// Step is the model's next move: tool calls, or (with no calls) its final answer.
+// Step is the model's next move: tool calls, or (with no calls) its final answer. Model and Usage
+// say which model answered and what the call cost; an adapter returns them with its error too,
+// since a refused or cut answer is billed as well.
 type Step struct {
 	Text  string
 	Calls []ToolCall
+	Model string
+	Usage Usage
+}
+
+// Usage counts the tokens of model calls, as Claude reports them: Input is what was read
+// uncached, CacheCreation what was written to the prompt cache, CacheRead what was read from it.
+type Usage struct {
+	Input         int
+	Output        int
+	CacheCreation int
+	CacheRead     int
+}
+
+// Plus is u and o added up.
+func (u Usage) Plus(o Usage) Usage {
+	return Usage{
+		Input: u.Input + o.Input, Output: u.Output + o.Output,
+		CacheCreation: u.CacheCreation + o.CacheCreation, CacheRead: u.CacheRead + o.CacheRead,
+	}
+}
+
+// AskReport is what one question cost, for the operator: counts only, never its texts.
+type AskReport struct {
+	// Model is the model that answered the last call, empty when no call answered.
+	Model string
+	// Turns counts the model calls, ToolCalls the tool calls of the loop.
+	Turns     int
+	ToolCalls int
+	Usage     Usage
+	Duration  time.Duration
+	// OK says the question ended in a cited answer.
+	OK bool
 }
 
 // ToolModel is an external model able to call tools.
@@ -116,6 +150,8 @@ type Ask struct {
 	Tools   ToolRunner
 	Seal    Seal
 	Timeout time.Duration
+	// Report hears once what each question that reached the model cost; nil reports nothing.
+	Report func(ctx context.Context, report AskReport)
 }
 
 // finalAnswer splits the model's last text into the cited answer and its blocks (S3): the blocks
@@ -183,6 +219,21 @@ func (a Ask) answer(ctx context.Context, question string, history []Exchange, pr
 	if len(sealed) != 1+2*len(history) {
 		return domain.CitedAnswer{}, fmt.Errorf("analyst: seal returned %d texts for %d", len(sealed), 1+2*len(history))
 	}
+	report := AskReport{}
+	if a.Report != nil {
+		start := time.Now()
+		defer func() {
+			report.Duration = time.Since(start)
+			a.Report(context.WithoutCancel(ctx), report)
+		}()
+	}
+	answer, err := a.loop(ctx, sealed, history, progress, filed, &report)
+	report.OK = err == nil
+	return answer, err
+}
+
+// loop runs the model and the tools until a final answer, counting what it spends in report.
+func (a Ask) loop(ctx context.Context, sealed []privacy.Sanitised[string], history []Exchange, progress Progress, filed *int, report *AskReport) (domain.CitedAnswer, error) {
 	specs := a.Tools.Specs()
 	turns := make([]Turn, 0, len(history)+1)
 	for i := range history {
@@ -196,6 +247,11 @@ func (a Ask) answer(ctx context.Context, question string, history []Exchange, pr
 			return domain.CitedAnswer{}, err
 		}
 		step, err := a.Model.Next(ctx, specs, turns)
+		report.Turns++
+		report.Usage = report.Usage.Plus(step.Usage)
+		if step.Model != "" {
+			report.Model = step.Model
+		}
 		if err != nil {
 			if ctx.Err() != nil {
 				return domain.CitedAnswer{}, ctx.Err()
@@ -215,6 +271,7 @@ func (a Ask) answer(ctx context.Context, question string, history []Exchange, pr
 				return domain.CitedAnswer{}, err
 			}
 			calls++
+			report.ToolCalls = calls
 			if progress != nil {
 				progress.ToolStep(domain.ToolStepLabel(c.Name))
 			}

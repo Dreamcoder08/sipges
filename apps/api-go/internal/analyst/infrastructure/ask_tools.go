@@ -182,7 +182,9 @@ func (c *Claude) Next(ctx context.Context, tools []application.ToolSpec, turns [
 // claudeStep reads Claude's answer: its tool calls, or its text when it called none.
 func claudeStep(raw []byte) (application.Step, error) {
 	var answer *struct {
-		StopReason string `json:"stop_reason"`
+		Model      string      `json:"model"`
+		StopReason string      `json:"stop_reason"`
+		Usage      claudeUsage `json:"usage"`
 		Content    []struct {
 			Type  string          `json:"type"`
 			Text  string          `json:"text"`
@@ -194,13 +196,13 @@ func claudeStep(raw []byte) (application.Step, error) {
 	if err := json.Unmarshal(raw, &answer); err != nil || answer == nil {
 		return application.Step{}, errors.New("narrator: unreadable answer")
 	}
+	step := application.Step{Model: answer.Model, Usage: answer.Usage.counts()}
 	switch answer.StopReason {
 	case stopRefusal:
-		return application.Step{}, errors.New("narrator: the model declined the question")
+		return step, errors.New("narrator: the model declined the question")
 	case stopMaxTokens:
-		return application.Step{}, errors.New("narrator: the answer was truncated")
+		return step, errors.New("narrator: the answer was truncated")
 	}
-	var step application.Step
 	var text strings.Builder
 	for _, b := range answer.Content {
 		switch b.Type {
@@ -214,6 +216,36 @@ func claudeStep(raw []byte) (application.Step, error) {
 		step.Text = js.TrimJS(text.String())
 	}
 	return step, nil
+}
+
+// claudeUsage is the usage of a Claude answer; input_tokens excludes the cached tokens.
+type claudeUsage struct {
+	Input         int `json:"input_tokens"`
+	Output        int `json:"output_tokens"`
+	CacheCreation int `json:"cache_creation_input_tokens"`
+	CacheRead     int `json:"cache_read_input_tokens"`
+}
+
+func (u claudeUsage) counts() application.Usage {
+	return application.Usage{Input: u.Input, Output: u.Output, CacheCreation: u.CacheCreation, CacheRead: u.CacheRead}
+}
+
+// completionUsage is the usage of a chat completion: prompt_tokens includes the cached tokens,
+// which counts gives Claude's meaning by taking them out of the input.
+type completionUsage struct {
+	Prompt     int `json:"prompt_tokens"`
+	Completion int `json:"completion_tokens"`
+	Details    *struct {
+		Cached int `json:"cached_tokens"`
+	} `json:"prompt_tokens_details"`
+}
+
+func (u completionUsage) counts() application.Usage {
+	cached := 0
+	if u.Details != nil {
+		cached = min(max(u.Details.Cached, 0), u.Prompt)
+	}
+	return application.Usage{Input: u.Prompt - cached, Output: u.Completion, CacheRead: cached}
 }
 
 // Next is one step of the loop on an OpenAI-compatible server: function tools, a system message,
@@ -276,6 +308,8 @@ func (c *OpenAICompatible) Next(ctx context.Context, tools []application.ToolSpe
 // completionStep reads the first choice: its tool calls, or its text when it called none.
 func completionStep(raw []byte) (application.Step, error) {
 	var answer *struct {
+		Model   string          `json:"model"`
+		Usage   completionUsage `json:"usage"`
 		Choices []struct {
 			FinishReason *string `json:"finish_reason"`
 			Message      *struct {
@@ -293,19 +327,19 @@ func completionStep(raw []byte) (application.Step, error) {
 	if err := json.Unmarshal(raw, &answer); err != nil || answer == nil {
 		return application.Step{}, errors.New("narrator: unreadable answer")
 	}
+	step := application.Step{Model: answer.Model, Usage: answer.Usage.counts()}
 	if len(answer.Choices) == 0 || answer.Choices[0].Message == nil {
-		return application.Step{}, errors.New("narrator: the model returned no text")
+		return step, errors.New("narrator: the model returned no text")
 	}
 	choice := answer.Choices[0]
 	if choice.FinishReason != nil {
 		switch *choice.FinishReason {
 		case finishLength:
-			return application.Step{}, errors.New("narrator: the answer was truncated")
+			return step, errors.New("narrator: the answer was truncated")
 		case finishContentFilter:
-			return application.Step{}, errors.New("narrator: the model declined the question")
+			return step, errors.New("narrator: the model declined the question")
 		}
 	}
-	var step application.Step
 	for _, call := range choice.Message.ToolCalls {
 		args := json.RawMessage(call.Function.Arguments)
 		if !json.Valid(args) {
