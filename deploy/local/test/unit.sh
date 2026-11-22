@@ -1027,7 +1027,12 @@ for a in "$@"; do
 done
 case $cmd in
 mkdir) mkdir -p "$(at "${args[0]}")" ;;
-lsf) [[ -d $(at "${args[0]}") ]] || exit 3; (cd "$(at "${args[0]}")" && find . -mindepth 1 -maxdepth 2 -type f -printf '%P\n' | sort) ;;
+lsf)
+  # .lsf-fails-at N: the Nth listing fails, as a flaky SFTP or S3 listing would.
+  count=$(($(cat "$RCLONE_ROOT/.lsf-count" 2>/dev/null || echo 0) + 1))
+  echo "$count" >"$RCLONE_ROOT/.lsf-count"
+  [[ $count != "$(cat "$RCLONE_ROOT/.lsf-fails-at" 2>/dev/null)" ]] || exit 1
+  [[ -d $(at "${args[0]}") ]] || exit 3; (cd "$(at "${args[0]}")" && find . -mindepth 1 -maxdepth 2 -type f -printf '%P\n' | sort) ;;
 copy)
   src=$(at "${args[0]}") dst=$(at "${args[1]}")
   [[ -d $src ]] || exit 3
@@ -1108,6 +1113,25 @@ mkdir -p "$remote/20261101T070000Z"
 echo partial >"$remote/20261101T070000Z/db.dump.gpg"
 offsite_step push
 check 'a half pushed backup no longer here is removed' test ! -e "$remote/20261101T070000Z"
+
+# A listing that fails partway through a round removes nothing from the remote.
+fresh
+remote=$work/remote/sipges
+mkdir -p "$work/remote"
+sealed 20261121T070000Z
+offsite_step push
+sealed 20261122T070000Z
+offsite_step push
+sealed 20261123T070000Z
+for n in 2 3 4 5 6; do
+  echo 0 >"$work/remote/.lsf-count"
+  echo "$n" >"$work/remote/.lsf-fails-at"
+  offsite_step push || true
+done
+command rm -f "$work/remote/.lsf-fails-at"
+# SIPGES_BACKUP_KEEP is 2 here: retention may drop 20261121, never the two newest.
+check 'a listing that fails mid-round keeps every complete backup retention keeps' \
+  test -f "$remote/20261122T070000Z/SHA256SUMS" -a -f "$remote/20261123T070000Z/SHA256SUMS"
 
 fresh
 mkdir -p "$work/remote"

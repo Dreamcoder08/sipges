@@ -35,18 +35,16 @@ failed() {
   return 1
 }
 
-# Backups on the remote with their checksums, oldest first. Anything else there is left alone.
-complete() {
-  local listing
-  listing=$(rclone lsf -R --files-only --max-depth=2 "$remote") || return 1
-  sed -nE 's#^(20[0-9]{6}T[0-9]{6}Z)/SHA256SUMS$#\1#p' <<<"$listing" | sort
-}
+# The files on the remote, two levels down. Every decision below reads one listing taken here, with
+# its status checked: a second listing that failed unseen would make every backup look half pushed.
+listing() { rclone lsf -R --files-only --max-depth=2 "$remote"; }
 
-# Folders named like a backup on the remote that never got their checksums: pushes cut short.
-incomplete() {
-  local listing
-  listing=$(rclone lsf -R --files-only --max-depth=2 "$remote") || return 1
-  comm -23 <(sed -nE 's#^(20[0-9]{6}T[0-9]{6}Z)/.*#\1#p' <<<"$listing" | sort -u) <(complete)
+# From a listing: the backups with their checksums, oldest first. Anything else is left alone.
+complete_in() { sed -nE 's#^(20[0-9]{6}T[0-9]{6}Z)/SHA256SUMS$#\1#p' <<<"$1" | sort; }
+
+# From a listing: folders named like a backup that never got their checksums, pushes cut short.
+incomplete_in() {
+  comm -23 <(sed -nE 's#^(20[0-9]{6}T[0-9]{6}Z)/.*#\1#p' <<<"$1" | sort -u) <(complete_in "$1")
 }
 
 local_backups() {
@@ -66,12 +64,12 @@ push() {
     failed "cannot reach $remote"
     return 1
   }
-  local on_remote newest todo name old
-  on_remote=$(complete) || {
+  local files newest todo name old
+  files=$(listing) || {
     failed "cannot reach $remote"
     return 1
   }
-  newest=$(tail -n 1 <<<"$on_remote")
+  newest=$(complete_in "$files" | tail -n 1)
   # A first push sends only the newest backup; after that, every one newer than the remote's newest,
   # so a computer that was off for days catches up without sending what retention would drop.
   if [[ -z $newest ]]; then
@@ -87,8 +85,13 @@ push() {
     echo "pushed $name to $remote"
   done
 
+  # A fresh listing after the pushes; if it fails, nothing is removed.
+  files=$(listing) || {
+    failed "pushed, but could not list $remote to apply retention"
+    return 1
+  }
   # Retention as for the backups (ops/retain.sh), on the backups the remote holds.
-  complete | bash "$(dirname "${BASH_SOURCE[0]}")/retain.sh" "$keep" "${SIPGES_BACKUP_KEEP_WEEKLY:-8}" "${SIPGES_BACKUP_KEEP_MONTHLY:-12}" |
+  complete_in "$files" | bash "$(dirname "${BASH_SOURCE[0]}")/retain.sh" "$keep" "${SIPGES_BACKUP_KEEP_WEEKLY:-8}" "${SIPGES_BACKUP_KEEP_MONTHLY:-12}" |
     while read -r old; do
       rclone purge "$remote/${old:?}" || exit 1
     done || {
@@ -96,14 +99,15 @@ push() {
     return 1
   }
   # Every push that remains unfinished has been retried above, so these are gone from here.
-  incomplete | while read -r old; do
+  incomplete_in "$files" | while read -r old; do
     rclone purge "$remote/${old:?}" || exit 1
   done || {
     failed "could not remove half pushed backups from $remote"
     return 1
   }
 
-  newest=$(complete | tail -n 1)
+  # Retention always keeps the newest (SIPGES_BACKUP_KEEP is 1 or more).
+  newest=$(complete_in "$files" | tail -n 1)
   printf '%s %s\n' "$(now)" "$newest" >"$backups/.last-offsite"
   rm -f -- "$backups/.last-offsite-failure"
 }
@@ -141,7 +145,7 @@ probe() {
 
 case ${1:-} in
 push) push ;;
-list) complete ;;
+list) files=$(listing) && complete_in "$files" ;;
 fetch) fetch "${2:-}" ;;
 probe) probe ;;
 loop)
