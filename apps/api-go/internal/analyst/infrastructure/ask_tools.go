@@ -42,6 +42,29 @@ const askBlocksExample = "```bloques\n" +
 	`{"tipo":"mapa","fuente":1},{"tipo":"cronologia","fuente":1,"eventos":[{"fecha":"2026-03-02","texto":"Inicio del bloqueo"}]}]` +
 	"\n```"
 
+// Prompt caching on Claude (shared/prompt-caching.md of the Claude API reference): the request
+// renders tools, then system, then messages, and the cache is a prefix match. The tools and the
+// system prompt are the same for every step of every question (fixed texts, the runner's fixed
+// order, no dates or ids), so a breakpoint on the one system block caches both, across the loop and
+// across questions; a second one on the last block of the conversation caches the turns so far for
+// the loop's next step. Two of the four breakpoints the API allows.
+
+type cacheControl struct {
+	Type string `json:"type"`
+}
+
+// ephemeral is the default five-minute cache: a question's steps follow each other in seconds.
+var ephemeral = cacheControl{Type: "ephemeral"}
+
+type systemBlock struct {
+	Type         string        `json:"type"`
+	Text         string        `json:"text"`
+	CacheControl *cacheControl `json:"cache_control,omitempty"`
+}
+
+// askSystem is askPrompt as the one system block, marked as the end of the stable prefix.
+var askSystem = []systemBlock{{Type: textBlock, Text: askPrompt, CacheControl: &ephemeral}}
+
 type sourceJSON struct {
 	N      int    `json:"n"`
 	Module string `json:"modulo"`
@@ -93,6 +116,8 @@ func (c *Claude) Next(ctx context.Context, tools []application.ToolSpec, turns [
 		ToolUseID string          `json:"tool_use_id,omitempty"`
 		Content   string          `json:"content,omitempty"`
 		IsError   bool            `json:"is_error,omitempty"`
+		// CacheControl marks the end of the conversation so far (cacheBreakpoint).
+		CacheControl *cacheControl `json:"cache_control,omitempty"`
 	}
 	type message struct {
 		Role    string  `json:"role"`
@@ -130,12 +155,18 @@ func (c *Claude) Next(ctx context.Context, tools []application.ToolSpec, turns [
 			push("user", block{Type: textBlock, Text: turn.Question.Value()})
 		}
 	}
+	// The last block of the last turn is a breakpoint: the next step of the loop resends this whole
+	// conversation with its own turns after it, and reads it from the cache.
+	if n := len(messages); n > 0 {
+		last := messages[n-1].Content
+		last[len(last)-1].CacheControl = &ephemeral
+	}
 	specs := make([]tool, 0, len(tools))
 	for _, t := range tools {
 		specs = append(specs, tool{Name: t.Name, Description: t.Description, InputSchema: input(t.InputSchema)})
 	}
 	body, err := json.Marshal(map[string]any{
-		"model": c.model, "max_tokens": maxAskTokens, "system": askPrompt, "tools": specs, "messages": messages,
+		"model": c.model, "max_tokens": maxAskTokens, "system": askSystem, "tools": specs, "messages": messages,
 	})
 	if err != nil {
 		return application.Step{}, errors.New("narrator: unusable request")
