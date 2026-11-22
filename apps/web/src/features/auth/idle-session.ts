@@ -11,6 +11,8 @@ export const KEEPALIVE_AFTER_MS = 5 * 60_000;
 export const KEEPALIVE_PATH = '/system/auth/sessions';
 /** The longest the check sleeps; it also runs on every request answer and on tab wake. */
 const MAX_TICK_MS = 30_000;
+/** A check the server does not answer in this long is dropped, and the tab decides alone. */
+export const CHECK_TIMEOUT_MS = 10_000;
 const ACTIVITY_EVENTS = ['pointerdown', 'keydown', 'wheel', 'touchstart'] as const;
 
 export type IdlePhase = 'active' | 'warning' | 'expired';
@@ -53,7 +55,8 @@ export const watchIdleSession = (
   let sending = false;
   // The deadline the server last confirmed when this tab was about to warn or end; another tab's
   // activity moves the server's deadline without this tab hearing of it.
-  let confirmed: number | undefined;
+  // Keyed by phase as well: a deadline confirmed for the warning is asked again at its end.
+  let confirmed: string | undefined;
   let probing = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
 
@@ -86,7 +89,7 @@ export const watchIdleSession = (
     if (ended || deadline === undefined) return;
     const now = Date.now();
     const phase = idlePhase(now, deadline);
-    if (phase !== 'active' && confirmed !== deadline) return confirm();
+    if (phase !== 'active' && confirmed !== `${phase}:${deadline}`) return confirm();
     if (phase === 'expired') return end();
     if (phase === 'warning' && !warned) {
       warned = true;
@@ -108,14 +111,20 @@ export const watchIdleSession = (
   const confirm = () => {
     if (probing) return;
     probing = true;
-    void request(KEEPALIVE_PATH, { background: true })
+    const abort = new AbortController();
+    const giveUp = setTimeout(() => abort.abort(), CHECK_TIMEOUT_MS);
+    void request(KEEPALIVE_PATH, { background: true, signal: abort.signal })
       .then(() => undefined)
       .catch((error: unknown) => {
         if (isApiError(error, 401)) end();
       })
       .finally(() => {
+        clearTimeout(giveUp);
         probing = false;
-        confirmed = deadline;
+        // The deadline after the answer, which may have moved it to another phase; check() only
+        // asks with a deadline, and nothing clears it.
+        confirmed =
+          deadline === undefined ? undefined : `${idlePhase(Date.now(), deadline)}:${deadline}`;
         check();
       });
   };

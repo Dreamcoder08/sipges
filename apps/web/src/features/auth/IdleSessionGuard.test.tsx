@@ -297,6 +297,34 @@ describe('idle session (world-class-local T8f)', () => {
     expect(expired).toHaveBeenCalledTimes(1);
   });
 
+  it('asks again at the deadline when another tab extended the session during the warning', async () => {
+    withTimeout(TIMEOUT_SECONDS);
+    const expired = await mount();
+    await wait(28 * MINUTE + 10 * 1000);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    // Another tab works during this tab's warning.
+    expiresAt = Date.now() + TIMEOUT_SECONDS * 1000;
+    await wait(2 * MINUTE);
+    expect(expired).not.toHaveBeenCalled();
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('decides alone when the server does not answer its check', async () => {
+    withTimeout(TIMEOUT_SECONDS);
+    server.use(
+      http.get('/system/auth/sessions', ({ request: req }) =>
+        req.headers.get(BACKGROUND_HEADER) === '1'
+          ? new Promise<never>(() => undefined)
+          : sessionAnswer({ request: req }),
+      ),
+    );
+    const expired = await mount();
+    await wait(28 * MINUTE + 30 * 1000);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    await wait(2 * MINUTE);
+    expect(expired).toHaveBeenCalledTimes(1);
+  });
+
   it('ends the session at the deadline with no activity', async () => {
     withTimeout(TIMEOUT_SECONDS);
     const expired = await mount();
