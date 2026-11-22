@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { type FormEvent, useEffect, useId, useRef, useState } from 'react';
-import { isApiError, isMfaRequired, request } from '../../shared/api/client.ts';
+import { isApiError, request } from '../../shared/api/client.ts';
+import { providersQuery } from '../../shared/api/providers.ts';
 import { errorDetail } from '../../shared/api/feedback.ts';
 import { Alert } from '../../shared/ui/Alert.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
@@ -13,27 +14,6 @@ const PATH = '/system/auth/password';
 const MISMATCH = 'Las contraseñas nuevas no coinciden.';
 const CHANGED = 'Contraseña cambiada. Se cerraron las sesiones abiertas en otros dispositivos.';
 
-/**
- * Whether this API can change a password. Only the Go API has the route (world-class-local T8);
- * the TypeScript API still serving cloud production answers 404 (403 for a read-only role). An
- * empty body is refused with 422 before any credential is read or the sign-in throttle counts,
- * so the probe changes nothing. A 401 still ends the session through the query cache.
- */
-const passwordRouteQuery = (scope: string) => ({
-  queryKey: ['password-route', scope] as const,
-  queryFn: async ({ signal }: { signal: AbortSignal }) => {
-    try {
-      await request(PATH, { scope, method: 'POST', body: { json: {} }, signal });
-      return true;
-    } catch (error) {
-      if (isApiError(error, 401) || isMfaRequired(error)) throw error;
-      return isApiError(error, 422);
-    }
-  },
-  staleTime: Infinity,
-  retry: false,
-});
-
 type Problem = { readonly field: 'current' | 'next' | 'again' | 'form'; readonly text: string };
 
 /**
@@ -42,8 +22,12 @@ type Problem = { readonly field: 'current' | 'next' | 'again' | 'form'; readonly
  * Offered only where the API has the route, so the form never fails by construction.
  */
 export const PasswordCard = ({ scope, onChanged }: { scope: string; onChanged: () => void }) => {
-  const route = useQuery(passwordRouteQuery(scope));
-  return route.data === true ? <PasswordForm scope={scope} onChanged={onChanged} /> : null;
+  // Only the Go API changes a password, and says so in /system/auth/providers; the TypeScript API
+  // still serving cloud production does not, so the form is never offered where it would fail.
+  const providers = useQuery(providersQuery);
+  return providers.data?.password_change === true ? (
+    <PasswordForm scope={scope} onChanged={onChanged} />
+  ) : null;
 };
 
 const PasswordForm = ({ scope, onChanged }: { scope: string; onChanged: () => void }) => {

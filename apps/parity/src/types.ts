@@ -37,7 +37,9 @@ export type ParityCase = {
    * gets (ADR 0032): left out of Go's answer before comparing. TypeScript naming one is still a
    * difference.
    */
-  readonly goOnly?: { readonly list: string; readonly names: readonly string[] };
+  readonly goOnly?:
+    | { readonly list: string; readonly names: readonly string[] }
+    | { readonly keys: readonly string[] };
   /**
    * For a text answer whose values differ per process: a regular expression; only the lines it
    * matches are compared, in order. The schema of a metrics text, for example.

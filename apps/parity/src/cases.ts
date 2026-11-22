@@ -74,7 +74,13 @@ export const CASES: readonly ParityCase[] = [
     headers: { cookie: UNKNOWN_TOKEN },
   },
   { name: 'me with a session', method: 'GET', path: '/system/auth/me', auth: 'consulta' },
-  { name: 'sign-in providers', method: 'GET', path: '/system/auth/providers' },
+  {
+    name: 'sign-in providers',
+    method: 'GET',
+    path: '/system/auth/providers',
+    // Only the Go API changes a password (world-class-local T8); the web reads this flag.
+    goOnly: { keys: ['password_change'] },
+  },
   {
     name: 'public write without Origin',
     method: 'POST',

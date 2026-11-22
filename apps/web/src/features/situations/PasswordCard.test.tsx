@@ -7,8 +7,8 @@ import { createQueryClient } from '../../app/query-client.ts';
 import { server } from '../../test/server.ts';
 import { AccountSection } from './AccountSection.tsx';
 
-// Synthetic credentials only. The Go API answers an empty body with 422 before it reads any
-// credential; the TypeScript API has no such route (404, or 403 for a read-only role).
+// Synthetic credentials only. The Go API says in /system/auth/providers that it changes a
+// password; the TypeScript API answers without that flag and has no such route.
 type Body = { current_password?: string; new_password?: string };
 const CURRENT = 'synthetic-old-pass-1';
 const NEXT = 'synthetic-new-pass-22';
@@ -16,10 +16,11 @@ const NEXT = 'synthetic-new-pass-22';
 const goPasswordRoute = (respond: (body: Body) => Response, posts: Body[] = []) =>
   server.use(
     http.get('*/system/auth/sessions', () => HttpResponse.json({ sessions: [] })),
+    http.get('*/system/auth/providers', () =>
+      HttpResponse.json({ google: false, password_change: true }),
+    ),
     http.post('*/system/auth/password', async ({ request }) => {
       const body = (await request.json()) as Body;
-      if (body.current_password === undefined && body.new_password === undefined)
-        return HttpResponse.json({ detail: [{ type: 'missing' }] }, { status: 422 });
       posts.push(body);
       return respond(body);
     }),
@@ -129,19 +130,21 @@ describe('PasswordCard', () => {
     await waitFor(() => expect(onSessionEnded).toHaveBeenCalled());
   });
 
-  it.each([404, 403])('is not offered where the API has no such route (%i)', async (status) => {
-    const probes: string[] = [];
+  it('is not offered, and never calls the route, where the API does not announce it', async () => {
+    const calls: string[] = [];
     server.use(
       http.get('*/system/auth/sessions', () => HttpResponse.json({ sessions: [] })),
+      // The TypeScript API's answer: no password_change flag.
+      http.get('*/system/auth/providers', () => HttpResponse.json({ google: false })),
       http.post('*/system/auth/password', () => {
-        probes.push('probe');
-        return HttpResponse.json({ detail: 'Not Found' }, { status });
+        calls.push('password');
+        return HttpResponse.json({ detail: 'Not Found' }, { status: 404 });
       }),
     );
     renderSection();
     await screen.findByText('No hay sesiones activas.');
-    await waitFor(() => expect(probes).toHaveLength(1));
     expect(screen.queryByRole('heading', { name: 'Cambiar contraseña' })).toBeNull();
     expect(screen.queryByLabelText('Contraseña actual')).toBeNull();
+    expect(calls).toEqual([]);
   });
 });
