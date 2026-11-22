@@ -4,6 +4,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
+### Añadido
+
+- Instalación local: copia de los respaldos fuera del equipo. `./sipges offsite-config` configura un remoto de rclone (SFTP o almacenamiento compatible con S3) y `./sipges offsite-to <remoto:carpeta>` sube cada respaldo, ya cifrado, en minutos y luego cada hora; una computadora que estuvo apagada se pone al día sola. Un respaldo cuenta en el remoto solo cuando sus archivos están comprobados. `./sipges restore` trae del remoto el respaldo que ya no está en el equipo y lo verifica antes de detener nada. Las credenciales quedan en `rclone/rclone.conf`, nunca en `.env`.
+
 ### Limpieza
 
 - Los 14 documentos ODD sin tareas abiertas pasan a `odd/archive/`, como pide `AGENTS.md`, con sus enlaces actualizados en 72 archivos; `pnpm odd:status` muestra solo trabajo vivo.

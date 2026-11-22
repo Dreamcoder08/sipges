@@ -189,6 +189,35 @@ services:
     cap_add: [CHOWN, DAC_OVERRIDE, DAC_READ_SEARCH, FOWNER]
     security_opt: ['no-new-privileges:true']
 
+  # Set by ./sipges offsite-to (world-class-local T13): pushes each sealed backup to an rclone
+  # remote within the hour, catching up after the computer was off. Only while a remote is set.
+  offsite:
+    image: sipges-offsite:local
+    build: { context: ., dockerfile: Dockerfile.offsite }
+    <<: *hardening
+    profiles: [offsite]
+    entrypoint: [/bin/bash, /ops/offsite.sh]
+    command: [loop]
+    environment:
+      SIPGES_BACKUP_OFFSITE: ${SIPGES_BACKUP_OFFSITE:-}
+      SIPGES_BACKUP_KEEP: ${SIPGES_BACKUP_KEEP:-14}
+      SIPGES_BACKUP_KEEP_WEEKLY: ${SIPGES_BACKUP_KEEP_WEEKLY:-8}
+      SIPGES_BACKUP_KEEP_MONTHLY: ${SIPGES_BACKUP_KEEP_MONTHLY:-12}
+      RCLONE_CONFIG: /config/rclone.conf
+      XDG_CACHE_HOME: /tmp
+      TZ: ${SIPGES_TIMEZONE:-America/Lima}
+    # As the installing user: what it writes in the backups and rclone folders stays theirs.
+    user: ${SIPGES_HOST_OWNER:?}
+    volumes:
+      - ./ops:/ops:ro
+      - ${SIPGES_BACKUP_DIR:-./backups}:/backups
+      # The folder of rclone.conf (./sipges offsite-config), not the file: rclone rewrites it
+      # through a temporary file beside it, to save refreshed tokens and what it learns of a server.
+      - ${SIPGES_RCLONE_DIR:-./rclone}:/config
+    # Its own network with a route out, and no way to the database.
+    networks: [offsite]
+    mem_limit: 256m
+
   # Only ever started by `./sipges restore`: the one service that holds the superuser password.
   restore:
     profiles: [ops]
@@ -261,3 +290,4 @@ networks:
   backend:
     internal: true
   frontend:
+  offsite:

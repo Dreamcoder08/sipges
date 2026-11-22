@@ -81,7 +81,7 @@ Without `SIPGES_DATA_KEY` and `SIPGES_BACKUP_PASSPHRASE` from `.env`, no backup 
 | --- | --- |
 | `./sipges status` | Shows what is running, which build (the commit it came from), the latest backup, any backup failure, and what still protects your data poorly (no copy on a second disk, no recovery kit). |
 | `./sipges stop` / `./sipges start` | Stops or starts everything. It also starts by itself after a restart of the computer. |
-| `./sipges logs api` | Shows recent activity. Other parts: `db`, `caddy`, `backup`. |
+| `./sipges logs api` | Shows recent activity. Other parts: `db`, `caddy`, `backup`, `offsite`. |
 
 Check `./sipges status` once a week. It is how you find out a nightly backup failed.
 
@@ -89,7 +89,7 @@ Check `./sipges status` once a week. It is how you find out a nightly backup fai
 
 SIPGES backs itself up every night at 2:00, Lima time. It keeps the latest 14, plus the newest backup of each of the last 8 weeks and of each of the last 12 months, so you can go back up to a year. A backup holds the database and every evidence file, encrypted. It counts only after SIPGES has read it back.
 
-If the computer was off or asleep at 2:00, SIPGES backs up as soon as it starts again, whenever the newest backup is more than a day old. `./sipges status` warns when the newest backup is more than 26 hours old, and on every run while the backups have no copy on a second disk (see below).
+If the computer was off or asleep at 2:00, SIPGES backs up as soon as it starts again, whenever the newest backup is more than a day old. `./sipges status` warns when the newest backup is more than 26 hours old, and on every run while the backups have no copy on a second disk or off-site (see below).
 
 Backups are in `deploy/local/backups`. **A backup on the same computer does not protect you from a dead disk.** Let SIPGES copy each one to a folder on another disk (an encrypted external disk, or another computer's shared folder mounted here):
 
@@ -101,11 +101,26 @@ Backups are in `deploy/local/backups`. **A backup on the same computer does not 
 
 The folder must exist. SIPGES marks it with a `.sipges-backup-copy` file, copies every backup there after it is read back, checks the copy against its checksums and keeps the same ones as the backup folder (the latest, weekly and monthly). It copies only into the marked folder: with the disk unplugged, nothing goes to this computer's disk in its place, the backup itself still counts, and `./sipges status` says the copy failed and why. Plug the disk back in and run `./sipges start`: a running service keeps seeing the empty folder it started with, and start gives it the disk again, so the next backup is copied. `copy-backups-to` warns when the folder is on the same disk as the backups, as happens when it was made while the other disk was unplugged. To stop the copies, remove the `SIPGES_BACKUP_COPY_DIR` line from `.env` and run `./sipges start`.
 
+### Off-site copy
+
+A disk in the same office does not survive a fire or a theft. SIPGES can also push every backup to a server elsewhere, a NAS over SFTP or S3-compatible storage, through [rclone](https://rclone.org/). The backups leave already encrypted with `SIPGES_BACKUP_PASSPHRASE`, so the server only ever holds data it cannot read, and without the recovery kit nobody can open them, you included.
+
+```bash
+./sipges offsite-config                 # answer rclone's questions to add a remote, such as "nas"
+./sipges offsite-to nas:sipges-backups  # tries the remote, then pushes every backup there
+```
+
+The remote's settings and password go to `deploy/local/rclone/rclone.conf`, readable only by you, never to `.env`: `offsite-to` refuses a connection string with a password in it. For SFTP, pin the server's key first, so a machine pretending to be your NAS cannot catch the password: run `ssh-keyscan <nas address> > rclone/known_hosts` and answer `known_hosts_file` with `/config/known_hosts` in `offsite-config`.
+
+The `offsite` service pushes the newest backup within minutes, then checks every hour, so a computer that was off catches up on its own with every backup it missed. A backup counts on the remote only once its files are there and checked and its checksums have gone up last. The remote keeps the same ones as the backup folder. `./sipges status` names the remote and the newest backup on it, says when a push failed and why, and warns when no push worked for 26 hours. To stop, run `./sipges offsite-to --off`: what is already on the remote stays.
+
+`./sipges restore <name>` with a backup that is no longer on this computer fetches it from the remote and checks it against its checksums before anything stops. To restore on a new computer, install SIPGES, put your `.env` secrets and a copy of the `rclone` folder in place, run `./sipges offsite-to` with the same remote, then `./sipges backups --offsite` and `./sipges restore`.
+
 | Command | What it does |
 | --- | --- |
 | `./sipges backup` | Takes a backup now. |
-| `./sipges backups` | Lists the backups by date. |
-| `./sipges restore 20261106T193243Z` | Replaces everything with that backup. Asks you to type RESTORE. |
+| `./sipges backups` | Lists the backups by date. `--offsite` lists those on the remote. |
+| `./sipges restore 20261106T193243Z` | Replaces everything with that backup, fetched from the remote if it is not here. Asks you to type RESTORE. |
 
 To change the hour, the numbers kept or the time zone, edit `SIPGES_BACKUP_HOUR`, `SIPGES_BACKUP_KEEP` (latest backups), `SIPGES_BACKUP_KEEP_WEEKLY`, `SIPGES_BACKUP_KEEP_MONTHLY` and `SIPGES_TIMEZONE` in `.env`, then run `./sipges start`.
 
@@ -346,6 +361,7 @@ When the bridge is stopped, your login expired or your subscription quota ran ou
 | Browser says the certificate is not trusted | Install `sipges-root-ca.crt` on that computer. After `./sipges wipe` the certificate is new, so install it again. |
 | A blank page | You used a different name or address from the install. Use that one, or change it with `./sipges install <new name>`. |
 | The status shows a backup failure | Run `./sipges logs backup`. Disk space is the usual cause. |
+| The status shows an off-site push failure | Run `./sipges logs offsite`. Usually the server is unreachable or its password changed: fix it with `./sipges offsite-config`. The next hourly round retries. |
 | `the database did not become ready` | Run `./sipges logs db`. After a power cut it may need a while to recover, so wait and try again. |
 | `the app has already run here` | `prepare` is only for an unused install. To start over: `./sipges wipe`, then `./sipges prepare`. |
 | `SIPGES did not become ready` | Run `./sipges logs api`, and keep the output for support. It holds no passwords. |
