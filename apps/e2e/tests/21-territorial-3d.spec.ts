@@ -18,6 +18,9 @@ test('the territorial map opens a 3D terrain view of documented records and retu
   const terrain = page.locator('[data-map-engine="cesium"]');
   await expect(terrain).toBeVisible({ timeout: 30_000 });
   await expect(terrain.locator('canvas')).toBeVisible();
+  // The relief says it is loading until the first view's tiles arrive (world-class-local T9).
+  await expect(terrain).toHaveAttribute('aria-busy', 'false', { timeout: 30_000 });
+  await expect(page.getByRole('status').filter({ hasText: 'Cargando el relieve' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Vista 3D' })).toHaveAttribute(
     'aria-pressed',
     'true',

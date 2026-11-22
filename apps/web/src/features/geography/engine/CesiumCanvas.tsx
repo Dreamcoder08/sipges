@@ -24,7 +24,7 @@ import {
   WebMercatorTilingScheme,
 } from '@cesium/engine';
 import '@cesium/engine/Source/Widget/CesiumWidget.css';
-import { useEffect, useId, useLayoutEffect, useMemo, useRef } from 'react';
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useResolvedTheme } from '../../../shared/lib/theme.ts';
 import { Icon } from '../../../shared/ui/Icon.tsx';
 import type { IconName } from '../../../shared/ui/icons.ts';
@@ -211,6 +211,9 @@ const CesiumCanvas = ({
   });
   const theme = useResolvedTheme();
   const initial = useRef({ home, theme });
+  // The relief streams in tile by tile after the engine starts: until the first view's tiles
+  // arrive the globe is blank, so the view says it is loading (world-class-local T9).
+  const [reliefLoading, setReliefLoading] = useState(true);
 
   useEffect(() => {
     const node = container.current;
@@ -235,6 +238,12 @@ const CesiumCanvas = ({
         skyAtmosphere: false,
         scene3DOnly: true,
         creditContainer: credits.current,
+        // Draw a frame only when something changed (camera, tiles, entities, the effects below
+        // call requestRender), never continuously: an idle globe re-rendered every frame, which
+        // on a software or weak GPU blocked the page for ~165 ms per frame (world-class-local T9).
+        // The clock does not animate, so simulation time never asks for a frame.
+        requestRenderMode: true,
+        maximumRenderTimeChange: Number.POSITIVE_INFINITY,
       });
     } catch {
       handlers.current.onFailure();
@@ -247,6 +256,13 @@ const CesiumCanvas = ({
     scene.verticalExaggeration = 1.5;
     scene.canvas.setAttribute('aria-describedby', hint);
     scene.renderError.addEventListener(() => handlers.current.onFailure());
+    const stopWatchingTiles = scene.globe.tileLoadProgressEvent.addEventListener(
+      (queued: number) => {
+        if (queued > 0 || !scene.globe.tilesLoaded) return;
+        setReliefLoading(false);
+        stopWatchingTiles();
+      },
+    );
     limitZoom(scene, initial.current.home);
     frameExtent(instance.camera, initial.current.home, 0);
     const clicks = new ScreenSpaceEventHandler(scene.canvas);
@@ -262,6 +278,7 @@ const CesiumCanvas = ({
     widget.current = instance;
     return () => {
       widget.current = null;
+      stopWatchingTiles();
       clicks.destroy();
       instance.destroy();
     };
@@ -423,8 +440,15 @@ const CesiumCanvas = ({
           className={`${styles.canvas} ${styles.globe}`}
           role="region"
           aria-label={label}
+          aria-busy={reliefLoading}
           data-map-engine="cesium"
         />
+        {reliefLoading && (
+          <p role="status" className={styles.loading}>
+            <progress aria-hidden="true" className={styles.loadingBar} />
+            Cargando el relieve…
+          </p>
+        )}
         <div className={frame.controls}>
           {controls.map((c) => (
             <button

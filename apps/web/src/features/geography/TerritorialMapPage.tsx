@@ -725,31 +725,37 @@ const TerritorialWorkspace = ({
                 />
               </Suspense>
             </MapErrorBoundary>
-          ) : engine === 'webgl' ? (
-            <MapErrorBoundary fallback={svgMap} onError={() => setEngine('svg')}>
-              <Suspense fallback={<p role="status">Cargando el motor cartográfico…</p>}>
-                <GeoCanvas
-                  basemap={basemap}
-                  home={homeExtent}
-                  homeLabel={area.home}
-                  showDistricts={area.sechura}
-                  label={mapLabel}
-                  points={canvasPoints}
-                  concessions={shownConcessions}
-                  selectedPoint={selectedPoint?.id ?? ''}
-                  selectedConcession={selectedConcession?.code ?? ''}
-                  focus={focus}
-                  onView3d={() => {
-                    setTerrainNote('');
-                    setView3d(true);
-                  }}
-                  onSelectPoint={selectPoint}
-                  onSelectConcession={selectConcession}
-                  onView={setCanvasView}
-                  onFailure={() => setEngine('svg')}
-                />
-              </Suspense>
-            </MapErrorBoundary>
+          ) : null}
+          {/* The 2D map stays mounted, hidden, while the 3D view is open: re-creating it on the way
+              back blocked the page for up to 800 ms on a software GPU (world-class-local T9). */}
+          {engine === 'webgl' ? (
+            <div hidden={view3d} className={styles.flatMap}>
+              <MapErrorBoundary fallback={svgMap} onError={() => setEngine('svg')}>
+                <Suspense fallback={<p role="status">Cargando el motor cartográfico…</p>}>
+                  <GeoCanvas
+                    hidden={view3d}
+                    basemap={basemap}
+                    home={homeExtent}
+                    homeLabel={area.home}
+                    showDistricts={area.sechura}
+                    label={mapLabel}
+                    points={canvasPoints}
+                    concessions={shownConcessions}
+                    selectedPoint={selectedPoint?.id ?? ''}
+                    selectedConcession={selectedConcession?.code ?? ''}
+                    focus={focus}
+                    onView3d={() => {
+                      setTerrainNote('');
+                      setView3d(true);
+                    }}
+                    onSelectPoint={selectPoint}
+                    onSelectConcession={selectConcession}
+                    onView={setCanvasView}
+                    onFailure={() => setEngine('svg')}
+                  />
+                </Suspense>
+              </MapErrorBoundary>
+            </div>
           ) : (
             svgMap
           )}
