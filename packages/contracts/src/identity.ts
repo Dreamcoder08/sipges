@@ -55,6 +55,7 @@ export const TotpEnableRequest = z.object({ code: z.string() });
 export const AuthProviders = z.object({
   google: z.boolean(),
   password_change: z.boolean().optional(),
+  password_reset: z.boolean().optional(),
 });
 export type AuthProviders = z.infer<typeof AuthProviders>;
 

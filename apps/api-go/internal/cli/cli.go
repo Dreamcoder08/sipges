@@ -122,7 +122,7 @@ func (a *app) help() string {
 }
 
 // typedBuiltins are typed commands with flags of their own: help lists them with the routes.
-var typedBuiltins = map[string]bool{"evidence upload": true, "analyst ask": true}
+var typedBuiltins = map[string]bool{"evidence upload": true, "analyst ask": true, "users reset-password": true}
 
 // wantsJSON answers before flags are parsed, so even a usage error can honour --json.
 func wantsJSON(args []string) bool {
@@ -140,19 +140,20 @@ func wantsJSON(args []string) bool {
 
 func (a *app) builtins() map[string]command {
 	return map[string]command{
-		"login":           a.login,
-		"logout":          a.logout,
-		"session":         a.sessionState,
-		"mfa enroll":      a.mfaEnroll,
-		"password":        a.password,
-		"project list":    a.projectList,
-		"project switch":  a.projectSwitch,
-		"apikey create":   a.apiKeyCreate,
-		"routes":          a.listRoutes,
-		"call":            a.call,
-		"evidence upload": a.evidenceUpload,
-		"analyst ask":     a.analystAsk,
-		"verify":          a.verifyCommand,
+		"login":                a.login,
+		"logout":               a.logout,
+		"session":              a.sessionState,
+		"mfa enroll":           a.mfaEnroll,
+		"password":             a.password,
+		"project list":         a.projectList,
+		"project switch":       a.projectSwitch,
+		"apikey create":        a.apiKeyCreate,
+		"routes":               a.listRoutes,
+		"call":                 a.call,
+		"evidence upload":      a.evidenceUpload,
+		"analyst ask":          a.analystAsk,
+		"users reset-password": a.resetPassword,
+		"verify":               a.verifyCommand,
 	}
 }
 

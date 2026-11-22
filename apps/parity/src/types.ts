@@ -35,7 +35,7 @@ export type ParityCase = {
   /**
    * Entries of a list that only the Go API answers, such as a tool the frozen TypeScript API never
    * gets (ADR 0032): left out of Go's answer before comparing. TypeScript naming one is still a
-   * difference.
+   * difference. `keys` names top-level fields only Go answers, such as a capability flag.
    */
   readonly goOnly?:
     | { readonly list: string; readonly names: readonly string[] }

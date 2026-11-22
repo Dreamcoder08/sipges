@@ -20,6 +20,9 @@ type providers struct {
 	// PasswordChange tells the web it may offer POST /system/auth/password, which only this API
 	// serves; the TypeScript API answers without it (world-class-local T8).
 	PasswordChange bool `json:"password_change"`
+	// PasswordReset tells the web an administrator may reset another person's password
+	// (POST /system/auth/accounts/{username}/password), which only this API serves.
+	PasswordReset bool `json:"password_reset"`
 }
 
 // Routes registers GET /system/auth/me (auth-routes.ts: the session's user, or null) and
@@ -45,6 +48,6 @@ func Routes(mux *http.ServeMux, sessions Authenticator, googleEnabled bool, log 
 		httpx.WriteJSON(w, http.StatusOK, me{p.Username, p.FullName, string(p.Role), 1})
 	})
 	mux.HandleFunc("GET /system/auth/providers", func(w http.ResponseWriter, _ *http.Request) {
-		httpx.WriteJSON(w, http.StatusOK, providers{Google: googleEnabled, PasswordChange: true})
+		httpx.WriteJSON(w, http.StatusOK, providers{Google: googleEnabled, PasswordChange: true, PasswordReset: true})
 	})
 }
