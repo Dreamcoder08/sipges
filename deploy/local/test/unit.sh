@@ -34,6 +34,9 @@ compose)
     ;;
   run)
     [[ $* != *migrate* || ! -f $FAKE/migrate-fails ]] || exit 1
+    [[ $* != *' offsite '* || ! -f $FAKE/offsite-fails ]] || exit 1
+    # An off-site fetch lands the backup where ./sipges restore looks for it.
+    if [[ $* == *' offsite fetch '* ]]; then mkdir -p "$(sed -n 's/^SIPGES_BACKUP_DIR=//p' "$SIPGES_ENV_FILE")/${*: -1}"; fi
     echo "gid=${SIPGES_HOST_GID:-unset}" >"$FAKE/run-env"
     stat -c '%a %g' "$SIPGES_IMPORT_REPORTS" >"$FAKE/reports-during-run"
     for arg in "$@"; do
@@ -909,6 +912,233 @@ echo 20971520 >"$FAKE/df-free"
 run backup
 check 'with 20 GB free the backup runs' called 'backup.sh'
 rm -f "$FAKE/df-free"
+
+# --- an off-site copy of the sealed backups (world-class-local T13)
+
+offsite_env() { printf 'SIPGES_RCLONE_DIR=%s/rclone\n' "$work" >>"$SIPGES_ENV_FILE"; }
+
+fresh
+offsite_env
+if run offsite-to; then fail 'offsite-to with no remote is refused'; else ok 'offsite-to with no remote is refused'; fi
+if run offsite-to ':sftp,host=nas,pass=secret:sipges'; then fail 'a connection string is refused'; else ok 'a connection string is refused'; fi
+check 'because it would put a password in the .env' said 'a remote named in'
+if run offsite-to /media/disk/sipges; then fail 'a local folder is refused'; else ok 'a local folder is refused'; fi
+check 'and copy-backups-to is named for it' said 'copy-backups-to'
+check 'nothing refused is written' test -z "$(grep '^SIPGES_BACKUP_OFFSITE=' "$SIPGES_ENV_FILE" || true)"
+
+fresh
+offsite_env
+run install
+touch "$FAKE/offsite-fails"
+if run offsite-to nas:sipges; then fail 'a remote that cannot be reached is refused'; else ok 'a remote that cannot be reached is refused'; fi
+check 'and is not written' test -z "$(grep '^SIPGES_BACKUP_OFFSITE=' "$SIPGES_ENV_FILE" || true)"
+check 'and the way to set it up is named' said './sipges offsite-config'
+command rm -f "$FAKE/offsite-fails"
+: >"$FAKE/calls"
+run offsite-to nas:sipges
+check 'offsite-to tries the remote before writing it' called 'run --rm --no-deps -e SIPGES_BACKUP_OFFSITE=nas:sipges offsite probe'
+check 'then writes it to the .env' env_is SIPGES_BACKUP_OFFSITE nas:sipges
+check 'and starts the off-site service' called 'up -d offsite'
+check 'the rclone settings file exists for the mount' test -f "$work/rclone/rclone.conf"
+check 'and only its owner may read it' test "$(stat -c %a "$work/rclone/rclone.conf")" = 600
+check 'nor open its folder' test "$(stat -c %a "$work/rclone")" = 700
+run offsite-to nas:other
+check 'a new remote replaces the old one, one line only' test "$(grep -c '^SIPGES_BACKUP_OFFSITE=' "$SIPGES_ENV_FILE")" = 1
+: >"$FAKE/calls"
+run start
+check 'start with a remote starts the off-site service' called 'up -d offsite'
+run offsite-to --off
+check 'offsite-to --off removes the remote' test -z "$(grep '^SIPGES_BACKUP_OFFSITE=' "$SIPGES_ENV_FILE" || true)"
+check 'and stops the service' called 'rm -sf offsite'
+: >"$FAKE/calls"
+run start
+check 'start without a remote leaves the off-site service off' bash -c "! grep -qF 'up -d offsite' '$FAKE/calls'"
+
+fresh
+offsite_env
+: >"$FAKE/calls"
+run offsite-config < /dev/null || true
+check 'offsite-config runs rclone config in the service' called 'run --rm --no-deps --entrypoint rclone offsite config'
+check 'on a settings file only its owner may read' test "$(stat -c %a "$work/rclone/rclone.conf")" = 600
+check 'and says how to pin an SFTP server key' said 'known_hosts_file'
+
+# status: where the backups go, and when the push fails or stops.
+fresh
+offsite_env
+printf 'SIPGES_BACKUP_OFFSITE=nas:sipges\n' >>"$SIPGES_ENV_FILE"
+printf '2026-11-22T07:00:00Z 20261122T070000Z\n' >"$work/backups/.last-offsite"
+run status || true
+check 'status names the off-site remote and its newest backup' said 'Backups pushed off-site to nas:sipges (newest 20261122T070000Z)'
+check 'an off-site copy is a copy off this computer' said_not 'the backups are only on this computer'
+touch -d '-30 hours' "$work/backups/.last-offsite"
+run status || true
+check 'status warns when no push succeeded for 26 hours' said 'WARNING: no backup reached nas:sipges in the last 26 hours'
+printf '2026-11-22T08:00:00Z could not push 20261122T070000Z to nas:sipges\n' >"$work/backups/.last-offsite-failure"
+run status || true
+check 'status shows a failed push' said 'WARNING: the off-site push failed at 2026-11-22T08:00:00Z: could not push'
+check 'every call names the off-site profile while a remote is set' called '--profile offsite'
+
+# restore and backups read from the remote.
+fresh
+offsite_env
+if run restore 20261120T070000Z --yes; then fail 'restoring a backup that is nowhere is refused'; else ok 'restoring a backup that is nowhere is refused'; fi
+check 'without a remote it says there is no such backup' said 'no backup named 20261120T070000Z'
+if run backups --offsite; then fail 'backups --offsite without a remote is refused'; else ok 'backups --offsite without a remote is refused'; fi
+printf 'SIPGES_BACKUP_OFFSITE=nas:sipges\n' >>"$SIPGES_ENV_FILE"
+: >"$FAKE/calls"
+run backups --offsite
+check 'backups --offsite lists the remote' called 'offsite list'
+: >"$FAKE/calls"
+run restore 20261120T070000Z --yes || true
+check 'a backup missing here is fetched from the remote' called 'offsite fetch 20261120T070000Z'
+check 'and then restored' called 'run --rm restore 20261120T070000Z'
+check 'saying where it came from' said 'Fetching 20261120T070000Z from nas:sipges'
+touch "$FAKE/offsite-fails"
+command rm -rf "$work/backups/20261121T070000Z"
+: >"$FAKE/calls"
+if run restore 20261121T070000Z --yes; then fail 'a fetch that fails stops the restore'; else ok 'a fetch that fails stops the restore'; fi
+check 'before anything is stopped' bash -c "! grep -qE ' stop |run --rm restore' '$FAKE/calls'"
+command rm -f "$FAKE/offsite-fails"
+
+# The kit names the remote: on another computer the backups are there.
+fresh
+offsite_env
+printf 'SIPGES_DATA_KEY=synthetic-data-key-0000\nSIPGES_BACKUP_PASSPHRASE=synthetic-passphrase-a1b2\nSIPGES_BACKUP_OFFSITE=nas:sipges\n' >>"$SIPGES_ENV_FILE"
+run recovery-kit "$work/kit.txt" <<<"zzzz" || true
+check 'the recovery kit names the off-site remote' grep -qF 'Off-site copy:   nas:sipges' "$work/kit.txt"
+check 'and says to keep the rclone settings with the .env' grep -qF 'rclone folder' "$work/kit.txt"
+
+# The push itself (ops/offsite.sh), against a stand-in rclone whose fake: remote is a folder.
+cat >"$root/rclone" <<'RCLONE'
+#!/usr/bin/env bash
+# Answers like rclone for the calls ops/offsite.sh makes; fake:<path> is $RCLONE_ROOT/<path>.
+printf '%s\n' "$*" >>"$RCLONE_ROOT/.calls"
+[[ ! -f $RCLONE_ROOT/.down ]] || exit 1
+at() { if [[ $1 == fake:* ]]; then printf '%s/%s' "$RCLONE_ROOT" "${1#fake:}"; else printf '%s' "$1"; fi; }
+cmd=$1
+shift
+exclude= args=()
+for a in "$@"; do
+  case $a in
+  --exclude=*) exclude=${a#--exclude=/} ;;
+  -*) ;;
+  *) args+=("$a") ;;
+  esac
+done
+case $cmd in
+mkdir) mkdir -p "$(at "${args[0]}")" ;;
+lsf) [[ -d $(at "${args[0]}") ]] || exit 3; (cd "$(at "${args[0]}")" && find . -mindepth 1 -maxdepth 2 -type f -printf '%P\n' | sort) ;;
+copy)
+  src=$(at "${args[0]}") dst=$(at "${args[1]}")
+  [[ -d $src ]] || exit 3
+  mkdir -p "$dst"
+  for f in "$src"/*; do
+    [[ $(basename "$f") != "$exclude" ]] || continue
+    if [[ -f $RCLONE_ROOT/.copy-fails && $(basename "$f") == uploads.tar.gpg ]]; then exit 1; fi
+    cp "$f" "$dst/"
+  done
+  ;;
+check)
+  src=$(at "${args[0]}") dst=$(at "${args[1]}")
+  for f in "$src"/*; do
+    [[ $(basename "$f") != "$exclude" ]] || continue
+    cmp -s "$f" "$dst/$(basename "$f")" || exit 1
+  done
+  ;;
+copyto) mkdir -p "$(dirname "$(at "${args[1]}")")" && cp "$(at "${args[0]}")" "$(at "${args[1]}")" ;;
+purge) rm -rf -- "$(at "${args[0]}")" ;;
+rcat) mkdir -p "$(dirname "$(at "${args[0]}")")" && cat >"$(at "${args[0]}")" ;;
+cat) cat "$(at "${args[0]}")" ;;
+deletefile) rm -f -- "$(at "${args[0]}")" ;;
+*) exit 2 ;;
+esac
+RCLONE
+chmod +x "$root/rclone"
+
+offsite_step() { # mode [name]
+  PATH="$root:$PATH" RCLONE_ROOT=$work/remote SIPGES_BACKUPS_PATH=$work/backups SIPGES_BACKUP_OFFSITE=fake:sipges \
+    SIPGES_BACKUP_KEEP=2 SIPGES_BACKUP_KEEP_WEEKLY=0 SIPGES_BACKUP_KEEP_MONTHLY=0 \
+    bash "$(dirname "$script")/ops/offsite.sh" "$@" >"$work/out" 2>&1
+}
+sealed() { # name: a backup as backup.sh leaves it
+  mkdir -p "$work/backups/$1"
+  echo "dump $1" >"$work/backups/$1/db.dump.gpg"
+  echo "files $1" >"$work/backups/$1/uploads.tar.gpg"
+  (cd "$work/backups/$1" && sha256sum db.dump.gpg uploads.tar.gpg >SHA256SUMS)
+}
+remote=
+fresh
+remote=$work/remote/sipges
+mkdir -p "$work/remote"
+for stamp in 20261118T070000Z 20261119T070000Z 20261120T070000Z; do sealed "$stamp"; done
+offsite_step push
+check 'a first push sends only the newest backup' test -f "$remote/20261120T070000Z/SHA256SUMS"
+check 'not every older one' test ! -e "$remote/20261119T070000Z"
+check 'the checksums go up last, after the files are checked' \
+  test "$(grep -nE '^(check|copyto)' "$work/remote/.calls" | head -n 1 | cut -d: -f2 | cut -d' ' -f1)" = check
+check 'a push records the newest backup that reached the remote' grep -q ' 20261120T070000Z$' "$work/backups/.last-offsite"
+sealed 20261121T070000Z
+sealed 20261122T070000Z
+mkdir -p "$remote/notes"
+touch "$remote/notes/keep.txt"
+offsite_step push
+check 'a computer that was off pushes every backup it missed' test -f "$remote/20261121T070000Z/SHA256SUMS"
+check 'up to the newest' test -f "$remote/20261122T070000Z/SHA256SUMS"
+check 'the remote keeps SIPGES_BACKUP_KEEP of them' test ! -e "$remote/20261120T070000Z"
+check 'and touches nothing that is not a backup' test -f "$remote/notes/keep.txt"
+offsite_step list
+check 'list names the backups on the remote' test "$(cat "$work/out")" = $'20261121T070000Z\n20261122T070000Z'
+
+# A push cut short never counts, is recorded, and is finished on the next round.
+fresh
+remote=$work/remote/sipges
+mkdir -p "$work/remote"
+sealed 20261122T070000Z
+touch "$work/remote/.copy-fails"
+if offsite_step push; then fail 'a push that fails says so'; else ok 'a push that fails says so'; fi
+check 'and leaves no checksums on the remote' test ! -e "$remote/20261122T070000Z/SHA256SUMS"
+check 'so list does not show it' bash -c "PATH='$root:$PATH' RCLONE_ROOT='$work/remote' SIPGES_BACKUPS_PATH='$work/backups' SIPGES_BACKUP_OFFSITE=fake:sipges bash '$(dirname "$script")/ops/offsite.sh' list | grep -c . | grep -qx 0"
+check 'and the failure is recorded for status' grep -q 'could not push 20261122T070000Z' "$work/backups/.last-offsite-failure"
+command rm -f "$work/remote/.copy-fails"
+offsite_step push
+check 'the next round finishes it' test -f "$remote/20261122T070000Z/SHA256SUMS"
+check 'and clears the failure' test ! -e "$work/backups/.last-offsite-failure"
+# A half pushed backup that is gone here is removed from the remote.
+mkdir -p "$remote/20261101T070000Z"
+echo partial >"$remote/20261101T070000Z/db.dump.gpg"
+offsite_step push
+check 'a half pushed backup no longer here is removed' test ! -e "$remote/20261101T070000Z"
+
+fresh
+mkdir -p "$work/remote"
+touch "$work/remote/.down"
+sealed 20261122T070000Z
+if offsite_step push; then fail 'an unreachable remote fails the push'; else ok 'an unreachable remote fails the push'; fi
+check 'and is recorded' grep -q 'cannot reach fake:sipges' "$work/backups/.last-offsite-failure"
+if offsite_step probe; then fail 'probe fails on an unreachable remote'; else ok 'probe fails on an unreachable remote'; fi
+command rm -f "$work/remote/.down"
+offsite_step probe
+check 'probe passes on a remote it can write, read and clean' test -z "$(find "$work/remote" -name '.sipges-offsite-probe')"
+
+# Fetch: the files come back only when they match their checksums.
+fresh
+remote=$work/remote/sipges
+mkdir -p "$work/remote"
+sealed 20261122T070000Z
+offsite_step push
+command rm -rf "$work/backups/20261122T070000Z"
+offsite_step fetch 20261122T070000Z
+check 'fetch brings a backup back' test -f "$work/backups/20261122T070000Z/uploads.tar.gpg"
+check 'checked against its checksums' bash -c "cd '$work/backups/20261122T070000Z' && sha256sum --quiet -c SHA256SUMS"
+if offsite_step fetch 20261122T070000Z; then fail 'fetch refuses a backup already here'; else ok 'fetch refuses a backup already here'; fi
+command rm -rf "$work/backups/20261122T070000Z"
+echo tampered >"$remote/20261122T070000Z/db.dump.gpg"
+if offsite_step fetch 20261122T070000Z; then fail 'a fetched backup that does not match is refused'; else ok 'a fetched backup that does not match is refused'; fi
+check 'and is not kept' test ! -e "$work/backups/20261122T070000Z"
+check 'nor its partial' test -z "$(find "$work/backups" -name '.partial-*')"
+command rm -f "$remote/20261122T070000Z/SHA256SUMS"
+if offsite_step fetch 20261122T070000Z; then fail 'a half pushed backup cannot be fetched'; else ok 'a half pushed backup cannot be fetched'; fi
+if offsite_step fetch ../etc; then fail 'fetch refuses a name that is not a backup'; else ok 'fetch refuses a name that is not a backup'; fi
 
 command rm -rf "$root"
 if ((failures > 0)); then

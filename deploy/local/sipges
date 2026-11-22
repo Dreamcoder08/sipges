@@ -34,6 +34,9 @@ compose() {
       die "SIPGES_COMPOSE_OVERRIDE names $override, which does not exist. Fix the path in $ENV_FILE, or remove that line"
     files+=(-f "$override")
   fi
+  # With an off-site remote set (world-class-local T13), every call sees the offsite service, so
+  # stop and status include it.
+  [[ ! -f $ENV_FILE || -z $(env_value SIPGES_BACKUP_OFFSITE) ]] || files+=(--profile offsite)
   local replicas
   replicas=$(api_replicas) || exit 1
   if [[ $replicas == 2 ]]; then
@@ -288,6 +291,7 @@ start() {
   wait_ready
   mark_ready
   refresh_copy_mount
+  [[ -z $(env_value SIPGES_BACKUP_OFFSITE) ]] || start_offsite
 }
 
 # A container keeps the mount it started with: a disk plugged in after it started, or plugged
@@ -532,10 +536,13 @@ cmd_status() {
     say "WARNING: the copy to the second disk failed at $when: $reason"
   elif [[ -n $(env_value SIPGES_BACKUP_COPY_DIR) ]]; then
     say "Backups copied to: $(env_value SIPGES_BACKUP_COPY_DIR)"
+  elif [[ -n $(env_value SIPGES_BACKUP_OFFSITE) ]]; then
+    : # the off-site lines below say where the copy goes
   else
     # One dead disk loses the data and every backup beside it (world-class-local T3).
     say 'WARNING: the backups are only on this computer: a dead disk loses them with the data. Plug in a second disk and run ./sipges copy-backups-to <folder on it>'
   fi
+  offsite_status "$dir"
   kit_confirmed ||
     say 'WARNING: no recovery kit confirmed: without SIPGES_DATA_KEY and SIPGES_BACKUP_PASSPHRASE no backup can be opened. Run ./sipges recovery-kit'
 }
@@ -575,6 +582,7 @@ Keep this sheet on paper, away from this computer. Anyone holding it and a backu
 Site:            $(env_value SIPGES_SITE_HOST)
 Backups folder:  $(env_value SIPGES_BACKUP_DIR)
 Copy folder:     $(env_value SIPGES_BACKUP_COPY_DIR)
+Off-site copy:   $(env_value SIPGES_BACKUP_OFFSITE)
 
 SIPGES_DATA_KEY=$key
 SIPGES_BACKUP_PASSPHRASE=$pass
@@ -582,7 +590,9 @@ SIPGES_BACKUP_PASSPHRASE=$pass
 To restore on another computer:
 1. Install SIPGES there: ./sipges install
 2. In its .env, replace SIPGES_DATA_KEY and SIPGES_BACKUP_PASSPHRASE with the two lines above.
-3. Copy a backup folder (such as 20261121T070000Z) into its backups folder.
+3. Copy a backup folder (such as 20261121T070000Z) into its backups folder. With an off-site copy,
+   put a copy of the rclone folder next to ./sipges instead (keep it with the .env, not on paper),
+   then run ./sipges offsite-to with the remote above and ./sipges backups --offsite.
 4. Run ./sipges restore <that folder name>
 KIT
     chmod 600 "$file"
@@ -632,8 +642,86 @@ check_copy_folder() {
   say "WARNING: $dir is not marked as the backup copy (is the disk plugged in?). Backups go on without a copy until it is back and ./sipges start runs again."
 }
 
+# An off-site copy of every backup (world-class-local T13): the offsite service pushes the sealed
+# backups, already encrypted, to an rclone remote such as SFTP or S3-compatible storage. Its
+# credentials live in rclone/rclone.conf (folder SIPGES_RCLONE_DIR), never in the .env: only a
+# remote named there is accepted, so no password ends up in the .env, status or the recovery kit.
+rclone_dir() { local d; d=$(env_value SIPGES_RCLONE_DIR); printf '%s' "${d:-./rclone}"; }
+
+# Made before any run, private and owned by the installing user, whom the service runs as: Docker
+# would otherwise create the folder as root.
+ensure_rclone_conf() {
+  local dir
+  dir=$(rclone_dir)
+  (umask 077 && mkdir -p "$dir" && touch "$dir/rclone.conf") || die "cannot create $dir/rclone.conf"
+  { chmod 700 "$dir" && chmod 600 "$dir/rclone.conf"; } || die "cannot make $dir private" # either fails: die
+}
+
+start_offsite() {
+  ensure_rclone_conf
+  compose up -d offsite
+}
+
+cmd_offsite_config() {
+  need_env
+  ensure_rclone_conf
+  say "Answer rclone's questions to add a remote; its settings go to $(rclone_dir)/rclone.conf. Then run ./sipges offsite-to <remote>:<folder>."
+  say "For SFTP, save the server's key first (ssh-keyscan <host> >$(rclone_dir)/known_hosts) and answer known_hosts_file with /config/known_hosts."
+  compose run --rm --no-deps --entrypoint rclone offsite config
+}
+
+cmd_offsite_to() {
+  need_env
+  local remote=${1:-}
+  [[ -n $remote ]] || die 'say where: ./sipges offsite-to nas:sipges-backups (see ./sipges offsite-config), or --off'
+  if [[ $remote == --off ]]; then
+    [[ -z $(env_value SIPGES_BACKUP_OFFSITE) ]] || compose rm -sf offsite
+    sed -i '/^SIPGES_BACKUP_OFFSITE=/d' "$ENV_FILE"
+    say 'Backups are no longer pushed off-site. What is already on the remote stays there.'
+    return
+  fi
+  [[ $remote != :* ]] ||
+    die 'use a remote named in rclone.conf (./sipges offsite-config), not a connection string: it would put a password in the .env'
+  [[ $remote =~ ^[A-Za-z0-9_][A-Za-z0-9_.\ -]*:.*$ ]] ||
+    die "$remote is not an rclone remote such as nas:sipges-backups. For a folder on another disk, use ./sipges copy-backups-to"
+  ensure_rclone_conf
+  compose run --rm --no-deps -e SIPGES_BACKUP_OFFSITE="$remote" offsite probe ||
+    die "could not write to $remote. Is it set up? See ./sipges offsite-config"
+  sed -i '/^SIPGES_BACKUP_OFFSITE=/d' "$ENV_FILE"
+  [[ ! -s $ENV_FILE || -z $(tail -c 1 "$ENV_FILE") ]] || printf '\n' >>"$ENV_FILE"
+  printf 'SIPGES_BACKUP_OFFSITE=%s\n' "$remote" >>"$ENV_FILE"
+  start_offsite
+  say "Every backup will also be pushed to $remote, the newest within minutes, then hourly."
+  say 'They leave this computer already encrypted: keep the recovery kit, or the remote copies cannot be opened.'
+}
+
+# What status says about the off-site copy: where, the newest that arrived, and any failure.
+offsite_status() {
+  local dir=$1 remote when newest reason
+  remote=$(env_value SIPGES_BACKUP_OFFSITE)
+  [[ -n $remote ]] || return 0
+  if [[ -f $dir/.last-offsite-failure ]]; then
+    read -r when reason <"$dir/.last-offsite-failure"
+    say "WARNING: the off-site push failed at $when: $reason. See ./sipges logs offsite"
+  fi
+  if [[ -f $dir/.last-offsite ]]; then
+    read -r when newest <"$dir/.last-offsite"
+    say "Backups pushed off-site to $remote (newest ${newest:-none yet})"
+  fi
+  # The service records every hourly round that works, so 26 hours of silence is a stopped push.
+  if [[ ! -f $dir/.last-offsite || -z $(find "$dir/.last-offsite" -mmin -1560 2>/dev/null) ]]; then
+    say "WARNING: no backup reached $remote in the last 26 hours. See ./sipges logs offsite"
+  fi
+}
+
 cmd_backups() {
   need_env
+  if [[ ${1:-} == --offsite ]]; then
+    [[ -n $(env_value SIPGES_BACKUP_OFFSITE) ]] || die 'no off-site copy is set: see ./sipges offsite-to'
+    ensure_rclone_conf
+    compose run --rm --no-deps offsite list
+    return
+  fi
   find "$(env_value SIPGES_BACKUP_DIR)" -mindepth 1 -maxdepth 1 -type d -name '20*Z' -printf '%f\n' | sort
 }
 
@@ -642,7 +730,16 @@ cmd_restore() {
   local name=${1:-} confirm=${2:-}
   [[ -n $name ]] || die 'usage: ./sipges restore <backup name> (see ./sipges backups)'
   [[ $name =~ ^20[0-9]{6}T[0-9]{6}Z$ ]] || die "\"$name\" is not a backup name"
-  [[ -d "$(env_value SIPGES_BACKUP_DIR)/$name" ]] || die "no backup named $name"
+  if [[ ! -d "$(env_value SIPGES_BACKUP_DIR)/$name" ]]; then
+    local remote
+    remote=$(env_value SIPGES_BACKUP_OFFSITE)
+    [[ -n $remote ]] || die "no backup named $name"
+    # Fetched and checked before anything stops (world-class-local T13).
+    say "Fetching $name from $remote..."
+    ensure_rclone_conf
+    compose run --rm --no-deps offsite fetch "$name" ||
+      die "no backup named $name here, and it could not be fetched from $remote. See ./sipges backups --offsite"
+  fi
   if [[ $confirm != --yes ]]; then
     say "This replaces everything in SIPGES with backup $name. Type RESTORE to go on:"
     read -r answer
@@ -743,8 +840,10 @@ status) cmd_status ;;
 logs) need_env; shift; compose logs --tail=200 "$@" ;;
 backup) cmd_backup ;;
 rollback) cmd_rollback ;;
-backups) cmd_backups ;;
+backups) shift; cmd_backups "$@" ;;
 copy-backups-to) shift; cmd_copy_backups_to "$@" ;;
+offsite-config) cmd_offsite_config ;;
+offsite-to) shift; cmd_offsite_to "$@" ;;
 restore) shift; cmd_restore "$@" ;;
 recovery-kit) shift; cmd_recovery_kit "$@" ;;
 update) cmd_update ;;
@@ -758,11 +857,13 @@ help | -h | --help)
 ./sipges import ...        Read client files. Only tries, unless given --apply.
 ./sipges start | stop      Start or stop everything.
 ./sipges status            What is running, the latest backup, any backup failure.
-./sipges logs [service]    Recent logs: api, db, caddy, backup.
+./sipges logs [service]    Recent logs: api, db, caddy, backup, offsite.
 ./sipges backup            Take a backup now.
-./sipges backups           List the backups.
+./sipges backups [--offsite]  List the backups, here or on the off-site remote.
 ./sipges copy-backups-to <dir>  Also copy every backup to a folder on another disk.
-./sipges restore <name>    Replace all data with a backup.
+./sipges offsite-config    Set up an rclone remote (SFTP, S3-compatible...) for off-site copies.
+./sipges offsite-to <remote:folder> | --off  Also push every backup to that remote, hourly.
+./sipges restore <name>    Replace all data with a backup; fetched from the remote if not here.
 ./sipges recovery-kit [file]  Write the sheet with the backup secrets to print, and confirm it.
 ./sipges update            Back up, get the new version, rebuild, restart.
 ./sipges rollback          Go back to the version before the last update. The data stays.

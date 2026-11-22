@@ -32,6 +32,7 @@ deploy/local/sipges-recovery-kit.txt
 deploy/local/.sipges-recovery-kit
 deploy/local/.env.new
 deploy/local/backups/
+deploy/local/rclone/
 deploy/local/sipges-root-ca.crt
 deploy/local/imports/
 
