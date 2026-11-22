@@ -21,6 +21,8 @@ var accountErrors = map[application.AccountOutcome]struct {
 	application.AccountInvalid:    {http.StatusUnprocessableEntity, "Usuario inválido"},
 	application.AccountMissing:    {http.StatusNotFound, "Usuario inexistente"},
 	application.AccountLastAdmin:  {http.StatusConflict, "No se permite desactivar el último administrador"},
+	application.AccountSelfPassword: {http.StatusUnprocessableEntity,
+		"No puede restablecer su propia contraseña aquí; cámbiela con POST /system/auth/password"},
 }
 
 type okResponse struct {
@@ -167,3 +169,24 @@ func (h authHandlers) resetMFA(w http.ResponseWriter, r *http.Request) {
 }
 
 func normalized(raw string) string { return domain.NormalizeUsername(raw) }
+
+type temporaryPassword struct {
+	TemporaryPassword string `json:"temporary_password"`
+}
+
+// resetPassword is POST /system/auth/accounts/:username/password, within the active project: the
+// temporary password is in this answer only, which no cache may keep.
+func (h authHandlers) resetPassword(w http.ResponseWriter, r *http.Request) {
+	p, err := principal(r)
+	tenantID, scoped := h.TenantOf(r)
+	if err != nil || !scoped {
+		h.fail(w, r, "reset password failed")
+		return
+	}
+	temporary, outcome, err := h.Identity.ResetPassword(r.Context(), p, httpx.PathParam(r, "username"), tenantID)
+	if !h.answerAccount(w, r, outcome, err, "reset password failed") {
+		return
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	httpx.WriteJSON(w, http.StatusOK, temporaryPassword{temporary})
+}

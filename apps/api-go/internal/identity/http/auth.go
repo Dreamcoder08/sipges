@@ -80,6 +80,7 @@ func RegisterAuth(mux *http.ServeMux, deps AuthDeps) {
 	mux.HandleFunc("POST /system/auth/accounts", h.createAccount)
 	mux.HandleFunc("POST /system/auth/accounts/{username}/deactivate", h.deactivateAccount)
 	mux.HandleFunc("POST /system/auth/accounts/{username}/reset-mfa", h.resetMFA)
+	mux.HandleFunc("POST /system/auth/accounts/{username}/password", h.resetPassword)
 	mux.HandleFunc("POST /system/auth/accounts/{username}/google", h.linkGoogle)
 	mux.HandleFunc("GET /system/auth/sessions", h.listSessions)
 	mux.HandleFunc("DELETE /system/auth/sessions/{id}", h.endSession)

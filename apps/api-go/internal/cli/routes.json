@@ -152,6 +152,13 @@
   },
   {
     "method": "POST",
+    "path": "/system/auth/accounts/{username}/password",
+    "access": "session",
+    "command": "users reset-password",
+    "summary": "Reset another person's forgotten password; prints a temporary one once"
+  },
+  {
+    "method": "POST",
     "path": "/system/auth/accounts/{username}/reset-mfa",
     "access": "session",
     "command": "users reset-mfa",

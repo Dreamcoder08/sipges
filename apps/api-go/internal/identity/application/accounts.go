@@ -34,6 +34,10 @@ type AccountStore interface {
 	// appends the audit row to the trail of every tenant the user is granted, in one
 	// transaction, or answers AccountMissing and writes nothing.
 	ResetTOTP(ctx context.Context, username, detail string, at time.Time) (AccountOutcome, error)
+	// ResetPasswordInTenant stores the new hash of an active user granted tenantID, ends every
+	// session of that user and appends the audit row to that tenant's trail, in one transaction.
+	// An unknown or deactivated user is AccountMissing; nothing is written on a refusal.
+	ResetPasswordInTenant(ctx context.Context, username, passwordHash, tenantID string, audit SessionAudit) (AccountOutcome, error)
 }
 
 // AccountOutcome is what an administrative write answers; the empty value is success.
@@ -47,6 +51,9 @@ const (
 	AccountLastAdmin  AccountOutcome = "last_admin"
 	AccountSelf       AccountOutcome = "self"
 	AccountOutOfScope AccountOutcome = "out_of_scope"
+	// AccountSelfPassword is an administrator resetting their own password: that is a change,
+	// which asks for the current password (POST /system/auth/password).
+	AccountSelfPassword AccountOutcome = "self_password"
 )
 
 // BootstrapAdmin is the account an empty installation starts with.
@@ -151,6 +158,42 @@ func (s *Service) ResetMFA(ctx context.Context, actor *domain.Principal, rawUser
 	}
 	detail := "MFA restablecido por " + actor.Username + "; sesiones revocadas"
 	return s.deps.Accounts.ResetTOTPInTenant(ctx, username, tenantID, detail, s.now())
+}
+
+// ResetPassword is an administrator's reset of another person's forgotten password, within the
+// active project: a temporary password is drawn, stored as a hash, and every session of that
+// person ends. The temporary password is answered once and goes nowhere else: not to the audit,
+// not to a log. An administrator's own password is changed, not reset, so a stolen administrator
+// session cannot take over the account without its current password.
+func (s *Service) ResetPassword(ctx context.Context, actor *domain.Principal, rawUsername, tenantID string) (string, AccountOutcome, error) {
+	if actor.Role != domain.RoleAdmin {
+		return "", AccountForbidden, nil
+	}
+	username, ok := domain.AdminUsername(rawUsername)
+	if !ok {
+		return "", AccountInvalid, nil
+	}
+	if username == actor.Username {
+		return "", AccountSelfPassword, nil
+	}
+	temporary, err := domain.NewTemporaryPassword(username)
+	if err != nil {
+		return "", "", err
+	}
+	hash, err := s.deps.Hasher.Hash(temporary)
+	if err != nil {
+		return "", "", err
+	}
+	outcome, err := s.deps.Accounts.ResetPasswordInTenant(ctx, username, hash, tenantID, SessionAudit{
+		Action:   "PASSWORD_RESET",
+		RecordID: username,
+		Detail:   "Contraseña restablecida por " + actor.Username + "; sesiones revocadas",
+		At:       s.now(),
+	})
+	if err != nil || outcome != "" {
+		return "", outcome, err
+	}
+	return temporary, "", nil
 }
 
 // OperatorResetMFA is the reset-mfa command of admin-cli.ts: an operator on the server clears a

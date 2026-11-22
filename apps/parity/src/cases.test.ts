@@ -6,6 +6,11 @@ test('the declared route list is valid', () => {
   assert.deepEqual(validateCases(CASES), []);
 });
 
+test('the sign-in providers case ignores only the Go-only password flags', () => {
+  const providers = CASES.find((c) => c.name === 'sign-in providers');
+  assert.deepEqual(providers?.goOnly, { keys: ['password_change', 'password_reset'] });
+});
+
 test('duplicate names, relative paths and broad normalizations are refused', () => {
   const errors = validateCases([
     { name: 'a', method: 'GET', path: '/health' },

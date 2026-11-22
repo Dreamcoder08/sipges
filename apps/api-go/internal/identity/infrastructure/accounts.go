@@ -76,10 +76,7 @@ func (s Store) DeactivateUser(ctx context.Context, username string) (application
 		if _, err := tx.Exec(ctx, `UPDATE users SET active = false WHERE username = $1`, username); err != nil {
 			return "", fmt.Errorf("deactivate user: %w", err)
 		}
-		if _, err := tx.Exec(ctx, `DELETE FROM sessions WHERE username = $1`, username); err != nil {
-			return "", fmt.Errorf("revoke sessions: %w", err)
-		}
-		return "", nil
+		return "", revokeSessions(ctx, tx, username)
 	})
 }
 
@@ -174,8 +171,44 @@ func clearTOTP(ctx context.Context, tx pgx.Tx, username string) (bool, error) {
 	if tag.RowsAffected() == 0 {
 		return false, nil
 	}
+	return true, revokeSessions(ctx, tx, username)
+}
+
+// revokeSessions ends every session of username, expired or not.
+func revokeSessions(ctx context.Context, tx pgx.Tx, username string) error {
 	if _, err := tx.Exec(ctx, `DELETE FROM sessions WHERE username = $1`, username); err != nil {
-		return false, fmt.Errorf("revoke sessions: %w", err)
+		return fmt.Errorf("revoke sessions: %w", err)
 	}
-	return true, nil
+	return nil
+}
+
+// ResetPasswordInTenant stores the new hash of an active user granted tenantID, ends all of its
+// sessions and appends the audit row to that tenant's trail. The user row is locked first, so a
+// deactivation or a change at the same time waits; global writes come before the audit, because
+// entering the tenant drops to the role that cannot see them.
+func (s Store) ResetPasswordInTenant(ctx context.Context, username, passwordHash, tenantID string, audit application.SessionAudit) (application.AccountOutcome, error) {
+	return transaction(ctx, s.DB, func(tx pgx.Tx) (application.AccountOutcome, error) {
+		tag, err := tx.Exec(ctx, `SELECT 1 FROM users WHERE username = $1 AND active FOR UPDATE`, username)
+		if err != nil {
+			return "", fmt.Errorf("lock user for reset: %w", err)
+		}
+		if tag.RowsAffected() == 0 {
+			return application.AccountMissing, nil
+		}
+		var found int
+		err = tx.QueryRow(ctx, `SELECT 1 FROM grants WHERE username = $1 AND tenant_id = $2`, username, tenantID).Scan(&found)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return application.AccountOutOfScope, nil
+		}
+		if err != nil {
+			return "", fmt.Errorf("read grant: %w", err)
+		}
+		if _, err := tx.Exec(ctx, `UPDATE users SET password_hash = $2 WHERE username = $1`, username, passwordHash); err != nil {
+			return "", fmt.Errorf("reset password: %w", err)
+		}
+		if err := revokeSessions(ctx, tx, username); err != nil {
+			return "", err
+		}
+		return "", appendAudit(ctx, tx, tenantID, "Cuentas", audit)
+	})
 }
