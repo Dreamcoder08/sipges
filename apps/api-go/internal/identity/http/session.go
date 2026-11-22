@@ -6,7 +6,9 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/domain"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
@@ -59,10 +61,15 @@ type Authenticator interface {
 // (world-class-local T8f).
 const BackgroundHeader = "X-SIPGES-Background"
 
-// ActivityRecorder extends a session after a request that is user activity;
-// application.SessionActivity satisfies it.
+// RemainingHeader carries, on every answer to a request whose session authenticated, the whole
+// seconds until that session expires after any extension the request made; the web's idle timer
+// reads its deadline only from it (world-class-local T8f).
+const RemainingHeader = "X-SIPGES-Session-Remaining"
+
+// ActivityRecorder applies the idle rule to an authenticated request and returns the session's
+// remaining seconds; application.SessionActivity satisfies it.
 type ActivityRecorder interface {
-	Touch(ctx context.Context, token string) error
+	Record(ctx context.Context, token string, expires time.Time, userActivity bool) (int, error)
 }
 
 type principalKey struct{}
@@ -84,7 +91,7 @@ type SessionOptions struct {
 	RequireMFA bool
 	Logger     *slog.Logger
 	// Activity, when set, slides the idle expiry of every authenticated request that is not a
-	// background one.
+	// background one, and every authenticated answer carries RemainingHeader.
 	Activity ActivityRecorder
 }
 
@@ -132,12 +139,18 @@ func Session(opts SessionOptions) httpx.Middleware {
 				return
 			}
 
-			if opts.Activity != nil && r.Header.Get(BackgroundHeader) != "1" {
+			if opts.Activity != nil {
+				userActivity := r.Header.Get(BackgroundHeader) != "1"
+				remaining, err := opts.Activity.Record(r.Context(), token, principal.SessionExpiresAt, userActivity)
 				// A failed extension leaves the session valid until its stored expiry, so the
-				// request goes on.
-				if err := opts.Activity.Touch(r.Context(), token); err != nil && opts.Logger != nil {
+				// request goes on and tells that remainder.
+				if err != nil && opts.Logger != nil {
 					opts.Logger.LogAttrs(r.Context(), slog.LevelError, "session extension failed",
 						slog.String("request_id", httpx.RequestIDFrom(r.Context())))
+				}
+				// A source that does not tell the expiry sends no header rather than a wrong one.
+				if !principal.SessionExpiresAt.IsZero() {
+					w.Header().Set(RemainingHeader, strconv.Itoa(remaining))
 				}
 			}
 

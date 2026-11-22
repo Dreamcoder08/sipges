@@ -55,10 +55,10 @@ func (s Sessions) Authenticate(ctx context.Context, token string) (*domain.Princ
 	var role string
 	var totp, viaGoogle bool
 	err := s.DB.QueryRow(ctx,
-		`SELECT u.username, u.full_name, u.role, u.totp_enabled, s.via_google
+		`SELECT u.username, u.full_name, u.role, u.totp_enabled, s.via_google, s.expires_at
 		   FROM sessions s JOIN users u ON u.username = s.username
 		  WHERE s.token_hash = $1::text AND s.expires_at > $2::timestamptz AND u.active`,
-		HashToken(token), at).Scan(&p.Username, &p.FullName, &role, &totp, &viaGoogle)
+		HashToken(token), at).Scan(&p.Username, &p.FullName, &role, &totp, &viaGoogle, &p.SessionExpiresAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
@@ -72,18 +72,21 @@ func (s Sessions) Authenticate(ctx context.Context, token string) (*domain.Princ
 
 // ExtendSession runs the sliding idle expiry of application.SessionRenewal as one conditional
 // UPDATE on the token hash: an expired session, one with enough time left, or one the absolute
-// cap holds is not written.
-func (s Sessions) ExtendSession(ctx context.Context, tokenHash string, r application.SessionRenewal) (bool, error) {
-	var one int
+// cap holds is not written. It returns the new expiry when it wrote one.
+func (s Sessions) ExtendSession(ctx context.Context, tokenHash string, r application.SessionRenewal) (time.Time, bool, error) {
+	var expires time.Time
 	err := s.DB.QueryRow(ctx,
 		`UPDATE sessions
 		    SET expires_at = LEAST(created_at + make_interval(secs => $4::int), $3::timestamptz)
 		  WHERE token_hash = $1::text AND expires_at > $2::timestamptz AND expires_at < $5::timestamptz
 		    AND LEAST(created_at + make_interval(secs => $4::int), $3::timestamptz) > expires_at
-		RETURNING 1`,
-		tokenHash, r.At, r.IdleUntil, r.AbsoluteSeconds, r.RenewBefore).Scan(&one)
+		RETURNING expires_at`,
+		tokenHash, r.At, r.IdleUntil, r.AbsoluteSeconds, r.RenewBefore).Scan(&expires)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return false, nil
+		return time.Time{}, false, nil
 	}
-	return err == nil, err
+	if err != nil {
+		return time.Time{}, false, err
+	}
+	return expires, true, nil
 }

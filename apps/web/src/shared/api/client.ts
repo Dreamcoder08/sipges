@@ -68,23 +68,29 @@ export const runInBackground = <T>(start: () => T): T => {
   }
 };
 
-const activityListeners = new Set<() => void>();
+/**
+ * The Go API tells, on every answer to a request whose session authenticated, the whole seconds
+ * until that session expires (world-class-local T8f). Answers without it (public routes, the
+ * TypeScript API, 401s) say nothing about the session.
+ */
+export const SESSION_REMAINING_HEADER = 'X-SIPGES-Session-Remaining';
+
+const remainingListeners = new Set<(seconds: number) => void>();
 
 /**
- * Requests the Go API answers without extending the session: `/system/auth/me` is public there,
- * and the audit activity stream (`/system/events`) is long-lived background traffic.
+ * Called with the remaining seconds of every answer that tells them, background ones included.
+ * Returns the unsubscribe function.
  */
-const NOT_EXTENDING = new Set(['/system/auth/me', '/system/events']);
-const extendsSession = (path: string) => !NOT_EXTENDING.has(path.split('?')[0] ?? path);
+export const onSessionRemaining = (listener: (seconds: number) => void): (() => void) => {
+  remainingListeners.add(listener);
+  return () => remainingListeners.delete(listener);
+};
 
-/**
- * Called whenever the server answers a request that extends the session: one that is not
- * background, not on a path that never extends it, and not refused as signed out. Returns the
- * unsubscribe function.
- */
-export const onServerActivity = (listener: () => void): (() => void) => {
-  activityListeners.add(listener);
-  return () => activityListeners.delete(listener);
+const tellRemaining = (response: Response) => {
+  const value = response.headers.get(SESSION_REMAINING_HEADER);
+  if (value === null || !/^\d+$/.test(value)) return;
+  const seconds = Number(value);
+  for (const listener of remainingListeners) listener(seconds);
 };
 
 const encode = (body: RequestBody | undefined): { body?: BodyInit; type?: string } => {
@@ -114,9 +120,7 @@ export const request = async (path: string, options: RequestOptions = {}) => {
     ...(options.signal ? { signal: options.signal } : {}),
     ...(options.redirect ? { redirect: options.redirect } : {}),
   });
-  if (!background && response.status !== 401 && extendsSession(path)) {
-    for (const listener of activityListeners) listener();
-  }
+  tellRemaining(response);
   const redirected =
     options.redirect === 'manual' &&
     (response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400));

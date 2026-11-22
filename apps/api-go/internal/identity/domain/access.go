@@ -5,6 +5,7 @@ package domain
 import (
 	"slices"
 	"strings"
+	"time"
 )
 
 // Role is one of the values the users.role CHECK constraint allows.
@@ -26,6 +27,9 @@ type Principal struct {
 	// MFAEnabled is true when TOTP is enabled or the session came from Google sign-in, which
 	// stands in for the app's second factor (ADR 0010).
 	MFAEnabled bool
+	// SessionExpiresAt is the session's stored expiry when it authenticated; zero when the
+	// source does not tell it (world-class-local T8f).
+	SessionExpiresAt time.Time
 }
 
 // Decision is the outcome of CheckRoleAccess; Detail is the 403 message when not Allowed.

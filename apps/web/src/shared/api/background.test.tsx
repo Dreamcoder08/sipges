@@ -7,7 +7,13 @@ import { runtimeQuery } from '../../features/automation/api.ts';
 import { LiveUpdates } from '../../features/live/LiveUpdates.tsx';
 import { useUnreadNotifications } from '../../features/notifications/AvisosPanel.tsx';
 import { resetApi, server } from '../../test/server.ts';
-import { BACKGROUND_HEADER, onServerActivity, request, runInBackground } from './client.ts';
+import {
+  BACKGROUND_HEADER,
+  SESSION_REMAINING_HEADER,
+  onSessionRemaining,
+  request,
+  runInBackground,
+} from './client.ts';
 
 /** Every request's path and its background header, in arrival order. */
 const seen: { path: string; background: string | null }[] = [];
@@ -29,27 +35,38 @@ const wrapper = (client: QueryClient) =>
   };
 
 describe('background requests (world-class-local T8f)', () => {
-  it('marks a request as background only when asked, and reports the others as activity', async () => {
+  it('marks a request as background only when asked', async () => {
     server.use(http.get('/echo', () => HttpResponse.json({ ok: true })));
-    let activity = 0;
-    const off = onServerActivity(() => (activity += 1));
     await request('/echo');
     await request('/echo', { background: true });
     await runInBackground(() => request('/echo'));
-    // Public in Go: it never extends the session, so it is not activity either.
-    await request('/system/auth/me');
-    off();
     expect(headerOf('/echo')).toEqual([null, '1', '1']);
-    expect(activity).toBe(1);
   });
 
-  it('does not count a 401 as activity the server saw', async () => {
-    server.use(http.get('/gone', () => HttpResponse.json({ detail: 'x' }, { status: 401 })));
-    let activity = 0;
-    const off = onServerActivity(() => (activity += 1));
+  it('reports the session time the server tells, background answers included', async () => {
+    const answer = (remaining: string | null) => () =>
+      HttpResponse.json(
+        { ok: true },
+        remaining === null ? {} : { headers: { [SESSION_REMAINING_HEADER]: remaining } },
+      );
+    server.use(
+      http.get('/told', answer('3300')),
+      http.get('/told-later', answer('3600')),
+      http.get('/silent', answer(null)),
+      http.get('/garbled', answer('soon')),
+      http.get('/gone', () => HttpResponse.json({ detail: 'x' }, { status: 401 })),
+    );
+    const told: number[] = [];
+    const off = onSessionRemaining((seconds) => told.push(seconds));
+    await request('/told');
+    await request('/told-later', { background: true });
+    await request('/silent');
+    await request('/garbled');
+    await request('/system/auth/me');
     await expect(request('/gone')).rejects.toMatchObject({ status: 401 });
     off();
-    expect(activity).toBe(0);
+    await request('/told');
+    expect(told).toEqual([3300, 3600]);
   });
 
   it('polls the inbox and the automation runtime as background requests', async () => {

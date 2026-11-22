@@ -1,8 +1,11 @@
-import { isApiError, onServerActivity, request } from '../../shared/api/client.ts';
+import { isApiError, onSessionRemaining, request } from '../../shared/api/client.ts';
 
 /** The warning opens this long before the server would end the session. */
 export const WARNING_MS = 2 * 60_000;
-/** Human activity sends a keepalive once the last request the server saw is this old. */
+/**
+ * Human activity sends a keepalive at most this often, and only once the server's deadline is
+ * this much short of a full timeout: before that the server would not extend the session.
+ */
 export const KEEPALIVE_AFTER_MS = 5 * 60_000;
 /** Keepalive request: a plain GET without the background header. */
 export const KEEPALIVE_PATH = '/system/auth/sessions';
@@ -12,9 +15,8 @@ const ACTIVITY_EVENTS = ['pointerdown', 'keydown', 'wheel', 'touchstart'] as con
 
 export type IdlePhase = 'active' | 'warning' | 'expired';
 
-/** Where the session stands `now`, given when the server last saw activity. */
-export const idlePhase = (now: number, seenAt: number, timeoutMs: number): IdlePhase => {
-  const deadline = seenAt + timeoutMs;
+/** Where the session stands `now`, given the deadline the server last told. */
+export const idlePhase = (now: number, deadline: number): IdlePhase => {
   if (now >= deadline) return 'expired';
   return now >= deadline - WARNING_MS ? 'warning' : 'active';
 };
@@ -33,16 +35,19 @@ export type IdleWatch = {
 };
 
 /**
- * Follows the server's idle deadline for this tab (world-class-local T8f). The deadline counts
- * from the last request that extended the session (a keepalive or a user request); background
- * requests and `/system/auth/me` do not move it. Every decision reads the clock, never a tick count,
- * so a tab that slept catches up on its next check (visibilitychange or the coarse timer).
+ * Follows the server's idle deadline for this tab (world-class-local T8f). The deadline is only
+ * what the server tells in its answers (`onSessionRemaining`), background ones included, so a tab
+ * that only polls follows another tab's activity; until the first such answer it waits and warns
+ * nothing. Every decision reads the clock, never a tick count, so a tab that slept catches up on
+ * its next check (visibilitychange or the coarse timer).
  */
 export const watchIdleSession = (
   timeoutMs: number,
   on: { warn: (open: boolean) => void; expire: () => void },
 ): IdleWatch => {
-  let seenAt = Date.now();
+  const after = keepaliveAfter(timeoutMs);
+  let deadline: number | undefined;
+  let keptAt = Date.now();
   let warned = false;
   let ended = false;
   let sending = false;
@@ -58,9 +63,10 @@ export const watchIdleSession = (
   const keepalive = (): Promise<void> => {
     if (sending) return Promise.resolve();
     sending = true;
+    keptAt = Date.now();
     // The own-sessions list: an authenticated route every role may call, so the session
     // middleware extends the session (`/system/auth/me` is public in Go and does not). Its
-    // answer moves `seenAt` through onServerActivity.
+    // answer tells the new deadline through onSessionRemaining.
     return request(KEEPALIVE_PATH)
       .then(() => undefined)
       .catch((error: unknown) => {
@@ -73,15 +79,18 @@ export const watchIdleSession = (
 
   const check = () => {
     clearTimeout(timer);
-    if (ended) return;
+    if (ended || deadline === undefined) return;
     const now = Date.now();
-    const phase = idlePhase(now, seenAt, timeoutMs);
+    const phase = idlePhase(now, deadline);
     if (phase === 'expired') return end();
     if (phase === 'warning' && !warned) {
       warned = true;
       on.warn(true);
+    } else if (phase === 'active' && warned && !sending) {
+      // Another tab's activity moved the deadline: the warning no longer applies.
+      warned = false;
+      on.warn(false);
     }
-    const deadline = seenAt + timeoutMs;
     const next = phase === 'active' ? deadline - WARNING_MS : deadline;
     timer = setTimeout(check, Math.min(Math.max(next - now, 0), MAX_TICK_MS));
   };
@@ -89,11 +98,13 @@ export const watchIdleSession = (
   const onActivity = () => {
     // While the warning is open only its button (or Escape) continues the session.
     if (warned || ended) return;
-    if (Date.now() - seenAt >= keepaliveAfter(timeoutMs)) void keepalive();
+    const now = Date.now();
+    const extendable = deadline === undefined || deadline - now < timeoutMs - after;
+    if (extendable && now - keptAt >= after) void keepalive();
   };
 
-  const offServer = onServerActivity(() => {
-    seenAt = Date.now();
+  const offServer = onSessionRemaining((seconds) => {
+    deadline = Date.now() + seconds * 1000;
     check();
   });
   const options = { passive: true, capture: true } as const;

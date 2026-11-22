@@ -3,6 +3,8 @@ package app_test
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -15,6 +17,7 @@ import (
 const (
 	idleTTL          = time.Hour
 	backgroundHeader = "X-SIPGES-Background"
+	remainingHeader  = "X-SIPGES-Session-Remaining"
 )
 
 // idleSession signs a synthetic account in through POST /login and returns its username and
@@ -141,5 +144,68 @@ func TestProvidersAdvertiseTheIdleTimeout(t *testing.T) {
 	var body map[string]any
 	if err := json.Unmarshal([]byte(got.body), &body); err != nil || got.status != http.StatusOK || body["idle_timeout_seconds"] != float64(3600) {
 		t.Fatalf("providers: %d %s", got.status, got.body)
+	}
+}
+
+// remaining is the X-SIPGES-Session-Remaining answer of one authenticated request at `at`.
+func (f *loginFixture) remaining(t *testing.T, user string, at time.Time, headers map[string]string) string {
+	t.Helper()
+	f.s.clock.set(at)
+	got, header := f.s.doHeader(t, req{path: "/system/auth/sessions", user: user, headers: headers})
+	if got.status != http.StatusOK {
+		t.Fatalf("request at %s: %d %s", at, got.status, got.body)
+	}
+	return header.Get(remainingHeader)
+}
+
+func expectRemaining(t *testing.T, got string, want time.Duration) {
+	t.Helper()
+	if w := strconv.Itoa(int(want / time.Second)); got != w {
+		t.Fatalf("%s = %q, want %q", remainingHeader, got, w)
+	}
+}
+
+func TestAuthenticatedAnswersTellTheSessionsRemainingSeconds(t *testing.T) {
+	f := newLoginFixture(t, "idle-remaining")
+	user, signedIn := f.idleSession(t)
+
+	// Minute 2: nothing is written, so 58 minutes remain.
+	expectRemaining(t, f.remaining(t, user, signedIn.Add(2*time.Minute), nil), 58*time.Minute)
+	// A background request at minute 50 extends nothing and tells the unextended 10 minutes.
+	expectRemaining(t, f.remaining(t, user, signedIn.Add(50*time.Minute), map[string]string{backgroundHeader: "1"}), 10*time.Minute)
+	// User activity at minute 50 extends the session, and the answer tells the new full hour.
+	expectRemaining(t, f.remaining(t, user, signedIn.Add(50*time.Minute), nil), idleTTL)
+}
+
+func TestTheRemainingSecondsStopAtTheEightHourCap(t *testing.T) {
+	f := newLoginFixture(t, "idle-remaining-cap")
+	user, signedIn := f.idleSession(t)
+	for at := 50 * time.Minute; at < sessionTTL-10*time.Minute; at += 50 * time.Minute {
+		f.activity(t, user, signedIn.Add(at), nil)
+	}
+	// Ten minutes before the cap, activity cannot add a full hour.
+	expectRemaining(t, f.remaining(t, user, signedIn.Add(sessionTTL-10*time.Minute), nil), 10*time.Minute)
+}
+
+func TestPublicAndRefusedAnswersCarryNoRemainingSeconds(t *testing.T) {
+	f := newLoginFixture(t, "idle-remaining-none")
+	user, signedIn := f.idleSession(t)
+	f.s.clock.set(signedIn.Add(time.Minute))
+	for name, q := range map[string]req{
+		"public providers": {path: "/system/auth/providers", user: user},
+		"public me":        {path: "/system/auth/me", user: user},
+		"no session":       {path: "/system/auth/sessions"},
+		"unknown session":  {path: "/system/auth/sessions", headers: map[string]string{"Cookie": "sipges_session=" + strings.Repeat("0", 64)}},
+	} {
+		got, header := f.s.doHeader(t, q)
+		if v, ok := header[http.CanonicalHeaderKey(remainingHeader)]; ok {
+			t.Errorf("%s: %d carries %s %q", name, got.status, remainingHeader, v)
+		}
+	}
+	// An idle-expired session answers 401 without it too.
+	f.s.clock.set(signedIn.Add(idleTTL + time.Minute))
+	got, header := f.s.doHeader(t, req{path: "/system/auth/sessions", user: user})
+	if got.status != http.StatusUnauthorized || header.Get(remainingHeader) != "" {
+		t.Fatalf("expired: %d %q", got.status, header.Get(remainingHeader))
 	}
 }

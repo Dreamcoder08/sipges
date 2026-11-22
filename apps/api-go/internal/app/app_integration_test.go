@@ -208,6 +208,13 @@ type req struct {
 
 func (s *server) do(t *testing.T, q req) reply {
 	t.Helper()
+	got, _ := s.doHeader(t, q)
+	return got
+}
+
+// doHeader is do that also returns the response headers.
+func (s *server) doHeader(t *testing.T, q req) (reply, http.Header) {
+	t.Helper()
 	method := q.method
 	if method == "" {
 		method = http.MethodGet
@@ -231,7 +238,7 @@ func (s *server) do(t *testing.T, q req) reply {
 	}
 	defer func() { _ = res.Body.Close() }()
 	b, _ := io.ReadAll(res.Body)
-	return reply{res.StatusCode, string(b)}
+	return reply{res.StatusCode, string(b)}, res.Header
 }
 
 // raw sends the request target byte for byte (an HTTP client would normalize it).

@@ -2,6 +2,7 @@ import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { SESSION_REMAINING_HEADER, request } from '../shared/api/client.ts';
 import { api, resetApi, server } from '../test/server.ts';
 import { App } from './App.tsx';
 
@@ -151,11 +152,16 @@ describe('sign-in', () => {
         http.get('/system/auth/providers', () =>
           HttpResponse.json({ google: false, idle_timeout_seconds: 180 }),
         ),
+        // The Go API tells the session's remaining seconds on its authenticated answers.
+        http.get('/remaining-probe', () =>
+          HttpResponse.json({}, { headers: { [SESSION_REMAINING_HEADER]: '180' } }),
+        ),
       );
       signIn();
       at('/irsa');
       render(<App />);
       expect(await screen.findByRole('heading', { level: 1, name: 'IRSA-SIPGES' })).toBeVisible();
+      await act(() => request('/remaining-probe'));
       await act(() => vi.advanceTimersByTimeAsync(181_000));
       expect(await screen.findByRole('status')).toHaveTextContent(
         'Su sesión se cerró por inactividad.',

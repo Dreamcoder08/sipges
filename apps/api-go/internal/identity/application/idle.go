@@ -32,14 +32,23 @@ func NewSessionRenewal(at time.Time) SessionRenewal {
 	}
 }
 
-// SessionExtender stores a renewal.
-type SessionExtender interface {
-	// ExtendSession applies r to the unexpired session of tokenHash in one conditional write;
-	// false when the rule left it unchanged.
-	ExtendSession(ctx context.Context, tokenHash string, r SessionRenewal) (bool, error)
+// RemainingSeconds is the whole seconds from at until expires, never negative: what the session
+// middleware tells the web in X-SIPGES-Session-Remaining.
+func RemainingSeconds(expires, at time.Time) int {
+	if !expires.After(at) {
+		return 0
+	}
+	return int(expires.Sub(at) / time.Second)
 }
 
-// SessionActivity records user activity on a session that already authenticated.
+// SessionExtender stores a renewal.
+type SessionExtender interface {
+	// ExtendSession applies r to the unexpired session of tokenHash in one conditional write
+	// and returns the new expiry; false when the rule left it unchanged.
+	ExtendSession(ctx context.Context, tokenHash string, r SessionRenewal) (time.Time, bool, error)
+}
+
+// SessionActivity follows the idle expiry of sessions that already authenticated.
 type SessionActivity struct {
 	Sessions SessionExtender
 	Tokens   SessionTokens
@@ -47,12 +56,25 @@ type SessionActivity struct {
 	Now func() time.Time
 }
 
-// Touch extends the session of token by the sliding idle rule.
-func (a SessionActivity) Touch(ctx context.Context, token string) error {
+// Record is one authenticated request on the session of token, which expired at `expires` when
+// it authenticated. User activity slides the expiry by the idle rule; a background request does
+// not. It returns the whole seconds the session has left afterwards, the stored expiry and the
+// 8-hour cap included. When the extension fails it returns the unextended remainder and the error.
+func (a SessionActivity) Record(ctx context.Context, token string, expires time.Time, userActivity bool) (int, error) {
 	now := time.Now
 	if a.Now != nil {
 		now = a.Now
 	}
-	_, err := a.Sessions.ExtendSession(ctx, a.Tokens.Hash(token), NewSessionRenewal(now()))
-	return err
+	renewal := NewSessionRenewal(now())
+	if !userActivity {
+		return RemainingSeconds(expires, renewal.At), nil
+	}
+	extended, ok, err := a.Sessions.ExtendSession(ctx, a.Tokens.Hash(token), renewal)
+	if err != nil {
+		return RemainingSeconds(expires, renewal.At), err
+	}
+	if ok {
+		expires = extended
+	}
+	return RemainingSeconds(expires, renewal.At), nil
 }
