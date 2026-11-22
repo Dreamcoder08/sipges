@@ -1,5 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
+import { fakeAnalyst } from '../support/analyst-thread.ts';
 import { smallTargets } from './target-size.ts';
 
 /*
@@ -23,12 +24,7 @@ const box = async (locator: Locator) => {
 };
 
 const askOnPhone = async (page: Page, admin: { username: string; password: string }) => {
-  await page.route('**/system/v4/settings', async (route) => {
-    const response = await route.fetch();
-    const settings = (await response.json()) as Record<string, unknown>;
-    await route.fulfill({ response, json: { ...settings, external_ai: { enabled: true } } });
-  });
-  await page.route('**/system/analyst', (route) => route.fulfill({ json: { available: true } }));
+  await fakeAnalyst(page, { externalAi: true });
   await page.route('**/system/analyst/ask', (route) => route.fulfill({ json: reply }));
   await signInToProject(page, admin, DEFAULT_SCOPE);
   await page.goto('/inicio');

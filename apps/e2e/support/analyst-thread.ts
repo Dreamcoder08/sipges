@@ -7,7 +7,8 @@ import { expect } from './fixtures.ts';
  * and has neither /system/analyst/ask nor /ask/stream. So the browser says the installation has
  * one, the project settings say whether external AI is on (nothing is stored), and /ask is
  * answered in the browser with synthetic replies. /ask/stream is left to the server, whose 404
- * makes Inicio fall back to /ask (T21), unless a spec fakes the stream itself.
+ * makes Inicio fall back to /ask (T21), unless a spec fakes the stream itself; `fakeAnalyst` declares
+ * that 404 in the browser, because the Go API does serve the stream.
  */
 
 export type Source = { n: number; module: string; id: string; title: string };
@@ -48,6 +49,13 @@ export const fakeAnalyst = async (page: Page, { externalAi }: { externalAi: bool
     await route.fulfill({ response, json: { ...settings, external_ai: { enabled: externalAi } } });
   });
   await page.route('**/system/analyst', (route) => route.fulfill({ json: { available: true } }));
+  // Inicio falls back from the stream to /ask when the stream answers 404. The TypeScript API has
+  // no stream route at all; the Go API serves one (and says no analyst is configured), so the
+  // fallback is declared here to keep these specs the same on both runtimes. A spec that fakes
+  // the stream registers its own route afterwards, and Playwright's latest route wins.
+  await page.route(`**${STREAM_PATH}`, (route) =>
+    route.fulfill({ status: 404, json: { detail: 'Not Found' } }),
+  );
 };
 
 /** The question a request to /ask carries. */
