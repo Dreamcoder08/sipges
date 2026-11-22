@@ -63,6 +63,9 @@ Run `sipgesctl help` for every command.
   on every command, the generic call included. `apikey create --secret-file FILE` keeps a new key,
   which the API shows only once, in a private file. The file is created first, so a bad path issues
   no key, and a key that still cannot be written is revoked.
+  The one exception is `temporary_password` from an administrator's password reset (`users
+  reset-password`, or the same route through the generic call): the API shows it only once and the
+  administrator must hand it over, so it prints in clear.
 - The session is saved in `$XDG_STATE_HOME/sipges/session.json` with mode 0600. A file others can
   read is refused, and a session is never sent to an address other than its own.
 - Plain `http://` is accepted only for a loopback address.
