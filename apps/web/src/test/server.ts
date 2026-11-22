@@ -50,6 +50,22 @@ const SYNTHETIC_EVENTS = [
 export const handlers = [
   http.get('/system/auth/providers', () => HttpResponse.json({ google: false })),
   http.get('/system/auth/me', () => HttpResponse.json(api.me ? { ...api.me, active: 1 } : null)),
+  // The own-sessions list; the idle keepalive calls it because it extends the session (T8f).
+  http.get('/system/auth/sessions', () =>
+    signedIn(() =>
+      HttpResponse.json({
+        sessions: [
+          {
+            id: 'session-synthetic-1',
+            created_at: '2026-01-01T00:00:00Z',
+            expires_at: '2026-01-01T08:00:00Z',
+            method: 'password',
+            current: true,
+          },
+        ],
+      }),
+    ),
+  ),
   http.post('/login', async ({ request }) => {
     const form = new URLSearchParams(await request.text());
     if (form.get('password') !== 'synthetic-pass-123') {

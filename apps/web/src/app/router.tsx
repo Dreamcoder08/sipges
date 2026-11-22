@@ -28,6 +28,7 @@ import { AnalystThreadProvider, DashboardPage, InicioPage } from '../features/da
 import { DecisionInbox } from '../features/bandeja/index.ts';
 import {
   GoogleSignInError,
+  IdleSessionGuard,
   LoginPage,
   MfaEnrollmentPage,
   logout,
@@ -210,6 +211,8 @@ const loginRoute = createRoute({
   validateSearch: z.object({
     redirect: z.string().optional(),
     google: GoogleSignInError.optional().catch(undefined),
+    // Why the session ended, when the app ended it (world-class-local T8f).
+    motivo: z.literal('inactividad').optional().catch(undefined),
   }),
   component: function LoginRoute() {
     const { queryClient } = loginRoute.useRouteContext();
@@ -218,6 +221,7 @@ const loginRoute = createRoute({
     return (
       <LoginPage
         googleError={search.google}
+        endedIdle={search.motivo === 'inactividad'}
         onSignedIn={async () => {
           queryClient.clear();
           await router.navigate({ href: safeRedirect(search.redirect), replace: true });
@@ -358,6 +362,17 @@ const appRoute = createRoute({
                 <Outlet />
               </Suspense>
             </AppShell>
+            {/* Like a 401: back to sign in with the cache dropped, saying why (T8f). */}
+            <IdleSessionGuard
+              onExpired={async () => {
+                const current = router.state.location.href;
+                await router.navigate({
+                  to: '/login',
+                  search: { redirect: current, motivo: 'inactividad' },
+                });
+                queryClient.clear();
+              }}
+            />
           </AnalystThreadProvider>
         </NavigateProvider>
       </ProjectSettingsProvider>

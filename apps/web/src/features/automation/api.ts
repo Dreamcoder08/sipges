@@ -27,11 +27,16 @@ export const apiKeysQuery = (scope: string) =>
       requestJson('/system/integrations/api-keys', ApiKeyOut.array(), { scope, signal }),
   });
 
+/** Polled, so every load is a background request that does not extend an idle session (T8f). */
 export const runtimeQuery = (scope: string) =>
   queryOptions({
     queryKey: ['automation-runtime', scope],
     queryFn: ({ signal }) =>
-      requestJson('/system/automations/runtime', AutomationRuntimeState, { scope, signal }),
+      requestJson('/system/automations/runtime', AutomationRuntimeState, {
+        scope,
+        signal,
+        background: true,
+      }),
     refetchInterval: 30000,
   });
 

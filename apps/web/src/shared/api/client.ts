@@ -42,6 +42,49 @@ export type RequestOptions = {
   readonly redirect?: RequestRedirect;
   /** What the caller reads back; JSON unless named (`text/event-stream` for a stream). */
   readonly accept?: string;
+  /** Automatic traffic (polling): sent with BACKGROUND_HEADER, so it does not extend the session. */
+  readonly background?: boolean;
+};
+
+/**
+ * Marks a request the app made on its own (polling, live refresh). The Go API ends a session
+ * after a stretch without user activity and does not count these requests (world-class-local T8f).
+ */
+export const BACKGROUND_HEADER = 'X-SIPGES-Background';
+
+let backgroundDepth = 0;
+
+/**
+ * Runs `start` with every request it starts synchronously marked as background: TanStack Query
+ * calls a refetch's queryFn synchronously from `invalidateQueries`, so wrapping that call marks
+ * the refetches it triggers. A queryFn that awaits before calling `request` is not covered.
+ */
+export const runInBackground = <T>(start: () => T): T => {
+  backgroundDepth += 1;
+  try {
+    return start();
+  } finally {
+    backgroundDepth -= 1;
+  }
+};
+
+const activityListeners = new Set<() => void>();
+
+/**
+ * Requests the Go API answers without extending the session: `/system/auth/me` is public there,
+ * and the audit activity stream (`/system/events`) is long-lived background traffic.
+ */
+const NOT_EXTENDING = new Set(['/system/auth/me', '/system/events']);
+const extendsSession = (path: string) => !NOT_EXTENDING.has(path.split('?')[0] ?? path);
+
+/**
+ * Called whenever the server answers a request that extends the session: one that is not
+ * background, not on a path that never extends it, and not refused as signed out. Returns the
+ * unsubscribe function.
+ */
+export const onServerActivity = (listener: () => void): (() => void) => {
+  activityListeners.add(listener);
+  return () => activityListeners.delete(listener);
 };
 
 const encode = (body: RequestBody | undefined): { body?: BodyInit; type?: string } => {
@@ -56,10 +99,13 @@ const encode = (body: RequestBody | undefined): { body?: BodyInit; type?: string
  * the client never handles tokens; every failure becomes an ApiError.
  */
 export const request = async (path: string, options: RequestOptions = {}) => {
+  // Read before the first await: `runInBackground` only covers the synchronous start.
+  const background = options.background === true || backgroundDepth > 0;
   const { body, type } = encode(options.body);
   const headers = new Headers({ accept: options.accept ?? 'application/json' });
   if (type) headers.set('content-type', type);
   if (options.scope) headers.set('X-SIPGES-Scope', options.scope);
+  if (background) headers.set(BACKGROUND_HEADER, '1');
   const response = await fetch(path, {
     method: options.method ?? 'GET',
     credentials: 'same-origin',
@@ -68,6 +114,9 @@ export const request = async (path: string, options: RequestOptions = {}) => {
     ...(options.signal ? { signal: options.signal } : {}),
     ...(options.redirect ? { redirect: options.redirect } : {}),
   });
+  if (!background && response.status !== 401 && extendsSession(path)) {
+    for (const listener of activityListeners) listener();
+  }
   const redirected =
     options.redirect === 'manual' &&
     (response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400));

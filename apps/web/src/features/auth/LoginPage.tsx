@@ -41,9 +41,12 @@ const errorMessage = (error: unknown): string | null => {
 export const LoginPage = ({
   onSignedIn,
   googleError,
+  endedIdle = false,
 }: {
   onSignedIn: () => void | Promise<void>;
   googleError?: GoogleSignInError | undefined;
+  /** The app ended the session after the API's idle timeout (world-class-local T8f). */
+  endedIdle?: boolean;
 }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -89,6 +92,9 @@ export const LoginPage = ({
           <Alert tone="info">
             Ingrese el código de seis dígitos de su aplicación de autenticación.
           </Alert>
+        ) : null}
+        {endedIdle && !message && !asksForCode ? (
+          <Alert tone="info">Su sesión se cerró por inactividad.</Alert>
         ) : null}
         {googleError && !message && !asksForCode ? (
           <Alert tone="error">{GOOGLE_ERRORS[googleError]}</Alert>

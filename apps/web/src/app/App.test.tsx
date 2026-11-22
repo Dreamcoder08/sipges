@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -137,6 +137,35 @@ describe('sign-in', () => {
     await user.click(within(menu).getByRole('menuitem', { name: 'Cerrar sesión' }));
     expect(await screen.findByLabelText('Usuario')).toBeVisible();
     expect(api.requests).toContain('POST /logout');
+  });
+
+  it('returns to sign-in after the idle timeout, saying why (world-class-local T8f)', async () => {
+    // jsdom has no modal dialogs; the warning shown on the way only needs to open.
+    const showModal = HTMLDialogElement.prototype.showModal;
+    HTMLDialogElement.prototype.showModal = function open(this: HTMLDialogElement) {
+      this.setAttribute('open', '');
+    };
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      server.use(
+        http.get('/system/auth/providers', () =>
+          HttpResponse.json({ google: false, idle_timeout_seconds: 180 }),
+        ),
+      );
+      signIn();
+      at('/irsa');
+      render(<App />);
+      expect(await screen.findByRole('heading', { level: 1, name: 'IRSA-SIPGES' })).toBeVisible();
+      await act(() => vi.advanceTimersByTimeAsync(181_000));
+      expect(await screen.findByRole('status')).toHaveTextContent(
+        'Su sesión se cerró por inactividad.',
+      );
+      expect(window.location.pathname).toBe('/login');
+      expect(new URLSearchParams(window.location.search).get('redirect')).toBe('/irsa');
+    } finally {
+      vi.useRealTimers();
+      HTMLDialogElement.prototype.showModal = showModal;
+    }
   });
 });
 
