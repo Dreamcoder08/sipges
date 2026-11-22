@@ -1,6 +1,6 @@
 import type { Role } from '@sipges/contracts';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import { InternalLink } from '../../../shared/lib/navigation.tsx';
 import { Icon } from '../../../shared/ui/Icon.tsx';
 import { accountsQuery, recordCountsQuery } from '../api.ts';
@@ -30,8 +30,9 @@ const storeHidden = (key: string) => {
 /**
  * Inicio's «Primeros pasos» for a new project (world-class-local T7): only the steps this role
  * can act on and the app can tell are done, with «N de M». It waits for its sources and shows
- * nothing when one fails, rather than guessing; once every step is done, or after «Ocultar», it
- * stays away for this person and project.
+ * nothing when one fails, rather than guessing. It shows nothing once every step is done, and
+ * «Ocultar» keeps it away for this person and project: the only thing it ever stores, because the
+ * app keeps nothing in the browser the person did not choose.
  */
 export const FirstSteps = ({
   scope,
@@ -58,11 +59,6 @@ export const FirstSteps = ({
     : [];
   const done = steps.filter((step) => step.done).length;
   const complete = steps.length > 0 && done === steps.length;
-
-  // Done for good: a project that later empties does not bring the list back.
-  useEffect(() => {
-    if (complete) storeHidden(key);
-  }, [complete, key]);
 
   if (hidden || !steps.length || complete) return null;
 

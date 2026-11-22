@@ -127,19 +127,15 @@ it('shows nothing to roles that cannot act on any step', async () => {
   expect(requested).not.toHaveBeenCalled();
 });
 
-it('disappears for good once every step is done', async () => {
+it('shows nothing once every step is done, and stores nothing in the browser for it', async () => {
+  // The app keeps nothing in browser storage the person did not choose (e2e 03, 24, 25).
+  window.localStorage.clear();
   useData({ records: 2, accounts: [account('demo'), account('colega')] });
   const queryClient = client();
-  const { container, unmount } = renderSteps('admin', queryClient);
+  const { container } = renderSteps('admin', queryClient);
   await waitFor(() => expect(queryClient.isFetching()).toBe(0));
   expect(container).toBeEmptyDOMElement();
-  unmount();
-
-  // Records deleted later do not bring the list back.
-  useData({ records: 0, accounts: [account('demo')] });
-  const again = renderSteps();
-  await new Promise((resolve) => setTimeout(resolve, 50));
-  expect(again.container).toBeEmptyDOMElement();
+  expect(window.localStorage.length).toBe(0);
 });
 
 it('stays hidden after «Ocultar», across a remount, for this person and project only', async () => {
