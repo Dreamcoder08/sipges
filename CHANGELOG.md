@@ -16,6 +16,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ### Corregido
 
+- Analista: «Preguntar» guarda en caché de Claude la parte fija de cada pregunta (instrucciones y herramientas) y la conversación en curso, y registra por pregunta los tokens usados, los leídos de caché, las vueltas y la duración, sin ningún texto. Responde con un mensaje claro ante citas sin fuente (también de cinco o más cifras), respuestas cortadas o pausadas y argumentos de herramienta mal formados, y conserva el turno completo del modelo al continuar. Nuevo set de evaluación sin conexión de 21 casos con respuestas grabadas.
 - Territorio: el mapa ya no se congela al volver de la vista 3D (unos 3 s bloqueados pasaron a ninguno): el globo 3D solo dibuja cuando algo cambia, el mapa 2D queda montado mientras se ve el 3D y los contornos de distrito los dibuja MapLibre. El relieve 3D dice «Cargando el relieve…» hasta que llegan sus primeros datos.
 - Identidad: antes de avisar o cerrar por inactividad, la pestaña consulta al servidor sin extender la sesión; una pestaña en segundo plano ya no lleva al inicio de sesión mientras se trabaja en otra. La API evita escrituras de sesión innecesarias y registra la causa cuando falla una extensión.
 - Inicio: un proyecto nuevo muestra «Primeros pasos», con solo lo que la aplicación puede comprobar: cargar los primeros registros (administración y análisis) y dar acceso al equipo (administración). Indica el avance, se puede ocultar y desaparece al completarse.
