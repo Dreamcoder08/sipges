@@ -42,6 +42,55 @@ export type RequestOptions = {
   readonly redirect?: RequestRedirect;
   /** What the caller reads back; JSON unless named (`text/event-stream` for a stream). */
   readonly accept?: string;
+  /** Automatic traffic (polling): sent with BACKGROUND_HEADER, so it does not extend the session. */
+  readonly background?: boolean;
+};
+
+/**
+ * Marks a request the app made on its own (polling, live refresh). The Go API ends a session
+ * after a stretch without user activity and does not count these requests (world-class-local T8f).
+ */
+export const BACKGROUND_HEADER = 'X-SIPGES-Background';
+
+let backgroundDepth = 0;
+
+/**
+ * Runs `start` with every request it starts synchronously marked as background: TanStack Query
+ * calls a refetch's queryFn synchronously from `invalidateQueries`, so wrapping that call marks
+ * the refetches it triggers. A queryFn that awaits before calling `request` is not covered.
+ */
+export const runInBackground = <T>(start: () => T): T => {
+  backgroundDepth += 1;
+  try {
+    return start();
+  } finally {
+    backgroundDepth -= 1;
+  }
+};
+
+/**
+ * The Go API tells, on every answer to a request whose session authenticated, the whole seconds
+ * until that session expires (world-class-local T8f). Answers without it (public routes, the
+ * TypeScript API, 401s) say nothing about the session.
+ */
+export const SESSION_REMAINING_HEADER = 'X-SIPGES-Session-Remaining';
+
+const remainingListeners = new Set<(seconds: number) => void>();
+
+/**
+ * Called with the remaining seconds of every answer that tells them, background ones included.
+ * Returns the unsubscribe function.
+ */
+export const onSessionRemaining = (listener: (seconds: number) => void): (() => void) => {
+  remainingListeners.add(listener);
+  return () => remainingListeners.delete(listener);
+};
+
+const tellRemaining = (response: Response) => {
+  const value = response.headers.get(SESSION_REMAINING_HEADER);
+  if (value === null || !/^\d+$/.test(value)) return;
+  const seconds = Number(value);
+  for (const listener of remainingListeners) listener(seconds);
 };
 
 const encode = (body: RequestBody | undefined): { body?: BodyInit; type?: string } => {
@@ -56,10 +105,13 @@ const encode = (body: RequestBody | undefined): { body?: BodyInit; type?: string
  * the client never handles tokens; every failure becomes an ApiError.
  */
 export const request = async (path: string, options: RequestOptions = {}) => {
+  // Read before the first await: `runInBackground` only covers the synchronous start.
+  const background = options.background === true || backgroundDepth > 0;
   const { body, type } = encode(options.body);
   const headers = new Headers({ accept: options.accept ?? 'application/json' });
   if (type) headers.set('content-type', type);
   if (options.scope) headers.set('X-SIPGES-Scope', options.scope);
+  if (background) headers.set(BACKGROUND_HEADER, '1');
   const response = await fetch(path, {
     method: options.method ?? 'GET',
     credentials: 'same-origin',
@@ -68,6 +120,7 @@ export const request = async (path: string, options: RequestOptions = {}) => {
     ...(options.signal ? { signal: options.signal } : {}),
     ...(options.redirect ? { redirect: options.redirect } : {}),
   });
+  tellRemaining(response);
   const redirected =
     options.redirect === 'manual' &&
     (response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400));

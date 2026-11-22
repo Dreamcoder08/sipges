@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/application"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/httpx"
 )
 
@@ -23,6 +24,10 @@ type providers struct {
 	// PasswordReset tells the web an administrator may reset another person's password
 	// (POST /system/auth/accounts/{username}/password), which only this API serves.
 	PasswordReset bool `json:"password_reset"`
+	// IdleTimeoutSeconds tells the web a session ends after this many seconds without user
+	// activity, so it may run its own idle timer; the TypeScript API answers without it
+	// (world-class-local T8f).
+	IdleTimeoutSeconds int `json:"idle_timeout_seconds"`
 }
 
 // Routes registers GET /system/auth/me (auth-routes.ts: the session's user, or null) and
@@ -48,6 +53,7 @@ func Routes(mux *http.ServeMux, sessions Authenticator, googleEnabled bool, log 
 		httpx.WriteJSON(w, http.StatusOK, me{p.Username, p.FullName, string(p.Role), 1})
 	})
 	mux.HandleFunc("GET /system/auth/providers", func(w http.ResponseWriter, _ *http.Request) {
-		httpx.WriteJSON(w, http.StatusOK, providers{Google: googleEnabled, PasswordChange: true, PasswordReset: true})
+		httpx.WriteJSON(w, http.StatusOK, providers{Google: googleEnabled, PasswordChange: true, PasswordReset: true,
+			IdleTimeoutSeconds: application.IdleSeconds})
 	})
 }

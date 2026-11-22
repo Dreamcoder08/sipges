@@ -65,7 +65,7 @@ func run(m *testing.M) int {
 	return m.Run()
 }
 
-// t0 is the synthetic "now" of every request; sessions expire 8 h after it.
+// t0 is the synthetic "now" of every request; seeded sessions start at it and expire 8 h after it.
 var t0 = time.Date(2026, 11, 3, 12, 0, 0, 0, time.UTC)
 
 const sessionTTL = 8 * time.Hour
@@ -110,8 +110,10 @@ func seed(ctx context.Context, dsn string) error {
 	batch := &pgx.Batch{}
 	for _, user := range []string{"multi", "solo", "nogrant", "reader", "coord", "nomfa", "google", "gone"} {
 		tokens[user] = newToken()
-		batch.Queue(`INSERT INTO sessions (token_hash, username, expires_at, via_google) VALUES ($1, $2, $3, $4)`,
-			infrastructure.HashToken(tokens[user]), user, t0.Add(sessionTTL), user == "google")
+		// Signed in at t0, so the 8 h absolute cap and the stored expiry agree: activity near the
+		// expiry cannot slide it further (world-class-local T8f).
+		batch.Queue(`INSERT INTO sessions (token_hash, username, created_at, expires_at, via_google) VALUES ($1, $2, $3, $4, $5)`,
+			infrastructure.HashToken(tokens[user]), user, t0, t0.Add(sessionTTL), user == "google")
 	}
 	tokens["expired"] = newToken()
 	batch.Queue(`INSERT INTO sessions (token_hash, username, expires_at) VALUES ($1, 'solo', $2)`,
@@ -206,6 +208,13 @@ type req struct {
 
 func (s *server) do(t *testing.T, q req) reply {
 	t.Helper()
+	got, _ := s.doHeader(t, q)
+	return got
+}
+
+// doHeader is do that also returns the response headers.
+func (s *server) doHeader(t *testing.T, q req) (reply, http.Header) {
+	t.Helper()
 	method := q.method
 	if method == "" {
 		method = http.MethodGet
@@ -229,7 +238,7 @@ func (s *server) do(t *testing.T, q req) reply {
 	}
 	defer func() { _ = res.Body.Close() }()
 	b, _ := io.ReadAll(res.Body)
-	return reply{res.StatusCode, string(b)}
+	return reply{res.StatusCode, string(b)}, res.Header
 }
 
 // raw sends the request target byte for byte (an HTTP client would normalize it).

@@ -34,6 +34,16 @@ Configuración › Cuenta lets a person see and end their own sessions (odd/arch
 - **A project scope is required:** the audit row needs a tenant, so the three routes resolve the project like any business route, and an account with no project grant gets 403 «Seleccione un proyecto autorizado…». `/logout` stays public and scope-free, so that account can still sign out.
 - **Out of scope:** the pre-existing Origin rule treats `Origin: null` as absent and then accepts a same-host `Referer` (`apps/api/src/platform/http/origin.ts`); these routes inherit it unchanged. `Origin: null` alone, a cross-site Origin or Referer, and no header at all are refused with 403.
 
+## Addendum 2026-11-22: idle timeout (world-class-local T8f)
+A session now also ends after 60 minutes without user activity, and keeps the 8-hour absolute cap.
+- **Expiry:** password and Google sign-in store `expires_at = now + 60 min`; `created_at` stays the sign-in instant and the cookie keeps its 8 h `Max-Age`. An idle-expired session answers 401 like any expired session, and `GET /system/auth/sessions` shows the current `expires_at`.
+- **Sliding rule:** each successful authenticated request moves the session to `LEAST(created_at + 8 h, now + 60 min)`, so it never passes the absolute cap and never shortens. To bound writes it extends only when less than 55 minutes remain (60 minus a 5-minute slack), in one conditional `UPDATE` on the token hash; a busy session writes at most once every 5 minutes.
+- **Background requests:** a request with `X-SIPGES-Background: 1` authenticates normally but does not extend the session; any other value, or no header, extends it. The web sends it on automatic polling, so polling alone lets a session lapse.
+- **Remaining time:** every answer to a request whose session authenticated, background or not, carries `X-SIPGES-Session-Remaining`: the whole seconds until the stored expiry after any extension, the 8 h cap included; public routes and 401s carry none. The web's idle deadline comes only from that header, so its warning matches the server and a polling tab follows another tab's activity.
+- **No schema change:** the existing `sessions.created_at` and `expires_at` columns carry the rule; there is no migration.
+- **Go only:** the rule lives in `apps/api-go` (`identity/application/idle.go`, applied by the session middleware). The TypeScript API is frozen per [ADR 0032](0032-go-backend-rust-engines.md) and keeps 8 h sessions. `GET /system/auth/providers` advertises `idle_timeout_seconds: 3600` from Go only, and the web enables its idle timer only when that flag is present.
+- **Rationale:** field laptops are often left unattended and signed in; an hour of inactivity bounds that exposure, while the web keeps typing and other user activity alive, so people at work are not signed out.
+
 ## Consequences
 - Users keep their passwords; hashes upgrade transparently.
 - `SIPGES_DATA_KEY` becomes a required production secret; key rotation is a documented procedure: the API also opens values sealed with `SIPGES_DATA_KEY_PREVIOUS` while `pnpm --filter @sipges/api rotate:data-key` re-encrypts them ([docs/operations/data-key-rotation.md](../operations/data-key-rotation.md), 2026-11-02).

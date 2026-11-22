@@ -17,11 +17,18 @@ const Ok = z.object({ ok: z.literal(true) });
 
 const when = (iso: string) => formatDateTime(iso);
 
-/** The person's inbox for the active project, refreshed while the app is open. */
+/**
+ * The person's inbox for the active project, refreshed while the app is open. Every load is a
+ * background request: the shell polls it, so it never extends an idle session (T8f).
+ */
 const inboxQuery = (scope: string) => ({
   queryKey: ['notifications', scope],
   queryFn: ({ signal }: { signal: AbortSignal }) =>
-    requestJson('/system/notifications?limit=30', NotificationInbox, { scope, signal }),
+    requestJson('/system/notifications?limit=30', NotificationInbox, {
+      scope,
+      signal,
+      background: true,
+    }),
   refetchInterval: INBOX_REFRESH_MS,
 });
 

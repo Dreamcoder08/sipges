@@ -145,8 +145,8 @@ func TestLoginOpensASessionOnlyTheTokenHashOfIsStored(t *testing.T) {
 	token := match[1]
 	if n := f.count(t, `SELECT count(*) FROM sessions WHERE token_hash = $1 AND username = $2 AND NOT via_google
 	      AND expires_at = $3 AND created_at = $4`,
-		infrastructure.HashToken(token), user, f.s.clock.now().Add(sessionTTL), f.s.clock.now()); n != 1 {
-		t.Fatal("the session row does not hold the token's hash, 8 h expiry and the clock's time")
+		infrastructure.HashToken(token), user, f.s.clock.now().Add(idleTTL), f.s.clock.now()); n != 1 {
+		t.Fatal("the session row does not hold the token's hash, 1 h idle expiry and the clock's time")
 	}
 	if n := f.count(t, `SELECT count(*) FROM sessions WHERE token_hash = $1`, token); n != 0 {
 		t.Fatal("the raw token was stored")

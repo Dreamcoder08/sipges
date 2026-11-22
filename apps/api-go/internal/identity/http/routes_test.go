@@ -52,7 +52,7 @@ func TestRoutes(t *testing.T) {
 	for _, google := range []bool{false, true} {
 		mux := http.NewServeMux()
 		identityhttp.Routes(mux, sessions{token: ana}, google, quiet)
-		if status, body := get(t, mux, "/system/auth/providers", ""); status != 200 || !reflect.DeepEqual(body, map[string]any{"google": google, "password_change": true, "password_reset": true}) {
+		if status, body := get(t, mux, "/system/auth/providers", ""); status != 200 || !reflect.DeepEqual(body, map[string]any{"google": google, "password_change": true, "password_reset": true, "idle_timeout_seconds": float64(3600)}) {
 			t.Errorf("providers(google=%v): %d %v", google, status, body)
 		}
 		if status, body := get(t, mux, "/system/auth/me", ""); status != 200 || body != nil {

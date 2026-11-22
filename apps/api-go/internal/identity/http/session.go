@@ -6,7 +6,9 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/domain"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
@@ -54,6 +56,22 @@ type Authenticator interface {
 	Authenticate(ctx context.Context, token string) (*domain.Principal, error)
 }
 
+// BackgroundHeader marks a request the web sends on its own (automatic polling): with the value
+// "1" it authenticates normally but is not user activity, so it does not extend the session
+// (world-class-local T8f).
+const BackgroundHeader = "X-SIPGES-Background"
+
+// RemainingHeader carries, on every answer to a request whose session authenticated, the whole
+// seconds until that session expires after any extension the request made; the web's idle timer
+// reads its deadline only from it (world-class-local T8f).
+const RemainingHeader = "X-SIPGES-Session-Remaining"
+
+// ActivityRecorder applies the idle rule to an authenticated request and returns the session's
+// remaining seconds; application.SessionActivity satisfies it.
+type ActivityRecorder interface {
+	Record(ctx context.Context, token string, expires time.Time, userActivity bool) (int, error)
+}
+
 type principalKey struct{}
 
 // PrincipalFrom returns the identity of the request's session, if it had one.
@@ -72,6 +90,9 @@ type SessionOptions struct {
 	Sessions   Authenticator
 	RequireMFA bool
 	Logger     *slog.Logger
+	// Activity, when set, slides the idle expiry of every authenticated request that is not a
+	// background one, and every authenticated answer carries RemainingHeader.
+	Activity ActivityRecorder
 }
 
 // Session is sessionMiddleware (app.py enforce_auth steps 1-3): public routes, the session,
@@ -116,6 +137,21 @@ func Session(opts SessionOptions) httpx.Middleware {
 			if opts.RequireMFA && !principal.MFAEnabled && !mfaEnrollmentPaths[path] {
 				httpx.WriteJSON(w, http.StatusForbidden, mfaRequired{Detail: MFARequiredDetail, MFARequired: true})
 				return
+			}
+
+			if opts.Activity != nil {
+				userActivity := r.Header.Get(BackgroundHeader) != "1"
+				remaining, err := opts.Activity.Record(r.Context(), token, principal.SessionExpiresAt, userActivity)
+				// A failed extension leaves the session valid until its stored expiry, so the
+				// request goes on and tells that remainder.
+				if err != nil && opts.Logger != nil {
+					opts.Logger.LogAttrs(r.Context(), slog.LevelError, "session extension failed",
+						slog.String("request_id", httpx.RequestIDFrom(r.Context())))
+				}
+				// A source that does not tell the expiry sends no header rather than a wrong one.
+				if !principal.SessionExpiresAt.IsZero() {
+					w.Header().Set(RemainingHeader, strconv.Itoa(remaining))
+				}
 			}
 
 			ctx := WithPrincipal(r.Context(), principal)

@@ -45,7 +45,7 @@ const useRestartWatch = (
     const tick = async () => {
       if (Date.now() > deadline) return decide(undefined);
       try {
-        const status = await requestJson(PATH, DesktopUpdateStatus, { scope });
+        const status = await requestJson(PATH, DesktopUpdateStatus, { scope, background: true });
         if (stopped) return;
         // Back on the target version, or back on the old one after it went down: decided.
         if (status.installed === restarting.to || wentDown) return decide(status.installed);

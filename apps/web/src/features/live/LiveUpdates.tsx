@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
+import { BACKGROUND_HEADER, runInBackground } from '../../shared/api/client.ts';
 
 /** Changes arriving together refresh the screen once. */
 export const REFRESH_DEBOUNCE_MS = 800;
@@ -38,12 +39,20 @@ export const LiveUpdates = ({ scope }: { scope: string }) => {
     const refresh = () => {
       clearTimeout(timer);
       timer = setTimeout(
-        () => void client.invalidateQueries({ predicate: (q) => q.queryKey.includes(scope) }),
+        // Someone else's activity: the refetches must not extend this person's idle session.
+        () =>
+          void runInBackground(() =>
+            client.invalidateQueries({ predicate: (q) => q.queryKey.includes(scope) }),
+          ),
         REFRESH_DEBOUNCE_MS,
       );
     };
     const listen = async () => {
-      const headers = new Headers({ accept: 'text/event-stream', 'X-SIPGES-Scope': scope });
+      const headers = new Headers({
+        accept: 'text/event-stream',
+        'X-SIPGES-Scope': scope,
+        [BACKGROUND_HEADER]: '1',
+      });
       if (lastId) headers.set('Last-Event-ID', lastId);
       const response = await fetch('/system/events', {
         credentials: 'same-origin',

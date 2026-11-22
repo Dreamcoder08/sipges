@@ -78,8 +78,9 @@ export const CASES: readonly ParityCase[] = [
     name: 'sign-in providers',
     method: 'GET',
     path: '/system/auth/providers',
-    // Only the Go API changes a password (world-class-local T8); the web reads this flag.
-    goOnly: { keys: ['password_change', 'password_reset'] },
+    // Only the Go API changes a password (world-class-local T8) and ends idle sessions (T8f);
+    // the web reads these flags.
+    goOnly: { keys: ['password_change', 'password_reset', 'idle_timeout_seconds'] },
   },
   {
     name: 'public write without Origin',

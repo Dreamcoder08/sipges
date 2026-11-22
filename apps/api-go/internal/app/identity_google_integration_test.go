@@ -161,7 +161,10 @@ func TestGoogleSignInOpensASessionThatCountsAsTheSecondFactor(t *testing.T) {
 	if match == nil {
 		t.Fatalf("session cookie %q", got.cookies[1])
 	}
-	if n := f.count(t, `SELECT count(*) FROM sessions WHERE token_hash = $1 AND username = $2 AND via_google`, infrastructure.HashToken(match[1]), user); n != 1 {
+	// A Google session expires after the idle hour, like a password one (world-class-local T8f).
+	if n := f.count(t, `SELECT count(*) FROM sessions WHERE token_hash = $1 AND username = $2 AND via_google
+	      AND expires_at = $3 AND created_at = $4`,
+		infrastructure.HashToken(match[1]), user, f.s.clock.now().Add(idleTTL), f.s.clock.now()); n != 1 {
 		t.Fatal("the session row differs")
 	}
 	sent := f.google.requests[0]
@@ -309,7 +312,7 @@ func TestGoogleRoutesAreHiddenWithoutAClient(t *testing.T) {
 	f := newAccountsFixture(t, "googlehidden")
 	expect(t, f.s.do(t, req{path: "/auth/google"}), http.StatusNotFound, notFound)
 	expect(t, f.s.do(t, req{path: "/auth/google/callback?state=a&code=b"}), http.StatusNotFound, notFound)
-	expect(t, f.s.do(t, req{path: "/system/auth/providers"}), http.StatusOK, `{"google":false,"password_change":true,"password_reset":true}`)
+	expect(t, f.s.do(t, req{path: "/system/auth/providers"}), http.StatusOK, `{"google":false,"password_change":true,"password_reset":true,"idle_timeout_seconds":3600}`)
 	admin := f.session(t, "admin", "admin", true)
 	user := f.session(t, "user", "analista", true)
 	expect(t, f.send(t, "/system/auth/accounts/"+user+"/google", admin, `{"email":"x@example.com"}`), http.StatusOK,

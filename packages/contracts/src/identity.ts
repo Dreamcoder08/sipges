@@ -56,6 +56,9 @@ export const AuthProviders = z.object({
   google: z.boolean(),
   password_change: z.boolean().optional(),
   password_reset: z.boolean().optional(),
+  // idle_timeout_seconds: the Go API ends a session after this long without user activity
+  // (world-class-local T8f); TypeScript omits it, and the web then runs no idle timer.
+  idle_timeout_seconds: z.number().int().positive().optional(),
 });
 export type AuthProviders = z.infer<typeof AuthProviders>;
 
