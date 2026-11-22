@@ -672,3 +672,8 @@
     min-height: var(--touch-target);
   }
 }
+
+/* The 2D map's holder, a grid item of .mapCard; hidden (display: none) while 3D is open. */
+.flatMap {
+  min-width: 0;
+}

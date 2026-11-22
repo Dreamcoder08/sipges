@@ -57,35 +57,8 @@ const RASTER = {
 
 /** Deck.gl colours of the current theme, read when a layer is built. */
 const overlayPaint = (theme: Theme) => ({
-  district: [...paintRgb('--map-district-line', theme), 150] as const,
   selected: [...paintRgb('--map-outline-selected', theme), 255] as const,
   halo: paintRgb('--map-point-halo', theme),
-});
-
-/** Raster basemap only; everything SIPGES draws lives in deck.gl layers above it. */
-export const styleFor = (basemap: Basemap, theme: Theme = 'light'): StyleSpecification => ({
-  version: 8,
-  sources:
-    basemap === 'ninguno'
-      ? {}
-      : {
-          base: {
-            type: 'raster',
-            tiles: [TEMPLATES[basemap]],
-            tileSize: 256,
-            maxzoom: BASEMAPS[basemap].maxZoom,
-          },
-        },
-  layers: [
-    {
-      id: 'fondo',
-      type: 'background',
-      paint: { 'background-color': paintColour('--map-bg', theme) },
-    },
-    ...(basemap === 'ninguno'
-      ? []
-      : [{ id: 'base', type: 'raster' as const, source: 'base', paint: RASTER[theme][basemap] }]),
-  ],
 });
 
 const DISTRICTS = {
@@ -97,7 +70,56 @@ const DISTRICTS = {
   })),
 };
 
-const EMPTY = { type: 'FeatureCollection' as const, features: [] };
+/**
+ * The raster basemap and the district outlines; everything else SIPGES draws lives in deck.gl
+ * layers above it. The outlines are a MapLibre line layer, not a deck.gl PathLayer: they are
+ * static, and the PathLayer's first draw blocked the page for ~700 ms on a software GPU every
+ * time the 2D map opened (world-class-local T9).
+ */
+export const styleFor = (
+  basemap: Basemap,
+  theme: Theme = 'light',
+  showDistricts = false,
+): StyleSpecification => ({
+  version: 8,
+  sources: {
+    ...(basemap === 'ninguno'
+      ? {}
+      : {
+          base: {
+            type: 'raster' as const,
+            tiles: [TEMPLATES[basemap]],
+            tileSize: 256,
+            maxzoom: BASEMAPS[basemap].maxZoom,
+          },
+        }),
+    ...(showDistricts ? { distritos: { type: 'geojson' as const, data: DISTRICTS } } : {}),
+  },
+  layers: [
+    {
+      id: 'fondo',
+      type: 'background',
+      paint: { 'background-color': paintColour('--map-bg', theme) },
+    },
+    ...(basemap === 'ninguno'
+      ? []
+      : [{ id: 'base', type: 'raster' as const, source: 'base', paint: RASTER[theme][basemap] }]),
+    ...(showDistricts
+      ? [
+          {
+            id: 'distritos',
+            type: 'line' as const,
+            source: 'distritos',
+            paint: {
+              'line-color': paintColour('--map-district-line', theme),
+              'line-opacity': 150 / 255,
+              'line-width': 1,
+            },
+          },
+        ]
+      : []),
+  ],
+});
 
 const ALPHA = { observado: 235, estimado: 120, escenario: 0 } as const;
 // Wide enough for the list number the marker carries (up to three digits).
@@ -111,6 +133,7 @@ const RADIUS = { current: 13, normal: 11, dim: 9 } as const;
  * (ODD territorial-3d), which the page loads in its place.
  */
 const GeoCanvas = ({
+  hidden = false,
   basemap,
   home,
   homeLabel,
@@ -127,6 +150,12 @@ const GeoCanvas = ({
   onView,
   onFailure,
 }: {
+  /**
+   * The page keeps the map mounted but hidden while the 3D view is open, so going back does not
+   * re-create the WebGL map. While hidden the camera stays put; shown again, it frames `home`
+   * and then `focus`, as a newly created map would.
+   */
+  hidden?: boolean;
   basemap: Basemap;
   home: Extent;
   homeLabel: string;
@@ -158,7 +187,7 @@ const GeoCanvas = ({
     [extent[2], extent[3]],
   ];
   const theme = useResolvedTheme();
-  const initial = useRef({ home, basemap, theme });
+  const initial = useRef({ home, basemap, theme, showDistricts });
   // Zoom in quarter steps, rounded down: markers are never closer than the numbers assume.
   const [labelZoom, setLabelZoom] = useState<number | null>(null);
 
@@ -169,7 +198,11 @@ const GeoCanvas = ({
     try {
       instance = new MapLibreMap({
         container: node,
-        style: styleFor(initial.current.basemap, initial.current.theme),
+        style: styleFor(
+          initial.current.basemap,
+          initial.current.theme,
+          initial.current.showDistricts,
+        ),
         bounds: bounds(initial.current.home),
         fitBoundsOptions: { padding: 24 },
         attributionControl: false,
@@ -212,29 +245,50 @@ const GeoCanvas = ({
   }, [hint]);
 
   useEffect(() => {
-    map.current?.setStyle(styleFor(basemap, theme));
-  }, [basemap, theme]);
+    map.current?.setStyle(styleFor(basemap, theme, showDistricts));
+  }, [basemap, theme, showDistricts]);
+
+  const frameFocus = (current: MapLibreMap, target: Focus) => {
+    if (target.extent) current.fitBounds(bounds(target.extent), { padding: 48, duration: 700 });
+    else if (target.at)
+      current.flyTo({
+        center: [target.at[0], target.at[1]],
+        zoom: Math.max(current.getZoom(), target.zoom ?? 12),
+        duration: 700,
+        essential: true,
+      });
+  };
 
   const homeKey = home.join(',');
   useEffect(() => {
+    if (hidden) return;
     map.current?.fitBounds(bounds(home), { padding: 24, duration: 600 });
-    // `homeKey` stands for the four numbers of `home`.
+    // `homeKey` stands for the four numbers of `home`; `hidden` is handled by the effect below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [homeKey]);
 
   useEffect(() => {
-    if (!focus) return;
     const current = map.current;
-    if (!current) return;
-    if (focus.extent) current.fitBounds(bounds(focus.extent), { padding: 48, duration: 700 });
-    else if (focus.at)
-      current.flyTo({
-        center: [focus.at[0], focus.at[1]],
-        zoom: Math.max(current.getZoom(), focus.zoom ?? 12),
-        duration: 700,
-        essential: true,
-      });
+    if (!focus || !current || hidden) return;
+    frameFocus(current, focus);
+    // A focus set while hidden is framed when the map is shown (the effect below).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focus]);
+
+  // Shown again after the 3D view: size the canvas to its container (it had none while hidden),
+  // then frame what a newly created map would show.
+  const wasHidden = useRef(hidden);
+  useEffect(() => {
+    const current = map.current;
+    const shown = wasHidden.current && !hidden;
+    wasHidden.current = hidden;
+    if (!shown || !current) return;
+    current.resize();
+    current.fitBounds(bounds(home), { padding: 24, duration: 0 });
+    if (focus) frameFocus(current, focus);
+    // Runs on the hidden → shown change only; `home` and `focus` are read at that moment.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hidden]);
 
   useEffect(() => {
     const paint = overlayPaint(theme);
@@ -242,14 +296,6 @@ const GeoCanvas = ({
     overlay.current?.setProps({
       getCursor: ({ isHovering }) => (isHovering ? 'pointer' : 'grab'),
       layers: [
-        new GeoJsonLayer({
-          id: 'distritos',
-          data: showDistricts ? DISTRICTS : EMPTY,
-          stroked: true,
-          filled: false,
-          getLineColor: [...paint.district],
-          lineWidthMinPixels: 1,
-        }),
         new GeoJsonLayer<{ code: string; legend: string }>({
           id: 'concesiones',
           data: {
@@ -327,7 +373,7 @@ const GeoCanvas = ({
         }),
       ],
     });
-  }, [points, concessions, selectedPoint, selectedConcession, theme, showDistricts, labelZoom]);
+  }, [points, concessions, selectedPoint, selectedConcession, theme, labelZoom]);
 
   type Action = 'in' | 'out' | 'home' | '3d';
   const act = (action: Action) => {

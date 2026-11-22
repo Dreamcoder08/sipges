@@ -238,6 +238,12 @@ const CesiumCanvas = ({
         skyAtmosphere: false,
         scene3DOnly: true,
         creditContainer: credits.current,
+        // Draw a frame only when something changed (camera, tiles, entities, the effects below
+        // call requestRender), never continuously: an idle globe re-rendered every frame, which
+        // on a software or weak GPU blocked the page for ~165 ms per frame (world-class-local T9).
+        // The clock does not animate, so simulation time never asks for a frame.
+        requestRenderMode: true,
+        maximumRenderTimeChange: Number.POSITIVE_INFINITY,
       });
     } catch {
       handlers.current.onFailure();
