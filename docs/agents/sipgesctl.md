@@ -53,11 +53,16 @@ Run `sipgesctl help` for every command.
   administrators only, in the active project. The API (`POST /system/auth/accounts/{username}/password`)
   draws a 20-character temporary password, ends every session of that person and answers the
   password once, with `Cache-Control: no-store`; the audit row (`PASSWORD_RESET`, module Cuentas)
-  names both people and never the password. The command prints it once with
+  names both people and never the password. The reset also forgets that person's failed sign-ins,
+  so a locked-out account signs in with the temporary password at once; the per-address limit stays.
+  The command prints it once with
   `Entregue esta contraseña temporal en persona y pida a la persona que la cambie de inmediato con
   «Cambiar contraseña».`; with `--json` it is `data.temporary_password`, next to `data.instruction`.
   Another role answers 403 (exit 4), your own account 422 (exit 6, use `sipgesctl password`), an
   unknown or deactivated account 404 (exit 5), an account outside the project 403.
+  The password is printed before the session file is saved: if that save fails, it still prints,
+  with a warning on stderr (`data.warning` with `--json`) and exit 9. That is the one answer where
+  `ok` stays `true` with a non-zero exit: the reset happened, only the local session was not kept.
 - The TOTP secret goes to a new private file and is never printed.
 - Fields that hold a credential (`token`, `secret`, `password` and others) print as `[redacted]`
   on every command, the generic call included. `apikey create --secret-file FILE` keeps a new key,

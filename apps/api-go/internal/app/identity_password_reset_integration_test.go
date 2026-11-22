@@ -194,3 +194,31 @@ func TestProvidersAnnouncesThePasswordReset(t *testing.T) {
 		t.Fatalf("got %d %s", got.status, got.body)
 	}
 }
+
+func TestPasswordResetLiftsTheLockoutOfThePersonOnly(t *testing.T) {
+	f := newAccountsFixture(t, "pwreset-lockout")
+	admin := f.session(t, "admin", "admin", true)
+	target, _ := f.resetTarget(t, "target")
+	f.exec(t, `DELETE FROM login_failures`)
+	// The person used up the per-user limit; an address and someone else also hold failures.
+	for range 5 {
+		f.exec(t, `INSERT INTO login_failures (subject, failed_at) VALUES ($1, $2), ('ip:192.0.2.7', $2), ('user:someone-else', $2)`,
+			"user:"+target, f.s.clock.now())
+	}
+	expect(t, f.login(t, target, loginPassword).reply, http.StatusTooManyRequests, tooManyLogins)
+
+	// The administrator types the name as people do: the stored, normalised key still clears.
+	got, _ := f.reset(t, strings.ToUpper(target), admin)
+	match := temporaryBody.FindStringSubmatch(strings.TrimSpace(got.body))
+	if got.status != http.StatusOK || match == nil {
+		t.Fatalf("got %d %s, want 200 and one temporary password", got.status, got.body)
+	}
+	if n := f.count(t, `SELECT count(*) FROM login_failures WHERE subject = $1`, "user:"+target); n != 0 {
+		t.Fatalf("%d failures of the person survived the reset", n)
+	}
+	if n := f.count(t, `SELECT count(*) FROM login_failures WHERE subject IN ('ip:192.0.2.7', 'user:someone-else')`); n != 10 {
+		t.Fatalf("%d failures of others remain, want 10", n)
+	}
+	// The temporary password works at once, without waiting out the window.
+	expect(t, f.login(t, target, match[1]).reply, http.StatusOK, `{"ok":true,"name":"Synthetic","role":"analista"}`)
+}

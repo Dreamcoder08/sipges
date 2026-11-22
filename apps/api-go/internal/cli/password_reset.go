@@ -34,10 +34,13 @@ func (a *app) resetPassword(ctx context.Context, o *options, args []string) (int
 	if err != nil {
 		return 0, err
 	}
-	if err := c.persist(path); err != nil {
-		return 0, err
-	}
+	// The temporary password exists only in this answer: it is printed before the session is
+	// saved, so a session file that cannot be written never loses it.
+	persistErr := c.persist(path)
 	if answer.status != http.StatusOK {
+		if persistErr != nil {
+			return 0, persistErr
+		}
 		return o.answer(route, answer), nil
 	}
 	fields, _ := answer.data.(map[string]any)
@@ -45,10 +48,20 @@ func (a *app) resetPassword(ctx context.Context, o *options, args []string) (int
 	if temporary == "" {
 		return 0, &exitError{exit: ExitFailed, code: "bad_answer", detail: "the API sent no temporary password"}
 	}
+	exit, warning := ExitOK, ""
+	if persistErr != nil {
+		exit, warning = ExitLocal, "the password was reset, but the session could not be saved: "+persistErr.Error()
+	}
 	if o.json {
 		view := map[string]any{"username": username, "temporary_password": temporary, "instruction": resetPasswordInstruction}
-		return a.write(true, envelope{OK: true, Status: answer.status, Route: route, Data: view}, ExitOK), nil
+		if warning != "" {
+			view["warning"] = warning
+		}
+		return a.write(true, envelope{OK: true, Status: answer.status, Route: route, Data: view}, exit), nil
 	}
 	_, _ = fmt.Fprintf(a.stdout, "Contraseña temporal de %s: %s\n%s\n", username, temporary, resetPasswordInstruction)
-	return ExitOK, nil
+	if warning != "" {
+		_, _ = fmt.Fprintf(a.stderr, "sipgesctl: %s\n", warning)
+	}
+	return exit, nil
 }
