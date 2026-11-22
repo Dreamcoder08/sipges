@@ -1,5 +1,6 @@
 import { analyzeAccessibility } from '../support/accessibility.ts';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
+import { fakeAnalyst } from '../support/analyst-thread.ts';
 
 /*
  * The Inicio analyst's answer on a phone (odd/archive/agentic-analyst.md T1d, T2): text, sources and
@@ -58,15 +59,7 @@ for (const width of [360, 412]) {
     }) => {
       await page.emulateMedia({ colorScheme, reducedMotion: 'reduce' });
       await page.setViewportSize({ width, height: 800 });
-      await page.route('**/system/v4/settings', async (route) => {
-        const response = await route.fetch();
-        const settings = (await response.json()) as Record<string, unknown>;
-        await route.fulfill({ response, json: { ...settings, external_ai: { enabled: true } } });
-      });
-      // This e2e API has no analyst; the browser says the installation has one.
-      await page.route('**/system/analyst', (route) =>
-        route.fulfill({ json: { available: true } }),
-      );
+      await fakeAnalyst(page, { externalAi: true });
       await page.route('**/system/analyst/ask', (route) => route.fulfill({ json: reply }));
       await signInToProject(page, admin, DEFAULT_SCOPE);
       await page.goto('/inicio');
