@@ -177,8 +177,8 @@ export const handlers = [
       }),
     ),
   ),
-  // Changing a password lives in the Go API only; like the TypeScript API, the double has no
-  // such route, and tests that need it answer the Go route's empty-body 422 themselves.
+  // Changing a password lives in the Go API only; like the TypeScript API, the double has no such
+  // route and its providers answer has no password_change flag. Tests that need it say so themselves.
   http.post('/system/auth/password', () =>
     HttpResponse.json({ detail: 'Not Found' }, { status: 404 }),
   ),

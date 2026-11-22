@@ -51,6 +51,10 @@ export const watchIdleSession = (
   let warned = false;
   let ended = false;
   let sending = false;
+  // The deadline the server last confirmed when this tab was about to warn or end; another tab's
+  // activity moves the server's deadline without this tab hearing of it.
+  let confirmed: number | undefined;
+  let probing = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
 
   const end = () => {
@@ -82,6 +86,7 @@ export const watchIdleSession = (
     if (ended || deadline === undefined) return;
     const now = Date.now();
     const phase = idlePhase(now, deadline);
+    if (phase !== 'active' && confirmed !== deadline) return confirm();
     if (phase === 'expired') return end();
     if (phase === 'warning' && !warned) {
       warned = true;
@@ -93,6 +98,26 @@ export const watchIdleSession = (
     }
     const next = phase === 'active' ? deadline - WARNING_MS : deadline;
     timer = setTimeout(check, Math.min(Math.max(next - now, 0), MAX_TICK_MS));
+  };
+
+  /**
+   * Asks the server before warning or ending: a background request that does not extend the
+   * session but tells its remaining time, so a hidden tab follows another tab's activity. A 401
+   * ends it; a failed request leaves the deadline this tab already had.
+   */
+  const confirm = () => {
+    if (probing) return;
+    probing = true;
+    void request(KEEPALIVE_PATH, { background: true })
+      .then(() => undefined)
+      .catch((error: unknown) => {
+        if (isApiError(error, 401)) end();
+      })
+      .finally(() => {
+        probing = false;
+        confirmed = deadline;
+        check();
+      });
   };
 
   const onActivity = () => {
